@@ -44,12 +44,16 @@ const studentRoutes = require('./routes/students');
 const packageRoutes = require('./routes/packages');
 const slotRoutes = require('./routes/slots');
 const bookingRoutes = require('./routes/bookings');
+const paymentRoutes = require('./routes/payments');
+const notificationRoutes = require('./routes/notifications');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Fallback 404 Handler
 app.use((req, res, next) => {
