@@ -54,7 +54,7 @@ function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutralBg flex flex-col font-sans">
+    <div className="min-h-screen bg-transparent flex flex-col font-sans">
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-12">
         {/* Hero Banner */}
         <div className="bg-gradient-to-r from-primaryDark via-primary to-[#1875c4] rounded-3xl text-white p-8 sm:p-12 shadow-card relative overflow-hidden">
@@ -158,7 +158,7 @@ function HomePage() {
         </section>
       </main>
 
-      <footer className="bg-white border-t border-borderColor py-6 mt-12">
+      <footer className="bg-white/90 backdrop-blur-md border-t border-slate-200/60 py-6 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-textMuted">
           <p>© 2026 Sithma Driving School Management System — Sri Lanka Institute of Information Technology (SLIIT)</p>
           <div className="flex items-center gap-4 font-medium">
@@ -183,11 +183,25 @@ import QuizResultPage from './pages/QuizResultPage';
 import QuizHistoryPage from './pages/QuizHistoryPage';
 import QuestionBankManagementPage from './pages/QuestionBankManagementPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import DarkVeil from './components/DarkVeil';
 
 export default function App() {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-neutralBg flex flex-col font-sans">
+      <div className="min-h-screen relative font-sans text-textMain selection:bg-accent selection:text-primary-dark">
+        {/* Full-Site Dark Veil WebGL Background */}
+        <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden bg-slate-950">
+          <DarkVeil
+            hueShift={0}
+            noiseIntensity={0.02}
+            scanlineIntensity={0.1}
+            speed={0.4}
+            scanlineFrequency={0.05}
+            warpAmount={0.12}
+          />
+          <div className="absolute inset-0 bg-slate-950/25 pointer-events-none" />
+        </div>
+
         <Navbar />
         <Routes>
           {/* Public Routes */}

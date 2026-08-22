@@ -33,7 +33,7 @@ export default {
           dark: '#B03333',
           light: '#FAECEC'
         },
-        neutralBg: '#F7F9FB',
+        neutralBg: 'transparent',
         cardBg: '#FFFFFF',
         textMain: '#1A2433',
         textMuted: '#5A6779',
