@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutralBg text-textMain min-h-screen font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold text-textMain tracking-tight;
+  }
+}
+
+@layer components {
+  /* Status Pills */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .badge-success {
+    @apply bg-success-light text-success-dark border border-success/20;
+  }
+
+  .badge-warning {
+    @apply bg-warning-light text-warning-dark border border-warning/20;
+  }
+
+  .badge-danger {
+    @apply bg-danger-light text-danger-dark border border-danger/20;
+  }
+
+  .badge-info {
+    @apply bg-primary-light text-primary border border-primary/20;
+  }
+
+  .badge-accent {
+    @apply bg-accent-light text-accent-dark border border-accent/20;
+  }
+
+  /* Design System Cards */
+  .card {
+    @apply bg-cardBg rounded-card border border-borderColor shadow-card p-6 transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:shadow-cardHover hover:border-primary/30;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover active:bg-primary-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-textMain font-semibold hover:bg-accent-dark hover:text-white transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-borderColor text-textMain font-medium hover:bg-neutralBg transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+}
