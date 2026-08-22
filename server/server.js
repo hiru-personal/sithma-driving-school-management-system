@@ -42,10 +42,14 @@ app.get('/api/health', (req, res) => {
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/students');
 const packageRoutes = require('./routes/packages');
+const slotRoutes = require('./routes/slots');
+const bookingRoutes = require('./routes/bookings');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/packages', packageRoutes);
+app.use('/api/slots', slotRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Fallback 404 Handler
 app.use((req, res, next) => {
@@ -61,7 +65,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`[Server] Sithma Driving School API running on port ${PORT}`);

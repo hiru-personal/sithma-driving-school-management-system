@@ -170,6 +170,11 @@ function HomePage() {
   );
 }
 
+import BookLessonPage from './pages/BookLessonPage';
+import MyLessonsPage from './pages/MyLessonsPage';
+import SlotManagementPage from './pages/SlotManagementPage';
+import InstructorSchedulePage from './pages/InstructorSchedulePage';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -194,7 +199,15 @@ export default function App() {
             path="/student/lessons"
             element={
               <ProtectedRoute allowedRoles={['student']}>
-                <StudentDashboard />
+                <MyLessonsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/lessons/book"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <BookLessonPage />
               </ProtectedRoute>
             }
           />
@@ -236,7 +249,7 @@ export default function App() {
             path="/staff/slots"
             element={
               <ProtectedRoute allowedRoles={['staff', 'admin']}>
-                <StaffStudentListPage />
+                <SlotManagementPage />
               </ProtectedRoute>
             }
           />
@@ -245,6 +258,16 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={['staff', 'admin']}>
                 <StaffStudentListPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Instructor Protected Routes */}
+          <Route
+            path="/instructor/schedule"
+            element={
+              <ProtectedRoute allowedRoles={['instructor', 'staff', 'admin']}>
+                <InstructorSchedulePage />
               </ProtectedRoute>
             }
           />

@@ -140,6 +140,17 @@ export default function Navbar() {
                     <CreditCard className="w-4 h-4" /> Payment Queue
                   </Link>
                 </>
+              {isInstructor && (
+                <Link
+                  to="/instructor/schedule"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/instructor/schedule')
+                      ? 'bg-primaryDark text-white'
+                      : 'text-blue-100 hover:bg-primaryDark/50 hover:text-white'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" /> My Assigned Schedule
+                </Link>
               )}
             </nav>
           )}
