@@ -165,6 +165,8 @@ export default function Navbar() {
                     <CreditCard className="w-4 h-4" /> Payment Queue
                   </Link>
                 </>
+              )}
+
               {isInstructor && (
                 <Link
                   to="/instructor/schedule"
