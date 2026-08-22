@@ -38,6 +38,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Routes
+const authRoutes = require('./routes/auth');
+
+app.use('/api/auth', authRoutes);
+
 // Fallback 404 Handler
 app.use((req, res, next) => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
