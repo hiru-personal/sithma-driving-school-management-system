@@ -182,6 +182,7 @@ import QuizTakingPage from './pages/QuizTakingPage';
 import QuizResultPage from './pages/QuizResultPage';
 import QuizHistoryPage from './pages/QuizHistoryPage';
 import QuestionBankManagementPage from './pages/QuestionBankManagementPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 export default function App() {
   return (
@@ -298,6 +299,16 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={['staff', 'admin']}>
                 <QuestionBankManagementPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Executive Dashboard */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboardPage />
               </ProtectedRoute>
             }
           />

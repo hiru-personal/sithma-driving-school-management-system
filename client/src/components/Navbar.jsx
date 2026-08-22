@@ -16,6 +16,7 @@ import {
   Users,
   Layers,
   Clock,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -96,6 +97,19 @@ export default function Navbar() {
                     <BookOpen className="w-4 h-4" /> Exam Practice
                   </Link>
                 </>
+              )}
+
+              {user?.role === 'admin' && (
+                <Link
+                  to="/admin/dashboard"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/admin/dashboard')
+                      ? 'bg-accent text-primaryDark font-bold'
+                      : 'text-accent hover:bg-primaryDark/50'
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4" /> Executive Dashboard
+                </Link>
               )}
 
               {isStaff && (
