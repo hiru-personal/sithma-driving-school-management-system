@@ -152,5 +152,10 @@ export default function DarkVeil({
     };
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
 
-  return <canvas ref={ref} className="w-full h-full block" />;
+  return (
+    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-full h-full">
+      <canvas ref={ref} className="w-full h-full block" />
+    </div>
+  );
 }
+
