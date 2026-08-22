@@ -58,104 +58,115 @@ vec4 cppn_fn(vec2 coordinate,float in0,float in1,float in2){
 
 void mainImage(out vec4 fragColor,in vec2 fragCoord){
     vec2 uv=fragCoord/uResolution.xy*2.-1.;
-    uv.y*=-1.;
-    uv+=uWarp*vec2(sin(uv.y*6.283+uTime*0.5),cos(uv.x*6.283+uTime*0.5))*0.05;
-    fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
+    uv.x*=uResolution.x/uResolution.y;
+    vec2 p=uv;
+    p+=(sin(p.yx*4.+vec2(0.,iTime))*0.03)*uWarp;
+    vec4 col=cppn_fn(p,0.,0.,0.);
+    col=clamp(col,0.,1.);
+    col.rgb=hueShiftRGB(col.rgb,uHueShift);
+    float scan=sin(fragCoord.y*uScanFreq+iTime*5.)*0.5+0.5;
+    col.rgb-=scan*uScan*0.05;
+    float n=(rand(fragCoord+vec2(iTime))-0.5)*uNoise;
+    col.rgb+=n*0.05;
+    fragColor=col;
 }
 
 void main(){
-    vec4 col;mainImage(col,gl_FragCoord.xy);
-    col.rgb=hueShiftRGB(col.rgb,uHueShift);
-    float scanline_val=sin(gl_FragCoord.y*uScanFreq)*0.5+0.5;
-    col.rgb*=1.-(scanline_val*scanline_val)*uScan;
-    col.rgb+=(rand(gl_FragCoord.xy+uTime)-0.5)*uNoise;
-    gl_FragColor=vec4(clamp(col.rgb,0.0,1.0),1.0);
+    mainImage(gl_FragColor,gl_FragCoord.xy);
 }
 `;
 
 export default function DarkVeil({
   hueShift = 0,
-  noiseIntensity = 0.02,
-  scanlineIntensity = 0.1,
-  speed = 0.4,
-  scanlineFrequency = 0.05,
-  warpAmount = 0.1,
-  resolutionScale = 1
+  noiseIntensity = 0.5,
+  scanlineIntensity = 0.2,
+  speed = 0.5,
+  scanlineFrequency = 2.0,
+  warpAmount = 0.6,
+  resolutionScale = 0.5
 }) {
   const ref = useRef(null);
 
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const parent = canvas.parentElement || document.body;
 
     let renderer;
-    try {
-      renderer = new Renderer({
-        dpr: Math.min(window.devicePixelRatio, 2),
-        canvas,
-        alpha: true,
-      });
-    } catch (e) {
-      console.warn('WebGL not supported for DarkVeil background', e);
-      return;
-    }
-
-    const gl = renderer.gl;
-    const geometry = new Triangle(gl);
-
-    const program = new Program(gl, {
-      vertex,
-      fragment,
-      uniforms: {
-        uTime: { value: 0 },
-        uResolution: { value: new Vec2(window.innerWidth, window.innerHeight) },
-        uHueShift: { value: hueShift },
-        uNoise: { value: noiseIntensity },
-        uScan: { value: scanlineIntensity },
-        uScanFreq: { value: scanlineFrequency },
-        uWarp: { value: warpAmount }
-      }
-    });
-
-    const mesh = new Mesh(gl, { geometry, program });
-
-    const resize = () => {
-      const w = parent.clientWidth || window.innerWidth;
-      const h = parent.clientHeight || window.innerHeight;
-      renderer.setSize(w * resolutionScale, h * resolutionScale);
-      program.uniforms.uResolution.value.set(w, h);
-    };
-
-    window.addEventListener('resize', resize);
-    resize();
-
-    const start = performance.now();
     let frame = 0;
 
-    const loop = () => {
-      program.uniforms.uTime.value = ((performance.now() - start) / 1000) * speed;
-      program.uniforms.uHueShift.value = hueShift;
-      program.uniforms.uNoise.value = noiseIntensity;
-      program.uniforms.uScan.value = scanlineIntensity;
-      program.uniforms.uScanFreq.value = scanlineFrequency;
-      program.uniforms.uWarp.value = warpAmount;
-      renderer.render({ scene: mesh });
-      frame = requestAnimationFrame(loop);
-    };
+    try {
+      renderer = new Renderer({
+        canvas,
+        width: window.innerWidth * resolutionScale,
+        height: window.innerHeight * resolutionScale,
+        dpr: Math.min(window.devicePixelRatio || 1, 2),
+        alpha: true,
+        antialias: false,
+        powerPreference: 'high-performance'
+      });
 
-    loop();
+      const gl = renderer.gl;
+      if (!gl) return;
 
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', resize);
-    };
+      const geometry = new Triangle(gl);
+
+      const program = new Program(gl, {
+        vertex,
+        fragment,
+        uniforms: {
+          uTime: { value: 0 },
+          uResolution: { value: new Vec2(window.innerWidth, window.innerHeight) },
+          uHueShift: { value: hueShift },
+          uNoise: { value: noiseIntensity },
+          uScan: { value: scanlineIntensity },
+          uScanFreq: { value: scanlineFrequency },
+          uWarp: { value: warpAmount }
+        }
+      });
+
+      const mesh = new Mesh(gl, { geometry, program });
+
+      const resize = () => {
+        const w = window.innerWidth || document.documentElement.clientWidth || 1024;
+        const h = window.innerHeight || document.documentElement.clientHeight || 768;
+        renderer.setSize(w * resolutionScale, h * resolutionScale);
+        program.uniforms.uResolution.value.set(w, h);
+      };
+
+      window.addEventListener('resize', resize);
+      resize();
+
+      const start = performance.now();
+
+      const loop = () => {
+        try {
+          program.uniforms.uTime.value = ((performance.now() - start) / 1000) * speed;
+          program.uniforms.uHueShift.value = hueShift;
+          program.uniforms.uNoise.value = noiseIntensity;
+          program.uniforms.uScan.value = scanlineIntensity;
+          program.uniforms.uScanFreq.value = scanlineFrequency;
+          program.uniforms.uWarp.value = warpAmount;
+          renderer.render({ scene: mesh });
+          frame = requestAnimationFrame(loop);
+        } catch (err) {
+          console.warn('Animation frame error in DarkVeil:', err);
+        }
+      };
+
+      loop();
+
+      return () => {
+        if (frame) cancelAnimationFrame(frame);
+        window.removeEventListener('resize', resize);
+      };
+    } catch (e) {
+      console.warn('WebGL initialization failed in DarkVeil (falling back gracefully):', e);
+    }
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-full h-full">
-      <canvas ref={ref} className="w-full h-full block" />
+    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-full h-full bg-slate-950">
+      <canvas ref={ref} className="w-full h-full block opacity-70" />
     </div>
   );
 }
-
