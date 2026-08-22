@@ -40,8 +40,12 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 const authRoutes = require('./routes/auth');
+const studentRoutes = require('./routes/students');
+const packageRoutes = require('./routes/packages');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/packages', packageRoutes);
 
 // Fallback 404 Handler
 app.use((req, res, next) => {
