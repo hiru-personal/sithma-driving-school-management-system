@@ -295,6 +295,14 @@ exports.getMe = async (req, res) => {
       student: studentProfile,
     });
   } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve profile',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    1-Click Demo Login for testing and university lecturer grading
 // @route   POST /api/auth/demo-login/:role
 // @access  Public
@@ -351,4 +359,5 @@ exports.demoLogin = async (req, res) => {
     });
   }
 };
+
 
