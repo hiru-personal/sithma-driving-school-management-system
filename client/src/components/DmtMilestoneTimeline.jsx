@@ -118,12 +118,12 @@ export default function DmtMilestoneTimeline({ student }) {
 
   return (
     <div className="card space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-borderColor pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
         <div>
-          <h2 className="text-lg font-bold text-textMain flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" /> DMT Regulatory Milestone Stepper
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Clock className="w-5 h-5 text-cyan-400" /> DMT Regulatory Milestone Stepper
           </h2>
-          <p className="text-xs text-textMuted">
+          <p className="text-xs text-slate-400">
             {isType2
               ? 'Type 2 (Trial-Ready) Track — Learner Exam pre-cleared, tracking practical trial attempts & 1.5-yr window'
               : 'Type 1 (New Learner) Track — Tracking Medical, Learner Exam, and Practical Trial Progression'}
@@ -140,10 +140,10 @@ export default function DmtMilestoneTimeline({ student }) {
       {/* Deadline Alert Banner */}
       {deadlineWarning && (
         <div
-          className={`p-3 rounded-lg flex items-center gap-2 text-xs font-semibold ${
+          className={`p-3.5 rounded-xl flex items-center gap-2.5 text-xs font-semibold backdrop-blur-md ${
             deadlineWarning.type === 'danger'
-              ? 'bg-danger-light text-danger-dark border border-danger/30'
-              : 'bg-warning-light text-warning-dark border border-warning/30'
+              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
+              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
           }`}
         >
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -152,93 +152,36 @@ export default function DmtMilestoneTimeline({ student }) {
       )}
 
       {/* Timeline Stepper */}
-      <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-        {milestones.map((m, idx) => {
+      <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/20">
+        {milestones.map((m) => {
           const Icon = m.icon;
           const isCompleted = m.status === 'completed';
           const isInProgress = m.status === 'in_progress';
 
           return (
-            <div key={m.id} className="relative group flex items-start gap-4">
-              {/* Circle Marker */}
+            <div key={m.id} className="relative group">
+              {/* Stepper Dot */}
               <div
-                className={`absolute -left-6 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white transition-colors ${
+                className={`absolute -left-6 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all border shadow-md ${
                   isCompleted
-                    ? 'bg-success text-white'
+                    ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
                     : isInProgress
-                    ? 'bg-accent text-primaryDark ring-accent/30 animate-pulse'
-                    : 'bg-slate-200 text-slate-500'
+                    ? 'bg-cyan-400 text-slate-950 border-cyan-200 animate-pulse shadow-[0_0_12px_rgba(6,182,212,0.6)]'
+                    : 'bg-slate-900 text-slate-500 border-white/20'
                 }`}
               >
-                {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3 h-3" />}
+                {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
               </div>
 
-              {/* Content Card */}
-              <div className="flex-1 bg-neutralBg p-4 rounded-xl border border-borderColor hover:border-primary/40 transition-colors">
+              {/* Step Content */}
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 hover:border-white/20 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                  <h3 className="font-bold text-sm text-textMain">{m.title}</h3>
-                  <span
-                    className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block w-fit ${
-                      isCompleted
-                        ? 'badge-success'
-                        : isInProgress
-                        ? 'badge-warning'
-                        : 'badge-info bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {m.date}
-                  </span>
+                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                    {m.title}
+                  </h3>
+                  <span className="text-xs text-slate-400 font-semibold">{m.date}</span>
                 </div>
-                <p className="text-xs text-textMuted leading-relaxed">{m.desc}</p>
-
-                {/* Trial Specific Attempts Visualization */}
-                {m.id === 'trial' && (
-                  <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-textMain">Trial Attempts (Max 3):</span>
-                      <div className="flex items-center gap-1.5">
-                        {[1, 2, 3].map((num) => {
-                          const attempt = trial.attempts?.[num - 1];
-                          const hasAttempt = !!attempt;
-                          const isPassed = attempt?.result === 'passed';
-                          const isFailed = attempt?.result === 'failed';
-
-                          return (
-                            <span
-                              key={num}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                                isPassed
-                                  ? 'bg-success text-white'
-                                  : isFailed
-                                  ? 'bg-danger text-white'
-                                  : hasAttempt
-                                  ? 'bg-warning text-white'
-                                  : 'bg-slate-200 text-slate-600'
-                              }`}
-                              title={
-                                attempt
-                                  ? `Attempt #${num}: ${attempt.result} (${format(
-                                      new Date(attempt.date),
-                                      'yyyy-MM-dd'
-                                    )})`
-                                  : `Attempt #${num}: Available`
-                              }
-                            >
-                              {num}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {trial.deadlineDate && (
-                      <span className="text-textMuted flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-primary" />
-                        1.5-Yr Limit: {format(new Date(trial.deadlineDate), 'MMM dd, yyyy')}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <p className="text-xs text-slate-300 leading-relaxed">{m.desc}</p>
               </div>
             </div>
           );

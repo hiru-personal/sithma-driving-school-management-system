@@ -44,7 +44,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
+    const interval = setInterval(fetchUnread, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -93,9 +93,9 @@ export default function NotificationBell() {
       case 'booking':
         return <Calendar className="w-4 h-4 text-cyan-300" />;
       case 'trial':
-        return <Award className="w-4 h-4 text-success" />;
+        return <Award className="w-4 h-4 text-emerald-400" />;
       case 'dmt-date':
-        return <Clock className="w-4 h-4 text-warning" />;
+        return <Clock className="w-4 h-4 text-amber-300" />;
       default:
         return <Sparkles className="w-4 h-4 text-blue-300" />;
     }
@@ -106,12 +106,12 @@ export default function NotificationBell() {
       {/* Liquid Glass Bell Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md transition-all duration-300 shadow-sm flex items-center justify-center"
-        title="Notifications"
+        className="relative w-9 h-9 rounded-full bg-white/15 hover:bg-cyan-500/20 text-white hover:text-cyan-300 border border-white/30 backdrop-blur-xl transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.15)] flex items-center justify-center cursor-pointer group"
+        title="Notifications Center"
       >
-        <Bell className="w-4 h-4" />
+        <Bell className="w-4 h-4 text-white group-hover:text-cyan-300 transition-colors" strokeWidth={2.2} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gradient-to-tr from-accent via-amber-400 to-amber-300 text-slate-950 text-[9px] font-black flex items-center justify-center shadow-[0_0_10px_rgba(242,169,59,0.7)] animate-pulse">
+          <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-gradient-to-tr from-accent via-amber-400 to-amber-300 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-[0_0_12px_rgba(242,169,59,0.9)] ring-2 ring-slate-900 animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -119,12 +119,12 @@ export default function NotificationBell() {
 
       {/* Liquid Glass Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 sm:w-96 backdrop-blur-3xl bg-slate-950/90 border border-white/20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-3 w-80 sm:w-96 backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
           <div className="p-4 bg-white/5 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h4 className="text-xs font-bold text-white uppercase tracking-wider">In-App Alerts</h4>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/20 text-accent border border-accent/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/20 text-accent border border-accent/30 shadow-[0_0_8px_rgba(242,169,59,0.3)]">
                   {unreadCount} New
                 </span>
               )}
@@ -143,7 +143,8 @@ export default function NotificationBell() {
             {notifications.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400 space-y-1">
                 <Bell className="w-6 h-6 text-slate-600 mx-auto" />
-                <p>No notifications yet</p>
+                <p className="text-slate-300 font-medium">No notifications yet</p>
+                <p className="text-[11px] text-slate-500">You're completely up to date!</p>
               </div>
             ) : (
               notifications.slice(0, 10).map((n) => (
@@ -152,7 +153,7 @@ export default function NotificationBell() {
                   onClick={() => !n.read && handleMarkAsRead(n._id)}
                   className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer ${
                     !n.read
-                      ? 'bg-cyan-500/10 hover:bg-cyan-500/15'
+                      ? 'bg-cyan-500/15 hover:bg-cyan-500/20'
                       : 'hover:bg-white/5'
                   }`}
                 >
@@ -178,7 +179,7 @@ export default function NotificationBell() {
             )}
           </div>
 
-          <div className="p-2.5 bg-white/5 border-t border-white/10 text-center">
+          <div className="p-3 bg-white/5 border-t border-white/10 text-center">
             <Link
               to="/notifications"
               onClick={() => setIsOpen(false)}

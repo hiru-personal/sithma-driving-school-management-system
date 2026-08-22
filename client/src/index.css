@@ -4,59 +4,67 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-textMain min-h-screen font-sans antialiased;
+    @apply bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-accent selection:text-slate-950;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-semibold text-textMain tracking-tight;
+    @apply font-heading font-semibold text-white tracking-tight;
+  }
+
+  p {
+    @apply text-slate-300;
+  }
+
+  input, select, textarea {
+    @apply bg-slate-900/80 border border-white/15 text-white placeholder-slate-500 rounded-xl focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all;
   }
 }
 
 @layer components {
-  /* Status Pills */
+  /* Glowing Status Pills */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider backdrop-blur-md;
   }
 
   .badge-success {
-    @apply bg-success-light text-success-dark border border-success/20;
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)];
   }
 
   .badge-warning {
-    @apply bg-warning-light text-warning-dark border border-warning/20;
+    @apply bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)];
   }
 
   .badge-danger {
-    @apply bg-danger-light text-danger-dark border border-danger/20;
+    @apply bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)];
   }
 
   .badge-info {
-    @apply bg-primary-light text-primary border border-primary/20;
+    @apply bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)];
   }
 
   .badge-accent {
-    @apply bg-accent-light text-accent-dark border border-accent/20;
+    @apply bg-amber-400/15 text-amber-300 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.2)];
   }
 
-  /* Glassmorphism & Translucent Design System Cards */
+  /* Liquid Glass Cards */
   .card {
-    @apply bg-white/95 backdrop-blur-md rounded-card border border-slate-200/80 shadow-card p-6 transition-all duration-200;
+    @apply bg-slate-900/65 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] text-slate-100 p-6 transition-all duration-300 relative overflow-hidden;
   }
 
   .card-hover {
-    @apply hover:shadow-cardHover hover:border-primary/40 hover:-translate-y-0.5;
+    @apply hover:border-cyan-400/40 hover:shadow-[0_12px_40px_0_rgba(6,182,212,0.2)] hover:-translate-y-1;
   }
 
-  /* Buttons */
+  /* Liquid Glass Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover active:bg-primary-dark transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary via-blue-600 to-primary-hover text-white font-semibold hover:shadow-[0_0_20px_rgba(11,95,165,0.6)] active:scale-95 transition-all border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-textMain font-semibold hover:bg-accent-dark hover:text-white transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent via-amber-400 to-accent-dark text-slate-950 font-bold hover:shadow-[0_0_20px_rgba(242,169,59,0.6)] active:scale-95 transition-all border border-amber-300/40 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white/90 backdrop-blur-sm border border-borderColor text-textMain font-medium hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-slate-200 font-semibold hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed;
   }
 }
