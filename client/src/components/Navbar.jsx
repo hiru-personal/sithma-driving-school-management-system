@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import {
   Car,
   Bell,
@@ -159,6 +160,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-3">
+                <NotificationBell />
                 <div className="text-right">
                   <div className="text-sm font-semibold text-white leading-tight">{user.name}</div>
                   <div className="text-xs text-blue-200">

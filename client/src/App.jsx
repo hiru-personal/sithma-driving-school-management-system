@@ -174,6 +174,9 @@ import BookLessonPage from './pages/BookLessonPage';
 import MyLessonsPage from './pages/MyLessonsPage';
 import SlotManagementPage from './pages/SlotManagementPage';
 import InstructorSchedulePage from './pages/InstructorSchedulePage';
+import UploadPaymentPage from './pages/UploadPaymentPage';
+import PaymentVerificationQueuePage from './pages/PaymentVerificationQueuePage';
+import NotificationsPage from './pages/NotificationsPage';
 
 export default function App() {
   return (
@@ -215,7 +218,7 @@ export default function App() {
             path="/student/payments"
             element={
               <ProtectedRoute allowedRoles={['student']}>
-                <StudentDashboard />
+                <UploadPaymentPage />
               </ProtectedRoute>
             }
           />
@@ -257,7 +260,7 @@ export default function App() {
             path="/staff/payments"
             element={
               <ProtectedRoute allowedRoles={['staff', 'admin']}>
-                <StaffStudentListPage />
+                <PaymentVerificationQueuePage />
               </ProtectedRoute>
             }
           />
@@ -268,6 +271,16 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={['instructor', 'staff', 'admin']}>
                 <InstructorSchedulePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Notifications Center (All Roles) */}
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute allowedRoles={['student', 'staff', 'instructor', 'admin']}>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />
