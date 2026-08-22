@@ -177,6 +177,11 @@ import InstructorSchedulePage from './pages/InstructorSchedulePage';
 import UploadPaymentPage from './pages/UploadPaymentPage';
 import PaymentVerificationQueuePage from './pages/PaymentVerificationQueuePage';
 import NotificationsPage from './pages/NotificationsPage';
+import QuizSetupPage from './pages/QuizSetupPage';
+import QuizTakingPage from './pages/QuizTakingPage';
+import QuizResultPage from './pages/QuizResultPage';
+import QuizHistoryPage from './pages/QuizHistoryPage';
+import QuestionBankManagementPage from './pages/QuestionBankManagementPage';
 
 export default function App() {
   return (
@@ -226,7 +231,31 @@ export default function App() {
             path="/student/quiz"
             element={
               <ProtectedRoute allowedRoles={['student']}>
-                <StudentDashboard />
+                <QuizSetupPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/quiz/take"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <QuizTakingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/quiz/result"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <QuizResultPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/quiz/history"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <QuizHistoryPage />
               </ProtectedRoute>
             }
           />
@@ -261,6 +290,14 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={['staff', 'admin']}>
                 <PaymentVerificationQueuePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff/quiz"
+            element={
+              <ProtectedRoute allowedRoles={['staff', 'admin']}>
+                <QuestionBankManagementPage />
               </ProtectedRoute>
             }
           />

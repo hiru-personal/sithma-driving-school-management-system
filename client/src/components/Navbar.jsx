@@ -131,6 +131,16 @@ export default function Navbar() {
                     <Layers className="w-4 h-4" /> Packages
                   </Link>
                   <Link
+                    to="/staff/quiz"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                      isActive('/staff/quiz')
+                        ? 'bg-primaryDark text-white'
+                        : 'text-blue-100 hover:bg-primaryDark/50 hover:text-white'
+                    }`}
+                  >
+                    <BookOpen className="w-4 h-4" /> Question Bank
+                  </Link>
+                  <Link
                     to="/staff/payments"
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                       isActive('/staff/payments')
