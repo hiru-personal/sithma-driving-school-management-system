@@ -36,9 +36,9 @@ export default function Navbar() {
   return (
     <header className="sticky top-3 z-50 px-3 sm:px-6 lg:px-8 py-1 max-w-7xl mx-auto w-full transition-all duration-300">
       {/* Liquid Glass Capsule Bar */}
-      <div className="relative backdrop-blur-2xl bg-slate-900/70 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] rounded-2xl sm:rounded-full px-4 sm:px-6 py-2.5 transition-all duration-300 overflow-hidden">
+      <div className="relative backdrop-blur-2xl bg-slate-900/70 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] rounded-2xl sm:rounded-full px-4 sm:px-6 py-2.5 transition-all duration-300">
         {/* Specular Liquid Light Shimmer (Top Highlight) */}
-        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent pointer-events-none" />
         <div className="absolute inset-x-12 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent pointer-events-none" />
 
         <div className="flex items-center justify-between">
