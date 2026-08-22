@@ -87,6 +87,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const demoLogin = async (role) => {
+    try {
+      const res = await api.post(`/auth/demo-login/${role}`);
+      if (res.data.success) {
+        const { token, user, student } = res.data;
+        setToken(token);
+        setUser(user);
+        setStudent(student);
+        localStorage.setItem('sithma_token', token);
+        localStorage.setItem('sithma_user', JSON.stringify(user));
+        if (student) {
+          localStorage.setItem('sithma_student', JSON.stringify(student));
+        }
+        toast.success(`Welcome back, ${user.name}!`);
+        return { success: true, user, student };
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Demo login failed.';
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -115,6 +138,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin: user?.role === 'admin',
         isInstructor: user?.role === 'instructor',
         login,
+        demoLogin,
         register,
         logout,
         updateStudentData,

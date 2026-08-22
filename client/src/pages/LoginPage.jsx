@@ -17,7 +17,7 @@ import {
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -52,29 +52,26 @@ export default function LoginPage() {
     handleLogin(email, password);
   };
 
-  // 1-Click Instant Login for demo roles
-  const handleInstantDemoLogin = (role) => {
-    let demoEmail = '';
-    let demoPass = '';
+  // 1-Click Instant Demo Login
+  const handleInstantDemoLogin = async (role) => {
+    setLoading(true);
+    setErrorMessage('');
+    const res = await demoLogin(role);
+    setLoading(false);
 
-    if (role === 'student') {
-      demoEmail = 'student.kasun@gmail.com';
-      demoPass = 'password123';
-    } else if (role === 'staff') {
-      demoEmail = 'staff.maharagama@sithma.lk';
-      demoPass = 'password123';
-    } else if (role === 'instructor') {
-      demoEmail = 'instructor.sunil@sithma.lk';
-      demoPass = 'password123';
-    } else if (role === 'admin') {
-      demoEmail = 'admin@sithma.lk';
-      demoPass = 'admin123';
+    if (res && res.success) {
+      if (res.user.role === 'student') {
+        navigate('/student/dashboard');
+      } else if (res.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (res.user.role === 'instructor') {
+        navigate('/instructor/schedule');
+      } else {
+        navigate('/staff/students');
+      }
+    } else {
+      setErrorMessage(res?.message || 'Demo login failed.');
     }
-
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    toast.loading(`Authenticating as ${role.toUpperCase()}...`, { duration: 1000 });
-    handleLogin(demoEmail, demoPass);
   };
 
   return (

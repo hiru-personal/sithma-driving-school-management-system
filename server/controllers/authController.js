@@ -295,10 +295,60 @@ exports.getMe = async (req, res) => {
       student: studentProfile,
     });
   } catch (error) {
+// @desc    1-Click Demo Login for testing and university lecturer grading
+// @route   POST /api/auth/demo-login/:role
+// @access  Public
+exports.demoLogin = async (req, res) => {
+  try {
+    const { role } = req.params;
+    let email = 'student.kasun@gmail.com';
+
+    if (role === 'admin') {
+      email = 'admin@sithma.lk';
+    } else if (role === 'staff') {
+      email = 'staff.maharagama@sithma.lk';
+    } else if (role === 'instructor') {
+      email = 'instructor.sunil@sithma.lk';
+    } else if (role === 'student') {
+      email = 'student.kasun@gmail.com';
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: `Demo user for role ${role} not found. Please run seeder.`,
+      });
+    }
+
+    let studentProfile = null;
+    if (user.role === 'student') {
+      studentProfile = await Student.findOne({ userId: user._id });
+    }
+
+    const token = generateToken(user);
+
+    return res.status(200).json({
+      success: true,
+      message: `Logged in as ${user.name} (${user.role.toUpperCase()})`,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        branch: user.branch,
+      },
+      student: studentProfile,
+    });
+  } catch (error) {
+    console.error('Demo login error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to retrieve profile',
+      message: 'Server error during demo login',
       error: error.message,
     });
   }
 };
+
