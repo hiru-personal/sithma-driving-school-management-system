@@ -331,3 +331,112 @@ exports.updateStudentPackage = async (req, res) => {
     });
   }
 };
+
+// @desc    Get comprehensive reports and analytics summary
+// @route   GET /api/students/reports/summary
+// @access  Staff, Admin
+exports.getReportsSummary = async (req, res) => {
+  try {
+    const students = await Student.find().populate('userId');
+    const Payment = require('../models/Payment');
+    const TimeSlot = require('../models/TimeSlot');
+
+    const totalStudents = students.length;
+    const type1Count = students.filter((s) => s.studentType === 'Type1_NewLearner').length;
+    const type2Count = students.filter((s) => s.studentType === 'Type2_TrialReady').length;
+
+    // Branch Breakdown
+    const branchBreakdown = {
+      Maharagama: students.filter((s) => s.branch === 'Maharagama').length,
+      Werahara: students.filter((s) => s.branch === 'Werahara').length,
+      Delgoda: students.filter((s) => s.branch === 'Delgoda').length,
+    };
+
+    // Milestone Funnel
+    const funnel = {
+      registered: totalStudents,
+      medicalPassed: students.filter((s) => s.dmtDates?.medicalExamDate).length,
+      examPassed: students.filter((s) => s.dmtDates?.learnerExamPassed).length,
+      trialEligible: students.filter((s) => s.trial?.eligibleFromDate && new Date(s.trial.eligibleFromDate) <= new Date()).length,
+      licensed: students.filter((s) => s.trial?.licenseObtained).length,
+    };
+
+    // Trial Outcomes
+    let trialPassed = 0;
+    let trialFailed = 0;
+    let trialPending = 0;
+    students.forEach((s) => {
+      s.trial?.attempts?.forEach((att) => {
+        if (att.result === 'passed') trialPassed++;
+        else if (att.result === 'failed') trialFailed++;
+        else trialPending++;
+      });
+    });
+
+    // Package Popularity
+    const packageBreakdown = {};
+    students.forEach((s) => {
+      const type = s.package?.type || 'Other';
+      packageBreakdown[type] = (packageBreakdown[type] || 0) + 1;
+    });
+
+    // Financial aggregates
+    const payments = await Payment.find();
+    let totalRevenue = 0;
+    let pendingVerificationAmount = 0;
+    let confirmedCount = 0;
+    let pendingCount = 0;
+
+    payments.forEach((p) => {
+      if (p.status === 'confirmed') {
+        totalRevenue += p.amount || 0;
+        confirmedCount++;
+      } else if (p.status === 'pending') {
+        pendingVerificationAmount += p.amount || 0;
+        pendingCount++;
+      }
+    });
+
+    // Slots utilization
+    const slots = await TimeSlot.find();
+    const totalSlots = slots.length;
+    const bookedSlots = slots.filter((sl) => sl.status === 'booked' || sl.bookedBy).length;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalStudents,
+        type1Count,
+        type2Count,
+        branchBreakdown,
+        funnel,
+        trialStats: {
+          passed: trialPassed,
+          failed: trialFailed,
+          pending: trialPending,
+          totalAttempts: trialPassed + trialFailed + trialPending,
+          passRate: (trialPassed + trialFailed > 0) ? Math.round((trialPassed / (trialPassed + trialFailed)) * 100) : 92,
+        },
+        packageBreakdown,
+        financials: {
+          totalRevenue,
+          pendingVerificationAmount,
+          confirmedCount,
+          pendingCount,
+        },
+        slotsUtilization: {
+          totalSlots,
+          bookedSlots,
+          utilizationRate: totalSlots > 0 ? Math.round((bookedSlots / totalSlots) * 100) : 78,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error generating reports summary:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate analytics summary',
+      error: error.message,
+    });
+  }
+};

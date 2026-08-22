@@ -7,10 +7,12 @@ const {
   recordTrialAttempt,
   checkHeavyVehicleEligibility,
   updateStudentPackage,
+  getReportsSummary,
 } = require('../controllers/studentController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Protected Routes
+router.get('/reports/summary', authenticate, authorize('staff', 'admin'), getReportsSummary);
 router.get('/', authenticate, authorize('staff', 'admin'), getAllStudents);
 router.get('/:id', authenticate, getStudentById);
 router.patch('/:id/dmt-dates', authenticate, updateDmtDates);

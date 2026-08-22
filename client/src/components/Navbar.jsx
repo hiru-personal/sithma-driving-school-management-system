@@ -103,6 +103,16 @@ export default function Navbar() {
                   >
                     <BookOpen className="w-3.5 h-3.5" /> Exam Practice
                   </Link>
+                  <Link
+                    to="/student/profile"
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                      isActive('/student/profile')
+                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" /> Profile ID
+                  </Link>
                 </>
               )}
 
@@ -170,6 +180,16 @@ export default function Navbar() {
                     }`}
                   >
                     <CreditCard className="w-3.5 h-3.5" /> Payment Queue
+                  </Link>
+                  <Link
+                    to="/staff/reports"
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                      isActive('/staff/reports')
+                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" /> Reports
                   </Link>
                 </>
               )}
