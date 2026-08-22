@@ -13,6 +13,8 @@ import {
   RefreshCw,
   PlusCircle,
   FileCheck,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -120,9 +122,9 @@ export default function StaffStudentListPage() {
   const handleRecordTrial = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.patch(`/students/${selectedStudent._id}/trial`, trialForm);
+      const res = await api.post(`/students/${selectedStudent._id}/trial-attempt`, trialForm);
       if (res.data.success) {
-        toast.success(res.data.message);
+        toast.success('Trial attempt recorded successfully!');
         setSelectedStudent(null);
         fetchStudents();
       }
@@ -132,20 +134,23 @@ export default function StaffStudentListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-textMain font-heading flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" /> Student Records & DMT Milestone Management
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> Learner Registry & Operations
+          </div>
+          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
+            <Users className="w-6 h-6 text-cyan-400" /> Student Records & DMT Milestone Management
           </h1>
-          <p className="text-xs text-textMuted mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Manage registrations, track DMT milestone progress, and record practical trial examination attempts.
           </p>
         </div>
         <button
           onClick={fetchStudents}
-          className="btn-secondary text-xs py-2 px-3 self-start sm:self-auto"
+          className="btn-secondary text-xs py-2 px-3.5 self-start sm:self-auto flex items-center gap-1.5 font-bold"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh List
         </button>
@@ -156,13 +161,13 @@ export default function StaffStudentListPage() {
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-borderColor rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none"
+              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white placeholder-slate-500 rounded-xl text-xs focus:border-cyan-400 outline-none"
             />
           </div>
 
@@ -170,7 +175,7 @@ export default function StaffStudentListPage() {
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="px-3 py-2 border border-borderColor rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none font-medium"
+            className="px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-cyan-300 outline-none font-semibold"
           >
             <option value="All">All Branches</option>
             <option value="Maharagama">Maharagama Branch</option>
@@ -182,7 +187,7 @@ export default function StaffStudentListPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-borderColor rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none font-medium"
+            className="px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-slate-200 outline-none font-medium"
           >
             <option value="">All Categories (Type 1 & 2)</option>
             <option value="Type1_NewLearner">Type 1 — New Learner</option>
@@ -193,7 +198,7 @@ export default function StaffStudentListPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-borderColor rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none font-medium"
+            className="px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-slate-200 outline-none font-medium"
           >
             <option value="">All Progress Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -205,65 +210,69 @@ export default function StaffStudentListPage() {
       </div>
 
       {/* Student List Table */}
-      <div className="card p-0 overflow-hidden shadow-card">
+      <div className="card p-0 overflow-hidden shadow-2xl border border-white/10">
         {loading ? (
-          <div className="py-12 text-center text-xs text-textMuted flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-primary" /> Loading student database...
+          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading student database...
           </div>
         ) : students.length === 0 ? (
           <div className="py-12 text-center space-y-2">
-            <Users className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-sm font-semibold text-textMain">No students found matching your filters</p>
-            <p className="text-xs text-textMuted">Try adjusting your search query or branch filters.</p>
+            <Users className="w-10 h-10 text-slate-600 mx-auto" />
+            <p className="text-sm font-semibold text-white">No students found matching your filters</p>
+            <p className="text-xs text-slate-400">Try adjusting your search query or branch filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-borderColor text-textMuted uppercase text-[10px] font-bold tracking-wider">
+              <thead className="bg-slate-950/90 border-b border-white/10 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                 <tr>
-                  <th className="px-4 py-3">Student Name</th>
-                  <th className="px-4 py-3">Branch & Category</th>
-                  <th className="px-4 py-3">Package / Lessons</th>
-                  <th className="px-4 py-3">DMT Learner Status</th>
-                  <th className="px-4 py-3">Trial Attempts</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3.5">Student Name</th>
+                  <th className="px-4 py-3.5">Branch & Category</th>
+                  <th className="px-4 py-3.5">Package / Lessons</th>
+                  <th className="px-4 py-3.5">DMT Learner Status</th>
+                  <th className="px-4 py-3.5">Trial Attempts</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-borderColor">
+              <tbody className="divide-y divide-white/10">
                 {students.map((st) => {
                   const isLicensed = st.trial?.licenseObtained;
                   const attemptsCount = st.trial?.attempts?.length || 0;
                   const isType2 = st.studentType === 'Type2_TrialReady';
 
                   return (
-                    <tr key={st._id} className="hover:bg-primary-light/20 transition-colors">
+                    <tr key={st._id} className="hover:bg-white/5 transition-colors">
                       {/* Name & Contact */}
-                      <td className="px-4 py-3 font-semibold text-textMain">
-                        <div>{st.userId?.name || 'Unknown Student'}</div>
-                        <div className="text-[11px] text-textMuted font-normal">
+                      <td className="px-4 py-3.5 font-semibold text-white">
+                        <div className="text-sm">{st.userId?.name || 'Unknown Student'}</div>
+                        <div className="text-[11px] text-slate-400 font-normal">
                           {st.userId?.phone} • {st.userId?.email}
                         </div>
                       </td>
 
                       {/* Branch & Type */}
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-primary">{st.branch}</div>
-                        <span className={`badge text-[10px] py-0 px-2 mt-0.5 ${isType2 ? 'badge-accent' : 'badge-info'}`}>
+                      <td className="px-4 py-3.5">
+                        <div className="font-semibold text-cyan-300">{st.branch}</div>
+                        <span
+                          className={`badge text-[9px] py-0 px-2 mt-0.5 ${
+                            isType2 ? 'badge-accent' : 'badge-info'
+                          }`}
+                        >
                           {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
                         </span>
                       </td>
 
                       {/* Package */}
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-textMain">{st.package?.type?.replace('_', ' ')}</div>
-                        <div className="text-[11px] text-textMuted">
-                          {st.package?.lessonsUsed || 0} / {st.package?.lessonsTotal || 15} Lessons Used
+                      <td className="px-4 py-3.5">
+                        <div className="font-bold text-white">{st.package?.type?.replace('_', ' ')}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {st.package?.lessonsUsed || 0} / {st.package?.lessonsTotal || 15} used
                         </div>
                       </td>
 
                       {/* DMT Learner Exam */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3.5">
                         {isType2 ? (
                           <span className="badge badge-success text-[10px]">Pre-Cleared</span>
                         ) : st.dmtDates?.learnerExamPassed ? (
@@ -273,76 +282,74 @@ export default function StaffStudentListPage() {
                             Exam: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
                           </span>
                         ) : (
-                          <span className="badge bg-slate-100 text-slate-500 text-[10px]">Date Awaiting</span>
+                          <span className="badge badge-danger text-[10px]">Exam Pending</span>
                         )}
                       </td>
 
-                      {/* Trial Attempts */}
-                      <td className="px-4 py-3">
+                      {/* Trial Attempts Pills */}
+                      <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1">
                           {[1, 2, 3].map((num) => {
-                            const att = st.trial?.attempts?.[num - 1];
-                            const isPass = att?.result === 'passed';
-                            const isFail = att?.result === 'failed';
-
+                            const att = st.trial?.attempts?.find((a) => a.attemptNumber === num);
+                            let bg = 'bg-slate-800 text-slate-500 border border-white/10';
+                            if (att) {
+                              bg =
+                                att.result === 'passed'
+                                  ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                                  : 'bg-rose-500 text-white font-bold border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.5)]';
+                            }
                             return (
                               <span
                                 key={num}
-                                className={`w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold ${
-                                  isPass
-                                    ? 'bg-success text-white'
-                                    : isFail
-                                    ? 'bg-danger text-white'
-                                    : att
-                                    ? 'bg-warning text-white'
-                                    : 'bg-slate-200 text-slate-500'
-                                }`}
+                                className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold ${bg}`}
+                                title={
+                                  att
+                                    ? `Attempt ${num}: ${att.result.toUpperCase()} on ${format(
+                                        new Date(att.attemptDate),
+                                        'MMM dd, yyyy'
+                                      )}`
+                                    : `Attempt ${num}: Available`
+                                }
                               >
                                 {num}
                               </span>
                             );
                           })}
                         </div>
-                        {isLicensed && (
-                          <span className="text-[10px] font-bold text-success flex items-center gap-0.5 mt-0.5">
-                            <Award className="w-3 h-3" /> Licensed
-                          </span>
-                        )}
                       </td>
 
-                      {/* Status */}
-                      <td className="px-4 py-3">
+                      {/* Registration Status */}
+                      <td className="px-4 py-3.5">
                         <span
-                          className={`badge ${
+                          className={`badge text-[10px] ${
                             isLicensed
                               ? 'badge-success'
-                              : st.registrationStatus === 'registered'
+                              : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
                               ? 'badge-info'
                               : 'badge-warning'
                           }`}
                         >
-                          {isLicensed ? 'Licensed' : st.registrationStatus}
+                          {isLicensed ? 'Licensed' : st.registrationStatus?.replace('_', ' ')}
                         </span>
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => openStudentModal(st, 'edit_dmt')}
-                            className="p-1.5 rounded bg-primary-light text-primary hover:bg-primary hover:text-white transition-colors"
-                            title="Update DMT Dates"
-                          >
-                            <Calendar className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => openStudentModal(st, 'record_trial')}
-                            className="p-1.5 rounded bg-accent-light text-accent-dark hover:bg-accent hover:text-white transition-colors"
-                            title="Record Trial Attempt"
-                          >
-                            <Award className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      {/* Action Buttons */}
+                      <td className="px-4 py-3.5 text-right space-x-1.5">
+                        <button
+                          onClick={() => openStudentModal(st, 'edit_dmt')}
+                          className="p-1.5 rounded-lg bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/15 transition-colors"
+                          title="Update DMT Exam Dates"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => openStudentModal(st, 'record_trial')}
+                          disabled={isLicensed || attemptsCount >= 3}
+                          className="p-1.5 rounded-lg bg-white/10 hover:bg-amber-500/20 text-amber-300 border border-white/15 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          title="Record Practical Trial Result"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -353,164 +360,168 @@ export default function StaffStudentListPage() {
         )}
       </div>
 
-      {/* Interactive Modal for DMT Dates & Trial Record */}
+      {/* Modal Dialog: Edit DMT Dates / Record Trial Attempt */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-modal max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-borderColor pb-3">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h3 className="text-base font-bold text-textMain">
-                  {modalMode === 'record_trial' ? 'Record Practical Trial Exam Result' : 'Manage DMT Milestones'}
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  {modalMode === 'edit_dmt' ? (
+                    <>
+                      <Calendar className="w-5 h-5 text-cyan-400" /> DMT Regulatory Dates: {selectedStudent.userId?.name}
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-5 h-5 text-amber-400" /> Record Practical Trial Attempt: {selectedStudent.userId?.name}
+                    </>
+                  )}
                 </h3>
-                <p className="text-xs text-textMuted">
-                  Student: <strong>{selectedStudent.userId?.name}</strong> ({selectedStudent.branch} Branch)
+                <p className="text-xs text-slate-400">
+                  {selectedStudent.branch} Branch • {selectedStudent.studentType}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="text-slate-400 hover:text-textMain text-sm font-bold"
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Mode 1: Edit DMT Dates */}
+            {/* DMT Dates Edit Form */}
             {modalMode === 'edit_dmt' && (
               <form onSubmit={handleSaveDmtDates} className="space-y-4 text-xs">
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     DMT Medical Examination Date:
                   </label>
                   <input
                     type="date"
                     value={dmtForm.medicalExamDate}
                     onChange={(e) => setDmtForm({ ...dmtForm, medicalExamDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-borderColor rounded-lg text-xs"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5 bg-white/5 p-3 rounded-xl border border-white/10">
                   <input
                     type="checkbox"
                     id="staffMedPassed"
                     checked={dmtForm.medicalExamPassed}
-                    onChange={(e) => setDmtForm({ ...dmtForm, medicalExamPassed: e.target.checked })}
+                    onChange={(e) =>
+                      setDmtForm({ ...dmtForm, medicalExamPassed: e.target.checked })
+                    }
                     className="w-4 h-4 text-primary rounded"
                   />
-                  <label htmlFor="staffMedPassed" className="font-semibold text-textMain">
-                    Medical Exam Passed
+                  <label htmlFor="staffMedPassed" className="font-medium text-slate-200 cursor-pointer">
+                    Passed DMT Medical Examination
                   </label>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     DMT Learner Written Exam Date:
                   </label>
                   <input
                     type="date"
                     value={dmtForm.learnerExamDate}
                     onChange={(e) => setDmtForm({ ...dmtForm, learnerExamDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-borderColor rounded-lg text-xs"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5 bg-white/5 p-3 rounded-xl border border-white/10">
                   <input
                     type="checkbox"
                     id="staffExamPassed"
                     checked={dmtForm.learnerExamPassed}
-                    onChange={(e) => setDmtForm({ ...dmtForm, learnerExamPassed: e.target.checked })}
+                    onChange={(e) =>
+                      setDmtForm({ ...dmtForm, learnerExamPassed: e.target.checked })
+                    }
                     className="w-4 h-4 text-primary rounded"
                   />
-                  <label htmlFor="staffExamPassed" className="font-semibold text-textMain">
-                    Learner Written Exam Passed (Enables Trial Lessons)
+                  <label htmlFor="staffExamPassed" className="font-medium text-slate-200 cursor-pointer">
+                    Passed DMT Written Exam (Starts 3-Month Trial Waiting Window)
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-borderColor">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setSelectedStudent(null)}
-                    className="btn-secondary py-2 px-3 text-xs"
+                    className="btn-secondary text-xs py-2 px-4"
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn-primary py-2 px-4 text-xs font-bold">
-                    Save DMT Milestone
+                  <button type="submit" className="btn-primary text-xs py-2 px-5 font-bold">
+                    Save DMT Changes
                   </button>
                 </div>
               </form>
             )}
 
-            {/* Mode 2: Record Practical Trial Attempt */}
+            {/* Practical Trial Result Form */}
             {modalMode === 'record_trial' && (
               <form onSubmit={handleRecordTrial} className="space-y-4 text-xs">
-                <div className="p-3 bg-neutralBg rounded-lg border border-borderColor space-y-1">
-                  <div className="flex justify-between">
-                    <span>Attempts Used:</span>
-                    <span className="font-bold text-primary">
-                      {selectedStudent.trial?.attempts?.length || 0} of 3 Max Attempts
-                    </span>
+                <div className="p-3.5 bg-amber-500/10 border border-amber-400/20 rounded-xl space-y-1">
+                  <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400" /> DMT 3-Attempt Rule:
                   </div>
-                  <div className="flex justify-between">
-                    <span>Current Attempt Number:</span>
-                    <span className="font-bold text-accent-dark">
-                      Attempt #{(selectedStudent.trial?.attempts?.length || 0) + 1}
-                    </span>
-                  </div>
+                  <p className="text-slate-300 text-[11px]">
+                    Current attempts recorded: {selectedStudent.trial?.attempts?.length || 0} of 3 maximum allowed attempts.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
-                    Trial Examination Date:
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Practical Trial Examination Date:
                   </label>
                   <input
                     type="date"
                     required
                     value={trialForm.attemptDate}
                     onChange={(e) => setTrialForm({ ...trialForm, attemptDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-borderColor rounded-lg text-xs"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
-                    Examination Outcome:
-                  </label>
+                  <label className="block font-semibold text-slate-300 mb-1">Trial Outcome:</label>
                   <select
                     value={trialForm.result}
                     onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
-                    className="w-full px-3 py-2 border border-borderColor rounded-lg text-xs bg-white font-bold"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white font-bold rounded-xl"
                   >
-                    <option value="passed">✅ PASSED (Issue License & Complete)</option>
-                    <option value="failed">❌ FAILED (Schedule Retake Attempt)</option>
-                    <option value="pending">⏳ PENDING (Awaiting Official Result)</option>
+                    <option value="passed">PASSED (Issue Driver's License)</option>
+                    <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
+                    <option value="absent">ABSENT</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
-                    Examiner / Driving Instructor Notes:
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Examiner Notes / Feedback:
                   </label>
                   <textarea
-                    rows="2"
-                    placeholder="e.g. Reverse parking cleared cleanly, road observation satisfactory."
+                    rows={3}
+                    placeholder="e.g. Reverse parking cleared, minor observation on lane switching..."
                     value={trialForm.examinerNotes}
                     onChange={(e) => setTrialForm({ ...trialForm, examinerNotes: e.target.value })}
-                    className="w-full px-3 py-2 border border-borderColor rounded-lg text-xs"
-                  ></textarea>
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-borderColor">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setSelectedStudent(null)}
-                    className="btn-secondary py-2 px-3 text-xs"
+                    className="btn-secondary text-xs py-2 px-4"
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn-accent py-2 px-4 text-xs font-bold text-textMain">
-                    Submit Trial Result
+                  <button type="submit" className="btn-accent text-xs py-2 px-5 font-bold">
+                    Record Trial Result
                   </button>
                 </div>
               </form>

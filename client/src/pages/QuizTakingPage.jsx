@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Clock,
   HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -67,7 +68,6 @@ export default function QuizTakingPage() {
   };
 
   const handleSubmitQuiz = async () => {
-    // Check if at least some questions are answered
     const answeredEntries = Object.entries(userAnswers);
     if (answeredEntries.length === 0) {
       toast.error('Please answer at least one question before submitting');
@@ -105,9 +105,9 @@ export default function QuizTakingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutralBg flex items-center justify-center">
-        <div className="flex items-center gap-2 text-primary font-bold text-sm">
-          <Clock className="w-5 h-5 animate-spin" /> Preparing your {language} practice paper...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3 text-cyan-300 font-bold text-sm bg-slate-900/80 px-6 py-3 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl">
+          <Clock className="w-5 h-5 animate-spin text-cyan-400" /> Preparing your {language} practice paper...
         </div>
       </div>
     );
@@ -115,10 +115,10 @@ export default function QuizTakingPage() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-neutralBg py-12 px-4 text-center max-w-md mx-auto space-y-4">
-        <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
-        <h2 className="text-lg font-bold text-textMain">No questions available</h2>
-        <button onClick={() => navigate('/student/quiz')} className="btn-primary text-xs py-2 px-4">
+      <div className="py-12 px-4 text-center max-w-md mx-auto space-y-4">
+        <BookOpen className="w-12 h-12 text-slate-600 mx-auto" />
+        <h2 className="text-lg font-bold text-white">No questions available</h2>
+        <button onClick={() => navigate('/student/quiz')} className="btn-primary text-xs py-2.5 px-5">
           Back to Quiz Setup
         </button>
       </div>
@@ -131,45 +131,45 @@ export default function QuizTakingPage() {
   const progressPercent = Math.round(((currentIndex + 1) / total) * 100);
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-4xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-4xl mx-auto w-full">
       {/* Top Header & Progress */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-borderColor pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
         <div>
           <span className="badge badge-info text-xs">
             {language} • {vehicleCategory} Vehicle
           </span>
-          <h1 className="text-lg font-bold text-textMain mt-1">DMT Written Exam Practice</h1>
+          <h1 className="text-lg font-bold text-white mt-1">DMT Written Exam Practice</h1>
         </div>
 
         <div className="flex items-center gap-3 text-xs font-semibold">
-          <span className="text-textMuted">Answered:</span>
-          <span className="text-primary font-bold">
+          <span className="text-slate-400">Answered:</span>
+          <span className="text-cyan-300 font-bold">
             {answeredCount} of {total} Questions
           </span>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs text-textMuted font-medium">
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-xs text-slate-400 font-medium">
           <span>Question {currentIndex + 1} of {total}</span>
-          <span>{progressPercent}% Complete</span>
+          <span className="text-cyan-300 font-semibold">{progressPercent}% Complete</span>
         </div>
-        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-slate-950/80 h-2.5 rounded-full overflow-hidden border border-white/15 p-0.5">
           <div
-            className="bg-primary h-2 rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-cyan-500 to-blue-500 h-1.5 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(6,182,212,0.7)]"
             style={{ width: `${progressPercent}%` }}
           ></div>
         </div>
       </div>
 
       {/* Question Card */}
-      <div className="card shadow-modal p-6 sm:p-8 space-y-6">
+      <div className="card shadow-[0_20px_50px_rgba(0,0,0,0.7)] p-6 sm:p-8 space-y-6">
         <div className="space-y-2">
-          <span className="text-xs font-bold text-primary uppercase tracking-wider">
+          <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider">
             Question #{currentIndex + 1}
           </span>
-          <h2 className="text-base sm:text-lg font-bold text-textMain leading-snug">
+          <h2 className="text-base sm:text-lg font-bold text-white leading-snug">
             {currentQ.questionText}
           </h2>
         </div>
@@ -183,33 +183,33 @@ export default function QuizTakingPage() {
               <div
                 key={optIdx}
                 onClick={() => handleSelectOption(currentQ._id, optIdx)}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
                   isSelected
-                    ? 'border-primary bg-primary-light/40 shadow-sm ring-1 ring-primary'
-                    : 'border-borderColor hover:border-primary/40 bg-white'
+                    ? 'border-cyan-400 bg-cyan-500/15 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                    : 'border-white/10 hover:border-white/20 bg-white/5 text-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                       isSelected
-                        ? 'bg-primary text-white'
-                        : 'bg-slate-100 text-textMuted'
+                        ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                        : 'bg-white/10 text-slate-400'
                     }`}
                   >
                     {String.fromCharCode(65 + optIdx)}
                   </div>
-                  <span className="text-sm font-medium text-textMain">{option}</span>
+                  <span className="text-sm font-medium">{option}</span>
                 </div>
 
-                {isSelected && <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />}
+                {isSelected && <CheckCircle2 className="w-5 h-5 text-cyan-400 flex-shrink-0" />}
               </div>
             );
           })}
         </div>
 
         {/* Navigation & Submit Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-borderColor">
+        <div className="flex items-center justify-between pt-6 border-t border-white/10">
           <button
             type="button"
             disabled={currentIndex === 0}
@@ -232,7 +232,7 @@ export default function QuizTakingPage() {
               type="button"
               disabled={submitting}
               onClick={handleSubmitQuiz}
-              className="btn-accent text-xs py-2.5 px-6 font-bold text-textMain shadow-md"
+              className="btn-accent text-xs py-2.5 px-6 font-bold shadow-lg"
             >
               {submitting ? 'Calculating Score...' : 'Submit & Check Answers'}
             </button>

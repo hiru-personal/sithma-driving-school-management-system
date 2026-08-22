@@ -65,60 +65,63 @@ export default function NotificationsPage() {
   const getIcon = (type) => {
     switch (type) {
       case 'payment':
-        return <CreditCard className="w-5 h-5 text-accent-dark" />;
+        return <CreditCard className="w-5 h-5 text-accent" />;
       case 'booking':
-        return <Calendar className="w-5 h-5 text-primary" />;
+        return <Calendar className="w-5 h-5 text-cyan-400" />;
       case 'trial':
-        return <Award className="w-5 h-5 text-success" />;
+        return <Award className="w-5 h-5 text-emerald-400" />;
       case 'dmt-date':
-        return <Clock className="w-5 h-5 text-warning-dark" />;
+        return <Clock className="w-5 h-5 text-amber-300" />;
       default:
-        return <Sparkles className="w-5 h-5 text-primary" />;
+        return <Sparkles className="w-5 h-5 text-blue-300" />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-5xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-textMain font-heading flex items-center gap-2">
-            <Bell className="w-6 h-6 text-primary" /> Notifications Center
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> Real-Time Notifications
+          </div>
+          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
+            <Bell className="w-6 h-6 text-cyan-400" /> Notifications Center
           </h1>
-          <p className="text-xs text-textMuted mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Real-time milestone updates, payment confirmations, and scheduling alerts.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={fetchNotifications} className="btn-secondary text-xs py-2 px-3">
+        <div className="flex items-center gap-3">
+          <button onClick={fetchNotifications} className="btn-secondary text-xs py-2 px-3.5 flex items-center gap-1.5 font-bold">
             <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </button>
           <button
             onClick={handleMarkAllRead}
-            className="btn-primary text-xs py-2 px-3.5 font-bold"
+            className="btn-primary text-xs py-2 px-4 font-bold shadow-md flex items-center gap-1.5"
           >
-            <CheckCheck className="w-4 h-4" /> Mark All as Read
+            <CheckCheck className="w-3.5 h-3.5" /> Mark All Read
           </button>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="card p-3 flex flex-wrap gap-2 text-xs">
+      <div className="card p-2 flex items-center gap-1.5 overflow-x-auto">
         {[
           { id: 'all', label: 'All Alerts' },
-          { id: 'payment', label: '💳 Payments' },
-          { id: 'dmt-date', label: '⏱️ DMT Dates' },
-          { id: 'booking', label: '📅 Lesson Bookings' },
-          { id: 'trial', label: '🏆 Trial Results' },
+          { id: 'payment', label: 'Payments' },
+          { id: 'booking', label: 'Lesson Bookings' },
+          { id: 'trial', label: 'Trials' },
+          { id: 'dmt-date', label: 'DMT Dates' },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setFilterType(tab.id)}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               filterType === tab.id
-                ? 'bg-primary text-white shadow-sm'
-                : 'bg-neutralBg text-textMuted hover:bg-slate-200'
+                ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] border border-cyan-300'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             {tab.label}
@@ -129,44 +132,42 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="py-12 text-center text-xs text-textMuted flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-primary" /> Loading notifications...
+          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading notifications...
           </div>
         ) : filtered.length === 0 ? (
           <div className="card text-center py-12 space-y-2">
-            <Bell className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-sm font-semibold text-textMain">No notifications found</p>
-            <p className="text-xs text-textMuted">You're all caught up!</p>
+            <Bell className="w-10 h-10 text-slate-600 mx-auto" />
+            <p className="text-sm font-bold text-white">No notifications in this category</p>
+            <p className="text-xs text-slate-400">You're all caught up with your updates.</p>
           </div>
         ) : (
           filtered.map((n) => (
             <div
               key={n._id}
               onClick={() => !n.read && handleMarkAsRead(n._id)}
-              className={`card p-4 sm:p-5 flex items-start gap-4 transition-all ${
+              className={`card p-4 flex items-start gap-4 transition-all cursor-pointer ${
                 !n.read
-                  ? 'border-l-4 border-l-primary bg-primary-light/20 shadow-card'
-                  : 'bg-white'
+                  ? 'border-l-4 border-l-cyan-400 bg-cyan-500/10'
+                  : 'bg-slate-900/60'
               }`}
             >
-              <div className="p-2.5 rounded-xl bg-white border border-borderColor shadow-sm flex-shrink-0">
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 shadow-sm flex-shrink-0">
                 {getIcon(n.type)}
               </div>
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                  <h3 className="text-sm font-bold text-textMain">{n.title}</h3>
-                  <span className="text-xs text-textMuted font-medium">
-                    {n.createdAt ? format(new Date(n.createdAt), 'MMM dd, yyyy • hh:mm a') : ''}
+                  <h3 className="font-bold text-sm text-white">{n.title}</h3>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {n.createdAt ? format(new Date(n.createdAt), 'MMM dd, yyyy • hh:mm a') : 'N/A'}
                   </span>
                 </div>
-                <p className="text-xs text-textMuted leading-relaxed">{n.message}</p>
+                <p className="text-slate-300 leading-relaxed text-xs">{n.message}</p>
               </div>
 
               {!n.read && (
-                <span className="badge badge-warning text-[10px] py-0.5 px-2 flex-shrink-0 self-center">
-                  Unread
-                </span>
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)] flex-shrink-0 mt-2"></span>
               )}
             </div>
           ))

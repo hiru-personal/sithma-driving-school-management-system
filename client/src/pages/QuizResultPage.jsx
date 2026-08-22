@@ -18,9 +18,9 @@ export default function QuizResultPage() {
   const state = location.state;
   if (!state || !state.resultData) {
     return (
-      <div className="min-h-screen bg-neutralBg py-12 px-4 text-center max-w-md mx-auto space-y-4">
-        <p className="text-sm text-textMuted">No quiz results found.</p>
-        <Link to="/student/quiz" className="btn-primary text-xs py-2 px-4">
+      <div className="py-12 px-4 text-center max-w-md mx-auto space-y-4">
+        <p className="text-sm text-slate-400">No quiz results found.</p>
+        <Link to="/student/quiz" className="btn-primary text-xs py-2.5 px-5">
           Go to Practice Quiz
         </Link>
       </div>
@@ -31,16 +31,16 @@ export default function QuizResultPage() {
   const { score, totalQuestions, percentage, passed, answers = [] } = resultData;
 
   const getScoreColor = () => {
-    if (percentage >= 80) return 'text-success border-success bg-success-light/30';
-    if (percentage >= 50) return 'text-warning-dark border-warning bg-warning-light/30';
-    return 'text-danger border-danger bg-danger-light/30';
+    if (percentage >= 80) return 'text-emerald-400 border-emerald-500/40 bg-emerald-500/15 shadow-[0_0_20px_rgba(16,185,129,0.3)]';
+    if (percentage >= 50) return 'text-amber-300 border-amber-500/40 bg-amber-500/15 shadow-[0_0_20px_rgba(245,158,11,0.3)]';
+    return 'text-rose-400 border-rose-500/40 bg-rose-500/15 shadow-[0_0_20px_rgba(244,63,94,0.3)]';
   };
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-4xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-4xl mx-auto w-full">
       {/* Score Summary Card */}
-      <div className="card shadow-modal p-6 sm:p-8 text-center space-y-4">
-        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary-light text-primary mx-auto">
+      <div className="card shadow-[0_20px_50px_rgba(0,0,0,0.7)] p-6 sm:p-8 text-center space-y-4">
+        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 mx-auto">
           <Award className="w-8 h-8" />
         </div>
 
@@ -48,10 +48,10 @@ export default function QuizResultPage() {
           <span className="badge badge-info text-xs">
             {language} • {vehicleCategory} Category
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-textMain font-heading mt-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mt-2">
             {passed ? '🎉 Practice Exam Passed!' : 'Practice Exam Completed'}
           </h1>
-          <p className="text-xs text-textMuted mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             {passed
               ? 'Excellent performance! You met the DMT 80% passing standard.'
               : 'Keep reviewing traffic rules and take another practice test to reach the 80% mark.'}
@@ -60,7 +60,7 @@ export default function QuizResultPage() {
 
         {/* Circular Percentage Box */}
         <div
-          className={`inline-block border-4 rounded-3xl p-6 my-3 min-w-[200px] ${getScoreColor()}`}
+          className={`inline-block border-2 rounded-3xl p-6 my-3 min-w-[200px] backdrop-blur-xl ${getScoreColor()}`}
         >
           <div className="text-4xl font-black">{percentage}%</div>
           <div className="text-xs font-bold mt-1">
@@ -72,7 +72,7 @@ export default function QuizResultPage() {
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Link
             to={`/student/quiz/take?language=${language}&category=${vehicleCategory}`}
-            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-1.5"
+            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-1.5 shadow-md hover:scale-105"
           >
             <RotateCcw className="w-4 h-4" /> Try Again
           </Link>
@@ -87,8 +87,8 @@ export default function QuizResultPage() {
 
       {/* Question Review Section */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-textMain flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" /> Detailed Answer Key & Review
+        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-cyan-400" /> Detailed Answer Key & Review
         </h2>
 
         <div className="space-y-4">
@@ -102,19 +102,17 @@ export default function QuizResultPage() {
               <div
                 key={q._id || idx}
                 className={`card p-5 space-y-3 border-l-4 ${
-                  isCorrect ? 'border-l-success bg-white' : 'border-l-danger bg-red-50/20'
+                  isCorrect
+                    ? 'border-l-emerald-400 bg-emerald-500/10'
+                    : 'border-l-rose-500 bg-rose-500/10'
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-textMuted uppercase">
-                      Question #{idx + 1}
-                    </span>
-                    <h3 className="text-sm font-bold text-textMain">{q.questionText}</h3>
-                  </div>
-
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-400">
+                    Question #{idx + 1}
+                  </span>
                   <span
-                    className={`badge text-[10px] py-1 px-2.5 flex-shrink-0 ${
+                    className={`badge text-[10px] ${
                       isCorrect ? 'badge-success' : 'badge-danger'
                     }`}
                   >
@@ -122,36 +120,37 @@ export default function QuizResultPage() {
                   </span>
                 </div>
 
-                {/* Options Breakdown */}
-                <div className="space-y-1.5 text-xs pt-2">
-                  {q.options.map((opt, oIdx) => {
-                    const wasSelected = selectedOpt === oIdx;
-                    const isRight = correctOpt === oIdx;
+                <h3 className="text-sm font-bold text-white">{q.questionText}</h3>
 
-                    let rowStyle = 'bg-neutralBg border-slate-200 text-textMuted';
-                    if (isRight) {
-                      rowStyle = 'bg-success-light border-success/40 text-success-dark font-bold';
-                    } else if (wasSelected && !isRight) {
-                      rowStyle = 'bg-danger-light border-danger/40 text-danger-dark font-bold';
+                <div className="space-y-2 text-xs">
+                  {q.options.map((opt, oIdx) => {
+                    let borderClass = 'border-white/10 bg-white/5 text-slate-300';
+                    if (oIdx === correctOpt) {
+                      borderClass = 'border-emerald-400/50 bg-emerald-500/20 text-emerald-300 font-bold';
+                    } else if (oIdx === selectedOpt && !isCorrect) {
+                      borderClass = 'border-rose-500/50 bg-rose-500/20 text-rose-300 font-bold';
                     }
 
                     return (
                       <div
                         key={oIdx}
-                        className={`p-2.5 rounded-lg border flex items-center justify-between gap-2 ${rowStyle}`}
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${borderClass}`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold">{String.fromCharCode(65 + oIdx)}.</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-5 h-5 rounded-full bg-slate-900 border border-white/20 flex items-center justify-center text-[10px] font-bold">
+                            {String.fromCharCode(65 + oIdx)}
+                          </span>
                           <span>{opt}</span>
                         </div>
-                        {isRight && (
-                          <span className="text-[10px] uppercase font-bold text-success flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Correct Answer
+
+                        {oIdx === correctOpt && (
+                          <span className="badge badge-success text-[9px] py-0 px-1.5">
+                            Correct Answer
                           </span>
                         )}
-                        {wasSelected && !isRight && (
-                          <span className="text-[10px] uppercase font-bold text-danger flex items-center gap-1">
-                            <XCircle className="w-3.5 h-3.5" /> Your Choice
+                        {oIdx === selectedOpt && !isCorrect && (
+                          <span className="badge badge-danger text-[9px] py-0 px-1.5">
+                            Your Choice
                           </span>
                         )}
                       </div>
@@ -160,12 +159,9 @@ export default function QuizResultPage() {
                 </div>
 
                 {q.explanation && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start gap-2">
-                    <HelpCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="text-primary">Explanation:</strong> {q.explanation}
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-slate-400 bg-white/5 p-2.5 rounded-xl border border-white/10">
+                    💡 <strong>Explanation:</strong> {q.explanation}
+                  </p>
                 )}
               </div>
             );

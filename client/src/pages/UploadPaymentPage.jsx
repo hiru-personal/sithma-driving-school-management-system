@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Eye,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -100,19 +101,22 @@ export default function UploadPaymentPage() {
   const latestPayment = payments[0];
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-7xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-textMain font-heading flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-primary" /> Bank Payment Slip Upload & Verification
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> Fees & Invoicing
+          </div>
+          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
+            <CreditCard className="w-6 h-6 text-amber-400" /> Bank Payment Slip Upload & Verification
           </h1>
-          <p className="text-xs text-textMuted mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Upload your bank transfer slip or deposit receipt for administrative verification.
           </p>
         </div>
 
-        <button onClick={fetchPayments} className="btn-secondary text-xs py-2 px-3 self-start sm:self-auto">
+        <button onClick={fetchPayments} className="btn-secondary text-xs py-2 px-3.5 self-start sm:self-auto flex items-center gap-1.5 font-bold">
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Status
         </button>
       </div>
@@ -122,9 +126,10 @@ export default function UploadPaymentPage() {
         {/* Left 2 Cols: Bank Info & Upload Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Official Bank Account Details */}
-          <div className="bg-gradient-to-r from-primaryDark to-primary text-white rounded-2xl p-6 shadow-card space-y-3">
+          <div className="backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/70 to-slate-900/90 text-white rounded-3xl p-6 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] space-y-3 relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
             <div className="flex items-center justify-between">
-              <span className="badge bg-white/20 text-white border border-white/20 text-[10px]">
+              <span className="badge bg-white/15 text-cyan-300 border border-white/20 text-[10px]">
                 Official Driving School Account
               </span>
               <Building2 className="w-5 h-5 text-accent" />
@@ -132,16 +137,16 @@ export default function UploadPaymentPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 text-xs">
               <div>
-                <p className="text-blue-200">Bank & Branch:</p>
+                <p className="text-slate-400">Bank & Branch:</p>
                 <p className="font-bold text-sm text-white">Bank of Ceylon (BOC)</p>
-                <p className="text-[11px] text-blue-100">Maharagama Branch</p>
+                <p className="text-[11px] text-cyan-300">Maharagama Branch</p>
               </div>
               <div>
-                <p className="text-blue-200">Account Name:</p>
+                <p className="text-slate-400">Account Name:</p>
                 <p className="font-bold text-sm text-white">Sithma Driving School (Pvt) Ltd</p>
               </div>
               <div>
-                <p className="text-blue-200">Account Number:</p>
+                <p className="text-slate-400">Account Number:</p>
                 <p className="font-mono font-black text-sm text-accent tracking-wider">
                   8472910394
                 </p>
@@ -151,11 +156,11 @@ export default function UploadPaymentPage() {
 
           {/* Upload Form */}
           <div className="card space-y-5">
-            <div className="flex items-center justify-between border-b border-borderColor pb-3">
-              <h2 className="text-base font-bold text-textMain flex items-center gap-2">
-                <Upload className="w-4 h-4 text-primary" /> Upload New Payment Slip
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Upload className="w-4 h-4 text-cyan-400" /> Upload New Payment Slip
               </h2>
-              <span className="text-xs font-bold text-primary">
+              <span className="text-xs font-bold text-accent">
                 Package Due: Rs. {student?.package?.priceTotal?.toLocaleString() || '45,000'}
               </span>
             </div>
@@ -163,8 +168,8 @@ export default function UploadPaymentPage() {
             <form onSubmit={handleUploadSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
-                    Amount Paid (LKR) <span className="text-danger">*</span>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Amount Paid (LKR) <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="number"
@@ -172,12 +177,12 @@ export default function UploadPaymentPage() {
                     min="0"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-borderColor rounded-lg font-bold text-primary text-sm"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 rounded-xl font-bold text-accent text-sm outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-textMain mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Paying Bank Name:
                   </label>
                   <input
@@ -185,12 +190,12 @@ export default function UploadPaymentPage() {
                     value={formData.bankName}
                     onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
                     placeholder="e.g. Bank of Ceylon / Commercial Bank"
-                    className="w-full px-3 py-2.5 border border-borderColor rounded-lg"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl outline-none"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-textMain mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Bank Reference / Transaction ID (Optional):
                   </label>
                   <input
@@ -200,17 +205,17 @@ export default function UploadPaymentPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, transactionReference: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 border border-borderColor rounded-lg"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl outline-none"
                   />
                 </div>
               </div>
 
               {/* File Drop Area */}
               <div>
-                <label className="block font-semibold text-textMain mb-1">
-                  Upload Slip Image or PDF <span className="text-danger">*</span>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Upload Slip Image or PDF <span className="text-rose-400">*</span>
                 </label>
-                <div className="border-2 border-dashed border-slate-300 hover:border-primary/60 rounded-2xl p-6 text-center transition-colors bg-neutralBg">
+                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl p-6 text-center transition-colors bg-white/5 cursor-pointer">
                   <input
                     type="file"
                     id="slipFile"
@@ -219,26 +224,26 @@ export default function UploadPaymentPage() {
                     className="hidden"
                   />
                   <label htmlFor="slipFile" className="cursor-pointer block space-y-2">
-                    <Upload className="w-8 h-8 text-primary mx-auto" />
-                    <p className="font-semibold text-textMain text-xs">
+                    <Upload className="w-8 h-8 text-cyan-400 mx-auto" />
+                    <p className="font-semibold text-white text-xs">
                       {selectedFile ? selectedFile.name : 'Click to select bank payment slip file'}
                     </p>
-                    <p className="text-[11px] text-textMuted">JPG, PNG, WEBP, or PDF up to 5MB</p>
+                    <p className="text-[11px] text-slate-400">JPG, PNG, WEBP, or PDF up to 5MB</p>
                   </label>
                 </div>
               </div>
 
               {/* Preview Thumbnail */}
               {previewUrl && (
-                <div className="p-3 bg-slate-50 border border-borderColor rounded-xl flex items-center gap-3">
+                <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
                   <img
                     src={previewUrl}
                     alt="Slip Preview"
-                    className="w-16 h-16 object-cover rounded-lg border border-slate-200"
+                    className="w-16 h-16 object-cover rounded-xl border border-white/10"
                   />
                   <div className="text-xs">
-                    <p className="font-bold text-textMain">Slip Image Ready</p>
-                    <p className="text-textMuted">{selectedFile?.name}</p>
+                    <p className="font-bold text-white">Slip Image Ready</p>
+                    <p className="text-slate-400">{selectedFile?.name}</p>
                   </div>
                 </div>
               )}
@@ -246,7 +251,7 @@ export default function UploadPaymentPage() {
               <button
                 type="submit"
                 disabled={uploading || !selectedFile}
-                className="btn-accent w-full py-3 font-bold text-sm shadow-md"
+                className="btn-accent w-full py-3 font-bold text-sm shadow-lg disabled:opacity-50"
               >
                 {uploading ? 'Uploading Slip...' : 'Submit Payment Slip for Verification'}
               </button>
@@ -254,26 +259,18 @@ export default function UploadPaymentPage() {
           </div>
         </div>
 
-        {/* Right 1 Col: Status & History */}
+        {/* Right 1 Col: Status & Payment Log */}
         <div className="space-y-6">
-          {/* Latest Status Card */}
-          <div className="card space-y-3">
-            <h3 className="text-sm font-bold text-textMain flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" /> Current Verification Status
+          {/* Latest Status Pill Card */}
+          <div className="card space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-cyan-400" /> Current Verification Status
             </h3>
 
             {latestPayment ? (
-              <div
-                className={`p-4 rounded-xl border space-y-2 text-xs ${
-                  latestPayment.status === 'confirmed'
-                    ? 'bg-success-light border-success/30'
-                    : latestPayment.status === 'rejected'
-                    ? 'bg-danger-light border-danger/30'
-                    : 'bg-warning-light border-warning/30'
-                }`}
-              >
+              <div className="p-4 rounded-2xl border bg-white/5 border-white/10 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-textMain">Rs. {latestPayment.amount?.toLocaleString()}</span>
+                  <span className="font-bold text-white">Latest Submission:</span>
                   <span
                     className={`badge ${
                       latestPayment.status === 'confirmed'
@@ -283,64 +280,59 @@ export default function UploadPaymentPage() {
                         : 'badge-warning'
                     }`}
                   >
-                    {latestPayment.status.toUpperCase()}
+                    {latestPayment.status}
                   </span>
                 </div>
-
-                <p className="text-[11px] text-textMuted">
-                  Uploaded: {format(new Date(latestPayment.uploadedAt), 'MMM dd, yyyy • hh:mm a')}
+                <p className="text-slate-400">
+                  Amount: <strong className="text-accent">Rs. {latestPayment.amount?.toLocaleString()}</strong>
                 </p>
-
-                {latestPayment.status === 'rejected' && (
-                  <p className="text-danger font-semibold mt-1">
-                    Rejection Reason: {latestPayment.rejectionReason}
-                  </p>
-                )}
-
-                {latestPayment.status === 'confirmed' && (
-                  <p className="text-success-dark font-semibold mt-1 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Verified & Registration Confirmed
+                <p className="text-slate-400">
+                  Date: {latestPayment.uploadedAt ? format(new Date(latestPayment.uploadedAt), 'MMM dd, yyyy') : 'N/A'}
+                </p>
+                {latestPayment.rejectionReason && (
+                  <p className="text-rose-400 font-semibold mt-1">
+                    Note: {latestPayment.rejectionReason}
                   </p>
                 )}
               </div>
             ) : (
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-textMuted">
-                No payment slips uploaded yet. Please upload your slip on the left.
-              </div>
+              <p className="text-xs text-slate-400 italic">No payment slips uploaded yet.</p>
             )}
           </div>
 
-          {/* Past Payments List */}
+          {/* Payment History List */}
           <div className="card space-y-3">
-            <h3 className="text-sm font-bold text-textMain">Payment History</h3>
+            <h3 className="text-sm font-bold text-white">Payment Submission Log</h3>
             {loading ? (
-              <p className="text-xs text-textMuted">Loading history...</p>
+              <p className="text-xs text-slate-400">Loading history...</p>
             ) : payments.length === 0 ? (
-              <p className="text-xs text-textMuted italic">No previous payments recorded.</p>
+              <p className="text-xs text-slate-400 italic">No previous payments.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-white/10 text-xs">
                 {payments.map((p) => (
-                  <div
-                    key={p._id}
-                    className="p-3 bg-neutralBg rounded-lg border border-borderColor text-xs flex items-center justify-between"
-                  >
+                  <div key={p._id} className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-textMain">Rs. {p.amount?.toLocaleString()}</p>
-                      <p className="text-[10px] text-textMuted">
-                        {format(new Date(p.uploadedAt), 'yyyy-MM-dd')}
+                      <p className="font-bold text-white">{p.bankName}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {p.uploadedAt ? format(new Date(p.uploadedAt), 'MMM dd, yyyy') : ''}
                       </p>
                     </div>
-                    <span
-                      className={`badge text-[10px] py-0 px-2 ${
-                        p.status === 'confirmed'
-                          ? 'badge-success'
-                          : p.status === 'rejected'
-                          ? 'badge-danger'
-                          : 'badge-warning'
-                      }`}
-                    >
-                      {p.status}
-                    </span>
+                    <div className="text-right">
+                      <span className="font-bold text-accent">Rs. {p.amount?.toLocaleString()}</span>
+                      <div>
+                        <span
+                          className={`badge text-[9px] py-0 px-2 mt-0.5 ${
+                            p.status === 'confirmed'
+                              ? 'badge-success'
+                              : p.status === 'rejected'
+                              ? 'badge-danger'
+                              : 'badge-warning'
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

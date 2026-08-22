@@ -11,6 +11,8 @@ import {
   User,
   Building2,
   Calendar,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -69,19 +71,22 @@ export default function PaymentVerificationQueuePage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-textMain font-heading flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-primary" /> Payment Slip Verification Queue
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> Financial Ledger & Approvals
+          </div>
+          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
+            <CreditCard className="w-6 h-6 text-amber-400" /> Payment Slip Verification Queue
           </h1>
-          <p className="text-xs text-textMuted mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Review uploaded bank transfer slips, cross-check transaction amounts, and confirm student registrations.
           </p>
         </div>
 
-        <button onClick={fetchPendingPayments} className="btn-secondary text-xs py-2 px-3 self-start sm:self-auto">
+        <button onClick={fetchPendingPayments} className="btn-secondary text-xs py-2 px-3.5 self-start sm:self-auto flex items-center gap-1.5 font-bold">
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Queue
         </button>
       </div>
@@ -89,11 +94,11 @@ export default function PaymentVerificationQueuePage() {
       {/* Filter Bar */}
       <div className="card p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold text-textMain">Filter by Branch:</label>
+          <label className="text-xs font-semibold text-slate-300">Filter by Branch:</label>
           <select
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
-            className="px-3 py-1.5 border border-borderColor rounded-lg text-xs bg-white font-bold text-primary outline-none"
+            className="px-3.5 py-2 border border-white/15 rounded-xl text-xs bg-slate-950/80 font-bold text-cyan-300 outline-none"
           >
             <option value="All">All Branches</option>
             <option value="Maharagama">Maharagama Branch</option>
@@ -101,149 +106,180 @@ export default function PaymentVerificationQueuePage() {
             <option value="Delgoda">Delgoda Branch</option>
           </select>
         </div>
-
-        <span className="badge badge-warning text-xs">
+        <span className="badge badge-warning text-[10px]">
           {payments.length} Slips Awaiting Review
         </span>
       </div>
 
-      {/* Payments Grid / Table */}
-      {loading ? (
-        <div className="py-12 text-center text-xs text-textMuted flex items-center justify-center gap-2">
-          <RefreshCw className="w-4 h-4 animate-spin text-primary" /> Loading payment queue...
-        </div>
-      ) : payments.length === 0 ? (
-        <div className="card text-center py-12 space-y-2">
-          <CheckCircle2 className="w-10 h-10 text-success mx-auto" />
-          <p className="text-sm font-semibold text-textMain">All payments verified!</p>
-          <p className="text-xs text-textMuted">There are currently no pending slips awaiting staff review.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {payments.map((p) => {
-            const studentUser = p.studentId?.userId;
-
-            return (
-              <div key={p._id} className="card card-hover p-5 space-y-4 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="badge badge-info">{p.studentId?.branch} Branch</span>
-                    <span className="badge badge-warning">Pending Review</span>
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-base text-textMain">{studentUser?.name}</h3>
-                    <p className="text-xs text-textMuted">{studentUser?.phone} • {studentUser?.email}</p>
-                  </div>
-
-                  <div className="p-3 bg-neutralBg rounded-xl border border-borderColor text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-textMuted">Amount Paid:</span>
-                      <span className="font-bold text-primary">Rs. {p.amount?.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-textMuted">Bank:</span>
-                      <span>{p.bankName}</span>
-                    </div>
-                    {p.transactionReference && (
-                      <div className="flex justify-between">
-                        <span className="text-textMuted">Ref / Txn:</span>
-                        <span className="font-mono text-[11px]">{p.transactionReference}</span>
+      {/* Slips Table */}
+      <div className="card p-0 overflow-hidden shadow-2xl border border-white/10">
+        {loading ? (
+          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading pending slips...
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="py-12 text-center space-y-2">
+            <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+            <p className="text-sm font-bold text-white">All pending payment slips are verified!</p>
+            <p className="text-xs text-slate-400">There are no unverified slips in the queue.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-950/90 border-b border-white/10 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                <tr>
+                  <th className="px-4 py-3.5">Student Details</th>
+                  <th className="px-4 py-3.5">Branch</th>
+                  <th className="px-4 py-3.5">Bank & Slip Details</th>
+                  <th className="px-4 py-3.5">Amount (LKR)</th>
+                  <th className="px-4 py-3.5">Uploaded Date</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {payments.map((p) => (
+                  <tr key={p._id} className="hover:bg-white/5 transition-colors">
+                    <td className="px-4 py-3.5 font-semibold text-white">
+                      <div className="text-sm">{p.userId?.name || 'Unknown Student'}</div>
+                      <div className="text-[11px] text-slate-400 font-normal">
+                        {p.userId?.phone} • {p.userId?.email}
                       </div>
-                    )}
-                    <div className="flex justify-between text-[11px] text-textMuted pt-1 border-t border-borderColor">
-                      <span>Uploaded:</span>
-                      <span>{format(new Date(p.uploadedAt), 'yyyy-MM-dd • hh:mm a')}</span>
-                    </div>
-                  </div>
-                </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="badge badge-info text-[10px]">{p.branch} Branch</span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="font-bold text-slate-200">{p.bankName}</div>
+                      <div className="text-[11px] text-slate-400">Ref / Slip: {p.slipFileName || 'Uploaded Image'}</div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="text-sm font-black text-accent">
+                        Rs. {p.amount?.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-400 text-[11px]">
+                      {p.uploadedAt ? format(new Date(p.uploadedAt), 'MMM dd, yyyy • hh:mm a') : 'N/A'}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <button
+                        onClick={() => setSelectedPayment(p)}
+                        className="btn-secondary text-xs py-1.5 px-3 font-bold inline-flex items-center gap-1"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-cyan-300" /> Review Slip
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-                <div className="pt-3 border-t border-borderColor flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedPayment(p)}
-                    className="btn-primary w-full py-2 text-xs font-bold flex items-center justify-center gap-1.5"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Review Slip & Verify
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Review Modal with Slip Image */}
+      {/* Slip Verification Modal */}
       {selectedPayment && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-modal max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-borderColor pb-3">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h3 className="text-base font-bold text-textMain">Review Bank Payment Slip</h3>
-                <p className="text-xs text-textMuted">
-                  Student: <strong>{selectedPayment.studentId?.userId?.name}</strong> • Amount: <strong>Rs. {selectedPayment.amount?.toLocaleString()}</strong>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-amber-400" /> Review Bank Slip: {selectedPayment.userId?.name}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {selectedPayment.branch} Branch • {selectedPayment.userId?.phone}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedPayment(null)}
-                className="text-slate-400 hover:text-textMain text-sm font-bold"
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Slip Image View */}
-            <div className="bg-slate-100 p-2 rounded-xl border border-borderColor max-h-96 overflow-auto text-center">
-              <img
-                src={selectedPayment.slipImageUrl}
-                alt="Bank Transfer Slip"
-                className="max-h-80 mx-auto rounded-lg shadow-sm"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://placehold.co/600x400/0B5FA5/FFFFFF?text=Bank+Deposit+Slip+Image';
-                }}
-              />
-            </div>
+            {/* Slip Details & Image Preview */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 bg-white/5 rounded-2xl border border-white/10 text-xs">
+                <div>
+                  <span className="text-slate-400">Claimed Bank:</span>
+                  <p className="font-bold text-white mt-0.5">{selectedPayment.bankName}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400">Deposit Amount:</span>
+                  <p className="font-black text-accent text-sm mt-0.5">
+                    Rs. {selectedPayment.amount?.toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-400">Uploaded Date:</span>
+                  <p className="font-semibold text-slate-200 mt-0.5">
+                    {selectedPayment.uploadedAt
+                      ? format(new Date(selectedPayment.uploadedAt), 'MMM dd, yyyy')
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
 
-            {/* Rejection reason box */}
-            <div>
-              <label className="block text-xs font-semibold text-textMain mb-1">
-                Rejection Reason (Only if rejecting):
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Deposit amount does not match package fee"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="w-full px-3 py-2 border border-borderColor rounded-lg text-xs"
-              />
-            </div>
+              {/* Bank Transfer Slip Preview */}
+              <div className="border border-white/15 rounded-2xl p-2 bg-slate-900/90 text-center">
+                <p className="text-[11px] font-semibold text-slate-400 mb-2">Uploaded Slip Document Preview</p>
+                <div className="max-h-72 overflow-y-auto flex items-center justify-center bg-black/40 rounded-xl p-2">
+                  <img
+                    src={
+                      selectedPayment.slipUrl?.startsWith('http')
+                        ? selectedPayment.slipUrl
+                        : selectedPayment.slipUrl
+                        ? `http://localhost:5001${selectedPayment.slipUrl}`
+                        : 'https://placehold.co/600x400/0f172a/ffffff?text=Bank+Transfer+Receipt+Slip'
+                    }
+                    alt="Bank Deposit Slip"
+                    className="max-h-64 object-contain rounded-lg border border-white/10 shadow-lg"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://placehold.co/600x400/0f172a/ffffff?text=Receipt+Image';
+                    }}
+                  />
+                </div>
+              </div>
 
-            {/* Modal Actions */}
-            <div className="flex justify-between items-center pt-3 border-t border-borderColor">
-              <button
-                type="button"
-                onClick={() => setSelectedPayment(null)}
-                className="btn-secondary py-2 px-3 text-xs"
-              >
-                Close
-              </button>
+              {/* Rejection Note Field */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Rejection Reason (Only if rejecting this slip):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Deposit amount does not match bank record, blurry receipt..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/15 text-white rounded-xl text-xs"
+                />
+              </div>
 
-              <div className="flex items-center gap-2">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPayment(null)}
+                  className="btn-secondary text-xs py-2 px-4"
+                >
+                  Cancel
+                </button>
                 <button
                   type="button"
                   disabled={actionLoading}
                   onClick={() => handleVerify('rejected')}
-                  className="px-4 py-2 rounded-lg bg-danger-light text-danger-dark font-bold text-xs hover:bg-danger hover:text-white transition-colors flex items-center gap-1"
+                  className="px-4 py-2 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 text-xs font-bold transition-colors disabled:opacity-50"
                 >
-                  <XCircle className="w-4 h-4" /> Reject Slip
+                  <XCircle className="w-3.5 h-3.5 inline mr-1" /> Reject Slip
                 </button>
                 <button
                   type="button"
                   disabled={actionLoading}
                   onClick={() => handleVerify('confirmed')}
-                  className="btn-primary py-2 px-4 text-xs font-bold bg-success hover:bg-success-dark flex items-center gap-1"
+                  className="btn-primary text-xs py-2 px-5 font-bold"
                 >
-                  <CheckCircle2 className="w-4 h-4" /> Confirm & Approve Payment
+                  <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" /> Confirm & Verify Payment
                 </button>
               </div>
             </div>

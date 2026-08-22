@@ -14,6 +14,7 @@ import {
   Sparkles,
   ArrowRight,
   ShieldAlert,
+  X,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -96,27 +97,30 @@ export default function BookLessonPage() {
     (student?.package?.lessonsUsed || 0);
 
   return (
-    <div className="min-h-screen bg-neutralBg py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-borderColor pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-textMain font-heading flex items-center gap-2">
-            <CalendarIcon className="w-6 h-6 text-primary" /> Book a Practical Driving Lesson
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> On-Road Practical Training
+          </div>
+          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
+            <CalendarIcon className="w-6 h-6 text-cyan-400" /> Book a Practical Driving Lesson
           </h1>
-          <p className="text-xs text-textMuted mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Select your branch, date, vehicle type, and preferred 1-hour session time.
           </p>
         </div>
 
         {/* Balance badge */}
         <div className="flex items-center gap-2">
-          <div className="card p-3 bg-white flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center text-primary font-bold">
+          <div className="card p-3 flex items-center gap-3 bg-slate-900/80 border border-white/15">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 font-black text-sm">
               {lessonsRemaining}
             </div>
             <div className="text-xs">
-              <p className="font-bold text-textMain">Lessons Remaining</p>
-              <p className="text-textMuted text-[11px]">in your active package</p>
+              <p className="font-bold text-white">Lessons Remaining</p>
+              <p className="text-slate-400 text-[11px]">in your active package</p>
             </div>
           </div>
         </div>
@@ -124,15 +128,15 @@ export default function BookLessonPage() {
 
       {/* DMT Pass Requirement Alert */}
       {isDmtBlocked && (
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-3 text-xs">
-          <ShieldAlert className="w-5 h-5 text-accent-dark flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-amber-500/10 border border-amber-400/30 rounded-2xl backdrop-blur-md flex items-start gap-3 text-xs">
+          <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-amber-900">
+            <p className="font-bold text-amber-300">
               Department of Motor Traffic (DMT) Learner Written Exam Prerequisite
             </p>
-            <p className="text-amber-800 mt-0.5">
+            <p className="text-slate-300 mt-0.5">
               As a <strong>Type 1 (New Learner)</strong> student, you must pass the DMT written examination before starting practical on-road trial lessons. You can update your exam pass date in your{' '}
-              <Link to="/student/dashboard" className="font-bold underline text-primary">
+              <Link to="/student/dashboard" className="font-bold underline text-cyan-300">
                 Student Dashboard
               </Link>
               .
@@ -146,13 +150,13 @@ export default function BookLessonPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Branch Selector */}
           <div>
-            <label className="block text-xs font-semibold text-textMain mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Select Training Branch:
             </label>
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full px-3 py-2.5 border border-borderColor rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none font-semibold text-primary"
+              className="w-full px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-cyan-300 font-bold outline-none"
             >
               <option value="Maharagama">Maharagama Branch</option>
               <option value="Werahara">Werahara Branch</option>
@@ -162,7 +166,7 @@ export default function BookLessonPage() {
 
           {/* Date Picker */}
           <div>
-            <label className="block text-xs font-semibold text-textMain mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Select Lesson Date:
             </label>
             <input
@@ -170,16 +174,16 @@ export default function BookLessonPage() {
               min={new Date().toISOString().split('T')[0]}
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-3 py-2.5 border border-borderColor rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none font-medium"
+              className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-xs font-medium outline-none"
             />
           </div>
 
           {/* Vehicle Type Selector */}
           <div>
-            <label className="block text-xs font-semibold text-textMain mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
               Vehicle Type:
             </label>
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-4 gap-1.5">
               {[
                 { id: 'Car', label: 'Car', icon: Car },
                 { id: 'Bike', label: 'Bike', icon: Bike },
@@ -190,10 +194,10 @@ export default function BookLessonPage() {
                   key={v.id}
                   type="button"
                   onClick={() => setSelectedVehicle(v.id)}
-                  className={`p-2 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-colors ${
+                  className={`p-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all ${
                     selectedVehicle === v.id
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'bg-neutralBg text-textMuted hover:bg-slate-200'
+                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] border border-cyan-300'
+                      : 'bg-white/5 text-slate-300 hover:bg-white/15 border border-white/10'
                   }`}
                 >
                   <v.icon className="w-3.5 h-3.5" />
@@ -208,21 +212,21 @@ export default function BookLessonPage() {
       {/* Time Slots Grid */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-textMain flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" /> Available Session Slots for {selectedDate}
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <Clock className="w-4 h-4 text-cyan-400" /> Available Session Slots for {selectedDate}
           </h2>
-          <span className="text-xs text-textMuted">Standard session: 1 hour (2 x 30-min units)</span>
+          <span className="text-xs text-slate-400">Standard session: 1 hour (2 x 30-min units)</span>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-xs text-textMuted flex items-center justify-center gap-2">
-            <Clock className="w-4 h-4 animate-spin text-primary" /> Loading branch schedule...
+          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+            <Clock className="w-4 h-4 animate-spin text-cyan-400" /> Loading branch schedule...
           </div>
         ) : slots.length === 0 ? (
           <div className="card text-center py-10 space-y-2">
-            <Clock className="w-8 h-8 text-slate-300 mx-auto" />
-            <p className="text-sm font-semibold text-textMain">No time slots scheduled for this date</p>
-            <p className="text-xs text-textMuted">Please choose another date or contact the branch.</p>
+            <Clock className="w-8 h-8 text-slate-600 mx-auto" />
+            <p className="text-sm font-bold text-white">No time slots scheduled for this date</p>
+            <p className="text-xs text-slate-400">Please choose another date or contact the branch.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -233,21 +237,21 @@ export default function BookLessonPage() {
               return (
                 <div
                   key={slot._id}
-                  className={`card p-5 flex flex-col justify-between space-y-4 border-2 transition-all ${
+                  className={`card p-5 flex flex-col justify-between space-y-4 border transition-all ${
                     isBooked
-                      ? 'bg-slate-50 border-slate-200 opacity-60'
-                      : 'border-borderColor hover:border-primary/50 card-hover bg-white'
+                      ? 'bg-slate-950/40 border-white/5 opacity-50'
+                      : 'border-white/15 hover:border-cyan-400/40 card-hover bg-slate-900/70'
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-extrabold text-textMain">
+                      <span className="text-sm font-extrabold text-white">
                         {slot.startTime} – {slot.endTime}
                       </span>
                       <span
                         className={`badge ${
                           isBooked
-                            ? 'badge-danger bg-slate-200 text-slate-700'
+                            ? 'badge-danger bg-rose-500/10 text-rose-400'
                             : 'badge-success'
                         }`}
                       >
@@ -255,17 +259,17 @@ export default function BookLessonPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-1 text-xs text-textMuted">
+                    <div className="space-y-1 text-xs text-slate-400">
                       <p className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-primary" /> {slot.branch} Branch
+                        <MapPin className="w-3.5 h-3.5 text-cyan-400" /> {slot.branch} Branch
                       </p>
                       <p className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-accent-dark" />
+                        <User className="w-3.5 h-3.5 text-amber-400" />
                         Instructor:{' '}
                         {hasInstructor ? (
-                          <strong className="text-textMain">{slot.instructorId?.name}</strong>
+                          <strong className="text-white">{slot.instructorId?.name}</strong>
                         ) : (
-                          <span className="text-warning-dark font-medium">To be assigned</span>
+                          <span className="text-amber-300 font-medium">To be assigned</span>
                         )}
                       </p>
                     </div>
@@ -274,10 +278,10 @@ export default function BookLessonPage() {
                   <button
                     disabled={isBooked || isDmtBlocked || lessonsRemaining <= 0}
                     onClick={() => setSelectedSlot(slot)}
-                    className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-colors ${
+                    className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       isBooked
-                        ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                        : 'btn-accent text-textMain hover:bg-accent-dark hover:text-white'
+                        ? 'bg-white/5 text-slate-500 cursor-not-allowed border border-white/5'
+                        : 'btn-accent text-slate-950 hover:scale-105'
                     }`}
                   >
                     {isBooked ? 'Slot Unavailable' : 'Book This Slot'}
@@ -291,67 +295,67 @@ export default function BookLessonPage() {
 
       {/* Booking Confirmation Modal */}
       {selectedSlot && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-modal max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-borderColor pb-3">
-              <h3 className="text-base font-bold text-textMain flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-primary" /> Confirm Lesson Booking
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-cyan-400" /> Confirm Lesson Booking
               </h3>
               <button
                 onClick={() => setSelectedSlot(null)}
-                className="text-slate-400 hover:text-textMain text-sm font-bold"
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs bg-neutralBg p-4 rounded-xl border border-borderColor">
+            <div className="space-y-3 text-xs bg-white/5 p-4 rounded-2xl border border-white/10">
               <div className="flex justify-between">
-                <span className="text-textMuted">Date:</span>
-                <span className="font-bold text-textMain">
+                <span className="text-slate-400">Date:</span>
+                <span className="font-bold text-white">
                   {format(new Date(selectedSlot.date), 'EEEE, MMMM dd, yyyy')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-textMuted">Time:</span>
-                <span className="font-bold text-primary">
+                <span className="text-slate-400">Time:</span>
+                <span className="font-bold text-cyan-300">
                   {selectedSlot.startTime} – {selectedSlot.endTime} (1 Hour)
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-textMuted">Branch:</span>
-                <span className="font-bold text-textMain">{selectedSlot.branch} Branch</span>
+                <span className="text-slate-400">Branch:</span>
+                <span className="font-bold text-white">{selectedSlot.branch} Branch</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-textMuted">Vehicle Type:</span>
-                <span className="font-bold text-accent-dark">{selectedVehicle}</span>
+                <span className="text-slate-400">Vehicle Type:</span>
+                <span className="font-bold text-accent">{selectedVehicle}</span>
               </div>
-              <div className="flex justify-between border-t border-borderColor pt-2">
-                <span className="text-textMuted">Assigned Instructor:</span>
-                <span className="font-bold text-textMain">
+              <div className="flex justify-between border-t border-white/10 pt-2">
+                <span className="text-slate-400">Assigned Instructor:</span>
+                <span className="font-bold text-white">
                   {selectedSlot.instructorId?.name || 'Will be assigned by branch'}
                 </span>
               </div>
             </div>
 
             {/* Package Impact Summary */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 space-y-1">
-              <p className="font-bold">Package Deduction:</p>
+            <div className="p-3.5 bg-cyan-500/10 border border-cyan-400/20 rounded-xl text-xs text-slate-200 space-y-1">
+              <p className="font-bold text-cyan-300">Package Deduction:</p>
               <div className="flex justify-between">
                 <span>Current Lessons Remaining:</span>
                 <span className="font-bold">{lessonsRemaining}</span>
               </div>
               <div className="flex justify-between">
                 <span>After Booking:</span>
-                <span className="font-bold text-primary">{lessonsRemaining - 1} Remaining</span>
+                <span className="font-bold text-cyan-300">{lessonsRemaining - 1} Remaining</span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-borderColor">
+            <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setSelectedSlot(null)}
-                className="btn-secondary text-xs py-2 px-3"
+                className="btn-secondary text-xs py-2 px-4"
               >
                 Cancel
               </button>
@@ -359,7 +363,7 @@ export default function BookLessonPage() {
                 type="button"
                 disabled={bookingLoading}
                 onClick={handleConfirmBooking}
-                className="btn-primary text-xs py-2 px-4 font-bold"
+                className="btn-primary text-xs py-2 px-5 font-bold"
               >
                 {bookingLoading ? 'Confirming...' : 'Confirm & Reserve Slot'}
               </button>
