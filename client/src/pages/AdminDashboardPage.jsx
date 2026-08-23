@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
   const { metrics, branchData, trialDistribution, upcomingTrials, recentActivity } = analytics;
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-7xl mx-auto w-full">
+    <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

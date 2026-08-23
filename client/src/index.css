@@ -4,30 +4,42 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-accent selection:text-slate-950;
+    @apply bg-[#1e1035] text-slate-100 min-h-screen font-sans antialiased text-base selection:bg-purple-500 selection:text-white;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1 {
+    @apply text-3xl sm:text-4xl font-extrabold tracking-tight text-white;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl font-bold tracking-tight text-white;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl font-bold text-white;
+  }
+
+  h4, h5, h6 {
     @apply font-heading font-semibold text-white tracking-tight;
   }
 
   p {
-    @apply text-slate-300;
+    @apply text-slate-300 text-sm sm:text-base;
   }
 
   input, select, textarea {
-    @apply bg-slate-900/80 border border-white/15 text-white placeholder-slate-500 rounded-xl focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all;
+    @apply bg-slate-900/80 border border-purple-400/20 text-white placeholder-slate-400 text-sm sm:text-base px-4 py-3 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 outline-none transition-all;
   }
 }
 
 @layer components {
   /* Glowing Status Pills */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider backdrop-blur-md;
+    @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md;
   }
 
   .badge-success {
-    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)];
+    @apply bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)];
   }
 
   .badge-warning {
@@ -35,11 +47,11 @@
   }
 
   .badge-danger {
-    @apply bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)];
+    @apply bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)];
   }
 
   .badge-info {
-    @apply bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)];
+    @apply bg-purple-500/20 text-purple-200 border border-purple-400/30 shadow-[0_0_10px_rgba(168,85,247,0.25)];
   }
 
   .badge-accent {
@@ -48,23 +60,23 @@
 
   /* Liquid Glass Cards */
   .card {
-    @apply bg-slate-900/65 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] text-slate-100 p-6 transition-all duration-300 relative overflow-hidden;
+    @apply bg-slate-900/60 backdrop-blur-2xl rounded-3xl border border-purple-300/15 shadow-[0_8px_32px_0_rgba(15,5,30,0.45)] text-slate-100 p-6 sm:p-8 transition-all duration-300 relative overflow-hidden;
   }
 
   .card-hover {
-    @apply hover:border-cyan-400/40 hover:shadow-[0_12px_40px_0_rgba(6,182,212,0.2)] hover:-translate-y-1;
+    @apply hover:border-purple-400/50 hover:shadow-[0_12px_40px_0_rgba(168,85,247,0.25)] hover:-translate-y-1;
   }
 
   /* Liquid Glass Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary via-blue-600 to-primary-hover text-white font-semibold hover:shadow-[0_0_20px_rgba(11,95,165,0.6)] active:scale-95 transition-all border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-primary via-blue-600 to-primary-hover text-white text-sm sm:text-base font-bold hover:shadow-[0_0_20px_rgba(11,95,165,0.6)] active:scale-95 transition-all border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent via-amber-400 to-accent-dark text-slate-950 font-bold hover:shadow-[0_0_20px_rgba(242,169,59,0.6)] active:scale-95 transition-all border border-amber-300/40 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-accent via-amber-400 to-accent-dark text-slate-950 text-sm sm:text-base font-extrabold hover:shadow-[0_0_20px_rgba(242,169,59,0.6)] active:scale-95 transition-all border border-amber-300/40 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-slate-200 font-semibold hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-slate-200 text-sm sm:text-base font-bold hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed;
   }
 }

@@ -18,6 +18,7 @@ import {
   Clock,
   TrendingUp,
   Sparkles,
+  BarChart3,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -34,25 +35,25 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-3 z-50 px-3 sm:px-6 lg:px-8 py-1 max-w-7xl mx-auto w-full transition-all duration-300">
+    <header className="sticky top-3 z-50 px-4 sm:px-6 lg:px-10 py-2 max-w-[1440px] mx-auto w-full transition-all duration-300">
       {/* Liquid Glass Capsule Bar */}
-      <div className="relative backdrop-blur-2xl bg-slate-900/70 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] rounded-2xl sm:rounded-full px-4 sm:px-6 py-2.5 transition-all duration-300">
+      <div className="relative backdrop-blur-2xl bg-slate-900/75 border border-purple-300/25 shadow-[0_8px_32px_0_rgba(147,51,234,0.25)] rounded-2xl sm:rounded-full px-5 sm:px-7 py-3 transition-all duration-300">
         {/* Specular Liquid Light Shimmer (Top Highlight) */}
-        <div className="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent pointer-events-none" />
-        <div className="absolute inset-x-12 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-4 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-purple-300/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-12 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-fuchsia-400/30 to-transparent pointer-events-none" />
 
         <div className="flex items-center justify-between">
           {/* Logo & School Branding */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 rounded-xl sm:rounded-full bg-gradient-to-tr from-primary via-blue-600 to-accent flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(11,95,165,0.6)] border border-white/30 group-hover:scale-105 transition-transform duration-300">
-              <Car className="w-5 h-5 drop-shadow" />
+          <Link to="/" className="flex items-center gap-3.5 group">
+            <div className="relative w-11 h-11 rounded-xl sm:rounded-full bg-gradient-to-tr from-primary via-blue-600 to-accent flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(11,95,165,0.6)] border border-white/30 group-hover:scale-105 transition-transform duration-300">
+              <Car className="w-6 h-6 drop-shadow" />
               <div className="absolute inset-0 rounded-xl sm:rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="flex flex-col">
-              <span className="font-heading text-base font-extrabold tracking-tight text-white flex items-center gap-1.5 drop-shadow">
+              <span className="font-heading text-lg font-black tracking-tight text-white flex items-center gap-1.5 drop-shadow">
                 Sithma <span className="text-accent font-black">Driving</span>
               </span>
-              <span className="text-[10px] text-blue-200/80 font-medium tracking-wide">
+              <span className="text-xs text-blue-200/90 font-medium tracking-wide">
                 Sri Lanka's Driving Academy
               </span>
             </div>
@@ -60,58 +61,58 @@ export default function Navbar() {
 
           {/* Desktop Liquid Glass Navigation Links */}
           {user && (
-            <nav className="hidden lg:flex items-center gap-1.5 bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-md">
+            <nav className="hidden lg:flex items-center gap-2 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-md">
               {isStudent && (
                 <>
                   <Link
                     to="/student/dashboard"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/student/dashboard')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                    <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
                   <Link
                     to="/student/lessons"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/student/lessons') || isActive('/student/lessons/book')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Calendar className="w-3.5 h-3.5" /> Book Lessons
+                    <Calendar className="w-4 h-4" /> Book Lessons
                   </Link>
                   <Link
                     to="/student/payments"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/student/payments')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <CreditCard className="w-3.5 h-3.5" /> Payments
+                    <CreditCard className="w-4 h-4" /> Payments
                   </Link>
                   <Link
                     to="/student/quiz"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <BookOpen className="w-3.5 h-3.5" /> Exam Practice
+                    <BookOpen className="w-4 h-4" /> Exam Practice
                   </Link>
                   <Link
                     to="/student/profile"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/student/profile')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <User className="w-3.5 h-3.5" /> Profile ID
+                    <User className="w-4 h-4" /> Profile ID
                   </Link>
                 </>
               )}
@@ -119,13 +120,13 @@ export default function Navbar() {
               {user?.role === 'admin' && (
                 <Link
                   to="/admin/dashboard"
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
                     isActive('/admin/dashboard')
                       ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
                       : 'text-accent hover:bg-accent/20'
                   }`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5" /> Executive Dashboard
+                  <TrendingUp className="w-4 h-4" /> Executive Dashboard
                 </Link>
               )}
 
@@ -133,63 +134,63 @@ export default function Navbar() {
                 <>
                   <Link
                     to="/staff/students"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/staff/students')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5" /> Students & DMT
+                    <Users className="w-4 h-4" /> Students & DMT
                   </Link>
                   <Link
                     to="/staff/slots"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/staff/slots')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Clock className="w-3.5 h-3.5" /> Slot Creator
+                    <Clock className="w-4 h-4" /> Slot Creator
                   </Link>
                   <Link
                     to="/staff/packages"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/staff/packages')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Layers className="w-3.5 h-3.5" /> Packages
+                    <Layers className="w-4 h-4" /> Packages
                   </Link>
                   <Link
                     to="/staff/quiz"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/staff/quiz')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <BookOpen className="w-3.5 h-3.5" /> Question Bank
+                    <BookOpen className="w-4 h-4" /> Question Bank
                   </Link>
                   <Link
                     to="/staff/payments"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/staff/payments')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <CreditCard className="w-3.5 h-3.5" /> Payment Queue
+                    <CreditCard className="w-4 h-4" /> Payment Queue
                   </Link>
                   <Link
                     to="/staff/reports"
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                       isActive('/staff/reports')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <BarChart3 className="w-3.5 h-3.5" /> Reports
+                    <BarChart3 className="w-4 h-4" /> Reports
                   </Link>
                 </>
               )}
@@ -197,32 +198,32 @@ export default function Navbar() {
               {isInstructor && (
                 <Link
                   to="/instructor/schedule"
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                     isActive('/instructor/schedule')
                       ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Calendar className="w-3.5 h-3.5" /> Daily Schedule
+                  <Calendar className="w-4 h-4" /> Daily Schedule
                 </Link>
               )}
             </nav>
           )}
 
           {/* Right Actions & User Profile */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3.5">
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <NotificationBell />
 
                 {/* Frosted User Pill */}
-                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md shadow-sm">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.4)]">
+                <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/15 backdrop-blur-md shadow-sm">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.4)]">
                     {user.name.charAt(0)}
                   </div>
                   <div className="text-left leading-tight">
-                    <p className="text-xs font-bold text-white truncate max-w-[120px]">{user.name}</p>
-                    <p className="text-[10px] text-cyan-300 uppercase tracking-wider font-semibold">
+                    <p className="text-sm font-bold text-white truncate max-w-[150px]">{user.name}</p>
+                    <p className="text-xs text-cyan-300 uppercase tracking-wider font-semibold">
                       {user.role} • {user.branch}
                     </p>
                   </div>
@@ -231,23 +232,23 @@ export default function Navbar() {
                 {/* Liquid Glass Logout */}
                 <button
                   onClick={handleLogout}
-                  className="p-2 rounded-full bg-white/10 hover:bg-red-500/20 hover:border-red-400/40 text-slate-300 hover:text-red-300 border border-white/15 transition-all duration-300 flex items-center justify-center shadow-sm"
+                  className="p-2.5 rounded-full bg-white/10 hover:bg-red-500/20 hover:border-red-400/40 text-slate-300 hover:text-red-300 border border-white/15 transition-all duration-300 flex items-center justify-center shadow-sm"
                   title="Logout"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/login"
-                  className="px-4 py-1.5 text-xs font-semibold text-slate-200 hover:text-white hover:bg-white/10 rounded-full transition-colors border border-transparent hover:border-white/15"
+                  className="px-5 py-2 text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 rounded-full transition-colors border border-transparent hover:border-white/15"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-1.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark hover:scale-105 rounded-full shadow-[0_0_15px_rgba(242,169,59,0.4)] border border-amber-300/40 transition-all duration-300"
+                  className="px-5 py-2 text-sm font-extrabold text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark hover:scale-105 rounded-full shadow-[0_0_15px_rgba(242,169,59,0.4)] border border-amber-300/40 transition-all duration-300"
                 >
                   Register as Learner
                 </Link>

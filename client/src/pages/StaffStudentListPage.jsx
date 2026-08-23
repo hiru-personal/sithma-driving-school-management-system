@@ -134,40 +134,40 @@ export default function StaffStudentListPage() {
   };
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
+    <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Learner Registry & Operations
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 font-bold text-xs sm:text-sm mb-2.5">
+            <Sparkles className="w-4 h-4" /> Learner Registry & Operations
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <Users className="w-6 h-6 text-cyan-400" /> Student Records & DMT Milestone Management
+          <h1 className="text-3xl sm:text-4xl font-black text-white font-heading flex items-center gap-3 drop-shadow">
+            <Users className="w-8 h-8 text-cyan-400" /> Student Records & DMT Milestone Management
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-sm sm:text-base text-slate-300 mt-1">
             Manage registrations, track DMT milestone progress, and record practical trial examination attempts.
           </p>
         </div>
         <button
           onClick={fetchStudents}
-          className="btn-secondary text-xs py-2 px-3.5 self-start sm:self-auto flex items-center gap-1.5 font-bold"
+          className="btn-secondary text-sm py-3 px-5 self-start sm:self-auto flex items-center gap-2 font-bold shadow-lg"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh List
+          <RefreshCw className="w-4 h-4" /> Refresh List
         </button>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="card p-4 space-y-3">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="card p-6 space-y-4">
+        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
             <input
               type="text"
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white placeholder-slate-500 rounded-xl text-xs focus:border-cyan-400 outline-none"
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-950/80 border border-purple-400/20 text-white placeholder-slate-400 rounded-2xl text-sm sm:text-base focus:border-cyan-400 outline-none"
             />
           </div>
 
@@ -175,7 +175,7 @@ export default function StaffStudentListPage() {
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-cyan-300 outline-none font-semibold"
+            className="px-4 py-3.5 border border-purple-400/20 rounded-2xl text-sm sm:text-base bg-slate-950/80 text-cyan-300 outline-none font-bold"
           >
             <option value="All">All Branches</option>
             <option value="Maharagama">Maharagama Branch</option>
@@ -187,7 +187,7 @@ export default function StaffStudentListPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-slate-200 outline-none font-medium"
+            className="px-4 py-3.5 border border-purple-400/20 rounded-2xl text-sm sm:text-base bg-slate-950/80 text-slate-100 outline-none font-semibold"
           >
             <option value="">All Categories (Type 1 & 2)</option>
             <option value="Type1_NewLearner">Type 1 — New Learner</option>
@@ -198,7 +198,7 @@ export default function StaffStudentListPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-slate-200 outline-none font-medium"
+            className="px-4 py-3.5 border border-purple-400/20 rounded-2xl text-sm sm:text-base bg-slate-950/80 text-slate-100 outline-none font-semibold"
           >
             <option value="">All Progress Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -210,32 +210,32 @@ export default function StaffStudentListPage() {
       </div>
 
       {/* Student List Table */}
-      <div className="card p-0 overflow-hidden shadow-2xl border border-white/10">
+      <div className="card p-0 overflow-hidden shadow-2xl border border-purple-300/20">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading student database...
+          <div className="py-16 text-center text-sm sm:text-base text-slate-300 flex items-center justify-center gap-3">
+            <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" /> Loading student database...
           </div>
         ) : students.length === 0 ? (
-          <div className="py-12 text-center space-y-2">
-            <Users className="w-10 h-10 text-slate-600 mx-auto" />
-            <p className="text-sm font-semibold text-white">No students found matching your filters</p>
-            <p className="text-xs text-slate-400">Try adjusting your search query or branch filters.</p>
+          <div className="py-16 text-center space-y-3">
+            <Users className="w-12 h-12 text-slate-500 mx-auto" />
+            <p className="text-lg font-bold text-white">No students found matching your filters</p>
+            <p className="text-sm text-slate-400">Try adjusting your search query or branch filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/90 border-b border-white/10 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+            <table className="w-full text-left">
+              <thead className="bg-slate-950/90 border-b border-purple-300/20 text-slate-300 uppercase text-xs sm:text-sm font-extrabold tracking-wider">
                 <tr>
-                  <th className="px-4 py-3.5">Student Name</th>
-                  <th className="px-4 py-3.5">Branch & Category</th>
-                  <th className="px-4 py-3.5">Package / Lessons</th>
-                  <th className="px-4 py-3.5">DMT Learner Status</th>
-                  <th className="px-4 py-3.5">Trial Attempts</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-right">Actions</th>
+                  <th className="px-6 py-4">Student Name</th>
+                  <th className="px-6 py-4">Branch & Category</th>
+                  <th className="px-6 py-4">Package / Lessons</th>
+                  <th className="px-6 py-4">DMT Learner Status</th>
+                  <th className="px-6 py-4">Trial Attempts</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10">
+              <tbody className="divide-y divide-purple-300/15">
                 {students.map((st) => {
                   const isLicensed = st.trial?.licenseObtained;
                   const attemptsCount = st.trial?.attempts?.length || 0;
@@ -244,18 +244,18 @@ export default function StaffStudentListPage() {
                   return (
                     <tr key={st._id} className="hover:bg-white/5 transition-colors">
                       {/* Name & Contact */}
-                      <td className="px-4 py-3.5 font-semibold text-white">
-                        <div className="text-sm">{st.userId?.name || 'Unknown Student'}</div>
-                        <div className="text-[11px] text-slate-400 font-normal">
+                      <td className="px-6 py-4 font-semibold text-white">
+                        <div className="text-base sm:text-lg font-bold text-white">{st.userId?.name || 'Unknown Student'}</div>
+                        <div className="text-xs sm:text-sm text-slate-300 font-normal mt-0.5">
                           {st.userId?.phone} • {st.userId?.email}
                         </div>
                       </td>
 
                       {/* Branch & Type */}
-                      <td className="px-4 py-3.5">
-                        <div className="font-semibold text-cyan-300">{st.branch}</div>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-sm sm:text-base text-cyan-300">{st.branch}</div>
                         <span
-                          className={`badge text-[9px] py-0 px-2 mt-0.5 ${
+                          className={`badge text-xs py-0.5 px-2.5 mt-1 ${
                             isType2 ? 'badge-accent' : 'badge-info'
                           }`}
                         >
@@ -264,44 +264,45 @@ export default function StaffStudentListPage() {
                       </td>
 
                       {/* Package */}
-                      <td className="px-4 py-3.5">
-                        <div className="font-bold text-white">{st.package?.type?.replace('_', ' ')}</div>
-                        <div className="text-[11px] text-slate-400">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-sm sm:text-base text-white">{st.package?.type?.replace('_', ' ')}</div>
+                        <div className="text-xs sm:text-sm text-slate-300 mt-0.5">
                           {st.package?.lessonsUsed || 0} / {st.package?.lessonsTotal || 15} used
                         </div>
                       </td>
 
                       {/* DMT Learner Exam */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-6 py-4">
                         {isType2 ? (
-                          <span className="badge badge-success text-[10px]">Pre-Cleared</span>
+                          <span className="badge badge-success text-xs">Pre-Cleared</span>
                         ) : st.dmtDates?.learnerExamPassed ? (
-                          <span className="badge badge-success text-[10px]">Passed Written Exam</span>
+                          <span className="badge badge-success text-xs">Passed Written Exam</span>
                         ) : st.dmtDates?.learnerExamDate ? (
-                          <span className="badge badge-warning text-[10px]">
+                          <span className="badge badge-warning text-xs">
                             Exam: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
                           </span>
                         ) : (
-                          <span className="badge badge-danger text-[10px]">Exam Pending</span>
+                          <span className="badge badge-danger text-xs">Exam Pending</span>
                         )}
                       </td>
 
                       {/* Trial Attempts Pills */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
                           {[1, 2, 3].map((num) => {
                             const att = st.trial?.attempts?.find((a) => a.attemptNumber === num);
-                            let bg = 'bg-slate-800 text-slate-500 border border-white/10';
+                            let bg = 'bg-slate-800 text-slate-400 border border-white/10';
                             if (att) {
                               bg =
                                 att.result === 'passed'
-                                  ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
-                                  : 'bg-rose-500 text-white font-bold border-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.5)]';
+                                  ? 'bg-emerald-500 text-slate-950 font-black border-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                                  : 'bg-rose-500 text-white font-black border-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]';
                             }
+
                             return (
                               <span
                                 key={num}
-                                className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold ${bg}`}
+                                className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${bg}`}
                                 title={
                                   att
                                     ? `Attempt ${num}: ${att.result.toUpperCase()} on ${format(
@@ -319,9 +320,9 @@ export default function StaffStudentListPage() {
                       </td>
 
                       {/* Registration Status */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-6 py-4">
                         <span
-                          className={`badge text-[10px] ${
+                          className={`badge text-xs ${
                             isLicensed
                               ? 'badge-success'
                               : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
@@ -334,21 +335,21 @@ export default function StaffStudentListPage() {
                       </td>
 
                       {/* Action Buttons */}
-                      <td className="px-4 py-3.5 text-right space-x-1.5">
+                      <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => openStudentModal(st, 'edit_dmt')}
-                          className="p-1.5 rounded-lg bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/15 transition-colors"
+                          className="p-2.5 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
                           title="Update DMT Exam Dates"
                         >
-                          <Calendar className="w-3.5 h-3.5" />
+                          <Calendar className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openStudentModal(st, 'record_trial')}
                           disabled={isLicensed || attemptsCount >= 3}
-                          className="p-1.5 rounded-lg bg-white/10 hover:bg-amber-500/20 text-amber-300 border border-white/15 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="p-2.5 rounded-xl bg-white/10 hover:bg-amber-500/20 text-amber-300 border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                           title="Record Practical Trial Result"
                         >
-                          <Award className="w-3.5 h-3.5" />
+                          <Award className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

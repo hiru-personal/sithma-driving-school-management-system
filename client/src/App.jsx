@@ -57,13 +57,14 @@ export default function App() {
   return (
     <AuthProvider>
       <DarkVeil
-        hueShift={0}
-        noise={0.5}
-        scan={0.2}
-        scanFreq={2.0}
-        warp={0.6}
+        hueShift={280}
+        noiseIntensity={0.25}
+        scanlineIntensity={0.05}
+        scanlineFrequency={2.0}
+        warpAmount={0.5}
+        speed={0.4}
       />
-      <div className="relative z-10 min-h-screen flex flex-col font-sans text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
+      <div className="relative z-10 min-h-screen flex flex-col font-sans text-slate-100 selection:bg-purple-500 selection:text-white">
         <Navbar />
 
         <main className="flex-1 w-full">

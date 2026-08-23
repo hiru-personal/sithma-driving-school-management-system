@@ -63,11 +63,22 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord){
     p+=(sin(p.yx*4.+vec2(0.,iTime))*0.03)*uWarp;
     vec4 col=cppn_fn(p,0.,0.,0.);
     col=clamp(col,0.,1.);
-    col.rgb=hueShiftRGB(col.rgb,uHueShift);
+    
+    // Radiant Light Purple & Lavender Palette
+    vec3 deepPurple = vec3(0.38, 0.20, 0.68);
+    vec3 lightPurple = vec3(0.74, 0.54, 0.96);
+    vec3 lilacGlow = vec3(0.92, 0.82, 1.0);
+    
+    float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 purpleCol = mix(deepPurple, lightPurple, lum);
+    purpleCol = mix(purpleCol, lilacGlow, smoothstep(0.4, 0.85, lum));
+    
+    col.rgb = mix(purpleCol, hueShiftRGB(col.rgb, uHueShift), 0.2);
+    
     float scan=sin(fragCoord.y*uScanFreq+iTime*5.)*0.5+0.5;
-    col.rgb-=scan*uScan*0.05;
+    col.rgb-=scan*uScan*0.02;
     float n=(rand(fragCoord+vec2(iTime))-0.5)*uNoise;
-    col.rgb+=n*0.05;
+    col.rgb+=n*0.02;
     fragColor=col;
 }
 
@@ -78,12 +89,11 @@ void main(){
 
 export default function DarkVeil({
   hueShift = 0,
-  noiseIntensity = 0.5,
-  scanlineIntensity = 0.2,
-  speed = 0.5,
+  noiseIntensity = 0.25,
+  scanlineIntensity = 0.08,
+  speed = 0.4,
   scanlineFrequency = 2.0,
-  warpAmount = 0.6,
-  resolutionScale = 0.5
+  warpAmount = 0.5
 }) {
   const ref = useRef(null);
 
@@ -95,11 +105,12 @@ export default function DarkVeil({
     let frame = 0;
 
     try {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       renderer = new Renderer({
         canvas,
-        width: window.innerWidth * resolutionScale,
-        height: window.innerHeight * resolutionScale,
-        dpr: Math.min(window.devicePixelRatio || 1, 2),
+        width: window.innerWidth,
+        height: window.innerHeight,
+        dpr,
         alpha: true,
         antialias: false,
         powerPreference: 'high-performance'
@@ -115,7 +126,7 @@ export default function DarkVeil({
         fragment,
         uniforms: {
           uTime: { value: 0 },
-          uResolution: { value: new Vec2(window.innerWidth, window.innerHeight) },
+          uResolution: { value: new Vec2(window.innerWidth * dpr, window.innerHeight * dpr) },
           uHueShift: { value: hueShift },
           uNoise: { value: noiseIntensity },
           uScan: { value: scanlineIntensity },
@@ -129,8 +140,12 @@ export default function DarkVeil({
       const resize = () => {
         const w = window.innerWidth || document.documentElement.clientWidth || 1024;
         const h = window.innerHeight || document.documentElement.clientHeight || 768;
-        renderer.setSize(w * resolutionScale, h * resolutionScale);
-        program.uniforms.uResolution.value.set(w, h);
+        const curDpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        renderer.dpr = curDpr;
+        renderer.setSize(w, h);
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        program.uniforms.uResolution.value.set(w * curDpr, h * curDpr);
       };
 
       window.addEventListener('resize', resize);
@@ -162,11 +177,29 @@ export default function DarkVeil({
     } catch (e) {
       console.warn('WebGL initialization failed in DarkVeil (falling back gracefully):', e);
     }
-  }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
+  }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-full h-full bg-slate-950">
-      <canvas ref={ref} className="w-full h-full block opacity-70" />
+    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-screen h-screen bg-[#241240]">
+      {/* Radiant Light Purple & Lavender Ambient Mesh */}
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#4a1c86] via-[#2f1454] to-[#1a0b30]" />
+
+      {/* Floating Luminous Light Purple Glow Orbs across all quadrants */}
+      <div className="absolute -top-32 -left-32 w-[700px] h-[700px] bg-purple-500/40 rounded-full blur-[130px] pointer-events-none animate-pulse" />
+      <div className="absolute -top-32 -right-32 w-[700px] h-[700px] bg-fuchsia-400/35 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute -bottom-32 -left-32 w-[750px] h-[750px] bg-violet-400/40 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-[750px] h-[750px] bg-purple-400/35 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[550px] bg-purple-300/30 rounded-full blur-[150px] pointer-events-none" />
+
+      {/* Full-bleed WebGL Animated Shimmer */}
+      <canvas
+        ref={ref}
+        className="w-full h-full block opacity-85 mix-blend-screen absolute inset-0"
+        style={{ width: '100%', height: '100%' }}
+      />
+
+      {/* Soft Light Purple Atmospheric Sheen */}
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/15 via-transparent to-[#1a0b30]/45 pointer-events-none" />
     </div>
   );
 }

@@ -115,7 +115,7 @@ export default function ReportsAnalyticsPage() {
     : [];
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-7xl mx-auto w-full print:p-0 print:bg-white print:text-black">
+    <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full print:p-0 print:bg-white print:text-black">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
