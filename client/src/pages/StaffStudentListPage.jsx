@@ -14,6 +14,7 @@ import {
   PlusCircle,
   FileCheck,
   Sparkles,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -359,29 +360,43 @@ export default function StaffStudentListPage() {
                       </td>
 
                       {/* Action Buttons */}
-                      <td className="px-6 py-4 text-right space-x-2">
-                        <button
-                          onClick={() => handleTogglePremium(st._id)}
-                          className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-400/30 transition-all"
-                          title={st.isAdvancePaid ? "Revoke Premium Status" : "Mark Advance Paid & Grant Premium Access"}
-                        >
-                          <Sparkles className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openStudentModal(st, 'edit_dmt')}
-                          className="p-2.5 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
-                          title="Update DMT Exam Dates"
-                        >
-                          <Calendar className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openStudentModal(st, 'record_trial')}
-                          disabled={isLicensed || attemptsCount >= 3}
-                          className="p-2.5 rounded-xl bg-white/10 hover:bg-amber-500/20 text-amber-300 border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                          title="Record Practical Trial Result"
-                        >
-                          <Award className="w-4 h-4" />
-                        </button>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleTogglePremium(st._id)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                              st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-400/40 hover:bg-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                            }`}
+                            title={
+                              st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                                ? 'Revoke Premium Access'
+                                : 'Verify Advance Payment & Upgrade to Premium User'
+                            }
+                          >
+                            <ShieldCheck className="w-4 h-4 text-amber-300" />
+                            {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                              ? 'Verified Premium'
+                              : 'Verify Payment & Upgrade User'}
+                          </button>
+
+                          <button
+                            onClick={() => openStudentModal(st, 'edit_dmt')}
+                            className="p-2 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
+                            title="Update DMT Exam Dates"
+                          >
+                            <Calendar className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openStudentModal(st, 'record_trial')}
+                            disabled={isLicensed || attemptsCount >= 3}
+                            className="p-2 rounded-xl bg-white/10 hover:bg-amber-500/20 text-amber-300 border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            title="Record Practical Trial Result"
+                          >
+                            <Award className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

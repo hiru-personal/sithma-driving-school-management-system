@@ -44,13 +44,6 @@ exports.upload = multer({
 // @access  Student
 exports.uploadPaymentSlip = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please select a payment slip image or document to upload',
-      });
-    }
-
     const { amount, bankName, transactionReference } = req.body;
 
     const student = await Student.findOne({ userId: req.user._id });
@@ -58,7 +51,9 @@ exports.uploadPaymentSlip = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student profile not found' });
     }
 
-    const slipUrl = `/uploads/slips/${req.file.filename}`;
+    const slipUrl = req.file
+      ? `/uploads/slips/${req.file.filename}`
+      : `https://placehold.co/600x400/1e1035/FFFFFF?text=Dummy+Bank+Deposit+Slip+Rs.+${amount || 5000}`;
 
     const payment = await Payment.create({
       studentId: student._id,
@@ -250,13 +245,17 @@ exports.verifyPayment = async (req, res) => {
     }
     await payment.save();
 
-    // Update Student registration status
+    // Update Student registration status and Premium status
     const student = await Student.findById(payment.studentId._id);
     if (student) {
       if (status === 'confirmed') {
         student.registrationStatus = 'registered';
+        student.isAdvancePaid = true;
+        student.isPremium = true;
       } else {
         student.registrationStatus = 'pending_payment';
+        student.isAdvancePaid = false;
+        student.isPremium = false;
       }
       await student.save();
     }
@@ -265,19 +264,22 @@ exports.verifyPayment = async (req, res) => {
     await Notification.create({
       recipientId: payment.userId._id,
       recipientRole: 'student',
-      title: status === 'confirmed' ? '✅ Payment Slip Verified' : '⚠️ Payment Slip Verification Rejected',
+      title: status === 'confirmed' ? '👑 Bank Slip Verified — Premium User Activated!' : '⚠️ Payment Slip Verification Rejected',
       message:
         status === 'confirmed'
-          ? `Your payment slip for Rs. ${payment.amount?.toLocaleString()} has been verified by ${req.user.name}. You are now officially registered!`
-          : `Your payment slip was rejected. Reason: ${payment.rejectionReason}. Please re-upload a clear slip.`,
+          ? `Your bank deposit slip for Rs. ${payment.amount?.toLocaleString()} has been verified by staff (${req.user.name}). Your account is now a Premium User with full system access!`
+          : `Your payment slip was rejected. Reason: ${payment.rejectionReason}. Please upload a valid bank slip.`,
       type: 'payment',
-      link: '/student/payments',
+      link: '/student/dashboard',
     });
 
     return res.status(200).json({
       success: true,
-      message: `Payment marked as ${status}`,
+      message: status === 'confirmed' 
+        ? 'Payment slip verified! Student upgraded to Premium User.' 
+        : 'Payment slip rejected.',
       payment,
+      student,
     });
   } catch (error) {
     console.error('Payment verification error:', error);
