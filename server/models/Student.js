@@ -108,6 +108,18 @@ const studentSchema = new mongoose.Schema(
       enum: ['pending_payment', 'registered', 'in_progress', 'completed', 'cancelled'],
       default: 'pending_payment',
     },
+    isAdvancePaid: {
+      type: Boolean,
+      default: false,
+    },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    advancePaymentAmount: {
+      type: Number,
+      default: 5000,
+    },
   },
   {
     timestamps: true,
@@ -171,6 +183,14 @@ studentSchema.pre('save', function (next) {
     if (!this.dmtDates.learnerExamPassedDate) {
       this.dmtDates.learnerExamPassedDate = new Date();
     }
+  }
+
+  // 6. Sync Premium status with Advance Payment & Registration Status
+  if (this.isAdvancePaid || ['registered', 'in_progress', 'completed'].includes(this.registrationStatus)) {
+    this.isAdvancePaid = true;
+    this.isPremium = true;
+  } else {
+    this.isPremium = false;
   }
 
   next();

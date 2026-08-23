@@ -224,6 +224,9 @@ async function seed() {
       userId: studentUser._id,
       studentType: 'Type1_NewLearner',
       branch: 'Maharagama',
+      isAdvancePaid: true,
+      isPremium: true,
+      advancePaymentAmount: 5000,
       dmtDates: {
         medicalExamDate: medicalDate,
         medicalExamPassed: true,
@@ -251,6 +254,34 @@ async function seed() {
         licenseObtained: false,
       },
       registrationStatus: 'registered',
+    });
+
+    // Demo Non-Premium Student (Pending Advance Payment)
+    const pendingStudentUser = await User.create({
+      name: 'Nimal Perera',
+      email: 'student.pending@gmail.com',
+      passwordHash: standardPassword,
+      role: 'student',
+      phone: '077-8889900',
+      branch: 'Maharagama',
+    });
+
+    await Student.create({
+      userId: pendingStudentUser._id,
+      studentType: 'Type1_NewLearner',
+      branch: 'Maharagama',
+      isAdvancePaid: false,
+      isPremium: false,
+      advancePaymentAmount: 5000,
+      package: {
+        type: 'Car_Full',
+        packageId: carPkg._id,
+        lessonsTotal: carPkg.lessons,
+        lessonsUsed: 0,
+        priceTotal: carPkg.price,
+        bonusLessons: { bike: 2, threeWheeler: 2 },
+      },
+      registrationStatus: 'pending_payment',
     });
 
     // 5. Create Time Slots and Bookings

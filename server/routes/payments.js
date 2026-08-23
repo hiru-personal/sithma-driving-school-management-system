@@ -3,13 +3,15 @@ const router = express.Router();
 const {
   upload,
   uploadPaymentSlip,
+  payAdvance,
   getStudentPayments,
   getPendingPayments,
   verifyPayment,
 } = require('../controllers/paymentController');
 const { authenticate, authorize } = require('../middleware/auth');
 
-// Student upload payment slip (Multer single 'slipImage')
+// Student advance payment & slip upload
+router.post('/pay-advance', authenticate, payAdvance);
 router.post('/upload', authenticate, upload.single('slipImage'), uploadPaymentSlip);
 
 // Student payment history

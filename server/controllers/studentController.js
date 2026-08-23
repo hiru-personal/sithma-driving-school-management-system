@@ -440,3 +440,38 @@ exports.getReportsSummary = async (req, res) => {
     });
   }
 };
+
+// @desc    Toggle student advance paid / premium status (Staff/Admin)
+// @route   PATCH /api/students/:id/toggle-premium
+// @access  Staff, Admin
+exports.toggleAdvancePaid = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    student.isAdvancePaid = !student.isAdvancePaid;
+    student.isPremium = student.isAdvancePaid;
+    if (student.isAdvancePaid && student.registrationStatus === 'pending_payment') {
+      student.registrationStatus = 'registered';
+    } else if (!student.isAdvancePaid) {
+      student.registrationStatus = 'pending_payment';
+    }
+    await student.save();
+
+    return res.status(200).json({
+      success: true,
+      message: student.isAdvancePaid
+        ? 'Student marked as Advance Paid & Premium User'
+        : 'Student marked as Non-Premium (Advance Pending)',
+      student,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update student premium status',
+      error: error.message,
+    });
+  }
+};

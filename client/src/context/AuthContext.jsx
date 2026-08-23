@@ -125,6 +125,33 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('sithma_student', JSON.stringify(updatedStudent));
   };
 
+  const isAdvancePaid = !!(
+    student?.isAdvancePaid ||
+    student?.isPremium ||
+    (student?.registrationStatus && student?.registrationStatus !== 'pending_payment')
+  );
+  const isPremium = user?.role === 'student' ? isAdvancePaid : true;
+
+  const payAdvance = async (amount = 5000, bankName = 'Online Direct Advance', ref = '') => {
+    try {
+      const res = await api.post('/payments/pay-advance', {
+        amount,
+        bankName,
+        transactionReference: ref,
+      });
+      if (res.data.success) {
+        setStudent(res.data.student);
+        localStorage.setItem('sithma_student', JSON.stringify(res.data.student));
+        toast.success('👑 Advance payment confirmed! You are now a Premium User.');
+        return { success: true };
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Advance payment failed.';
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,10 +164,13 @@ export const AuthProvider = ({ children }) => {
         isStaff: user?.role === 'staff' || user?.role === 'admin',
         isAdmin: user?.role === 'admin',
         isInstructor: user?.role === 'instructor',
+        isAdvancePaid,
+        isPremium,
         login,
         demoLogin,
         register,
         logout,
+        payAdvance,
         updateStudentData,
       }}
     >

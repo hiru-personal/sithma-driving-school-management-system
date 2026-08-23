@@ -104,6 +104,62 @@ exports.uploadPaymentSlip = async (req, res) => {
   }
 };
 
+// @desc    Process advance payment to activate Premium User status (Student)
+// @route   POST /api/payments/pay-advance
+// @access  Student
+exports.payAdvance = async (req, res) => {
+  try {
+    const { amount = 5000, bankName = 'Sithma Direct Online Advance', transactionReference } = req.body;
+
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student profile not found' });
+    }
+
+    const payAmount = parseFloat(amount) || 5000;
+
+    const payment = await Payment.create({
+      studentId: student._id,
+      userId: req.user._id,
+      packageId: student.package?.packageId || null,
+      slipImageUrl: '/uploads/slips/advance-payment-confirmed.png',
+      amount: payAmount,
+      bankName: bankName,
+      transactionReference: transactionReference || `ADV-${Date.now()}`,
+      status: 'confirmed',
+      verifiedAt: new Date(),
+      uploadedAt: new Date(),
+    });
+
+    student.isAdvancePaid = true;
+    student.isPremium = true;
+    student.registrationStatus = 'registered';
+    await student.save();
+
+    await Notification.create({
+      recipientId: req.user._id,
+      recipientRole: 'student',
+      title: '👑 Premium User Access Activated!',
+      message: `Advance payment of Rs. ${payAmount.toLocaleString()} received. Your account is now upgraded to Premium User!`,
+      type: 'payment',
+      link: '/student/dashboard',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Advance payment confirmed! You are now a Premium User with full system access.',
+      payment,
+      student,
+    });
+  } catch (error) {
+    console.error('Advance payment error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to process advance payment',
+    });
+  }
+};
+
 // @desc    Get student's payment history
 // @route   GET /api/payments/student/:id
 // @access  Student, Staff, Admin

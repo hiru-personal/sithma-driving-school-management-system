@@ -133,6 +133,18 @@ export default function StaffStudentListPage() {
     }
   };
 
+  const handleTogglePremium = async (studentId) => {
+    try {
+      const res = await api.patch(`/students/${studentId}/toggle-premium`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        fetchStudents();
+      }
+    } catch (err) {
+      toast.error('Failed to update premium status');
+    }
+  };
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
@@ -321,21 +333,40 @@ export default function StaffStudentListPage() {
 
                       {/* Registration Status */}
                       <td className="px-6 py-4">
-                        <span
-                          className={`badge text-xs ${
-                            isLicensed
-                              ? 'badge-success'
-                              : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
-                              ? 'badge-info'
-                              : 'badge-warning'
-                          }`}
-                        >
-                          {isLicensed ? 'Licensed' : st.registrationStatus?.replace('_', ' ')}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span
+                            className={`badge text-xs ${
+                              isLicensed
+                                ? 'badge-success'
+                                : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
+                                ? 'badge-info'
+                                : 'badge-warning'
+                            }`}
+                          >
+                            {isLicensed ? 'Licensed' : st.registrationStatus?.replace('_', ' ')}
+                          </span>
+
+                          {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment' ? (
+                            <span className="badge badge-success text-[10px] py-0 px-2 font-bold flex items-center gap-1">
+                              👑 Premium User
+                            </span>
+                          ) : (
+                            <span className="badge badge-warning text-[10px] py-0 px-2 font-extrabold flex items-center gap-1">
+                              🔒 Advance Pending
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Action Buttons */}
                       <td className="px-6 py-4 text-right space-x-2">
+                        <button
+                          onClick={() => handleTogglePremium(st._id)}
+                          className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-400/30 transition-all"
+                          title={st.isAdvancePaid ? "Revoke Premium Status" : "Mark Advance Paid & Grant Premium Access"}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => openStudentModal(st, 'edit_dmt')}
                           className="p-2.5 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"

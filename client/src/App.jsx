@@ -27,10 +27,11 @@ import InstructorSchedulePage from './pages/InstructorSchedulePage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsAnalyticsPage from './pages/ReportsAnalyticsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import PremiumLockOverlay from './components/PremiumLockOverlay';
 import { Clock } from 'lucide-react';
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const { user, loading } = useAuth();
+  const { user, isPremium, loading } = useAuth();
 
   if (loading) {
     return (
@@ -48,6 +49,11 @@ function ProtectedRoute({ children, allowedRoles }) {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
+  }
+
+  // Learner Advance Payment & Premium Access Gate
+  if (user.role === 'student' && !isPremium) {
+    return <PremiumLockOverlay />;
   }
 
   return children;

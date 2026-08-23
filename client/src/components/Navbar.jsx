@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, isStudent, isStaff, isInstructor, logout } = useAuth();
+  const { user, isStudent, isStaff, isInstructor, isPremium, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,7 +62,13 @@ export default function Navbar() {
           {/* Desktop Liquid Glass Navigation Links */}
           {user && (
             <nav className="hidden lg:flex items-center gap-2 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-md">
-              {isStudent && (
+              {isStudent && !isPremium && (
+                <span className="px-4 py-2 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse flex items-center gap-2">
+                  🔒 Non-Premium (Advance Payment Required)
+                </span>
+              )}
+
+              {isStudent && isPremium && (
                 <>
                   <Link
                     to="/student/dashboard"
