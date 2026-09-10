@@ -8,6 +8,13 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please provide full name'],
       trim: true,
     },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+    },
     email: {
       type: String,
       required: [true, 'Please provide an email address'],
@@ -24,6 +31,11 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please provide a contact phone number'],
       trim: true,
     },
+    nic: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],
@@ -34,10 +46,37 @@ const userSchema = new mongoose.Schema(
       enum: ['student', 'staff', 'instructor', 'admin'],
       default: 'student',
     },
+    status: {
+      type: String,
+      enum: ['pending_verification', 'active', 'inactive', 'suspended'],
+      default: 'active',
+    },
     branch: {
       type: String,
       enum: ['Maharagama', 'Werahara', 'Delgoda', 'All'],
       default: 'Maharagama',
+    },
+    teachingCategories: {
+      type: String,
+      enum: ['Light', 'Heavy', 'Both'],
+      default: 'Light',
+    },
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockedUntil: {
+      type: Date,
+      default: null,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
   },
   {
@@ -54,6 +93,11 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
 userSchema.statics.hashPassword = async function (password) {
   const salt = await bcrypt.genSalt(10);
   return await bcrypt.hash(password, salt);
+};
+
+// Helper to check if account is currently locked out
+userSchema.methods.isLocked = function () {
+  return !!(this.lockedUntil && this.lockedUntil > Date.now());
 };
 
 module.exports = mongoose.model('User', userSchema);

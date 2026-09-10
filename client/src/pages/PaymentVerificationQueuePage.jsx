@@ -146,7 +146,7 @@ export default function PaymentVerificationQueuePage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="badge badge-info text-[10px]">{p.branch} Branch</span>
+                      <span className="badge badge-info text-[10px]">{p.studentId?.branch || p.userId?.branch || '—'} Branch</span>
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="font-bold text-slate-200">{p.bankName}</div>
@@ -186,7 +186,7 @@ export default function PaymentVerificationQueuePage() {
                   <CreditCard className="w-5 h-5 text-amber-400" /> Review Bank Slip: {selectedPayment.userId?.name}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  {selectedPayment.branch} Branch • {selectedPayment.userId?.phone}
+                  {selectedPayment.studentId?.branch || selectedPayment.userId?.branch || '—'} Branch • {selectedPayment.userId?.phone}
                 </p>
               </div>
               <button
@@ -226,10 +226,10 @@ export default function PaymentVerificationQueuePage() {
                 <div className="max-h-72 overflow-y-auto flex items-center justify-center bg-black/40 rounded-xl p-2">
                   <img
                     src={
-                      selectedPayment.slipUrl?.startsWith('http')
-                        ? selectedPayment.slipUrl
-                        : selectedPayment.slipUrl
-                        ? `http://localhost:5001${selectedPayment.slipUrl}`
+                      selectedPayment.slipImageUrl?.startsWith('http')
+                        ? selectedPayment.slipImageUrl
+                        : selectedPayment.slipImageUrl
+                        ? `http://localhost:5001${selectedPayment.slipImageUrl}`
                         : 'https://placehold.co/600x400/0f172a/ffffff?text=Bank+Transfer+Receipt+Slip'
                     }
                     alt="Bank Deposit Slip"

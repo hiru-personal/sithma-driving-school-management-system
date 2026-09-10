@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, isStudent, isStaff, isInstructor, isPremium, logout } = useAuth();
+  const { user, student, isStudent, isStaff, isInstructor, isPremium, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -100,16 +100,18 @@ export default function Navbar() {
                   >
                     <CreditCard className="w-4 h-4" /> Payments
                   </Link>
-                  <Link
-                    to="/student/quiz"
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                      isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <BookOpen className="w-4 h-4" /> Exam Practice
-                  </Link>
+                  {student?.studentType !== 'Type1_NewLearner' && (
+                    <Link
+                      to="/student/quiz"
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                        isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
+                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <BookOpen className="w-4 h-4" /> Exam Practice
+                    </Link>
+                  )}
                   <Link
                     to="/student/profile"
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
@@ -124,16 +126,28 @@ export default function Navbar() {
               )}
 
               {user?.role === 'admin' && (
-                <Link
-                  to="/admin/dashboard"
-                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
-                    isActive('/admin/dashboard')
-                      ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
-                      : 'text-accent hover:bg-accent/20'
-                  }`}
-                >
-                  <TrendingUp className="w-4 h-4" /> Executive Dashboard
-                </Link>
+                <>
+                  <Link
+                    to="/admin/dashboard"
+                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+                      isActive('/admin/dashboard')
+                        ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
+                        : 'text-accent hover:bg-accent/20'
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4" /> Executive Dashboard
+                  </Link>
+                  <Link
+                    to="/admin/accounts"
+                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+                      isActive('/admin/accounts')
+                        ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
+                        : 'text-accent hover:bg-accent/20'
+                    }`}
+                  >
+                    <Users className="w-4 h-4" /> Manage Accounts
+                  </Link>
+                </>
               )}
 
               {isStaff && (
@@ -311,13 +325,15 @@ export default function Navbar() {
                   >
                     Payments
                   </Link>
-                  <Link
-                    to="/student/quiz"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                  >
-                    Exam Practice
-                  </Link>
+                  {student?.studentType !== 'Type1_NewLearner' && (
+                    <Link
+                      to="/student/quiz"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    >
+                      Exam Practice
+                    </Link>
+                  )}
                 </div>
               )}
 

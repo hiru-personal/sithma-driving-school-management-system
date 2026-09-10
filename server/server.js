@@ -6,6 +6,7 @@ const fs = require('fs');
 const connectDB = require('./config/db');
 
 const app = express();
+// Sithma Driving School Management Server - Packages Updated
 
 // Connect Database
 connectDB();

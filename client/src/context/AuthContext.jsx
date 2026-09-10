@@ -14,6 +14,9 @@ export const AuthProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('sithma_token') || null);
+  const [mustChangePassword, setMustChangePassword] = useState(() => {
+    return localStorage.getItem('sithma_must_change_pwd') === 'true';
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +28,12 @@ export const AuthProvider = ({ children }) => {
           if (res.data.success) {
             setUser(res.data.user);
             setStudent(res.data.student);
+            setMustChangePassword(Boolean(res.data.user?.mustChangePassword));
             localStorage.setItem('sithma_user', JSON.stringify(res.data.user));
+            localStorage.setItem(
+              'sithma_must_change_pwd',
+              res.data.user?.mustChangePassword ? 'true' : 'false'
+            );
             if (res.data.student) {
               localStorage.setItem('sithma_student', JSON.stringify(res.data.student));
             }
@@ -41,26 +49,61 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (identifier, password) => {
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', {
+        email: identifier,
+        username: identifier,
+        password,
+      });
+
       if (res.data.success) {
-        const { token, user, student } = res.data;
+        const { token, user, student, mustChangePassword: pwdChangeRequired } = res.data;
         setToken(token);
         setUser(user);
         setStudent(student);
+        setMustChangePassword(Boolean(pwdChangeRequired));
+
         localStorage.setItem('sithma_token', token);
         localStorage.setItem('sithma_user', JSON.stringify(user));
+        localStorage.setItem(
+          'sithma_must_change_pwd',
+          pwdChangeRequired ? 'true' : 'false'
+        );
         if (student) {
           localStorage.setItem('sithma_student', JSON.stringify(student));
         }
+
         toast.success(`Welcome back, ${user.name}!`);
-        return { success: true, user, student };
+        return {
+          success: true,
+          user,
+          student,
+          mustChangePassword: Boolean(pwdChangeRequired),
+        };
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      const data = err.response?.data;
+      const msg = data?.message || 'Login failed. Please check your credentials.';
+      const pendingVerification =
+        data?.accountStatus === 'pending_verification' ||
+        (err.response?.status === 403 && msg.toLowerCase().includes('verification'));
+      const accountLocked = Boolean(data?.accountLocked) || err.response?.status === 423;
+      const accountDeactivated =
+        data?.accountStatus === 'inactive' ||
+        data?.accountStatus === 'suspended' ||
+        msg.toLowerCase().includes('deactivated');
+
       toast.error(msg);
-      return { success: false, message: msg };
+      return {
+        success: false,
+        message: msg,
+        pendingVerification,
+        accountLocked,
+        accountDeactivated,
+        status: err.response?.status,
+        lockedUntil: data?.lockedUntil,
+      };
     }
   };
 
@@ -68,17 +111,21 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/auth/register', registrationData);
       if (res.data.success) {
-        const { token, user, student } = res.data;
-        setToken(token);
-        setUser(user);
-        setStudent(student);
-        localStorage.setItem('sithma_token', token);
-        localStorage.setItem('sithma_user', JSON.stringify(user));
-        if (student) {
-          localStorage.setItem('sithma_student', JSON.stringify(student));
+        const { token, user, student, pendingVerification, message } = res.data;
+        if (token && user) {
+          setToken(token);
+          setUser(user);
+          setStudent(student);
+          localStorage.setItem('sithma_token', token);
+          localStorage.setItem('sithma_user', JSON.stringify(user));
+          if (student) {
+            localStorage.setItem('sithma_student', JSON.stringify(student));
+          }
+          toast.success('Registration successful! Welcome to Sithma Driving School.');
+        } else {
+          toast.success(message || 'Registration submitted! Awaiting officer verification.');
         }
-        toast.success('Registration successful! Welcome to Sithma Driving School.');
-        return { success: true, user, student };
+        return { success: true, user, student, pendingVerification, message };
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed.';
@@ -87,37 +134,51 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const demoLogin = async (role) => {
+  const changePassword = async (currentPassword, newPassword, confirmNewPassword) => {
     try {
-      const res = await api.post(`/auth/demo-login/${role}`);
+      const res = await api.post('/auth/change-password', {
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+      });
       if (res.data.success) {
-        const { token, user, student } = res.data;
-        setToken(token);
-        setUser(user);
-        setStudent(student);
-        localStorage.setItem('sithma_token', token);
-        localStorage.setItem('sithma_user', JSON.stringify(user));
-        if (student) {
-          localStorage.setItem('sithma_student', JSON.stringify(student));
+        setMustChangePassword(false);
+        localStorage.setItem('sithma_must_change_pwd', 'false');
+        if (res.data.token) {
+          setToken(res.data.token);
+          localStorage.setItem('sithma_token', res.data.token);
         }
-        toast.success(`Welcome back, ${user.name}!`);
-        return { success: true, user, student };
+        if (user) {
+          const updated = { ...user, mustChangePassword: false };
+          setUser(updated);
+          localStorage.setItem('sithma_user', JSON.stringify(updated));
+        }
+        toast.success('Password changed successfully!');
+        return { success: true };
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Demo login failed.';
+      const msg = err.response?.data?.message || 'Failed to change password.';
       toast.error(msg);
       return { success: false, message: msg };
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    setStudent(null);
-    localStorage.removeItem('sithma_token');
-    localStorage.removeItem('sithma_user');
-    localStorage.removeItem('sithma_student');
-    toast.success('Logged out successfully');
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (e) {
+      // Ignore network errors on logout
+    } finally {
+      setToken(null);
+      setUser(null);
+      setStudent(null);
+      setMustChangePassword(false);
+      localStorage.removeItem('sithma_token');
+      localStorage.removeItem('sithma_user');
+      localStorage.removeItem('sithma_student');
+      localStorage.removeItem('sithma_must_change_pwd');
+      toast.success('Logged out successfully');
+    }
   };
 
   const updateStudentData = (updatedStudent) => {
@@ -159,6 +220,7 @@ export const AuthProvider = ({ children }) => {
         student,
         token,
         loading,
+        mustChangePassword,
         isAuthenticated: !!user,
         isStudent: user?.role === 'student',
         isStaff: user?.role === 'staff' || user?.role === 'admin',
@@ -167,8 +229,8 @@ export const AuthProvider = ({ children }) => {
         isAdvancePaid,
         isPremium,
         login,
-        demoLogin,
         register,
+        changePassword,
         logout,
         payAdvance,
         updateStudentData,

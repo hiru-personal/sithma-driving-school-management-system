@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   RefreshCw,
   ArrowRight,
+  ShieldAlert,
   X,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -23,6 +24,13 @@ export default function MyLessonsPage() {
   const { student, updateStudentData } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const isType1 = student?.studentType === 'Type1_NewLearner' || student?.studentType === 'Type 1';
+  const isTrialEligible = Boolean(
+    student?.trialEligible ||
+    student?.learnerExamStatus === 'passed' ||
+    student?.dmtDates?.learnerExamPassed
+  );
 
   // Free Weekly Class Modal
   const [isFreeModalOpen, setIsFreeModalOpen] = useState(false);
@@ -124,6 +132,15 @@ export default function MyLessonsPage() {
   const upcomingBookings = bookings.filter((b) => b.status === 'confirmed' || b.status === 'pending');
   const pastBookings = bookings.filter((b) => b.status === 'completed' || b.status === 'cancelled');
 
+  const getStudentHourlyRate = () => {
+    const pkgType = student?.package?.type || '';
+    if (pkgType.includes('Car')) return 3000;
+    if (pkgType.includes('Bike')) return 1500;
+    if (pkgType.includes('ThreeWheeler')) return 2000;
+    if (pkgType.includes('Heavy')) return 3500;
+    return 3000;
+  };
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
@@ -149,6 +166,24 @@ export default function MyLessonsPage() {
           </button>
         </div>
       </div>
+
+      {/* Type 1 US-09 DMT Lock Banner */}
+      {isType1 && !isTrialEligible && (
+        <div className="p-4 bg-cyan-500/10 border border-cyan-400/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <ShieldAlert className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold text-white text-sm">DMT Learner Exam Required for Practical Lessons (US-09)</p>
+              <p className="text-slate-300 mt-0.5">
+                Government DMT regulations require Type 1 New Learners to pass the DMT Written Theory Examination before booking on-road practical/trial sessions.
+              </p>
+            </div>
+          </div>
+          <Link to="/student/dashboard" className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap">
+            View DMT Milestone Schedule →
+          </Link>
+        </div>
+      )}
 
       {/* Upcoming Lessons */}
       <div className="space-y-4">
@@ -278,7 +313,7 @@ export default function MyLessonsPage() {
             </div>
 
             <p className="text-xs text-slate-400">
-              Need extra driving practice before your practical DMT trial? Request supplementary lessons at Rs. 1,500 per session.
+              Need extra driving practice before your practical DMT trial? Request supplementary lessons at Rs. {getStudentHourlyRate().toLocaleString()} per hourly session.
             </p>
 
             <form onSubmit={handleRequestExtra} className="space-y-4 text-xs">
@@ -307,7 +342,7 @@ export default function MyLessonsPage() {
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center text-xs">
                 <span className="text-slate-400">Estimated Additional Cost:</span>
                 <span className="font-black text-accent text-sm">
-                  Rs. {(extraCount * 1500).toLocaleString()}
+                  Rs. {(extraCount * getStudentHourlyRate()).toLocaleString()}
                 </span>
               </div>
 

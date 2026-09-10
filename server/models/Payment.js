@@ -17,6 +17,15 @@ const paymentSchema = new mongoose.Schema(
       ref: 'Package',
       default: null,
     },
+    paymentType: {
+      type: String,
+      enum: ['advance', 'package', 'monthly', 'general', 'additional_lessons'],
+      default: 'general',
+    },
+    additionalLessonsCount: {
+      type: Number,
+      default: 0,
+    },
     slipImageUrl: {
       type: String,
       required: [true, 'Payment slip image is required'],

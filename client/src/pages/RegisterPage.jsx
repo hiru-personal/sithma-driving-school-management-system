@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 import {
   UserPlus,
   Car,
@@ -13,31 +14,109 @@ import {
   Building2,
   Sparkles,
   ShieldAlert,
+  CreditCard,
+  FileCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialPkg = searchParams.get('pkg');
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submittedType2, setSubmittedType2] = useState(null);
+  const [dbPackages, setDbPackages] = useState([]);
+
+  // Fetch dynamic packages maintained by Data Entry Officer (US-13, US-14)
+  useEffect(() => {
+    const fetchPkgs = async () => {
+      try {
+        const res = await api.get('/packages');
+        if (res.data?.success && res.data?.packages) {
+          setDbPackages(res.data.packages);
+        }
+      } catch (e) {
+        console.warn('Could not fetch dynamic packages:', e);
+      }
+    };
+    fetchPkgs();
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState({
     studentType: 'Type1_NewLearner',
     branch: 'Maharagama',
-    packageType: 'Car_Full',
-    customLessonsCount: 5,
+    packageType: initialPkg || 'Car_Individual',
+    customLessonsCount: 1,
     lightVehicleLicenseDate: '',
     name: '',
     email: '',
     phone: '',
+    nic: '',
+    advanceAmount: 5000,
+    advanceBankName: 'Bank of Ceylon',
+    advanceReference: '',
     password: '',
     confirmPassword: '',
   });
 
-  const packages = [
+  const [packageCategoryTab, setPackageCategoryTab] = useState(
+    ['Car_Full', 'Car_Refresher', 'HeavyVehicle_Bus'].includes(initialPkg)
+      ? 'comprehensive'
+      : 'individual'
+  );
+
+  const individualPackagesList = [
+    {
+      id: 'Car_Individual',
+      name: 'Car (Auto/Manual) — Individual Package',
+      category: 'Light Vehicle',
+      rate: 3000,
+      price: 'Rs. 3,000 / hr',
+      lessons: 'One lesson per hour',
+      bonus: 'Automatic & Manual Options',
+      desc: 'Car(Auto/Manual) one lesson per hour - Rs.3000.00. 1-on-1 practical driving session with certified coach.',
+      icon: Car,
+    },
+    {
+      id: 'Bike_Individual',
+      name: 'Bike — Individual Package',
+      category: 'Light Vehicle',
+      rate: 1500,
+      price: 'Rs. 1,500 / hr',
+      lessons: 'One lesson per hour',
+      bonus: 'Balance & Figure-8 Training',
+      desc: 'Bike one lesson per hour - Rs.1500.00. Obstacle and Figure-8 test track coaching.',
+      icon: Bike,
+    },
+    {
+      id: 'HeavyVehicle_Individual',
+      name: 'Heavy Vehicle — Individual Package',
+      category: 'Heavy Vehicle',
+      rate: 3500,
+      price: 'Rs. 3,500 / hr',
+      lessons: 'One lesson per hour',
+      bonus: 'Strict Requirement: 2+ Years Light License',
+      desc: 'Heavy Vehicle one lesson per hour - Rs.3500. Commercial bus coaching & air brake mechanics.',
+      icon: Bus,
+    },
+    {
+      id: 'ThreeWheeler_Individual',
+      name: 'Three Wheel — Individual Package',
+      category: 'Light Vehicle',
+      rate: 2000,
+      price: 'Rs. 2,000 / hr',
+      lessons: 'One lesson per hour',
+      bonus: 'Maneuvering & Bay Parking',
+      desc: 'Three Wheel one lesson per hour - Rs.2000.00. Handlebar control & reverse trial maneuvers.',
+      icon: Car,
+    },
+  ];
+
+  const comprehensivePackagesList = [
     {
       id: 'Car_Full',
       name: 'Car — Full License Package',
@@ -59,26 +138,6 @@ export default function RegisterPage() {
       icon: Car,
     },
     {
-      id: 'Bike',
-      name: 'Motorbike (Standalone)',
-      category: 'Light Vehicle',
-      lessons: 'Flexible quantity',
-      price: 'Rs. 850 / lesson',
-      bonus: 'Pay as you learn',
-      desc: 'Individual motorcycle practice and trial obstacle navigation.',
-      icon: Bike,
-    },
-    {
-      id: 'ThreeWheeler',
-      name: 'Three-Wheeler (Standalone)',
-      category: 'Light Vehicle',
-      lessons: 'Flexible quantity',
-      price: 'Rs. 1,000 / lesson',
-      bonus: 'Pay as you learn',
-      desc: 'Hands-on three-wheeler driving and reverse maneuvering practice.',
-      icon: Car,
-    },
-    {
       id: 'HeavyVehicle_Bus',
       name: 'Heavy Vehicle (Bus) Package',
       category: 'Heavy Vehicle',
@@ -90,8 +149,38 @@ export default function RegisterPage() {
     },
   ];
 
+  const getHourlyRate = (pkgId) => {
+    switch (pkgId) {
+      case 'Car_Individual':
+        return 3000;
+      case 'Bike_Individual':
+      case 'Bike':
+        return 1500;
+      case 'HeavyVehicle_Individual':
+        return 3500;
+      case 'ThreeWheeler_Individual':
+      case 'ThreeWheeler':
+        return 2000;
+      default:
+        return 0;
+    }
+  };
+
+  const isIndividualPackage = [
+    'Car_Individual',
+    'Bike_Individual',
+    'Bike',
+    'ThreeWheeler_Individual',
+    'ThreeWheeler',
+    'HeavyVehicle_Individual',
+  ].includes(formData.packageType);
+
   const handleNext = () => {
-    if (step === 3 && formData.packageType === 'HeavyVehicle_Bus') {
+    if (
+      step === 3 &&
+      (formData.packageType === 'HeavyVehicle_Bus' ||
+        formData.packageType === 'HeavyVehicle_Individual')
+    ) {
       if (!formData.lightVehicleLicenseDate) {
         toast.error('Please specify your Light Vehicle license issued date');
         return;
@@ -101,7 +190,9 @@ export default function RegisterPage() {
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
 
       if (issued > twoYearsAgo) {
-        toast.error('DMT Rule: You must have held a light vehicle license for at least 2 years before enrolling for heavy vehicle!');
+        toast.error(
+          'DMT Rule: You must have held a light vehicle license for at least 2 years before enrolling for heavy vehicle!'
+        );
         return;
       }
     }
@@ -125,6 +216,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (formData.studentType === 'Type2_TrialReady' && !formData.advanceReference) {
+      toast.error('Please enter your Bank Deposit Slip or Transfer Reference Number');
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
@@ -132,20 +228,94 @@ export default function RegisterPage() {
       email: formData.email,
       password: formData.password,
       phone: formData.phone,
+      nic: formData.nic,
       branch: formData.branch,
       studentType: formData.studentType,
       packageType: formData.packageType,
       customLessonsCount: formData.customLessonsCount,
       lightVehicleLicenseDate: formData.lightVehicleLicenseDate || null,
+      advanceAmount: formData.advanceAmount || 5000,
+      advanceBankName: formData.advanceBankName || 'Bank of Ceylon',
+      advanceReference: formData.advanceReference || `BOC-ADV-${Date.now().toString().slice(-6)}`,
     };
+
 
     const res = await register(payload);
     setLoading(false);
 
-    if (res.success) {
-      navigate('/student/dashboard');
+    if (res && res.success) {
+      // ── Always redirect to payment gateway for all self-registered students ──
+      // They must complete advance payment before portal access is granted
+      navigate('/payment-gateway', {
+        state: {
+          studentName: formData.name,
+          studentId: res.student?._id || null,
+          userId: res.user?.id || null,
+          branch: formData.branch,
+          nic: formData.nic,
+          email: formData.email,
+          advanceAmount: payload.advanceAmount || 5000,
+          registrationReference: payload.advanceReference,
+        },
+        replace: true,
+      });
     }
   };
+
+  if (submittedType2) {
+    return (
+      <div className="py-12 px-4 sm:px-6 max-w-2xl mx-auto w-full text-center">
+        <div className="p-8 sm:p-10 rounded-3xl bg-slate-900/90 border border-amber-400/30 shadow-[0_20px_60px_rgba(245,158,11,0.2)] space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+            <CheckCircle2 className="w-9 h-9" />
+          </div>
+          <div>
+            <span className="badge badge-warning text-xs font-bold uppercase tracking-wider mb-2">
+              Registration Submitted • Pending Verification
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">
+              Advance Payment Awaiting Officer Approval
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+              Thank you, <strong className="text-white">{submittedType2.name}</strong>. Your Type 2 (Trial-Ready) registration and advance payment slip of <strong className="text-amber-300">Rs. {submittedType2.amount.toLocaleString()}</strong> have been queued.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left text-xs space-y-2.5 text-slate-300">
+            <div className="flex justify-between">
+              <span className="text-slate-400">NIC Number:</span>
+              <span className="font-semibold text-white">{submittedType2.nic || 'Provided'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Branch:</span>
+              <span className="font-semibold text-white">{submittedType2.branch}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Transaction Reference:</span>
+              <span className="font-semibold text-accent">{submittedType2.reference}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Account Status:</span>
+              <span className="text-amber-400 font-bold">Pending Officer Verification (Login Blocked)</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 leading-relaxed text-left">
+            ℹ️ <strong>What happens next?</strong> Our branch Data Entry Officer will verify your deposit slip. As soon as verified, your account will be activated, granting you portal access to select your course package and start booking lessons.
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Link to="/login" className="btn-primary py-3 px-6 text-xs font-bold">
+              Go to Sign In Portal
+            </Link>
+            <Link to="/" className="btn-secondary py-3 px-6 text-xs font-bold">
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
@@ -308,12 +478,53 @@ export default function RegisterPage() {
             <div>
               <h2 className="text-lg font-bold text-white">Step 3: Choose Your Course Package</h2>
               <p className="text-xs text-slate-400 mt-1">
-                Official pricing catalog of Sithma Driving School.
+                Select an individual hourly package or an all-inclusive comprehensive course package.
               </p>
             </div>
 
+            {/* Package Category Switcher */}
+            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10 w-fit">
+              <button
+                type="button"
+                onClick={() => {
+                  setPackageCategoryTab('individual');
+                  if (!isIndividualPackage) {
+                    setFormData({ ...formData, packageType: 'Car_Individual' });
+                  }
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  packageCategoryTab === 'individual'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                Individual Packages (Hourly)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPackageCategoryTab('comprehensive');
+                  if (isIndividualPackage) {
+                    setFormData({ ...formData, packageType: 'Car_Full' });
+                  }
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  packageCategoryTab === 'comprehensive'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Full Course Packages
+              </button>
+            </div>
+
+            {/* Packages List */}
             <div className="space-y-3">
-              {packages.map((pkg) => {
+              {(packageCategoryTab === 'individual'
+                ? individualPackagesList
+                : comprehensivePackagesList
+              ).map((pkg) => {
                 const Icon = pkg.icon;
                 const isSelected = formData.packageType === pkg.id;
 
@@ -351,14 +562,15 @@ export default function RegisterPage() {
             </div>
 
             {/* Heavy Vehicle Regulatory Prerequisite */}
-            {formData.packageType === 'HeavyVehicle_Bus' && (
+            {(formData.packageType === 'HeavyVehicle_Bus' ||
+              formData.packageType === 'HeavyVehicle_Individual') && (
               <div className="p-4 bg-amber-500/10 border border-amber-400/20 rounded-2xl space-y-2 text-xs">
                 <div className="flex items-center gap-2 font-bold text-amber-300">
                   <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  Heavy Vehicle (Bus) Regulatory Prerequisite
+                  Heavy Vehicle Regulatory Prerequisite
                 </div>
                 <p className="text-slate-300">
-                  Department of Motor Traffic regulations require holding a Light Vehicle driving license for at least <strong>2 years</strong> before enrolling for a Heavy Vehicle license.
+                  Department of Motor Traffic regulations require holding a Light Vehicle driving license for at least <strong>2 years</strong> before enrolling for a Heavy Vehicle license or lesson.
                 </p>
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">
@@ -376,15 +588,38 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Flexible quantity for Bike and Three-Wheeler */}
-            {(formData.packageType === 'Bike' || formData.packageType === 'ThreeWheeler') && (
-              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
-                <span className="text-xs font-semibold text-white">Number of Lessons to book:</span>
+            {/* Flexible quantity for Individual Packages */}
+            {isIndividualPackage && (
+              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-white block">
+                    Number of Practical Hours to book:
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Rate: Rs. {getHourlyRate(formData.packageType).toLocaleString()} / hour
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 4, 6].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, customLessonsCount: num })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                          formData.customLessonsCount === num
+                            ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300'
+                            : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        {num}h
+                      </button>
+                    ))}
+                  </div>
                   <input
                     type="number"
                     min="1"
-                    max="30"
+                    max="50"
                     value={formData.customLessonsCount}
                     onChange={(e) =>
                       setFormData({
@@ -392,13 +627,12 @@ export default function RegisterPage() {
                         customLessonsCount: parseInt(e.target.value, 10) || 1,
                       })
                     }
-                    className="w-20 px-3 py-1.5 border border-white/15 bg-slate-900/90 text-white rounded-xl text-sm text-center font-bold"
+                    className="w-16 px-2 py-1.5 border border-white/15 bg-slate-900/90 text-white rounded-xl text-sm text-center font-bold"
                   />
-                  <span className="text-xs text-accent font-bold">
+                  <span className="text-xs text-accent font-bold whitespace-nowrap pl-1">
                     = Rs.{' '}
                     {(
-                      formData.customLessonsCount *
-                      (formData.packageType === 'Bike' ? 850 : 1000)
+                      formData.customLessonsCount * getHourlyRate(formData.packageType)
                     ).toLocaleString()}
                   </span>
                 </div>
@@ -454,6 +688,20 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  National Identity Card (NIC) <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 200012345678 or 981234567V"
+                  value={formData.nic}
+                  onChange={(e) => setFormData({ ...formData, nic: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Contact Phone (WhatsApp) <span className="text-rose-400">*</span>
                 </label>
                 <input
@@ -466,7 +714,7 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Email Address <span className="text-rose-400">*</span>
                 </label>
@@ -508,6 +756,55 @@ export default function RegisterPage() {
                 />
               </div>
             </div>
+
+            {/* Type 2 Immediate Advance Payment Section (Exact Business Rule Flow) */}
+            {formData.studentType === 'Type2_TrialReady' && (
+              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
+                    <CreditCard className="w-4 h-4 text-amber-400" />
+                    <span>Mandatory Advance Payment (Type 2 Trial-Ready)</span>
+                  </div>
+                  <span className="badge badge-warning text-xs font-bold">Rs. 5,000</span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Trial-ready students are required to submit an initial advance deposit of <strong>Rs. 5,000</strong>. Your account will remain in <code className="text-amber-300 bg-amber-950/60 px-1 py-0.5 rounded">pending_verification</code> status until our Data Entry Officer verifies your payment.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      Bank Name
+                    </label>
+                    <select
+                      value={formData.advanceBankName}
+                      onChange={(e) => setFormData({ ...formData, advanceBankName: e.target.value })}
+                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
+                    >
+                      <option value="Bank of Ceylon">Bank of Ceylon (BOC)</option>
+                      <option value="Commercial Bank">Commercial Bank</option>
+                      <option value="Sampath Bank">Sampath Bank</option>
+                      <option value="Hatton National Bank">Hatton National Bank (HNB)</option>
+                      <option value="People's Bank">People's Bank</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      Deposit Slip / Transfer Reference <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. BOC-DEP-99482 or Ref #1234"
+                      value={formData.advanceReference}
+                      onChange={(e) => setFormData({ ...formData, advanceReference: e.target.value })}
+                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-between pt-4 border-t border-white/10">
               <button type="button" onClick={handlePrev} className="btn-secondary">

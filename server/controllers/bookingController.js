@@ -9,7 +9,7 @@ const Notification = require('../models/Notification');
 // @access  Student
 exports.createBooking = async (req, res) => {
   try {
-    const { timeSlotId, vehicleType, lessonType } = req.body;
+    const { timeSlotId, vehicleType, lessonType = 'regular' } = req.body;
 
     if (!timeSlotId || !vehicleType) {
       return res.status(400).json({
@@ -27,28 +27,68 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 2. Check DMT Learner Pass Gate (Type 1 must pass Learner Exam before booking practicals)
-    if (
-      student.studentType === 'Type1_NewLearner' &&
-      !student.dmtDates?.learnerExamPassed &&
-      lessonType !== 'free-weekly-class'
-    ) {
-      return res.status(400).json({
+    // 2. Gate: Account verification
+    if (student.accountStatus === 'pending_verification') {
+      return res.status(403).json({
         success: false,
-        message: 'DMT Requirement: You must pass your Learner Written Exam before booking practical driving trial lessons.',
+        message: 'Your account is pending verification by our branch officer. Booking is restricted until verified.',
       });
     }
 
-    // 3. Check Lessons Balance
-    const totalAllowed = (student.package.lessonsTotal || 15) + (student.package.additionalLessonsRequested || 0);
-    if ((student.package.lessonsUsed || 0) >= totalAllowed) {
-      return res.status(400).json({
+    // 3. Gate: Type 1 (New Learner) DMT Learner's Exam Gate (US-09)
+    // Type 1 students can ONLY book lessons after passing their learner exam
+    const isType1 = student.studentType === 'Type1_NewLearner' || student.studentType === 'Type 1';
+    if (isType1) {
+      const isLearnerPassed =
+        student.trialEligible ||
+        student.learnerExamStatus === 'passed' ||
+        Boolean(student.dmtDates?.learnerExamPassed);
+      if (!isLearnerPassed) {
+        return res.status(403).json({
+          success: false,
+          message: `DMT Requirement (US-09): As a Type 1 New Learner, practical and trial lessons can only be booked after your Learner Written Exam is officially marked 'Passed' by the branch officer. (Current status: ${
+            student.learnerExamStatus === 'failed' ? 'Failed - Awaiting Retake' : 'Not Faced / In Progress'
+          })`,
+        });
+      }
+    }
+
+    // 4. Gate: Course Package Payment Gate
+    // Passed students (both Type 1 and Type 2) must have confirmed package payment or unlocked lessons before booking
+    const hasConfirmedPayment = student.packagePaymentStatus === 'confirmed';
+    const hasUnlockedLessons = (student.lessonsUnlocked || 0) > 0;
+    if (!hasConfirmedPayment && !hasUnlockedLessons) {
+      return res.status(403).json({
         success: false,
-        message: 'You have used all lessons in your package. Please request additional lessons to continue booking.',
+        message:
+          student.packagePaymentStatus === 'pending'
+            ? 'Your course package payment is pending verification by our branch officer. Lessons will unlock as soon as payment is confirmed.'
+            : 'Please select and pay for your course package to unlock lessons for booking.',
       });
     }
 
-    // 4. Find & Lock TimeSlot
+    // 5. Gate: Check Lessons Balance & Monthly Payment Quota Cap
+    const totalAllowed = student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null
+      ? student.lessonsUnlocked
+      : ((student.package?.lessonsTotal || 15) + (student.package?.additionalLessonsRequested || 0));
+    const currentUsed = student.lessonsUsed !== undefined && student.lessonsUsed !== null
+      ? student.lessonsUsed
+      : (student.package?.lessonsUsed || 0);
+
+    if (currentUsed >= totalAllowed) {
+      if (student.paymentPlan === 'monthly') {
+        return res.status(403).json({
+          success: false,
+          message: `Monthly limit reached: You have completed all ${totalAllowed} unlocked lessons for this billing month (monthly quota: 4 lessons). Please submit payment for next month or buy additional lessons to continue booking.`,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'You have used all unlocked lessons in your course package. Please buy additional lessons in your profile to continue booking.',
+      });
+    }
+
+    // 6. Find & Lock TimeSlot
     const timeSlot = await TimeSlot.findById(timeSlotId);
     if (!timeSlot) {
       return res.status(404).json({
@@ -83,31 +123,37 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 5. Update TimeSlot & Student Lessons Used
+    // 7. Update TimeSlot & Student Lessons Used & Activity Metadata
     timeSlot.status = 'booked';
     timeSlot.bookedBy = student._id;
     await timeSlot.save();
 
-    student.package.lessonsUsed = (student.package.lessonsUsed || 0) + 1;
+    student.lessonsUsed = currentUsed + 1;
+    if (student.package) {
+      student.package.lessonsUsed = student.lessonsUsed;
+    }
+    student.lastActivityDate = new Date();
     await student.save();
 
-    // 6. Create Booking Record
+    // 8. Create Booking Record
     const booking = await Booking.create({
       studentId: student._id,
       timeSlotId: timeSlot._id,
       branch: timeSlot.branch,
       vehicleType,
-      lessonType: lessonType || 'regular',
+      lessonType,
       status: 'confirmed',
     });
 
-    // 7. Trigger In-App Notification
+    // 9. Trigger Exactly 1 In-App Notification
+    const remainingCount = Math.max(0, totalAllowed - student.lessonsUsed);
     await Notification.create({
       recipientId: req.user._id,
       recipientRole: 'student',
       title: 'Lesson Booking Confirmed',
-      message: `Your ${vehicleType} lesson on ${new Date(timeSlot.date).toDateString()} at ${timeSlot.startTime} (${timeSlot.branch} Branch) has been confirmed.`,
+      message: `Your ${vehicleType} lesson (${lessonType}) on ${new Date(timeSlot.date).toDateString()} at ${timeSlot.startTime} (${timeSlot.branch} Branch) has been confirmed. Lessons remaining: ${remainingCount}.`,
       type: 'booking',
+      link: '/student/dashboard',
     });
 
     const populated = await Booking.findById(booking._id)
@@ -121,7 +167,8 @@ exports.createBooking = async (req, res) => {
       success: true,
       message: 'Lesson slot booked successfully!',
       booking: populated,
-      lessonsRemaining: totalAllowed - student.package.lessonsUsed,
+      lessonsRemaining: remainingCount,
+      lessonsUsed: student.lessonsUsed,
     });
   } catch (error) {
     console.error('Booking error:', error);
@@ -310,12 +357,22 @@ exports.requestAdditionalLessons = async (req, res) => {
 
     student.package.additionalLessonsRequested =
       (student.package.additionalLessonsRequested || 0) + qty;
+    
+    // Also increment lessonsUnlocked
+    const currentUnlocked =
+      student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null
+        ? student.lessonsUnlocked
+        : (student.package?.lessonsTotal || 15);
+    student.lessonsUnlocked = currentUnlocked + qty;
+
     await student.save();
 
     return res.status(200).json({
       success: true,
       message: `Added ${qty} additional lesson(s) to your balance.`,
       package: student.package,
+      lessonsUnlocked: student.lessonsUnlocked,
+      lessonsRemaining: Math.max(0, student.lessonsUnlocked - (student.lessonsUsed || 0)),
     });
   } catch (error) {
     return res.status(500).json({

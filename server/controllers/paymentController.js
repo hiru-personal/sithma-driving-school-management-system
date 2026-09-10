@@ -44,7 +44,7 @@ exports.upload = multer({
 // @access  Student
 exports.uploadPaymentSlip = async (req, res) => {
   try {
-    const { amount, bankName, transactionReference } = req.body;
+    const { amount, bankName, transactionReference, paymentType = 'general', packageId, paymentPlan } = req.body;
 
     const student = await Student.findOne({ userId: req.user._id });
     if (!student) {
@@ -53,12 +53,24 @@ exports.uploadPaymentSlip = async (req, res) => {
 
     const slipUrl = req.file
       ? `/uploads/slips/${req.file.filename}`
-      : `https://placehold.co/600x400/1e1035/FFFFFF?text=Dummy+Bank+Deposit+Slip+Rs.+${amount || 5000}`;
+      : `https://placehold.co/600x400/1e1035/FFFFFF?text=Bank+Deposit+Slip+Rs.+${amount || 5000}`;
+
+    let resolvedPackageId = packageId || student.package?.packageId || null;
+    if (paymentPlan) {
+      student.paymentPlan = paymentPlan;
+    }
+
+    if (paymentType === 'package' || paymentType === 'monthly') {
+      student.packagePaymentStatus = 'pending';
+    } else if (paymentType === 'advance') {
+      student.advancePaymentStatus = 'pending';
+    }
 
     const payment = await Payment.create({
       studentId: student._id,
       userId: req.user._id,
-      packageId: student.package?.packageId || null,
+      packageId: resolvedPackageId,
+      paymentType,
       slipImageUrl: slipUrl,
       amount: parseFloat(amount) || student.package?.priceTotal || 0,
       bankName: bankName || 'Bank of Ceylon',
@@ -75,8 +87,8 @@ exports.uploadPaymentSlip = async (req, res) => {
     const notifications = staffUsers.map((staff) => ({
       recipientId: staff._id,
       recipientRole: staff.role,
-      title: 'New Payment Slip Uploaded',
-      message: `Student ${req.user.name} (${student.branch} Branch) uploaded a payment slip of Rs. ${payment.amount?.toLocaleString()}.`,
+      title: `New ${paymentType.toUpperCase()} Payment Slip Uploaded`,
+      message: `Student ${req.user.name} (${student.branch} Branch) uploaded a ${paymentType} payment slip of Rs. ${payment.amount?.toLocaleString()}.`,
       type: 'payment',
       link: '/staff/payments',
     }));
@@ -99,6 +111,86 @@ exports.uploadPaymentSlip = async (req, res) => {
   }
 };
 
+// @desc    Submit Package Selection & Payment (Student Step 5)
+// @route   POST /api/payments/package-payment
+// @access  Student
+exports.submitPackagePayment = async (req, res) => {
+  try {
+    const { packageId, packageType, paymentPlan = 'full', amount, bankName, transactionReference, slipImageUrl } = req.body;
+
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student profile not found' });
+    }
+
+    // Resolve package dynamically from Package model (US-13, US-14)
+    const Package = require('../models/Package');
+    let pkgDoc = null;
+    if (packageId) pkgDoc = await Package.findById(packageId);
+    if (!pkgDoc && packageType) pkgDoc = await Package.findOne({ type: packageType, isActive: true });
+    if (!pkgDoc) {
+      return res.status(400).json({ success: false, message: 'Invalid course package selected.' });
+    }
+
+    const payAmount = parseFloat(amount) || (paymentPlan === 'monthly' ? Math.round(pkgDoc.price / 3) : pkgDoc.price);
+
+    student.package = {
+      type: pkgDoc.type,
+      packageId: pkgDoc._id,
+      lessonsTotal: pkgDoc.lessons,
+      lessonsUsed: student.lessonsUsed || 0,
+      priceTotal: pkgDoc.price,
+      bonusLessons: pkgDoc.bonusLessons || { bike: 0, threeWheeler: 0 },
+      additionalLessonsRequested: student.package?.additionalLessonsRequested || 0,
+    };
+    student.paymentPlan = paymentPlan;
+    student.packagePaymentStatus = 'pending';
+    await student.save();
+
+    const slip = req.file ? `/uploads/slips/${req.file.filename}` : (slipImageUrl || `/uploads/slips/package-${Date.now()}.png`);
+
+    const payment = await Payment.create({
+      studentId: student._id,
+      userId: req.user._id,
+      packageId: pkgDoc._id,
+      paymentType: paymentPlan === 'monthly' ? 'monthly' : 'package',
+      slipImageUrl: slip,
+      amount: payAmount,
+      bankName: bankName || 'Bank of Ceylon',
+      transactionReference: transactionReference || `PKG-${Date.now()}`,
+      status: 'pending',
+      uploadedAt: new Date(),
+    });
+
+    // Notify Data Entry Officers
+    const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
+    const notifications = staffUsers.map((staff) => ({
+      recipientId: staff._id,
+      recipientRole: staff.role,
+      title: 'New Package Payment Uploaded',
+      message: `Student ${req.user.name} submitted package payment of Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) for verification.`,
+      type: 'payment',
+      link: '/staff/payments',
+    }));
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Package payment submitted successfully. Your lesson balance will unlock once verified by our branch officer.',
+      payment,
+      student,
+    });
+  } catch (error) {
+    console.error('Submit package payment error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to submit package payment',
+    });
+  }
+};
+
 // @desc    Process advance payment to activate Premium User status (Student)
 // @route   POST /api/payments/pay-advance
 // @access  Student
@@ -117,6 +209,7 @@ exports.payAdvance = async (req, res) => {
       studentId: student._id,
       userId: req.user._id,
       packageId: student.package?.packageId || null,
+      paymentType: 'advance',
       slipImageUrl: '/uploads/slips/advance-payment-confirmed.png',
       amount: payAmount,
       bankName: bankName,
@@ -128,21 +221,23 @@ exports.payAdvance = async (req, res) => {
 
     student.isAdvancePaid = true;
     student.isPremium = true;
+    student.accountStatus = 'active';
+    student.advancePaymentStatus = 'verified';
     student.registrationStatus = 'registered';
     await student.save();
 
     await Notification.create({
       recipientId: req.user._id,
       recipientRole: 'student',
-      title: '👑 Premium User Access Activated!',
-      message: `Advance payment of Rs. ${payAmount.toLocaleString()} received. Your account is now upgraded to Premium User!`,
+      title: 'Advance Payment Verified!',
+      message: `Advance payment of Rs. ${payAmount.toLocaleString()} received. Your account is activated and ready for package selection!`,
       type: 'payment',
       link: '/student/dashboard',
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Advance payment confirmed! You are now a Premium User with full system access.',
+      message: 'Advance payment confirmed! You now have active access to the portal.',
       payment,
       student,
     });
@@ -193,8 +288,9 @@ exports.getPendingPayments = async (req, res) => {
     let payments = await Payment.find({ status: 'pending' })
       .populate({
         path: 'studentId',
-        populate: { path: 'userId', select: 'name email phone branch' },
+        populate: { path: 'userId', select: 'name email phone nic branch' },
       })
+      .populate('userId', 'name email phone nic branch')
       .sort({ uploadedAt: -1 });
 
     if (branch && branch !== 'All') {
@@ -245,18 +341,80 @@ exports.verifyPayment = async (req, res) => {
     }
     await payment.save();
 
-    // Update Student registration status and Premium status
     const student = await Student.findById(payment.studentId._id);
+    let notificationMessage = '';
+    let notificationTitle = '';
+
     if (student) {
+      const isAdvance = payment.paymentType === 'advance' || student.accountStatus === 'pending_verification' || payment.amount === 5000;
+
       if (status === 'confirmed') {
-        student.registrationStatus = 'registered';
-        student.isAdvancePaid = true;
-        student.isPremium = true;
+        if (isAdvance) {
+          // Flow step 4: Advance payment verified -> activate account and grant first login
+          student.accountStatus = 'active';
+          student.advancePaymentStatus = 'verified';
+          student.isAdvancePaid = true;
+          student.isPremium = true;
+          student.registrationStatus = 'registered';
+          student.verifiedBy = req.user._id;
+          student.verifiedAt = new Date();
+
+          // Also activate User account status so login succeeds
+          await User.findByIdAndUpdate(payment.userId._id, { status: 'active' });
+
+          notificationTitle = 'Advance Payment Verified — Account Activated!';
+          notificationMessage = `Your advance payment of Rs. ${payment.amount?.toLocaleString()} has been verified by ${req.user.name}. Your account is now active! You can now log in and select your course package to start booking lessons.`;
+        } else if (payment.paymentType === 'additional_lessons') {
+          // Additional Lessons Payment Confirmed
+          const extraQty = payment.additionalLessonsCount || Math.round(payment.amount / 2500) || 1;
+          student.package.additionalLessonsRequested =
+            (student.package.additionalLessonsRequested || 0) + extraQty;
+          const currentUnlocked =
+            student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null
+              ? student.lessonsUnlocked
+              : (student.package?.lessonsTotal || 15);
+          student.lessonsUnlocked = currentUnlocked + extraQty;
+
+          notificationTitle = 'Additional Lessons Payment Verified!';
+          notificationMessage = `Your payment of Rs. ${payment.amount?.toLocaleString()} for ${extraQty} additional practical lesson(s) has been confirmed. Lessons available to book: ${Math.max(
+            0,
+            student.lessonsUnlocked - (student.lessonsUsed || 0)
+          )}.`;
+        } else {
+          // Flow step 5: Package payment confirmed -> unlock lesson balance
+          student.packagePaymentStatus = 'confirmed';
+          const totalPackageLessons = student.package?.lessonsTotal || 15;
+
+          if (student.paymentPlan === 'monthly' || payment.paymentType === 'monthly') {
+            // Option B: Monthly payment — unlocks MAX of 4 lessons for that billing month only (server-side cap)
+            student.lessonsUnlocked = Math.min((student.lessonsUsed || 0) + 4, totalPackageLessons);
+            notificationTitle = 'Monthly Package Payment Confirmed!';
+            notificationMessage = `Your monthly payment has been confirmed. 4 lessons have been unlocked for this billing month (Total unlocked: ${student.lessonsUnlocked}/${totalPackageLessons}).`;
+          } else {
+            // Option A: Full payment — unlocks full lesson count immediately
+            student.lessonsUnlocked = totalPackageLessons;
+            notificationTitle = 'Full Course Package Payment Confirmed!';
+            notificationMessage = `Your full package payment of Rs. ${payment.amount?.toLocaleString()} has been confirmed. All ${totalPackageLessons} lessons are now unlocked!`;
+          }
+        }
       } else {
-        student.registrationStatus = 'pending_payment';
-        student.isAdvancePaid = false;
-        student.isPremium = false;
+        // Rejected
+        if (isAdvance) {
+          student.advancePaymentStatus = 'rejected';
+          student.accountStatus = 'pending_verification';
+          student.isAdvancePaid = false;
+          notificationTitle = 'Advance Payment Verification Rejected';
+          notificationMessage = `Your advance payment slip was rejected. Reason: ${payment.rejectionReason}. Please re-upload a valid bank deposit slip.`;
+        } else if (payment.paymentType === 'additional_lessons') {
+          notificationTitle = 'Additional Lessons Payment Slip Rejected';
+          notificationMessage = `Your additional lessons payment slip was rejected. Reason: ${payment.rejectionReason}. Please re-submit your payment.`;
+        } else {
+          student.packagePaymentStatus = 'none';
+          notificationTitle = 'Package Payment Verification Rejected';
+          notificationMessage = `Your package payment slip was rejected. Reason: ${payment.rejectionReason}. Please re-submit your payment.`;
+        }
       }
+
       await student.save();
     }
 
@@ -264,11 +422,8 @@ exports.verifyPayment = async (req, res) => {
     await Notification.create({
       recipientId: payment.userId._id,
       recipientRole: 'student',
-      title: status === 'confirmed' ? '👑 Bank Slip Verified — Premium User Activated!' : '⚠️ Payment Slip Verification Rejected',
-      message:
-        status === 'confirmed'
-          ? `Your bank deposit slip for Rs. ${payment.amount?.toLocaleString()} has been verified by staff (${req.user.name}). Your account is now a Premium User with full system access!`
-          : `Your payment slip was rejected. Reason: ${payment.rejectionReason}. Please upload a valid bank slip.`,
+      title: notificationTitle || (status === 'confirmed' ? 'Payment Verified' : 'Payment Rejected'),
+      message: notificationMessage || `Your payment for Rs. ${payment.amount?.toLocaleString()} was ${status}.`,
       type: 'payment',
       link: '/student/dashboard',
     });
@@ -276,8 +431,8 @@ exports.verifyPayment = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: status === 'confirmed' 
-        ? 'Payment slip verified! Student upgraded to Premium User.' 
-        : 'Payment slip rejected.',
+        ? 'Payment verified successfully.' 
+        : 'Payment rejected.',
       payment,
       student,
     });
@@ -289,3 +444,308 @@ exports.verifyPayment = async (req, res) => {
     });
   }
 };
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PUBLIC PRE-AUTH PAYMENT ENDPOINTS (No JWT required — pending students)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// @desc    Upload advance payment slip BEFORE login verification (Pre-auth gateway)
+// @route   POST /api/payments/upload-pending
+// @access  Public (unverified student submits by pendingUserId)
+exports.uploadPendingSlip = async (req, res) => {
+  try {
+    const { pendingUserId, amount, bankName, transactionReference } = req.body;
+
+    if (!pendingUserId) {
+      return res.status(400).json({ success: false, message: 'Student reference is required.' });
+    }
+
+    const user = await User.findById(pendingUserId);
+    if (!user || user.role !== 'student') {
+      return res.status(404).json({ success: false, message: 'Student account not found.' });
+    }
+
+    const student = await Student.findOne({ userId: user._id });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student profile not found.' });
+    }
+
+    const slipUrl = req.file
+      ? `/uploads/slips/${req.file.filename}`
+      : `https://placehold.co/600x400/1e1035/FFFFFF?text=Bank+Deposit+Slip+Rs.+${amount || 5000}`;
+
+    const txRef = transactionReference || `BOC-ADV-${Date.now().toString().slice(-6)}`;
+
+    const payment = await Payment.create({
+      studentId: student._id,
+      userId: user._id,
+      paymentType: 'advance',
+      slipImageUrl: slipUrl,
+      amount: parseFloat(amount) || 5000,
+      bankName: bankName || 'Bank of Ceylon',
+      transactionReference: txRef,
+      status: 'pending',
+      uploadedAt: new Date(),
+    });
+
+    student.advancePaymentStatus = 'pending';
+    await student.save();
+
+    // Notify branch staff
+    const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] }, branch: { $in: [student.branch, 'All'] } });
+    if (staffUsers.length > 0) {
+      await Notification.insertMany(
+        staffUsers.map((s) => ({
+          recipientId: s._id,
+          recipientRole: s.role,
+          title: '📋 New Advance Payment Slip Uploaded',
+          message: `${user.name} (${student.branch} Branch) uploaded an advance payment slip of Rs. ${Number(amount || 5000).toLocaleString()} — pending verification.`,
+          type: 'payment',
+          link: '/staff/payments',
+        }))
+      );
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Payment slip uploaded successfully. Our branch officer will verify it shortly.',
+      payment: { ...payment.toObject(), transactionReference: txRef },
+    });
+  } catch (error) {
+    console.error('Pending slip upload error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Upload failed' });
+  }
+};
+
+// @desc    Simulate online card payment before login (Pre-auth gateway)
+// @route   POST /api/payments/pay-advance-pending
+// @access  Public (simulated gateway — no real charges)
+exports.payAdvancePending = async (req, res) => {
+  try {
+    const { pendingUserId, amount, bankName, transactionReference, cardLast4 } = req.body;
+
+    if (!pendingUserId) {
+      return res.status(400).json({ success: false, message: 'Student reference is required.' });
+    }
+
+    const user = await User.findById(pendingUserId);
+    if (!user || user.role !== 'student') {
+      return res.status(404).json({ success: false, message: 'Student account not found.' });
+    }
+
+    const student = await Student.findOne({ userId: user._id });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student profile not found.' });
+    }
+
+    const txRef = transactionReference || `ONPAY-${Date.now().toString().slice(-8)}`;
+    const payAmount = parseFloat(amount) || 5000;
+
+    // Simulate payment — mark as confirmed immediately (online gateway auto-approves)
+    const payment = await Payment.create({
+      studentId: student._id,
+      userId: user._id,
+      paymentType: 'advance',
+      slipImageUrl: `https://placehold.co/600x400/1e1035/FFFFFF?text=Online+Payment+Card+****${cardLast4 || '0000'}`,
+      amount: payAmount,
+      bankName: bankName || 'Sithma Pay Online Gateway',
+      transactionReference: txRef,
+      status: 'confirmed',
+      verifiedAt: new Date(),
+      uploadedAt: new Date(),
+    });
+
+    // Auto-activate student account (online payment is auto-verified)
+    student.accountStatus = 'active';
+    student.advancePaymentStatus = 'verified';
+    student.isAdvancePaid = true;
+    student.isPremium = true;
+    student.registrationStatus = 'registered';
+    await student.save();
+
+    await User.findByIdAndUpdate(user._id, { status: 'active' });
+
+    // Notify student
+    await Notification.create({
+      recipientId: user._id,
+      recipientRole: 'student',
+      title: '✅ Online Payment Confirmed — Account Activated!',
+      message: `Your online advance payment of Rs. ${payAmount.toLocaleString()} via card ****${cardLast4 || '0000'} has been confirmed. Your account is now active! Log in to select your package.`,
+      type: 'payment',
+      link: '/student/dashboard',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Online payment confirmed. Your account is now active!',
+      payment: { ...payment.toObject(), transactionReference: txRef },
+      activated: true,
+    });
+  } catch (error) {
+    console.error('Pending online payment error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Payment failed' });
+  }
+};
+
+// @desc    Register intent to pay physically at branch (Pre-auth)
+// @route   POST /api/payments/register-physical-intent
+// @access  Public
+exports.registerPhysicalIntent = async (req, res) => {
+  try {
+    const { pendingUserId, branch, amount } = req.body;
+
+    if (pendingUserId) {
+      const user = await User.findById(pendingUserId).catch(() => null);
+      const student = user ? await Student.findOne({ userId: user._id }).catch(() => null) : null;
+
+      if (student) {
+        // Create a placeholder payment record for the physical intent
+        await Payment.create({
+          studentId: student._id,
+          userId: user._id,
+          paymentType: 'advance',
+          slipImageUrl: `https://placehold.co/600x400/1e1035/FFFFFF?text=Physical+Payment+Pending+${branch}`,
+          amount: parseFloat(amount) || 5000,
+          bankName: `Branch Office — ${branch}`,
+          transactionReference: `PHYS-${Date.now().toString().slice(-6)}`,
+          status: 'pending',
+          uploadedAt: new Date(),
+        });
+        student.advancePaymentStatus = 'pending';
+        await student.save();
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Physical payment intent recorded for ${branch} branch. Please visit to complete payment.`,
+    });
+  } catch (error) {
+    console.error('Physical intent error:', error);
+    return res.status(200).json({ success: true, message: 'Intent recorded.' }); // non-critical
+  }
+};
+
+
+// ─────────────────────────────────────────────────────────────
+// @desc    Buy Additional Lessons (Student Profile)
+// @route   POST /api/payments/buy-additional-lessons
+// @access  Student
+// ─────────────────────────────────────────────────────────────
+exports.buyAdditionalLessons = async (req, res) => {
+  try {
+    const {
+      lessonCount = 1,
+      paymentMethod = 'online', // 'online' | 'slip'
+      bankName = 'Bank of Ceylon',
+      transactionReference,
+      slipImageUrl,
+    } = req.body;
+
+    const qty = Math.max(1, parseInt(lessonCount, 10) || 1);
+    const pricePerLesson = 2500;
+    // Discount for 5+ lessons: Rs. 11,500 for 5 instead of 12,500
+    const totalAmount = qty === 5 ? 11500 : qty * pricePerLesson;
+
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student profile not found' });
+    }
+
+    if (paymentMethod === 'online') {
+      // Instant card/gateway payment: Automatically confirmed and unlocked immediately!
+      const payment = await Payment.create({
+        studentId: student._id,
+        userId: req.user._id,
+        packageId: student.package?.packageId || null,
+        paymentType: 'additional_lessons',
+        additionalLessonsCount: qty,
+        slipImageUrl: '/uploads/slips/online-additional-lessons.png',
+        amount: totalAmount,
+        bankName: 'Sithma Online Payment Gateway',
+        transactionReference: transactionReference || `ADDL-ONLINE-${Date.now()}`,
+        status: 'confirmed',
+        verifiedAt: new Date(),
+        uploadedAt: new Date(),
+      });
+
+      // Update student balance
+      student.package.additionalLessonsRequested =
+        (student.package.additionalLessonsRequested || 0) + qty;
+      const currentUnlocked =
+        student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null
+          ? student.lessonsUnlocked
+          : (student.package?.lessonsTotal || 15);
+      student.lessonsUnlocked = currentUnlocked + qty;
+      await student.save();
+
+      // Trigger In-App Notification
+      const remainingCount = Math.max(0, student.lessonsUnlocked - (student.lessonsUsed || 0));
+      await Notification.create({
+        recipientId: req.user._id,
+        recipientRole: 'student',
+        title: 'Additional Lessons Unlocked!',
+        message: `Payment of Rs. ${totalAmount.toLocaleString()} confirmed for ${qty} additional practical lesson(s). You now have ${remainingCount} total lessons available to book!`,
+        type: 'booking',
+        link: '/student/lessons/book',
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Successfully purchased ${qty} additional practical lesson(s)! They are ready to book now.`,
+        payment,
+        student,
+        lessonsUnlocked: student.lessonsUnlocked,
+        lessonsRemaining: remainingCount,
+      });
+    } else {
+      // Bank Deposit Slip Upload: Pending Officer Verification
+      const slip = req.file
+        ? `/uploads/slips/${req.file.filename}`
+        : (slipImageUrl || `/uploads/slips/additional-lessons-${Date.now()}.png`);
+
+      const payment = await Payment.create({
+        studentId: student._id,
+        userId: req.user._id,
+        packageId: student.package?.packageId || null,
+        paymentType: 'additional_lessons',
+        additionalLessonsCount: qty,
+        slipImageUrl: slip,
+        amount: totalAmount,
+        bankName: bankName || 'Bank of Ceylon',
+        transactionReference: transactionReference || `ADDL-SLIP-${Date.now()}`,
+        status: 'pending',
+        uploadedAt: new Date(),
+      });
+
+      // Notify Staff
+      const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
+      const notifications = staffUsers.map((staff) => ({
+        recipientId: staff._id,
+        recipientRole: staff.role,
+        title: 'Additional Lessons Slip Uploaded',
+        message: `Student ${req.user.name} submitted a slip for ${qty} additional lessons (Rs. ${totalAmount.toLocaleString()}) for verification.`,
+        type: 'payment',
+        link: '/staff/payments',
+      }));
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Deposit slip for ${qty} additional lessons submitted! Your lessons will unlock once verified by our branch officer.`,
+        payment,
+        student,
+      });
+    }
+  } catch (error) {
+    console.error('Buy additional lessons error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to purchase additional lessons',
+    });
+  }
+};
+

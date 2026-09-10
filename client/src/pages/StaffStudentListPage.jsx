@@ -32,6 +32,22 @@ export default function StaffStudentListPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [modalMode, setModalMode] = useState('view'); // 'view' | 'edit_dmt' | 'record_trial'
 
+  // Walk-in Student Registration Modal State (US-03)
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [availablePackages, setAvailablePackages] = useState([]);
+  const [submittingWalkIn, setSubmittingWalkIn] = useState(false);
+  const [walkInForm, setWalkInForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    nic: '',
+    branch: 'Maharagama',
+    studentType: 'Type1_NewLearner',
+    packageType: 'Car_Full',
+    advancePaymentCollected: false,
+    advanceAmount: 5000,
+  });
+
   // Form State for Recording Trial Attempt
   const [trialForm, setTrialForm] = useState({
     attemptDate: new Date().toISOString().split('T')[0],
@@ -39,13 +55,14 @@ export default function StaffStudentListPage() {
     examinerNotes: '',
   });
 
-  // Form State for Updating DMT Dates
+  // Form State for Updating DMT Dates (US-04, US-05, US-09)
   const [dmtForm, setDmtForm] = useState({
     medicalExamDate: '',
     medicalExamPassed: false,
     learnerRegistrationDate: '',
     learnerExamDate: '',
     learnerExamPassed: false,
+    learnerExamStatus: 'not_taken',
     learnerExamPassedDate: '',
   });
 
@@ -71,11 +88,45 @@ export default function StaffStudentListPage() {
 
   useEffect(() => {
     fetchStudents();
+    // Load packages for walk-in form (US-13, US-14)
+    api.get('/packages').then((res) => {
+      if (res.data?.success && res.data?.packages) {
+        setAvailablePackages(res.data.packages);
+      }
+    }).catch(() => {});
   }, [branchFilter, typeFilter, statusFilter]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     fetchStudents();
+  };
+
+  const handleRegisterWalkIn = async (e) => {
+    e.preventDefault();
+    setSubmittingWalkIn(true);
+    try {
+      const res = await api.post('/students/walk-in', walkInForm);
+      if (res.data.success) {
+        toast.success(`Walk-in student ${res.data.student.userId?.name} registered successfully!`);
+        setStudents((prev) => [res.data.student, ...prev]);
+        setShowWalkInModal(false);
+        setWalkInForm({
+          name: '',
+          email: '',
+          phone: '',
+          nic: '',
+          branch: 'Maharagama',
+          studentType: 'Type1_NewLearner',
+          packageType: 'Car_Full',
+          advancePaymentCollected: false,
+          advanceAmount: 5000,
+        });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to register walk-in student');
+    } finally {
+      setSubmittingWalkIn(false);
+    }
   };
 
   const openStudentModal = (student, mode = 'view') => {
@@ -94,6 +145,7 @@ export default function StaffStudentListPage() {
           ? student.dmtDates.learnerExamDate.split('T')[0]
           : '',
         learnerExamPassed: student.dmtDates.learnerExamPassed || false,
+        learnerExamStatus: student.learnerExamStatus || (student.dmtDates.learnerExamPassed ? 'passed' : 'not_taken'),
         learnerExamPassedDate: student.dmtDates.learnerExamPassedDate
           ? student.dmtDates.learnerExamPassedDate.split('T')[0]
           : '',
@@ -161,12 +213,20 @@ export default function StaffStudentListPage() {
             Manage registrations, track DMT milestone progress, and record practical trial examination attempts.
           </p>
         </div>
-        <button
-          onClick={fetchStudents}
-          className="btn-secondary text-sm py-3 px-5 self-start sm:self-auto flex items-center gap-2 font-bold shadow-lg"
-        >
-          <RefreshCw className="w-4 h-4" /> Refresh List
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            onClick={() => setShowWalkInModal(true)}
+            className="btn-accent text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg shadow-purple-950/40"
+          >
+            <PlusCircle className="w-4 h-4" /> Register Walk-In Student
+          </button>
+          <button
+            onClick={fetchStudents}
+            className="btn-secondary text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg"
+          >
+            <RefreshCw className="w-4 h-4" /> Refresh List
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
@@ -436,12 +496,12 @@ export default function StaffStudentListPage() {
               </button>
             </div>
 
-            {/* DMT Dates Edit Form */}
+            {/* DMT Dates Edit Form (US-04, US-05, US-09) */}
             {modalMode === 'edit_dmt' && (
               <form onSubmit={handleSaveDmtDates} className="space-y-4 text-xs">
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">
-                    DMT Medical Examination Date:
+                    1. DMT Medical Examination Date (US-04):
                   </label>
                   <input
                     type="date"
@@ -468,7 +528,19 @@ export default function StaffStudentListPage() {
 
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">
-                    DMT Learner Written Exam Date:
+                    2. DMT Learner Registration Date (US-05):
+                  </label>
+                  <input
+                    type="date"
+                    value={dmtForm.learnerRegistrationDate}
+                    onChange={(e) => setDmtForm({ ...dmtForm, learnerRegistrationDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    3. DMT Learner Written Exam Date:
                   </label>
                   <input
                     type="date"
@@ -478,20 +550,38 @@ export default function StaffStudentListPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2.5 bg-white/5 p-3 rounded-xl border border-white/10">
-                  <input
-                    type="checkbox"
-                    id="staffExamPassed"
-                    checked={dmtForm.learnerExamPassed}
-                    onChange={(e) =>
-                      setDmtForm({ ...dmtForm, learnerExamPassed: e.target.checked })
-                    }
-                    className="w-4 h-4 text-primary rounded"
-                  />
-                  <label htmlFor="staffExamPassed" className="font-medium text-slate-200 cursor-pointer">
-                    Passed DMT Written Exam (Starts 3-Month Trial Waiting Window)
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    4. Learner Exam Status (US-09 — Trial Eligibility Gate):
                   </label>
+                  <select
+                    value={dmtForm.learnerExamStatus}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDmtForm({
+                        ...dmtForm,
+                        learnerExamStatus: val,
+                        learnerExamPassed: val === 'passed',
+                      });
+                    }}
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold"
+                  >
+                    <option value="not_taken">Not Taken / In Progress</option>
+                    <option value="passed">PASSED (Unlocks Practical Trial Lessons - US-09)</option>
+                    <option value="failed">FAILED</option>
+                  </select>
                 </div>
+
+                {dmtForm.learnerExamStatus === 'passed' && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-400/30 rounded-xl text-emerald-300 space-y-1">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Trial Lesson Access Unlocked
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      Marking as Passed satisfies US-09. If this is a Type 1 learner, they will now be able to book practical Trial lessons.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
@@ -573,6 +663,182 @@ export default function StaffStudentListPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Walk-In Student Registration Modal (US-03) */}
+      {showWalkInModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-cyan-400/30 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <PlusCircle className="w-5 h-5 text-cyan-400" /> Register Walk-In Student (US-03)
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Direct branch office intake for in-person applicants.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWalkInModal(false)}
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterWalkIn} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Full Name <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Nimal Perera"
+                    value={walkInForm.name}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    NIC Number <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 200119203948"
+                    value={walkInForm.nic}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, nic: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Contact Phone <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 0771234567"
+                    value={walkInForm.phone}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Email Address <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. student@gmail.com"
+                    value={walkInForm.email}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Assigned Branch
+                  </label>
+                  <select
+                    value={walkInForm.branch}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, branch: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  >
+                    <option value="Maharagama">Maharagama</option>
+                    <option value="Werahara">Werahara</option>
+                    <option value="Delgoda">Delgoda</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Student Category
+                  </label>
+                  <select
+                    value={walkInForm.studentType}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, studentType: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold text-cyan-300"
+                  >
+                    <option value="Type1_NewLearner">Type 1 — New Learner</option>
+                    <option value="Type2_TrialReady">Type 2 — Trial Ready</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Enrolled Course Package (US-14)
+                </label>
+                <select
+                  value={walkInForm.packageType}
+                  onChange={(e) => setWalkInForm({ ...walkInForm, packageType: e.target.value })}
+                  className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                >
+                  {availablePackages.length > 0 ? (
+                    availablePackages.map((pkg) => (
+                      <option key={pkg._id} value={pkg.type}>
+                        {pkg.name} — Rs. {pkg.price?.toLocaleString()} ({pkg.lessons} lessons)
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Car_Full">Car — Full License Package (15 lessons, Rs. 45,000)</option>
+                      <option value="Car_Refresher">Car — Refresher Package (6 lessons, Rs. 15,000)</option>
+                      <option value="HeavyVehicle_Bus">Heavy Vehicle (Bus) Package (15 lessons, Rs. 65,000)</option>
+                      <option value="Car_Individual">Car Individual Package (Rs. 3,000/hr)</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {walkInForm.studentType === 'Type2_TrialReady' && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400" /> Type 2 Advance Payment Collection
+                  </div>
+                  <label className="flex items-center gap-2 text-slate-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={walkInForm.advancePaymentCollected}
+                      onChange={(e) => setWalkInForm({ ...walkInForm, advancePaymentCollected: e.target.checked })}
+                      className="w-4 h-4 text-amber-500 rounded"
+                    />
+                    <span>Collected Rs. 5,000 Advance Payment in cash/slip at desk</span>
+                  </label>
+                  <p className="text-[10px] text-slate-400">
+                    If checked, the student account will be activated immediately upon registration.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowWalkInModal(false)}
+                  className="btn-secondary text-xs py-2 px-4"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingWalkIn}
+                  className="btn-accent text-xs py-2 px-5 font-bold shadow-lg"
+                >
+                  {submittingWalkIn ? 'Registering...' : 'Complete Walk-In Registration'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

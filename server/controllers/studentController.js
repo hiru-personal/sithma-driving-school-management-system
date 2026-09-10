@@ -96,7 +96,7 @@ exports.getStudentById = async (req, res) => {
   }
 };
 
-// @desc    Update DMT milestone dates (Medical, Registration, Written Exam)
+// @desc    Update DMT milestone dates (Medical, Registration, Written Exam) (US-04, US-05, US-09)
 // @route   PATCH /api/students/:id/dmt-dates
 // @access  Student (self) OR Staff/Admin
 exports.updateDmtDates = async (req, res) => {
@@ -128,32 +128,81 @@ exports.updateDmtDates = async (req, res) => {
       learnerExamDate,
       learnerExamPassed,
       learnerExamPassedDate,
+      learnerExamStatus,
     } = req.body;
 
-    if (medicalExamDate !== undefined) student.dmtDates.medicalExamDate = medicalExamDate;
-    if (medicalExamPassed !== undefined) student.dmtDates.medicalExamPassed = medicalExamPassed;
-    if (learnerRegistrationDate !== undefined)
+    const updates = [];
+
+    // US-04: Update student DMT medical exam date
+    if (medicalExamDate !== undefined) {
+      student.dmtDates.medicalExamDate = medicalExamDate;
+      updates.push(`Medical Exam Date (${new Date(medicalExamDate).toLocaleDateString()})`);
+    }
+    if (medicalExamPassed !== undefined) {
+      student.dmtDates.medicalExamPassed = medicalExamPassed;
+    }
+
+    // US-05: Update student DMT learner registration date
+    if (learnerRegistrationDate !== undefined) {
       student.dmtDates.learnerRegistrationDate = learnerRegistrationDate;
-    if (learnerExamDate !== undefined) student.dmtDates.learnerExamDate = learnerExamDate;
-    if (learnerExamPassed !== undefined) {
-      student.dmtDates.learnerExamPassed = learnerExamPassed;
-      if (learnerExamPassed && !student.dmtDates.learnerExamPassedDate) {
+      updates.push(`Learner Registration Date (${new Date(learnerRegistrationDate).toLocaleDateString()})`);
+    }
+
+    if (learnerExamDate !== undefined) {
+      student.dmtDates.learnerExamDate = learnerExamDate;
+      updates.push(`Learner Exam Date (${new Date(learnerExamDate).toLocaleDateString()})`);
+    }
+
+    // US-09: Learner exam status passed unlocks trial lesson booking for Type 1
+    if (learnerExamStatus !== undefined) {
+      student.learnerExamStatus = learnerExamStatus;
+      if (learnerExamStatus === 'passed') {
+        student.dmtDates.learnerExamPassed = true;
+        student.trialEligible = true;
         student.dmtDates.learnerExamPassedDate = learnerExamPassedDate || new Date();
+        updates.push('Learner Exam Status (Passed — Trial Lessons Unlocked)');
+      } else if (learnerExamStatus === 'failed') {
+        student.dmtDates.learnerExamPassed = false;
+        if (student.studentType === 'Type1_NewLearner') {
+          student.trialEligible = false;
+        }
+        updates.push('Learner Exam Status (Failed)');
+      }
+    } else if (learnerExamPassed !== undefined) {
+      student.dmtDates.learnerExamPassed = learnerExamPassed;
+      if (learnerExamPassed) {
+        student.learnerExamStatus = 'passed';
+        student.trialEligible = true;
+        if (!student.dmtDates.learnerExamPassedDate) {
+          student.dmtDates.learnerExamPassedDate = learnerExamPassedDate || new Date();
+        }
+        updates.push('Learner Exam (Passed — Trial Lessons Unlocked)');
+      } else {
+        student.learnerExamStatus = 'failed';
+        if (student.studentType === 'Type1_NewLearner') {
+          student.trialEligible = false;
+        }
+        updates.push('Learner Exam (Not Passed)');
       }
     }
-    if (learnerExamPassedDate !== undefined)
-      student.dmtDates.learnerExamPassedDate = learnerExamPassedDate;
 
+    if (learnerExamPassedDate !== undefined) {
+      student.dmtDates.learnerExamPassedDate = learnerExamPassedDate;
+    }
+
+    student.lastActivityDate = new Date();
     await student.save();
 
     // Trigger in-app notification to the student if updated by staff
     if (req.user.role !== 'student') {
+      const summaryText = updates.length > 0 ? updates.join(', ') : 'milestone details';
       await Notification.create({
         recipientId: student.userId._id,
         recipientRole: 'student',
         title: 'DMT Milestone Updated',
-        message: `Your DMT dates or exam statuses were updated by ${req.user.name}.`,
+        message: `Your DMT record was updated by ${req.user.name}: ${summaryText}.`,
         type: 'dmt-date',
+        link: '/student/dashboard',
       });
     }
 
@@ -161,7 +210,9 @@ exports.updateDmtDates = async (req, res) => {
       success: true,
       message: 'DMT milestone dates updated successfully',
       dmtDates: student.dmtDates,
-      trial: student.trial,
+      learnerExamStatus: student.learnerExamStatus,
+      trialEligible: student.trialEligible,
+      student,
     });
   } catch (error) {
     console.error('Error updating DMT dates:', error);
@@ -311,6 +362,22 @@ exports.updateStudentPackage = async (req, res) => {
       } else if (packageType === 'HeavyVehicle_Bus') {
         student.package.lessonsTotal = 15;
         student.package.priceTotal = 65000;
+      } else if (packageType === 'Car_Individual') {
+        const qty = customLessons || 1;
+        student.package.lessonsTotal = qty;
+        student.package.priceTotal = customPrice || qty * 3000;
+      } else if (packageType === 'Bike' || packageType === 'Bike_Individual') {
+        const qty = customLessons || 1;
+        student.package.lessonsTotal = qty;
+        student.package.priceTotal = customPrice || qty * 1500;
+      } else if (packageType === 'ThreeWheeler' || packageType === 'ThreeWheeler_Individual') {
+        const qty = customLessons || 1;
+        student.package.lessonsTotal = qty;
+        student.package.priceTotal = customPrice || qty * 2000;
+      } else if (packageType === 'HeavyVehicle_Individual') {
+        const qty = customLessons || 1;
+        student.package.lessonsTotal = qty;
+        student.package.priceTotal = customPrice || qty * 3500;
       } else if (customLessons) {
         student.package.lessonsTotal = customLessons;
         student.package.priceTotal = customPrice || customLessons * 1000;
@@ -475,3 +542,149 @@ exports.toggleAdvancePaid = async (req, res) => {
     });
   }
 };
+
+// @desc    Register a walk-in student manually (Data Entry Officer / Staff / Admin) (Path B)
+// @route   POST /api/students/walk-in
+// @access  Staff, Admin
+exports.registerWalkInStudent = async (req, res) => {
+  try {
+    const {
+      name,
+      username,
+      email,
+      phone,
+      nic,
+      branch = 'Maharagama',
+      studentType = 'Type1_NewLearner',
+      packageId,
+      packageType,
+      password = 'Password@123',
+      advancePaymentCollected = false, // Configurable: Desk payment collected and verified immediately
+      skipVerificationQueue = false,   // If true AND payment collected -> immediate active status; default false routes to queue
+      advanceAmount = 5000,
+    } = req.body;
+
+    if (!name || !email || !phone || !nic) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name, NIC, phone number, and email are required.',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanUsername = (username || cleanEmail.split('@')[0]).toLowerCase().trim();
+
+    const existingUser = await User.findOne({
+      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+    });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user account with this email address or username already exists.',
+      });
+    }
+
+    // Resolve package dynamically from Package collection (US-13, US-14)
+    let pkgDoc = null;
+    if (packageId) pkgDoc = await Package.findById(packageId);
+    if (!pkgDoc && packageType) pkgDoc = await Package.findOne({ type: packageType, isActive: true });
+    if (!pkgDoc) {
+      pkgDoc = await Package.findOne({ isActive: true });
+    }
+
+    const isType2 = studentType === 'Type2_TrialReady' || studentType === 'Type 2';
+    // Path B Verification Rule:
+    // If officer collected advance payment in person AND explicitly skips separate verification queue -> Active immediately.
+    // Otherwise, defaults to requires separate verification (pending_verification).
+    const isImmediateVerified = Boolean(advancePaymentCollected && skipVerificationQueue);
+    const initialStatus = isImmediateVerified ? 'active' : 'pending_verification';
+    const advanceStatus = isImmediateVerified ? 'verified' : (advancePaymentCollected ? 'pending' : 'pending');
+
+    const passwordHash = await User.hashPassword(password);
+    const user = await User.create({
+      name: name.trim(),
+      username: cleanUsername,
+      email: cleanEmail,
+      phone: phone.trim(),
+      nic: nic.trim(),
+      passwordHash,
+      role: 'student',
+      status: initialStatus,
+      branch,
+      createdBy: req.user._id,
+      mustChangePassword: false,
+    });
+
+    const advancePayAmount = parseFloat(advanceAmount) || 5000;
+    const resolvedRef = `WALKIN-ADV-${Date.now().toString().slice(-6)}`;
+
+    const student = await Student.create({
+      userId: user._id,
+      nic: nic.trim(),
+      studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
+      branch,
+      registrationStatus: isImmediateVerified ? 'registered' : 'pending_payment',
+      accountStatus: initialStatus,
+      advancePaymentStatus: advanceStatus,
+      advancePaymentReference: resolvedRef,
+      isAdvancePaid: isImmediateVerified,
+      isPremium: isImmediateVerified,
+      trialEligible: isType2,
+      packagePaymentStatus: 'none',
+      lessonsUnlocked: isImmediateVerified ? (pkgDoc ? pkgDoc.lessons : 15) : 0,
+      lessonsUsed: 0,
+      isWalkIn: true,
+      createdBy: req.user._id,
+      verifiedBy: isImmediateVerified ? req.user._id : null,
+      verifiedAt: isImmediateVerified ? new Date() : null,
+      lastActivityDate: new Date(),
+      package: {
+        type: pkgDoc ? pkgDoc.type : 'Car_Full',
+        packageId: pkgDoc ? pkgDoc._id : null,
+        lessonsTotal: pkgDoc ? pkgDoc.lessons : 15,
+        lessonsUsed: 0,
+        priceTotal: pkgDoc ? pkgDoc.price : 45000,
+        bonusLessons: pkgDoc ? pkgDoc.bonusLessons : { bike: 2, threeWheeler: 2 },
+        additionalLessonsRequested: 0,
+      },
+      dmtDates: {
+        learnerExamPassed: isType2,
+      },
+    });
+
+    // Create payment entry
+    await Payment.create({
+      studentId: student._id,
+      userId: user._id,
+      packageId: pkgDoc ? pkgDoc._id : null,
+      paymentType: 'advance',
+      slipImageUrl: '/uploads/slips/walkin-receipt.png',
+      amount: advancePayAmount,
+      bankName: 'Cash at Branch Desk',
+      transactionReference: resolvedRef,
+      status: isImmediateVerified ? 'confirmed' : 'pending',
+      verifiedBy: isImmediateVerified ? req.user._id : null,
+      verifiedAt: isImmediateVerified ? new Date() : null,
+      uploadedAt: new Date(),
+    });
+
+    const populated = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(201).json({
+      success: true,
+      message: isImmediateVerified
+        ? `Walk-in student ${name} registered and activated immediately with in-person payment.`
+        : `Walk-in student ${name} registered. Advance payment queued for verification (Account pending verification).`,
+      student: populated,
+    });
+  } catch (error) {
+    console.error('Walk-in registration error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to register walk-in student',
+    });
+  }
+};
+

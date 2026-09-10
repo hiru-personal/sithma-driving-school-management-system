@@ -8,6 +8,7 @@ const defaultPackages = [
     vehicleCategory: 'Light',
     lessons: 15,
     price: 45000,
+    isPerLesson: false,
     bonusLessons: { bike: 2, threeWheeler: 2 },
     eligibilityCriteria: 'None',
     notes: 'Includes 2 free Three-Wheeler lessons and 2 free Bike lessons as a bonus.',
@@ -18,31 +19,10 @@ const defaultPackages = [
     vehicleCategory: 'Light',
     lessons: 6,
     price: 15000,
+    isPerLesson: false,
     bonusLessons: { bike: 0, threeWheeler: 0 },
     eligibilityCriteria: 'Existing Car License holders',
     notes: 'For students who already hold a Car license and need refresher practice.',
-  },
-  {
-    name: 'Bike (Standalone Lessons)',
-    type: 'Bike',
-    vehicleCategory: 'Light',
-    lessons: 1,
-    price: 850,
-    isPerLesson: true,
-    bonusLessons: { bike: 0, threeWheeler: 0 },
-    eligibilityCriteria: 'None',
-    notes: 'Rs. 850 per lesson. Students can choose any number of lessons.',
-  },
-  {
-    name: 'Three-Wheeler (Standalone Lessons)',
-    type: 'ThreeWheeler',
-    vehicleCategory: 'Light',
-    lessons: 1,
-    price: 1000,
-    isPerLesson: true,
-    bonusLessons: { bike: 0, threeWheeler: 0 },
-    eligibilityCriteria: 'None',
-    notes: 'Rs. 1,000 per lesson. Students can choose any number of lessons.',
   },
   {
     name: 'Heavy Vehicle (Bus) Package',
@@ -50,21 +30,103 @@ const defaultPackages = [
     vehicleCategory: 'Heavy',
     lessons: 15,
     price: 65000,
+    isPerLesson: false,
     bonusLessons: { bike: 0, threeWheeler: 0 },
     eligibilityCriteria: 'Must have held Light Vehicle license for 2+ years',
     notes: '15 lessons. Strict requirement: minimum 2 years on a Light Vehicle license.',
   },
+  {
+    name: 'Bike (Standalone)',
+    type: 'Bike',
+    vehicleCategory: 'Light',
+    lessons: 1,
+    price: 850,
+    isPerLesson: true,
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    eligibilityCriteria: 'None',
+    notes: 'Priced per lesson, Rs. 850/lesson, flexible quantity.',
+  },
+  {
+    name: 'Three-Wheeler (Standalone)',
+    type: 'ThreeWheeler',
+    vehicleCategory: 'Light',
+    lessons: 1,
+    price: 1000,
+    isPerLesson: true,
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    eligibilityCriteria: 'None',
+    notes: 'Priced per lesson, Rs. 1,000/lesson, flexible quantity.',
+  },
+  {
+    name: 'Car (Auto/Manual) — Individual Package',
+    type: 'Car_Individual',
+    vehicleCategory: 'Light',
+    lessons: 1,
+    price: 3000,
+    isPerLesson: true,
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    eligibilityCriteria: 'None',
+    notes: 'Car(Auto/Manual) one lesson per hour - Rs.3000.00. Flexible individual hourly sessions.',
+  },
+  {
+    name: 'Bike — Individual Package',
+    type: 'Bike_Individual',
+    vehicleCategory: 'Light',
+    lessons: 1,
+    price: 1500,
+    isPerLesson: true,
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    eligibilityCriteria: 'None',
+    notes: 'Bike one lesson per hour - Rs.1500.00. Balance, clutch control, and Figure-8 training.',
+  },
+  {
+    name: 'Three Wheel — Individual Package',
+    type: 'ThreeWheeler_Individual',
+    vehicleCategory: 'Light',
+    lessons: 1,
+    price: 2000,
+    isPerLesson: true,
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    eligibilityCriteria: 'None',
+    notes: 'Three Wheel one lesson per hour - Rs.2000.00. Steering, tight cornering, and reverse bay parking.',
+  },
+  {
+    name: 'Heavy Vehicle — Individual Package',
+    type: 'HeavyVehicle_Individual',
+    vehicleCategory: 'Heavy',
+    lessons: 1,
+    price: 3500,
+    isPerLesson: true,
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    eligibilityCriteria: 'Must have held Light Vehicle license for 2+ years',
+    notes: 'Heavy Vehicle one lesson per hour - Rs.3500. Commercial bus/lorry handling and air brake mechanics.',
+  },
 ];
 
-// @desc    Get all packages (Seeds automatically if collection is empty)
+// @desc    Get all packages (Seeds/syncs automatically)
 // @route   GET /api/packages
 // @access  Public
 exports.getAllPackages = async (req, res) => {
   try {
-    let packages = await Package.find({ isActive: true }).sort({ price: 1 });
+    let packages = await Package.find({ isActive: true }).sort({ isPerLesson: 1, price: 1 });
 
     if (packages.length === 0) {
       packages = await Package.insertMany(defaultPackages);
+    } else {
+      // Ensure all individual and comprehensive packages are present and up to date
+      for (const defPkg of defaultPackages) {
+        const exists = await Package.findOne({ type: defPkg.type });
+        if (!exists) {
+          await Package.create(defPkg);
+        } else if (defPkg.isPerLesson && (exists.price !== defPkg.price || exists.name !== defPkg.name)) {
+          exists.name = defPkg.name;
+          exists.price = defPkg.price;
+          exists.notes = defPkg.notes;
+          exists.isPerLesson = true;
+          await exists.save();
+        }
+      }
+      packages = await Package.find({ isActive: true }).sort({ isPerLesson: 1, price: 1 });
     }
 
     return res.status(200).json({

@@ -1,9 +1,11 @@
 const QuizQuestion = require('../models/QuizQuestion');
 const QuizAttempt = require('../models/QuizAttempt');
 const Student = require('../models/Student');
+const jwt = require('jsonwebtoken');
 
 // Sample initial multilingual question seed bank
 const initialQuestions = [
+
   // English - Light Vehicle
   {
     questionText: 'What is the maximum speed limit for motor cars on urban roads in Sri Lanka unless otherwise posted?',
@@ -110,11 +112,31 @@ const initialQuestions = [
 ];
 
 // @desc    Get questions for practice quiz (Seeds if empty)
+// @desc    Get questions for practice quiz (Seeds if empty)
 // @route   GET /api/quiz/questions
 // @access  Public / Authenticated
 exports.getQuizQuestions = async (req, res) => {
   try {
     const { language = 'English', vehicleCategory = 'Light' } = req.query;
+
+    // Type 1 Scope Restriction: Type 1 students MUST NOT access exam questions
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sithma_super_secret_jwt_key_2026_ispm');
+        if (decoded && decoded.id) {
+          const student = await Student.findOne({ userId: decoded.id });
+          if (student && student.studentType === 'Type1_NewLearner') {
+            return res.status(403).json({
+              success: false,
+              message: 'Access Restricted: Type 1 (New Learner) accounts are designated for lesson booking only and cannot access exam questions or quizzes.',
+            });
+          }
+        }
+      } catch (e) {
+        // Token parse error, proceed
+      }
+    }
 
     let count = await QuizQuestion.countDocuments({});
     if (count === 0) {
@@ -160,6 +182,14 @@ exports.submitQuizAttempt = async (req, res) => {
     const student = await Student.findOne({ userId: req.user._id });
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student profile not found' });
+    }
+
+    // Type 1 Scope Restriction
+    if (student.studentType === 'Type1_NewLearner') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Restricted: Type 1 (New Learner) accounts cannot access or submit exam quizzes.',
+      });
     }
 
     // Fetch questions with correct answers from DB
@@ -229,6 +259,14 @@ exports.getStudentQuizAttempts = async (req, res) => {
     const student = await Student.findById(req.params.id);
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    // Type 1 Scope Restriction
+    if (student.studentType === 'Type1_NewLearner') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Restricted: Type 1 accounts do not maintain exam quiz records.',
+      });
     }
 
     const attempts = await QuizAttempt.find({ studentId: student._id })

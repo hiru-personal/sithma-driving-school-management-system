@@ -33,9 +33,14 @@ const studentSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    nic: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     studentType: {
       type: String,
-      enum: ['Type1_NewLearner', 'Type2_TrialReady'],
+      enum: ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'],
       required: true,
       default: 'Type1_NewLearner',
     },
@@ -43,6 +48,47 @@ const studentSchema = new mongoose.Schema(
       type: String,
       enum: ['Maharagama', 'Werahara', 'Delgoda'],
       required: true,
+    },
+    accountStatus: {
+      type: String,
+      enum: ['pending_verification', 'active'],
+      default: 'active',
+    },
+    advancePaymentStatus: {
+      type: String,
+      enum: ['none', 'pending', 'verified', 'rejected'],
+      default: 'none',
+    },
+    learnerExamStatus: {
+      type: String,
+      enum: ['not_taken', 'passed', 'failed'],
+      default: 'not_taken',
+    },
+    trialEligible: {
+      type: Boolean,
+      default: false,
+    },
+    packagePaymentStatus: {
+      type: String,
+      enum: ['none', 'pending', 'confirmed'],
+      default: 'none',
+    },
+    paymentPlan: {
+      type: String,
+      enum: ['full', 'monthly'],
+      default: 'full',
+    },
+    lessonsUnlocked: {
+      type: Number,
+      default: 0,
+    },
+    lessonsUsed: {
+      type: Number,
+      default: 0,
+    },
+    lastActivityDate: {
+      type: Date,
+      default: Date.now,
     },
     // DMT Milestones Tracking
     dmtDates: {
@@ -61,6 +107,7 @@ const studentSchema = new mongoose.Schema(
         default: 0,
         max: 3,
       },
+      trialDate: { type: Date, default: null },
       eligibleFromDate: { type: Date, default: null },
       deadlineDate: { type: Date, default: null },
       licenseObtained: { type: Boolean, default: false },
@@ -74,7 +121,17 @@ const studentSchema = new mongoose.Schema(
     package: {
       type: {
         type: String,
-        enum: ['Car_Full', 'Car_Refresher', 'Bike', 'ThreeWheeler', 'HeavyVehicle_Bus'],
+        enum: [
+          'Car_Full',
+          'Car_Refresher',
+          'Bike',
+          'ThreeWheeler',
+          'HeavyVehicle_Bus',
+          'Car_Individual',
+          'Bike_Individual',
+          'ThreeWheeler_Individual',
+          'HeavyVehicle_Individual',
+        ],
         required: true,
       },
       packageId: {
@@ -120,6 +177,24 @@ const studentSchema = new mongoose.Schema(
       type: Number,
       default: 5000,
     },
+    advancePaymentReference: {
+      type: String,
+      default: '',
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -128,6 +203,31 @@ const studentSchema = new mongoose.Schema(
 
 // Pre-save hook to compute DMT deadlines and enforce rules
 studentSchema.pre('save', function (next) {
+  this.lastActivityDate = new Date();
+
+  // Sync lessonsUsed with package.lessonsUsed
+  if (this.package) {
+    if (this.lessonsUsed !== undefined && this.package.lessonsUsed !== this.lessonsUsed) {
+      this.package.lessonsUsed = this.lessonsUsed;
+    } else if (this.package.lessonsUsed !== undefined) {
+      this.lessonsUsed = this.package.lessonsUsed;
+    }
+  }
+
+  // Derive trialEligible status
+  if (this.studentType === 'Type2_TrialReady' || this.studentType === 'Type 2') {
+    this.trialEligible = true;
+    this.learnerExamStatus = 'passed';
+    if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
+  } else {
+    if (this.learnerExamStatus === 'passed' || this.dmtDates?.learnerExamPassed) {
+      this.trialEligible = true;
+      this.learnerExamStatus = 'passed';
+      if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
+    } else {
+      this.trialEligible = false;
+    }
+  }
   // 1. Calculate Heavy Vehicle Eligibility if lightVehicleLicenseDate is provided (2+ years)
   if (this.lightVehicleLicenseDate) {
     const twoYearsAgo = new Date();

@@ -22,6 +22,7 @@ export default function PackageManagementPage() {
   const [loading, setLoading] = useState(true);
   const [editingPackage, setEditingPackage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'comprehensive' | 'individual'
 
   const [formData, setFormData] = useState({
     name: '',
@@ -29,6 +30,7 @@ export default function PackageManagementPage() {
     vehicleCategory: 'Light',
     lessons: 15,
     price: 45000,
+    isPerLesson: false,
     bonusLessons: { bike: 0, threeWheeler: 0 },
     eligibilityCriteria: 'None',
     notes: '',
@@ -56,10 +58,11 @@ export default function PackageManagementPage() {
     setEditingPackage(null);
     setFormData({
       name: '',
-      type: 'Car_Full',
+      type: 'Car_Individual',
       vehicleCategory: 'Light',
-      lessons: 15,
-      price: 45000,
+      lessons: 1,
+      price: 3000,
+      isPerLesson: true,
       bonusLessons: { bike: 0, threeWheeler: 0 },
       eligibilityCriteria: 'None',
       notes: '',
@@ -75,12 +78,19 @@ export default function PackageManagementPage() {
       vehicleCategory: pkg.vehicleCategory,
       lessons: pkg.lessons,
       price: pkg.price,
+      isPerLesson: pkg.isPerLesson || false,
       bonusLessons: pkg.bonusLessons || { bike: 0, threeWheeler: 0 },
       eligibilityCriteria: pkg.eligibilityCriteria || 'None',
       notes: pkg.notes || '',
     });
     setIsModalOpen(true);
   };
+
+  const filteredPackages = packages.filter((pkg) => {
+    if (filterTab === 'comprehensive') return !pkg.isPerLesson;
+    if (filterTab === 'individual') return pkg.isPerLesson;
+    return true;
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -142,6 +152,41 @@ export default function PackageManagementPage() {
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+        <button
+          onClick={() => setFilterTab('all')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            filterTab === 'all'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+              : 'text-slate-400 hover:text-white bg-white/5'
+          }`}
+        >
+          All Packages ({packages.length})
+        </button>
+        <button
+          onClick={() => setFilterTab('individual')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            filterTab === 'individual'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+              : 'text-slate-400 hover:text-white bg-white/5'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          Individual Packages (Hourly) ({packages.filter((p) => p.isPerLesson).length})
+        </button>
+        <button
+          onClick={() => setFilterTab('comprehensive')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            filterTab === 'comprehensive'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+              : 'text-slate-400 hover:text-white bg-white/5'
+          }`}
+        >
+          Full Course Packages ({packages.filter((p) => !p.isPerLesson).length})
+        </button>
+      </div>
+
       {/* Packages Grid */}
       {loading ? (
         <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
@@ -149,11 +194,16 @@ export default function PackageManagementPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {packages.map((pkg) => (
+          {filteredPackages.map((pkg) => (
             <div key={pkg._id} className="card card-hover flex flex-col justify-between space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="badge badge-info text-[10px]">{pkg.vehicleCategory} Vehicle</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="badge badge-info text-[10px]">{pkg.vehicleCategory} Vehicle</span>
+                    {pkg.isPerLesson && (
+                      <span className="badge badge-warning text-[10px]">Hourly / Per Lesson</span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => openEditModal(pkg)}
@@ -177,12 +227,13 @@ export default function PackageManagementPage() {
 
                 <div className="text-2xl font-black text-accent mb-3">
                   Rs. {pkg.price?.toLocaleString()}
+                  {pkg.isPerLesson && <span className="text-xs font-semibold text-cyan-300 ml-1">/ hr</span>}
                 </div>
 
                 <div className="space-y-1.5 text-xs text-slate-300 border-t border-white/10 pt-3">
                   <p className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <strong>{pkg.lessons}</strong> Practical On-Road Lessons
+                    <strong>{pkg.lessons}</strong> {pkg.isPerLesson ? 'Hour Practical Lesson' : 'Practical On-Road Lessons'}
                   </p>
                   {pkg.bonusLessons?.bike > 0 && (
                     <p className="flex items-center gap-2 text-amber-300">
@@ -234,7 +285,7 @@ export default function PackageManagementPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Car Full Driving Course"
+                  placeholder="e.g. Car (Auto/Manual) — Individual Package"
                   className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
                 />
               </div>
@@ -247,11 +298,13 @@ export default function PackageManagementPage() {
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
                   >
+                    <option value="Car_Individual">Car (Auto/Manual) — Individual</option>
+                    <option value="Bike">Bike — Individual / Standard</option>
+                    <option value="ThreeWheeler">Three Wheel — Individual / Standard</option>
+                    <option value="HeavyVehicle_Individual">Heavy Vehicle — Individual</option>
                     <option value="Car_Full">Car Full Course</option>
-                    <option value="Car_TrialOnly">Car Trial Only</option>
-                    <option value="Bike_Only">Bike Only</option>
-                    <option value="ThreeWheeler_Only">3-Wheeler Only</option>
-                    <option value="HeavyVehicle_Bus">Heavy Vehicle (Bus)</option>
+                    <option value="Car_Refresher">Car Refresher Course</option>
+                    <option value="HeavyVehicle_Bus">Heavy Vehicle (Bus) Full Course</option>
                   </select>
                 </div>
                 <div>
@@ -265,6 +318,20 @@ export default function PackageManagementPage() {
                     <option value="Heavy">Heavy Vehicle</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 p-2.5 bg-white/5 border border-white/10 rounded-xl cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPerLesson}
+                    onChange={(e) => setFormData({ ...formData, isPerLesson: e.target.checked })}
+                    className="rounded border-white/20 text-cyan-500 focus:ring-0"
+                  />
+                  <span className="text-xs text-slate-200 font-semibold">
+                    Individual Hourly Package (One lesson per hour)
+                  </span>
+                </label>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

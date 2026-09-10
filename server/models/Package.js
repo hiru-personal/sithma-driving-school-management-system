@@ -9,7 +9,17 @@ const packageSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['Car_Full', 'Car_Refresher', 'Bike', 'ThreeWheeler', 'HeavyVehicle_Bus'],
+      enum: [
+        'Car_Full',
+        'Car_Refresher',
+        'Bike',
+        'ThreeWheeler',
+        'HeavyVehicle_Bus',
+        'Car_Individual',
+        'Bike_Individual',
+        'ThreeWheeler_Individual',
+        'HeavyVehicle_Individual',
+      ],
       required: true,
       unique: true,
     },

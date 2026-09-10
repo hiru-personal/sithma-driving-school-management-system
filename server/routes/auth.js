@@ -2,22 +2,24 @@ const express = require('express');
 const router = express.Router();
 const {
   registerStudent,
-  registerStaff,
   login,
+  logout,
   getMe,
-  demoLogin,
+  changePassword,
+  forgotPassword,
+  resetPassword,
 } = require('../controllers/authController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
-// Public routes
+// Public authentication routes
 router.post('/register', registerStudent);
 router.post('/login', login);
-router.post('/demo-login/:role', demoLogin);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
-// Admin-only route for creating staff & instructors (or initial bootstrap)
-router.post('/register-staff', registerStaff);
-
-// Protected routes
+// Protected authentication routes
 router.get('/me', authenticate, getMe);
+router.post('/logout', authenticate, logout);
+router.post('/change-password', authenticate, changePassword);
 
 module.exports = router;

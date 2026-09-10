@@ -26,12 +26,16 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import InstructorSchedulePage from './pages/InstructorSchedulePage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsAnalyticsPage from './pages/ReportsAnalyticsPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import AdminAccountsPage from './pages/AdminAccountsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PremiumLockOverlay from './components/PremiumLockOverlay';
+import PaymentGatewayPage from './pages/PaymentGatewayPage';
 import { Clock } from 'lucide-react';
 
-function ProtectedRoute({ children, allowedRoles }) {
-  const { user, isPremium, loading } = useAuth();
+function ProtectedRoute({ children, allowedRoles, blockType1 = false }) {
+  const { user, student, isPremium, loading } = useAuth();
 
   if (loading) {
     return (
@@ -54,6 +58,17 @@ function ProtectedRoute({ children, allowedRoles }) {
   // Learner Advance Payment & Premium Access Gate
   if (user.role === 'student' && !isPremium) {
     return <PremiumLockOverlay />;
+  }
+
+  // Type 1 restriction: cannot access quiz/exam routes anywhere
+  const isType1 =
+    student?.studentType === 'Type1_NewLearner' ||
+    student?.studentType === 'type1' ||
+    student?.studentType === 'Type 1' ||
+    user?.studentType === 'Type1_NewLearner' ||
+    user?.studentType === 'type1';
+  if (blockType1 && isType1) {
+    return <Navigate to="/student/dashboard" replace />;
   }
 
   return children;
@@ -79,6 +94,9 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/payment-gateway" element={<PaymentGatewayPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Student Protected Routes */}
             <Route
@@ -122,9 +140,17 @@ export default function App() {
               }
             />
             <Route
-              path="/student/quiz"
+              path="/student/payments"
               element={
                 <ProtectedRoute allowedRoles={['student']}>
+                  <UploadPaymentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/quiz"
+              element={
+                <ProtectedRoute allowedRoles={['student']} blockType1>
                   <QuizSetupPage />
                 </ProtectedRoute>
               }
@@ -132,7 +158,7 @@ export default function App() {
             <Route
               path="/student/quiz/take"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} blockType1>
                   <QuizTakingPage />
                 </ProtectedRoute>
               }
@@ -140,7 +166,7 @@ export default function App() {
             <Route
               path="/student/quiz/result"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} blockType1>
                   <QuizResultPage />
                 </ProtectedRoute>
               }
@@ -148,7 +174,7 @@ export default function App() {
             <Route
               path="/student/quiz/history"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} blockType1>
                   <QuizHistoryPage />
                 </ProtectedRoute>
               }
@@ -204,12 +230,20 @@ export default function App() {
               }
             />
 
-            {/* Admin Executive Dashboard */}
+            {/* Admin Executive Dashboard & Account Management */}
             <Route
               path="/admin/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/accounts"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminAccountsPage />
                 </ProtectedRoute>
               }
             />

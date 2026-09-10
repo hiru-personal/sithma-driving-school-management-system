@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 import {
   User,
   ShieldCheck,
@@ -16,14 +17,28 @@ import {
   Clock,
   Car,
   Key,
+  PlusCircle,
+  MinusCircle,
+  ArrowRight,
+  ShieldAlert,
+  DollarSign,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 export default function StudentProfilePage() {
-  const { user, student } = useAuth();
+  const { user, student, updateStudentData } = useAuth();
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState(user?.phone || '');
+
+  // Buy Additional Lessons State
+  const [selectedExtraCount, setSelectedExtraCount] = useState(2);
+  const [extraPaymentMethod, setExtraPaymentMethod] = useState('online'); // 'online' | 'slip'
+  const [extraBankName, setExtraBankName] = useState('Bank of Ceylon');
+  const [extraSlipRef, setExtraSlipRef] = useState('');
+  const [buyingLoading, setBuyingLoading] = useState(false);
 
   const handlePrintCard = () => {
     window.print();
@@ -33,6 +48,41 @@ export default function StudentProfilePage() {
     e.preventDefault();
     toast.success('Contact telephone updated');
     setIsEditingPhone(false);
+  };
+
+  const calculateExtraTotal = (count) => {
+    if (count === 5) return 11500; // Special 5-pack discount
+    return count * 2500;
+  };
+
+  const handleBuyExtraLessons = async (e) => {
+    e.preventDefault();
+    if (extraPaymentMethod === 'slip' && !extraSlipRef.trim()) {
+      toast.error('Please enter the bank deposit slip reference number');
+      return;
+    }
+
+    setBuyingLoading(true);
+    try {
+      const res = await api.post('/payments/buy-additional-lessons', {
+        lessonCount: selectedExtraCount,
+        paymentMethod: extraPaymentMethod,
+        bankName: extraBankName,
+        transactionReference: extraSlipRef.trim(),
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        if (res.data.student) {
+          updateStudentData(res.data.student);
+        }
+        setExtraSlipRef('');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to purchase additional lessons');
+    } finally {
+      setBuyingLoading(false);
+    }
   };
 
   return (
@@ -165,6 +215,232 @@ export default function StudentProfilePage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* BUY ADDITIONAL DRIVING LESSONS MODULE */}
+          <div className="card p-6 space-y-6 border-2 border-cyan-400/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-purple-950/40 shadow-[0_8px_32px_0_rgba(6,182,212,0.15)] relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div>
+                <span className="badge badge-accent text-[10px] font-bold uppercase tracking-wider mb-1">
+                  Extra Driving Practice
+                </span>
+                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <PlusCircle className="w-5 h-5 text-accent" /> Buy Additional Practical Lessons
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Package lessons not enough? Purchase additional 1-on-1 practical driving sessions directly through your profile.
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-slate-400 block font-semibold">Current Available:</span>
+                <span className="text-lg font-black text-cyan-300">
+                  {Math.max(
+                    0,
+                    (student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
+                      ? student.lessonsUnlocked
+                      : (student?.package?.lessonsTotal || 15) + (student?.package?.additionalLessonsRequested || 0)) -
+                      (student?.lessonsUsed || student?.package?.lessonsUsed || 0)
+                  )}{' '}
+                  Lessons
+                </span>
+              </div>
+            </div>
+
+            {/* Lesson Balance Overview Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
+                <span className="text-slate-400 text-[10px] block">Base Package</span>
+                <span className="font-bold text-white text-sm">{student?.package?.lessonsTotal || 15}</span>
+              </div>
+              <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-400/20 text-center">
+                <span className="text-cyan-300 text-[10px] block">Extra Added</span>
+                <span className="font-bold text-cyan-300 text-sm">+{student?.package?.additionalLessonsRequested || 0}</span>
+              </div>
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
+                <span className="text-slate-400 text-[10px] block">Completed</span>
+                <span className="font-bold text-slate-300 text-sm">{student?.lessonsUsed || student?.package?.lessonsUsed || 0}</span>
+              </div>
+              <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-400/20 text-center">
+                <span className="text-emerald-300 text-[10px] block">Ready to Book</span>
+                <span className="font-bold text-emerald-300 text-sm">
+                  {Math.max(
+                    0,
+                    (student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
+                      ? student.lessonsUnlocked
+                      : (student?.package?.lessonsTotal || 15) + (student?.package?.additionalLessonsRequested || 0)) -
+                      (student?.lessonsUsed || student?.package?.lessonsUsed || 0)
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleBuyExtraLessons} className="space-y-5">
+              {/* Select Lesson Count */}
+              <div>
+                <label className="block text-xs font-bold text-white mb-2">
+                  1. Choose Lesson Pack:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { count: 1, price: 2500, label: '1 Lesson' },
+                    { count: 2, price: 5000, label: '2 Lessons' },
+                    { count: 3, price: 7500, label: '3 Lessons' },
+                    { count: 5, price: 11500, label: '5 Lessons', badge: 'Save Rs. 1,000' },
+                  ].map((pkg) => (
+                    <button
+                      type="button"
+                      key={pkg.count}
+                      onClick={() => setSelectedExtraCount(pkg.count)}
+                      className={`p-3 rounded-2xl border text-center transition-all flex flex-col justify-between ${
+                        selectedExtraCount === pkg.count
+                          ? 'border-cyan-400 bg-cyan-500/15 ring-1 ring-cyan-400 shadow-md'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className="font-bold text-xs text-white">{pkg.label}</span>
+                        {selectedExtraCount === pkg.count && (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                        )}
+                      </div>
+                      <div className="text-sm font-black text-accent">
+                        Rs. {pkg.price.toLocaleString()}
+                      </div>
+                      {pkg.badge ? (
+                        <span className="text-[9px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-400/20 inline-block">
+                          {pkg.badge}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 mt-1">Rs. 2,500 / hr</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Method Selector */}
+              <div>
+                <label className="block text-xs font-bold text-white mb-2">
+                  2. Choose Payment Method:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setExtraPaymentMethod('online')}
+                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                      extraPaymentMethod === 'online'
+                        ? 'border-cyan-400 bg-cyan-500/15 ring-1 ring-cyan-400 text-cyan-200'
+                        : 'border-white/10 bg-white/5 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4 text-cyan-400" /> Instant Online Card Payment
+                      </span>
+                      {extraPaymentMethod === 'online' && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      Unlocks additional lessons <strong>immediately</strong> upon submission.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setExtraPaymentMethod('slip')}
+                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                      extraPaymentMethod === 'slip'
+                        ? 'border-amber-400 bg-amber-500/15 ring-1 ring-amber-400 text-amber-200'
+                        : 'border-white/10 bg-white/5 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-amber-400" /> Bank Transfer / Deposit Slip
+                      </span>
+                      {extraPaymentMethod === 'slip' && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      Submit deposit reference for branch Data Entry Officer verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Slip Fields (if slip chosen) */}
+              {extraPaymentMethod === 'slip' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3.5 bg-white/5 rounded-2xl border border-white/10">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Deposited Bank
+                    </label>
+                    <select
+                      value={extraBankName}
+                      onChange={(e) => setExtraBankName(e.target.value)}
+                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
+                    >
+                      <option value="Bank of Ceylon">Bank of Ceylon (BOC)</option>
+                      <option value="Commercial Bank">Commercial Bank</option>
+                      <option value="Sampath Bank">Sampath Bank</option>
+                      <option value="Hatton National Bank">Hatton National Bank (HNB)</option>
+                      <option value="People's Bank">People's Bank</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Deposit Reference Number <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. BOC-DEP-99401"
+                      value={extraSlipRef}
+                      onChange={(e) => setExtraSlipRef(e.target.value)}
+                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Checkout Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
+                <div>
+                  <span className="text-xs text-slate-400 block">Total Purchase Cost:</span>
+                  <span className="text-xl font-black text-accent">
+                    Rs. {calculateExtraTotal(selectedExtraCount).toLocaleString()}
+                  </span>
+                  <span className="text-[11px] text-slate-400 ml-2">
+                    ({selectedExtraCount} Practical Lesson{selectedExtraCount > 1 ? 's' : ''})
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Link
+                    to="/student/lessons/book"
+                    className="btn-secondary text-xs py-2.5 px-4 font-bold"
+                  >
+                    Go to Booking Calendar
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={buyingLoading}
+                    className="btn-accent text-xs py-2.5 px-5 font-bold shadow-lg flex items-center gap-2"
+                  >
+                    {buyingLoading ? (
+                      'Processing...'
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4" />
+                        Confirm & Buy {selectedExtraCount} Lesson{selectedExtraCount > 1 ? 's' : ''}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
 
           {/* DMT Milestone Summary */}
