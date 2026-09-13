@@ -16,6 +16,20 @@ import {
   Sparkles,
   ShieldCheck,
   X,
+  CreditCard,
+  FileText,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Hash,
+  DollarSign,
+  Clock,
+  ExternalLink,
+  XCircle,
+  File,
+  Package as PackageIcon,
+  Car,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -31,6 +45,14 @@ export default function StaffStudentListPage() {
   // Selected Student for Detail / Update Modal
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [modalMode, setModalMode] = useState('view'); // 'view' | 'edit_dmt' | 'record_trial'
+
+  // Payment Verification & Slip Review Modal State
+  const [verifyModalStudent, setVerifyModalStudent] = useState(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [studentPaymentsList, setStudentPaymentsList] = useState([]);
+  const [loadingStudentPayments, setLoadingStudentPayments] = useState(false);
 
   // Walk-in Student Registration Modal State (US-03)
   const [showWalkInModal, setShowWalkInModal] = useState(false);
@@ -186,15 +208,40 @@ export default function StaffStudentListPage() {
     }
   };
 
-  const handleTogglePremium = async (studentId) => {
+  const openVerifyPaymentModal = async (student) => {
+    setVerifyModalStudent(student);
+    setShowRejectInput(false);
+    setRejectionReason('');
+    setStudentPaymentsList(student.payments || (student.latestPayment ? [student.latestPayment] : []));
+    setLoadingStudentPayments(true);
     try {
-      const res = await api.patch(`/students/${studentId}/toggle-premium`);
+      const res = await api.get(`/payments/student/${student._id}`);
+      if (res.data.success && res.data.payments?.length > 0) {
+        setStudentPaymentsList(res.data.payments);
+      }
+    } catch (err) {
+      console.log('Error fetching student payments:', err);
+    } finally {
+      setLoadingStudentPayments(false);
+    }
+  };
+
+  const handleVerifyStudentPayment = async (studentId, action = 'verify') => {
+    setVerifyingPayment(true);
+    try {
+      const res = await api.patch(`/students/${studentId}/toggle-premium`, {
+        action,
+        rejectionReason: action === 'reject' ? rejectionReason : '',
+      });
       if (res.data.success) {
         toast.success(res.data.message);
+        setVerifyModalStudent(null);
         fetchStudents();
       }
     } catch (err) {
-      toast.error('Failed to update premium status');
+      toast.error(err.response?.data?.message || 'Failed to update payment status');
+    } finally {
+      setVerifyingPayment(false);
     }
   };
 
@@ -416,6 +463,12 @@ export default function StaffStudentListPage() {
                               🔒 Advance Pending
                             </span>
                           )}
+
+                          {st.latestPayment?.slipImageUrl && !st.isAdvancePaid && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-400/20 font-medium">
+                              <FileText className="w-3 h-3 text-cyan-400" /> Slip Uploaded
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -423,7 +476,15 @@ export default function StaffStudentListPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleTogglePremium(st._id)}
+                            onClick={() => openVerifyPaymentModal(st)}
+                            className="p-2 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
+                            title="Inspect Student Registration Details & Payment Slip"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => openVerifyPaymentModal(st)}
                             className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                               st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30'
@@ -431,8 +492,8 @@ export default function StaffStudentListPage() {
                             }`}
                             title={
                               st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
-                                ? 'Revoke Premium Access'
-                                : 'Verify Advance Payment & Upgrade to Premium User'
+                                ? 'View Payment Slip & Registration Records'
+                                : 'Review Payment Slip, Student Details & Verify Payment'
                             }
                           >
                             <ShieldCheck className="w-4 h-4 text-amber-300" />
@@ -839,6 +900,327 @@ export default function StaffStudentListPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Verification & Slip Review Modal */}
+      {verifyModalStudent && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.9)] max-w-4xl w-full p-6 sm:p-8 space-y-6 my-8 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className="badge badge-warning text-xs font-bold uppercase tracking-wider">
+                    Registration &amp; Slip Review
+                  </span>
+                  <span className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-400/30">
+                    Ref: {verifyModalStudent.latestPayment?.transactionReference || verifyModalStudent.advancePaymentReference || 'ADV-PENDING'}
+                  </span>
+                  {verifyModalStudent.isAdvancePaid && (
+                    <span className="badge badge-success text-xs font-bold">
+                      👑 Account Active &amp; Verified
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
+                  <CreditCard className="w-6 h-6 text-amber-400" /> Verify Student Payment &amp; Review Slip
+                </h3>
+                <p className="text-xs text-slate-300 mt-1">
+                  Inspect student registration details, check the bank deposit slip document, and verify to activate student portal access.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVerifyModalStudent(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Grid: 2 Columns */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Student Details (5 cols) */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-cyan-300 border-b border-white/10 pb-2">
+                  <User className="w-4 h-4 text-cyan-400" /> Student Profile &amp; Enrollment Records
+                </div>
+
+                <div className="space-y-3 bg-white/5 p-4 rounded-2xl border border-white/10 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[11px] font-semibold">Full Name</span>
+                    <span className="text-sm font-bold text-white">{verifyModalStudent.userId?.name || 'N/A'}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
+                    <div>
+                      <span className="text-slate-400 block text-[11px] font-semibold">Contact Phone</span>
+                      <span className="font-semibold text-white">{verifyModalStudent.userId?.phone || 'Not provided'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px] font-semibold">NIC / Passport</span>
+                      <span className="font-mono text-cyan-300 font-bold">{verifyModalStudent.nic || verifyModalStudent.userId?.nic || 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 border-t border-white/5">
+                    <span className="text-slate-400 block text-[11px] font-semibold">Email Address</span>
+                    <span className="text-white font-medium break-all">{verifyModalStudent.userId?.email || 'N/A'}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
+                    <div>
+                      <span className="text-slate-400 block text-[11px] font-semibold">Registered Branch</span>
+                      <span className="badge badge-info text-xs font-bold mt-0.5">{verifyModalStudent.branch} Branch</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px] font-semibold">Learner Category</span>
+                      <span className="text-xs font-bold text-cyan-300 mt-0.5 block">
+                        {verifyModalStudent.studentType?.includes('Type2') ? 'Category 2: Trial-Ready' : 'Category 1: New Learner'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10 space-y-1">
+                    <span className="text-slate-400 block text-[11px] font-semibold">Enrolled Course Package</span>
+                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-white/10">
+                      <div className="text-xs font-black text-white">
+                        {verifyModalStudent.package?.packageId?.name || (verifyModalStudent.package?.type?.replace(/_/g, ' ')) || 'Car — Full License Package'}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-300 mt-1">
+                        <span className="text-cyan-300 font-semibold">{verifyModalStudent.package?.lessonsTotal || 15} Practical Lessons</span>
+                        <span className="text-amber-300 font-mono font-bold">
+                          Course Fee: Rs. {Number(verifyModalStudent.package?.priceTotal || 45000).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Advance Status</span>
+                      <span className={`badge text-[11px] font-extrabold ${verifyModalStudent.isAdvancePaid ? 'badge-success' : 'badge-warning'}`}>
+                        {verifyModalStudent.isAdvancePaid ? 'Verified & Active' : 'Pending Verification'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-400 block text-[11px]">Advance Required</span>
+                      <span className="text-sm font-extrabold text-amber-300">
+                        Rs. {Number(verifyModalStudent.advancePaymentAmount || 5000).toLocaleString()}.00
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Payment Slip Inspection (7 cols) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-amber-400">
+                    <FileText className="w-4 h-4 text-amber-400" /> Submitted Payment Slip &amp; Bank Transfer
+                  </div>
+                  {loadingStudentPayments && (
+                    <span className="text-[11px] text-cyan-300 flex items-center gap-1 font-bold">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> Fetching latest slips...
+                    </span>
+                  )}
+                </div>
+
+                {/* Slip Metadata Card */}
+                {(() => {
+                  const currentPayment =
+                    studentPaymentsList.find((p) => p.status === 'pending') ||
+                    studentPaymentsList[0] ||
+                    verifyModalStudent.latestPayment ||
+                    null;
+
+                  const slipUrl = currentPayment?.slipImageUrl || null;
+                  const isPdf = slipUrl?.toLowerCase().includes('.pdf');
+                  const fullSlipUrl = slipUrl?.startsWith('http')
+                    ? slipUrl
+                    : slipUrl
+                    ? `http://localhost:5001${slipUrl}`
+                    : null;
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Deposited Amount</span>
+                          <span className="text-base font-black text-accent">
+                            Rs. {Number(currentPayment?.amount || verifyModalStudent.advancePaymentAmount || 5000).toLocaleString()}.00
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Bank Name</span>
+                          <span className="font-bold text-white">{currentPayment?.bankName || 'Bank of Ceylon'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Reference / Slip No.</span>
+                          <span className="font-mono text-cyan-300 font-bold break-all">
+                            {currentPayment?.transactionReference || verifyModalStudent.advancePaymentReference || 'ADV-DESK'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Slip Document / Image Display */}
+                      <div className="border border-white/15 rounded-2xl p-3 bg-slate-900/90 text-center space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
+                          <span className="flex items-center gap-1.5">
+                            {isPdf ? <File className="w-4 h-4 text-rose-400" /> : <Eye className="w-4 h-4 text-cyan-400" />}
+                            {isPdf ? 'Uploaded PDF Bank Slip Document' : 'Uploaded Bank Receipt / Slip Photo'}
+                          </span>
+                          {fullSlipUrl && (
+                            <a
+                              href={fullSlipUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-bold text-cyan-300 hover:text-cyan-200 inline-flex items-center gap-1 hover:underline bg-white/5 px-2.5 py-1 rounded-lg border border-white/10"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Open Full Document
+                            </a>
+                          )}
+                        </div>
+
+                        {fullSlipUrl ? (
+                          isPdf ? (
+                            <div className="bg-black/50 rounded-xl p-4 border border-white/10 text-center space-y-3">
+                              <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg">
+                                <FileText className="w-8 h-8" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-white">PDF Bank Slip Document Uploaded</p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  File: {slipUrl.split('/').pop()}
+                                </p>
+                              </div>
+                              <div className="flex items-center justify-center gap-3 pt-1">
+                                <a
+                                  href={fullSlipUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn-secondary text-xs py-2 px-4 inline-flex items-center gap-2 font-bold"
+                                >
+                                  <ExternalLink className="w-4 h-4 text-cyan-400" /> Open PDF in New Tab
+                                </a>
+                              </div>
+                              <iframe
+                                src={fullSlipUrl}
+                                title="Bank Slip PDF"
+                                className="w-full h-48 rounded-xl border border-white/10 bg-white/90 mt-2"
+                              />
+                            </div>
+                          ) : (
+                            <div className="relative group bg-black/50 rounded-xl overflow-hidden flex items-center justify-center p-2 min-h-[220px] max-h-[320px]">
+                              <img
+                                src={fullSlipUrl}
+                                alt="Payment Deposit Slip"
+                                className="max-h-[300px] w-auto object-contain rounded-lg shadow-2xl transition-transform hover:scale-[1.02]"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://placehold.co/600x400/0f172a/ffffff?text=Deposit+Slip+Document';
+                                }}
+                              />
+                            </div>
+                          )
+                        ) : (
+                          <div className="py-8 px-4 bg-black/30 rounded-xl border border-dashed border-white/10 text-slate-400 text-xs space-y-2">
+                            <CheckCircle2 className="w-8 h-8 text-amber-400 mx-auto" />
+                            <p className="font-bold text-white">Manual / Desk Registration</p>
+                            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                              No electronic slip was uploaded. The student was registered with Reference:
+                              <strong className="text-cyan-300 font-mono"> {verifyModalStudent.advancePaymentReference || 'ADV-DESK'}</strong>.
+                              You can verify their cash/bank deposit directly.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rejection reason box if opened */}
+                      {showRejectInput && (
+                        <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl space-y-2 text-xs animate-in fade-in">
+                          <label className="block font-bold text-rose-300">
+                            Reason for Rejecting Slip / Payment:
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="e.g. Deposit amount is less than Rs. 5,000, reference number illegible, or slip expired..."
+                            className="w-full px-3 py-2 bg-slate-950 border border-rose-500/40 text-white rounded-lg outline-none text-xs"
+                          />
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setShowRejectInput(false)}
+                              className="text-slate-400 hover:text-white px-3 py-1 text-xs"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              disabled={verifyingPayment}
+                              onClick={() => handleVerifyStudentPayment(verifyModalStudent._id, 'reject')}
+                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                            >
+                              Confirm Rejection
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10">
+              <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                Staff action will update student status and unlock full driving portal features.
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  disabled={verifyingPayment}
+                  onClick={() => setVerifyModalStudent(null)}
+                  className="btn-secondary text-xs py-2.5 px-4 font-bold"
+                >
+                  Close
+                </button>
+
+                {!verifyModalStudent.isAdvancePaid && !showRejectInput && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRejectInput(true)}
+                    className="px-4 py-2.5 rounded-xl border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-colors"
+                  >
+                    Reject Slip
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  disabled={verifyingPayment}
+                  onClick={() => handleVerifyStudentPayment(verifyModalStudent._id, 'verify')}
+                  className="btn-accent text-xs py-2.5 px-6 font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-950/40"
+                >
+                  {verifyingPayment ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Verifying Payment...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" /> {verifyModalStudent.isAdvancePaid ? 'Re-confirm Verified Status' : 'Verify Payment & Activate Student'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

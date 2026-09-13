@@ -41,10 +41,27 @@ exports.getAllStudents = async (req, res) => {
       );
     }
 
+    // Attach payments & latest slip for each student
+    const Payment = require('../models/Payment');
+    const studentIds = students.map((st) => st._id);
+    const payments = await Payment.find({ studentId: { $in: studentIds } }).sort({ uploadedAt: -1, createdAt: -1 });
+
+    const populatedStudents = students.map((st) => {
+      const stObj = st.toObject();
+      const stPayments = payments.filter((p) => p.studentId.toString() === st._id.toString());
+      stObj.payments = stPayments;
+      stObj.latestPayment =
+        stPayments.find((p) => p.paymentType === 'advance' && p.status === 'pending') ||
+        stPayments.find((p) => p.status === 'pending') ||
+        stPayments[0] ||
+        null;
+      return stObj;
+    });
+
     return res.status(200).json({
       success: true,
-      count: students.length,
-      students,
+      count: populatedStudents.length,
+      students: populatedStudents,
     });
   } catch (error) {
     console.error('Error fetching students:', error);
@@ -518,10 +535,54 @@ exports.toggleAdvancePaid = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    student.isAdvancePaid = !student.isAdvancePaid;
-    student.isPremium = student.isAdvancePaid;
+    const { action, rejectionReason } = req.body || {};
 
-    if (student.isAdvancePaid) {
+    if (action === 'reject') {
+      student.advancePaymentStatus = 'rejected';
+      student.accountStatus = 'pending_verification';
+      student.isAdvancePaid = false;
+      student.isPremium = false;
+      student.registrationStatus = 'pending_payment';
+      await User.findByIdAndUpdate(student.userId, { status: 'pending_verification' });
+
+      const Payment = require('../models/Payment');
+      await Payment.updateMany(
+        { studentId: student._id, paymentType: 'advance', status: 'pending' },
+        {
+          status: 'rejected',
+          rejectionReason: rejectionReason || 'Payment slip rejected by staff.',
+          verifiedBy: req.user?._id || null,
+          verifiedAt: new Date(),
+        }
+      );
+
+      // Create notification for student
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        recipientId: student.userId,
+        recipientRole: 'student',
+        title: '⚠️ Advance Payment Slip Rejected',
+        message: `Your advance payment slip was rejected by staff. Reason: ${
+          rejectionReason || 'Please verify deposit details and re-upload a clear slip.'
+        }`,
+        type: 'payment',
+        link: '/student/dashboard',
+      });
+
+      await student.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment slip marked as rejected. Student has been notified.',
+        student,
+      });
+    }
+
+    const shouldVerify = action === 'verify' ? true : (action === 'revoke' ? false : !student.isAdvancePaid);
+    student.isAdvancePaid = shouldVerify;
+    student.isPremium = shouldVerify;
+
+    if (shouldVerify) {
       student.accountStatus = 'active';
       student.advancePaymentStatus = 'verified';
       student.registrationStatus = 'registered';
@@ -535,6 +596,17 @@ exports.toggleAdvancePaid = async (req, res) => {
         { studentId: student._id, paymentType: 'advance', status: 'pending' },
         { status: 'confirmed', verifiedBy: req.user?._id || null, verifiedAt: new Date() }
       );
+
+      // Notify student
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        recipientId: student.userId,
+        recipientRole: 'student',
+        title: '🎉 Advance Payment Verified — Account Activated!',
+        message: `Your advance payment has been verified by ${req.user?.name || 'Staff'}. Your account is now fully active!`,
+        type: 'payment',
+        link: '/student/dashboard',
+      });
     } else {
       student.accountStatus = 'pending_verification';
       student.advancePaymentStatus = 'pending';
@@ -547,14 +619,14 @@ exports.toggleAdvancePaid = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: student.isAdvancePaid
-        ? 'Student verified successfully! Login access is now granted.'
+        ? 'Advance payment verified successfully! Student account is now active.'
         : 'Student reset to pending verification (Login access restricted).',
       student,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Failed to update student premium status',
+      message: 'Failed to update student payment status',
       error: error.message,
     });
   }
@@ -737,7 +809,7 @@ exports.updateStudentProfile = async (req, res) => {
       });
     }
 
-    const { name, phone, email, nic, branch, studentType } = req.body;
+    const { name, phone, email, nic, branch, studentType, packageId, packageType } = req.body;
 
     // Check email uniqueness if email is changed
     if (email && email.toLowerCase().trim() !== user.email.toLowerCase()) {
@@ -774,6 +846,41 @@ exports.updateStudentProfile = async (req, res) => {
 
     if (studentType && ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'].includes(studentType)) {
       student.studentType = studentType;
+    }
+
+    // Update package if specified
+    if (packageId || packageType) {
+      let pkgDoc = null;
+      if (packageId) {
+        pkgDoc = await Package.findById(packageId);
+      }
+      if (!pkgDoc && packageType) {
+        pkgDoc = await Package.findOne({ type: packageType, isActive: true });
+      }
+
+      if (pkgDoc) {
+        // Enforce heavy vehicle eligibility if selecting HeavyVehicle_Bus
+        if (pkgDoc.type === 'HeavyVehicle_Bus' && !student.heavyVehicleEligible) {
+          return res.status(400).json({
+            success: false,
+            message: 'Heavy Vehicle (Bus) package requires holding a Light Vehicle driving license for at least 2 years.',
+          });
+        }
+
+        student.package = {
+          type: pkgDoc.type,
+          packageId: pkgDoc._id,
+          lessonsTotal: pkgDoc.lessons,
+          lessonsUsed: student.package?.lessonsUsed || 0,
+          priceTotal: pkgDoc.price,
+          bonusLessons: pkgDoc.bonusLessons || { bike: 0, threeWheeler: 0 },
+          additionalLessonsRequested: student.package?.additionalLessonsRequested || 0,
+        };
+
+        if (student.lessonsUnlocked && student.lessonsUnlocked > 0 && student.lessonsUsed === 0) {
+          student.lessonsUnlocked = pkgDoc.lessons;
+        }
+      }
     }
 
     await user.save();
