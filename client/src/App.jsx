@@ -110,7 +110,7 @@ export default function App() {
             <Route
               path="/student/profile"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} requirePremium>
                   <StudentProfilePage />
                 </ProtectedRoute>
               }
@@ -118,7 +118,7 @@ export default function App() {
             <Route
               path="/student/lessons/book"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} requirePremium>
                   <BookLessonPage />
                 </ProtectedRoute>
               }
@@ -126,7 +126,7 @@ export default function App() {
             <Route
               path="/student/lessons"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} requirePremium>
                   <MyLessonsPage />
                 </ProtectedRoute>
               }
@@ -134,7 +134,7 @@ export default function App() {
             <Route
               path="/student/payments/upload"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} requirePremium>
                   <UploadPaymentPage />
                 </ProtectedRoute>
               }
@@ -142,7 +142,7 @@ export default function App() {
             <Route
               path="/student/payments"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} requirePremium>
                   <UploadPaymentPage />
                 </ProtectedRoute>
               }
@@ -150,7 +150,7 @@ export default function App() {
             <Route
               path="/student/quiz"
               element={
-                <ProtectedRoute allowedRoles={['student']} blockType1>
+                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
                   <QuizSetupPage />
                 </ProtectedRoute>
               }
@@ -158,7 +158,7 @@ export default function App() {
             <Route
               path="/student/quiz/take"
               element={
-                <ProtectedRoute allowedRoles={['student']} blockType1>
+                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
                   <QuizTakingPage />
                 </ProtectedRoute>
               }
@@ -166,7 +166,7 @@ export default function App() {
             <Route
               path="/student/quiz/result"
               element={
-                <ProtectedRoute allowedRoles={['student']} blockType1>
+                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
                   <QuizResultPage />
                 </ProtectedRoute>
               }
@@ -174,7 +174,7 @@ export default function App() {
             <Route
               path="/student/quiz/history"
               element={
-                <ProtectedRoute allowedRoles={['student']} blockType1>
+                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
                   <QuizHistoryPage />
                 </ProtectedRoute>
               }

@@ -84,49 +84,51 @@ export default function Navbar() {
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
                   {isPremium && (
-                    <Link
-                      to="/student/lessons"
-                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                        isActive('/student/lessons') || isActive('/student/lessons/book')
-                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                          : 'text-slate-300 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <Calendar className="w-4 h-4" /> Book Lessons
-                    </Link>
+                    <>
+                      <Link
+                        to="/student/lessons"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/lessons') || isActive('/student/lessons/book')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <Calendar className="w-4 h-4" /> Book Lessons
+                      </Link>
+                      <Link
+                        to="/student/payments"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/payments')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4" /> Payments
+                      </Link>
+                      {student?.studentType !== 'Type1_NewLearner' && (
+                        <Link
+                          to="/student/quiz"
+                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                            isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
+                              ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                              : 'text-slate-300 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <BookOpen className="w-4 h-4" /> Exam Practice
+                        </Link>
+                      )}
+                      <Link
+                        to="/student/profile"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/profile')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <User className="w-4 h-4" /> Profile ID
+                      </Link>
+                    </>
                   )}
-                  <Link
-                    to="/student/payments"
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                      isActive('/student/payments')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4" /> Payments
-                  </Link>
-                  {isPremium && student?.studentType !== 'Type1_NewLearner' && (
-                    <Link
-                      to="/student/quiz"
-                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                        isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
-                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                          : 'text-slate-300 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <BookOpen className="w-4 h-4" /> Exam Practice
-                    </Link>
-                  )}
-                  <Link
-                    to="/student/profile"
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                      isActive('/student/profile')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <User className="w-4 h-4" /> Profile ID
-                  </Link>
                 </>
               )}
 
@@ -316,28 +318,32 @@ export default function Navbar() {
                   >
                     Dashboard & DMT Timeline
                   </Link>
-                  <Link
-                    to="/student/lessons"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                  >
-                    Book Lessons
-                  </Link>
-                  <Link
-                    to="/student/payments"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                  >
-                    Payments
-                  </Link>
-                  {student?.studentType !== 'Type1_NewLearner' && (
-                    <Link
-                      to="/student/quiz"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                    >
-                      Exam Practice
-                    </Link>
+                  {isPremium && (
+                    <>
+                      <Link
+                        to="/student/lessons"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                      >
+                        Book Lessons
+                      </Link>
+                      <Link
+                        to="/student/payments"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                      >
+                        Payments
+                      </Link>
+                      {student?.studentType !== 'Type1_NewLearner' && (
+                        <Link
+                          to="/student/quiz"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                        >
+                          Exam Practice
+                        </Link>
+                      )}
+                    </>
                   )}
                 </div>
               )}
