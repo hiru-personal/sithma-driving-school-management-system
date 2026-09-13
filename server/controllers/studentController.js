@@ -705,3 +705,108 @@ exports.registerWalkInStudent = async (req, res) => {
   }
 };
 
+// @desc    Update student personal & registration details (self or staff/admin)
+// @route   PATCH /api/students/:id/profile
+// @access  Student (self), Staff, Admin
+exports.updateStudentProfile = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student record not found',
+      });
+    }
+
+    // Role check: Student can only edit their own record
+    if (
+      req.user.role === 'student' &&
+      student.userId.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: You can only edit your own details',
+      });
+    }
+
+    const user = await User.findById(student.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found',
+      });
+    }
+
+    const { name, phone, email, nic, branch, studentType } = req.body;
+
+    // Check email uniqueness if email is changed
+    if (email && email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const existing = await User.findOne({
+        email: email.toLowerCase().trim(),
+        _id: { $ne: user._id },
+      });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email address already exists.',
+        });
+      }
+      user.email = email.toLowerCase().trim();
+    }
+
+    if (name && name.trim()) {
+      user.name = name.trim();
+    }
+
+    if (phone !== undefined) {
+      user.phone = phone.trim();
+    }
+
+    if (nic !== undefined) {
+      student.nic = nic.trim();
+      user.nic = nic.trim();
+    }
+
+    if (branch && ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)) {
+      student.branch = branch;
+      user.branch = branch;
+    }
+
+    if (studentType && ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'].includes(studentType)) {
+      student.studentType = studentType;
+    }
+
+    await user.save();
+    await student.save();
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Your details have been updated successfully.',
+      student: populatedStudent,
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        nic: user.nic,
+        role: user.role,
+        status: user.status,
+        branch: user.branch,
+        mustChangePassword: user.mustChangePassword,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating student profile:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update details',
+      error: error.message,
+    });
+  }
+};
+

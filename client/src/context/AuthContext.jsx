@@ -181,9 +181,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateStudentData = (updatedStudent) => {
-    setStudent(updatedStudent);
-    localStorage.setItem('sithma_student', JSON.stringify(updatedStudent));
+  const updateStudentData = (updatedStudent, updatedUser = null) => {
+    if (updatedStudent) {
+      setStudent(updatedStudent);
+      localStorage.setItem('sithma_student', JSON.stringify(updatedStudent));
+    }
+    if (updatedUser) {
+      setUser(updatedUser);
+      localStorage.setItem('sithma_user', JSON.stringify(updatedUser));
+    }
   };
 
   const isAdvancePaid = !!(

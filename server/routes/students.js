@@ -10,6 +10,7 @@ const {
   getReportsSummary,
   toggleAdvancePaid,
   registerWalkInStudent,
+  updateStudentProfile,
 } = require('../controllers/studentController');
 const { authenticate, authorize, checkStudentOwnership } = require('../middleware/auth');
 
@@ -20,6 +21,7 @@ router.post('/walk-in', authenticate, authorize('staff', 'admin'), registerWalkI
 
 // Student profile & DMT updates: Enforce Student ownership (Student can only access/modify their own ID)
 router.get('/:id', authenticate, checkStudentOwnership, getStudentById);
+router.patch('/:id/profile', authenticate, checkStudentOwnership, updateStudentProfile);
 router.patch('/:id/dmt-dates', authenticate, checkStudentOwnership, updateDmtDates);
 router.get('/:id/heavy-vehicle-eligibility', authenticate, checkStudentOwnership, checkHeavyVehicleEligibility);
 

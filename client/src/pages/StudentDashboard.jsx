@@ -28,6 +28,7 @@ import {
   Phone,
   MapPin,
   Hash,
+  Edit3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -44,6 +45,58 @@ export default function StudentDashboard() {
   const [slipRef, setSlipRef] = useState('');
   const [bankName, setBankName] = useState('Bank of Ceylon');
   const [submittingPkgPayment, setSubmittingPkgPayment] = useState(false);
+
+  // Edit Profile Details Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    nic: '',
+    branch: 'Maharagama',
+    studentType: 'Type1_NewLearner',
+  });
+
+  const openEditModal = () => {
+    setEditForm({
+      name: user?.name || profile?.name || '',
+      phone: user?.phone || profile?.phone || '',
+      email: user?.email || '',
+      nic: profile?.nic || user?.nic || '',
+      branch: profile?.branch || user?.branch || 'Maharagama',
+      studentType: profile?.studentType || 'Type1_NewLearner',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveDetails = async (e) => {
+    e.preventDefault();
+    if (!editForm.name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+    if (!editForm.email.trim()) {
+      toast.error('Email address is required');
+      return;
+    }
+
+    setSavingDetails(true);
+    try {
+      const studentId = profile?._id || student?._id;
+      const res = await api.patch(`/students/${studentId}/profile`, editForm);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Details updated successfully!');
+        setProfile(res.data.student);
+        updateStudentData(res.data.student, res.data.user);
+        setIsEditModalOpen(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update details');
+    } finally {
+      setSavingDetails(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -153,6 +206,167 @@ export default function StudentDashboard() {
   const showPackagePaymentBanner =
     !isPackagePaymentConfirmed && (isType2 || (isType1 && isTrialEligible));
 
+  const renderEditModal = () => {
+    if (!isEditModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="card max-w-lg w-full p-6 sm:p-8 bg-slate-900/95 border border-white/20 shadow-[0_25px_70px_rgba(0,0,0,0.85)] space-y-6 relative rounded-3xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div>
+              <span className="badge badge-warning text-xs font-bold uppercase tracking-wider mb-1">
+                Correction / Update
+              </span>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-cyan-400" /> Edit Registration Details
+              </h3>
+              <p className="text-xs text-slate-300 mt-1">
+                Correct any errors in your personal or branch enrollment records.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/20 transition-colors text-sm font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveDetails} className="space-y-4">
+            {/* Full Name */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-200">
+                Full Name <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                  placeholder="e.g. Kasun Perera"
+                />
+              </div>
+            </div>
+
+            {/* Email & Phone Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-200">
+                  Email Address <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                    placeholder="e.g. kasun@example.com"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-200">
+                  Contact Phone
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                    placeholder="e.g. 077 123 4567"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* NIC */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-200">
+                National Identity Card (NIC) / Passport
+              </label>
+              <div className="relative">
+                <FileText className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={editForm.nic}
+                  onChange={(e) => setEditForm({ ...editForm, nic: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none font-mono"
+                  placeholder="e.g. 200012345678 or 981234567V"
+                />
+              </div>
+            </div>
+
+            {/* Branch & Category Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-200">
+                  Registered Branch
+                </label>
+                <select
+                  value={editForm.branch}
+                  onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                >
+                  <option value="Maharagama">Maharagama Branch</option>
+                  <option value="Werahara">Werahara Branch</option>
+                  <option value="Delgoda">Delgoda Branch</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-200">
+                  Learner Category
+                </label>
+                <select
+                  value={editForm.studentType}
+                  onChange={(e) => setEditForm({ ...editForm, studentType: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                >
+                  <option value="Type1_NewLearner">Category 1: New Learner</option>
+                  <option value="Type2_TrialReady">Category 2: Trial-Ready</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+              <button
+                type="button"
+                disabled={savingDetails}
+                onClick={() => setIsEditModalOpen(false)}
+                className="btn-secondary text-xs py-2.5 px-4 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingDetails}
+                className="btn-accent text-xs py-2.5 px-5 font-extrabold flex items-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                {savingDetails ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving Changes...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   if (isAdvancePaymentPending) {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1280px] mx-auto w-full">
@@ -180,6 +394,12 @@ export default function StudentDashboard() {
           </div>
 
           <div className="flex flex-wrap gap-3 sm:self-center relative z-10">
+            <button
+              onClick={openEditModal}
+              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-md"
+            >
+              <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Details
+            </button>
             <button
               onClick={fetchProfile}
               className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
@@ -241,9 +461,9 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Student Registered Details Card (READ ONLY) */}
+        {/* Student Registered Details Card */}
         <div className="card p-6 sm:p-8 space-y-6 border border-white/15 bg-slate-900/85 shadow-xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-2">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-3">
             <div>
               <span className="badge badge-info text-xs font-bold uppercase tracking-wider mb-1.5">
                 Official Registration File
@@ -255,9 +475,18 @@ export default function StudentDashboard() {
                 These are your submitted personal and registration records on file with Sithma Driving School.
               </p>
             </div>
-            <span className="text-xs font-mono text-slate-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-              Reference: {profile?.advancePaymentReference || 'ADV-PENDING'}
-            </span>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 hover:border-cyan-400 text-cyan-300 transition-colors shadow-md"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Details
+              </button>
+              <span className="text-xs font-mono text-slate-400 bg-white/5 px-3 py-2 rounded-xl border border-white/10">
+                Reference: {profile?.advancePaymentReference || 'ADV-PENDING'}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -358,6 +587,8 @@ export default function StudentDashboard() {
             </div>
           </div>
         </div>
+
+        {renderEditModal()}
       </div>
     );
   }
@@ -400,6 +631,12 @@ export default function StudentDashboard() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 sm:self-center relative z-10">
+          <button
+            onClick={openEditModal}
+            className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-md"
+          >
+            <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Details
+          </button>
           <button
             onClick={fetchProfile}
             className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
@@ -932,6 +1169,8 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {renderEditModal()}
     </div>
   );
 }
