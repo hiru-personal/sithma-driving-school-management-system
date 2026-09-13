@@ -34,7 +34,7 @@ import PremiumLockOverlay from './components/PremiumLockOverlay';
 import PaymentGatewayPage from './pages/PaymentGatewayPage';
 import { Clock } from 'lucide-react';
 
-function ProtectedRoute({ children, allowedRoles, blockType1 = false }) {
+function ProtectedRoute({ children, allowedRoles, blockType1 = false, requirePremium = false }) {
   const { user, student, isPremium, loading } = useAuth();
 
   if (loading) {
@@ -55,8 +55,8 @@ function ProtectedRoute({ children, allowedRoles, blockType1 = false }) {
     return <Navigate to="/" replace />;
   }
 
-  // Learner Advance Payment & Premium Access Gate
-  if (user.role === 'student' && !isPremium) {
+  // Learner Advance Payment & Premium Access Gate only for routes that require it
+  if (requirePremium && user.role === 'student' && !isPremium) {
     return <PremiumLockOverlay />;
   }
 

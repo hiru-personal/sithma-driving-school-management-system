@@ -45,9 +45,13 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo & School Branding */}
           <Link to="/" className="flex items-center gap-3.5 group">
-            <div className="relative w-11 h-11 rounded-xl sm:rounded-full bg-gradient-to-tr from-primary via-blue-600 to-accent flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(11,95,165,0.6)] border border-white/30 group-hover:scale-105 transition-transform duration-300">
-              <Car className="w-6 h-6 drop-shadow" />
-              <div className="absolute inset-0 rounded-xl sm:rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative w-11 h-11 rounded-xl sm:rounded-full bg-slate-950/80 p-1.5 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/30 group-hover:scale-105 group-hover:border-cyan-400 transition-all duration-300">
+              <img
+                src="/images/sithma-emblem.png"
+                alt="Sithma Driving School"
+                className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+              />
+              <div className="absolute inset-0 rounded-xl sm:rounded-full bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>
             <div className="flex flex-col">
               <span className="font-heading text-lg font-black tracking-tight text-white flex items-center gap-1.5 drop-shadow">
@@ -62,14 +66,13 @@ export default function Navbar() {
           {/* Desktop Liquid Glass Navigation Links */}
           {user && (
             <nav className="hidden lg:flex items-center gap-2 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-md">
-              {isStudent && !isPremium && (
-                <span className="px-4 py-2 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse flex items-center gap-2">
-                  🔒 Non-Premium (Advance Payment Required)
-                </span>
-              )}
-
-              {isStudent && isPremium && (
+              {isStudent && (
                 <>
+                  {!isPremium && (
+                    <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Status: Pending Verification
+                    </span>
+                  )}
                   <Link
                     to="/student/dashboard"
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
@@ -80,16 +83,18 @@ export default function Navbar() {
                   >
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                  <Link
-                    to="/student/lessons"
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                      isActive('/student/lessons') || isActive('/student/lessons/book')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Calendar className="w-4 h-4" /> Book Lessons
-                  </Link>
+                  {isPremium && (
+                    <Link
+                      to="/student/lessons"
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                        isActive('/student/lessons') || isActive('/student/lessons/book')
+                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4" /> Book Lessons
+                    </Link>
+                  )}
                   <Link
                     to="/student/payments"
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
@@ -100,7 +105,7 @@ export default function Navbar() {
                   >
                     <CreditCard className="w-4 h-4" /> Payments
                   </Link>
-                  {student?.studentType !== 'Type1_NewLearner' && (
+                  {isPremium && student?.studentType !== 'Type1_NewLearner' && (
                     <Link
                       to="/student/quiz"
                       className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${

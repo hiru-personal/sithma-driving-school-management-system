@@ -57,8 +57,6 @@ export default function RegisterPage() {
     phone: '',
     nic: '',
     advanceAmount: 5000,
-    advanceBankName: 'Bank of Ceylon',
-    advanceReference: '',
     password: '',
     confirmPassword: '',
   });
@@ -228,11 +226,6 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.studentType === 'Type2_TrialReady' && !formData.advanceReference) {
-      toast.error('Please enter your Bank Deposit Slip or Transfer Reference Number');
-      return;
-    }
-
     setLoading(true);
 
     const payload = {
@@ -247,8 +240,7 @@ export default function RegisterPage() {
       customLessonsCount: formData.customLessonsCount,
       lightVehicleLicenseDate: formData.lightVehicleLicenseDate || null,
       advanceAmount: formData.advanceAmount || 5000,
-      advanceBankName: formData.advanceBankName || 'Bank of Ceylon',
-      advanceReference: formData.advanceReference || `BOC-ADV-${Date.now().toString().slice(-6)}`,
+      advanceReference: `ADV-${Date.now().toString().slice(-6)}`,
     };
 
 
@@ -256,21 +248,23 @@ export default function RegisterPage() {
     setLoading(false);
 
     if (res && res.success) {
-      // ── Always redirect to payment gateway for all self-registered students ──
-      // They must complete advance payment before portal access is granted
-      navigate('/payment-gateway', {
-        state: {
-          studentName: formData.name,
-          studentId: res.student?._id || null,
-          userId: res.user?.id || null,
-          branch: formData.branch,
-          nic: formData.nic,
-          email: formData.email,
-          advanceAmount: payload.advanceAmount || 5000,
-          registrationReference: payload.advanceReference,
-        },
-        replace: true,
-      });
+      const pendingData = {
+        studentName: formData.name,
+        studentId: res.student?._id || null,
+        userId: res.user?.id || null,
+        branch: formData.branch,
+        nic: formData.nic,
+        email: formData.email,
+        advanceAmount: payload.advanceAmount || 5000,
+        registrationReference: payload.advanceReference,
+      };
+
+      try {
+        sessionStorage.setItem('sithma_pending_registration', JSON.stringify(pendingData));
+      } catch (e) {}
+
+      // Category 2 (Type 2: Trial-Ready) redirects directly to student dashboard
+      navigate('/student/dashboard');
     }
   };
 
@@ -394,7 +388,7 @@ export default function RegisterPage() {
                     <CheckCircle2 className="w-5 h-5 text-cyan-400" />
                   )}
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">Type 1 — New Learner Student</h3>
+                <h3 className="text-base font-bold text-white mb-2">Type 1 - New Learner Student</h3>
                 <p className="text-xs text-slate-300 leading-relaxed mb-4">
                   You have <strong>not yet registered with the DMT</strong>. Sithma Driving School will assist you with medical appointments, learner license registration, and exam milestones.
                 </p>
@@ -420,7 +414,7 @@ export default function RegisterPage() {
                     <CheckCircle2 className="w-5 h-5 text-amber-400" />
                   )}
                 </div>
-                <h3 className="text-base font-bold text-white mb-2">Type 2 — Trial-Ready Student</h3>
+                <h3 className="text-base font-bold text-white mb-2">Type 2 - Trial-Ready Student</h3>
                 <p className="text-xs text-slate-300 leading-relaxed mb-4">
                   You have <strong>already passed your DMT Medical & Learner's Exam</strong> independently and are joining specifically for practical Trial preparation.
                 </p>
@@ -786,39 +780,6 @@ export default function RegisterPage() {
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Trial-ready students are required to submit an initial advance deposit of <strong>Rs. 5,000</strong>. Your account will remain in <code className="text-amber-300 bg-amber-950/60 px-1 py-0.5 rounded">pending_verification</code> status until our Data Entry Officer verifies your payment.
                 </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      Bank Name
-                    </label>
-                    <select
-                      value={formData.advanceBankName}
-                      onChange={(e) => setFormData({ ...formData, advanceBankName: e.target.value })}
-                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
-                    >
-                      <option value="Bank of Ceylon">Bank of Ceylon (BOC)</option>
-                      <option value="Commercial Bank">Commercial Bank</option>
-                      <option value="Sampath Bank">Sampath Bank</option>
-                      <option value="Hatton National Bank">Hatton National Bank (HNB)</option>
-                      <option value="People's Bank">People's Bank</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                      Deposit Slip / Transfer Reference <span className="text-rose-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. BOC-DEP-99482 or Ref #1234"
-                      value={formData.advanceReference}
-                      onChange={(e) => setFormData({ ...formData, advanceReference: e.target.value })}
-                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
-                    />
-                  </div>
-                </div>
               </div>
             )}
 

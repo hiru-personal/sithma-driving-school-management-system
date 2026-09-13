@@ -256,23 +256,28 @@ exports.registerStudent = async (req, res) => {
       await Notification.insertMany(notifications);
     }
 
-    // STRICT VERIFICATION GATE: NO login token issued until verified
+    const token = generateToken(user);
+
     return res.status(201).json({
       success: true,
+      token,
       pendingVerification: true,
       accountStatus: 'pending_verification',
-      message:
-        'Registration submitted successfully! Your account is created with status "Pending Verification". Login will be enabled once our Data Entry Officer verifies your advance payment.',
+      message: 'Registration submitted successfully! Welcome to Sithma Driving School.',
       studentId: student._id,
       paymentId: payment._id,
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
+        phone: user.phone,
+        nic: user.nic,
         branch: user.branch,
         role: user.role,
+        status: user.status,
       },
-      student: { _id: student._id, branch: student.branch, studentType: student.studentType },
+      student,
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -299,10 +304,29 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Lookup user by email or username
-    const user = await User.findOne({
-      $or: [{ email: loginIdentifier }, { username: loginIdentifier }],
+    // Lookup user by email, username, NIC, or name
+    const rawIdentifier = (email || username || '').trim();
+    const escapedIdentifier = rawIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const candidates = await User.find({
+      $or: [
+        { email: loginIdentifier },
+        { username: loginIdentifier },
+        { nic: rawIdentifier },
+        { name: new RegExp(`^${escapedIdentifier}$`, 'i') },
+      ],
     }).select('+passwordHash');
+
+    let user = null;
+    for (const candidate of candidates) {
+      if (await candidate.comparePassword(password)) {
+        user = candidate;
+        break;
+      }
+    }
+    // If password didn't match any candidate, fallback to the first candidate to record failed attempt / lockout
+    if (!user && candidates.length > 0) {
+      user = candidates[0];
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -368,25 +392,10 @@ exports.login = async (req, res) => {
       await user.save();
     }
 
-    // 5. Verification Gate for Students
+    // 5. Fetch Student Profile
     let studentProfile = null;
     if (user.role === 'student') {
       studentProfile = await Student.findOne({ userId: user._id });
-
-      // If user status or student record is pending_verification
-      if (
-        user.status === 'pending_verification' ||
-        studentProfile?.accountStatus === 'pending_verification' ||
-        studentProfile?.advancePaymentStatus !== 'verified'
-      ) {
-        return res.status(403).json({
-          success: false,
-          accountStatus: 'pending_verification',
-          advancePaymentStatus: studentProfile?.advancePaymentStatus || 'pending',
-          message:
-            'Account pending verification: Your advance payment has not yet been verified by the Data Entry Officer. Login access will be granted once your payment is approved.',
-        });
-      }
     }
 
     const token = generateToken(user);

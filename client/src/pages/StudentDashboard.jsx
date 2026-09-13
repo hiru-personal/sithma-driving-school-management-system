@@ -137,6 +137,12 @@ export default function StudentDashboard() {
     profile?.dmtDates?.learnerExamPassed ||
     isType2
   );
+  const isAdvancePaymentPending = Boolean(
+    profile?.advancePaymentStatus !== 'verified' ||
+    profile?.accountStatus === 'pending_verification' ||
+    user?.status === 'pending_verification' ||
+    !profile?.isAdvancePaid
+  );
   const isPackagePaymentPending = profile?.packagePaymentStatus === 'pending';
   const isPackagePaymentConfirmed = profile?.packagePaymentStatus === 'confirmed';
   const showPackagePaymentBanner =
@@ -148,7 +154,7 @@ export default function StudentDashboard() {
       <div className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/80 to-slate-900/90 rounded-3xl p-6 sm:p-8 text-white border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
         <div className="space-y-2 relative z-10">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="badge badge-warning text-xs font-bold py-1">
               {profile?.branch} Branch
             </span>
@@ -158,6 +164,15 @@ export default function StudentDashboard() {
             {profile?.nic && (
               <span className="badge bg-slate-950/60 text-slate-300 text-xs border border-white/10 font-mono">
                 NIC: {profile.nic}
+              </span>
+            )}
+            {isAdvancePaymentPending ? (
+              <span className="badge bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
+                <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Status: Pending Verification
+              </span>
+            ) : (
+              <span className="badge bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Status: Active
               </span>
             )}
           </div>
@@ -178,7 +193,19 @@ export default function StudentDashboard() {
             <RefreshCw className="w-4 h-4 text-cyan-300" /> Refresh
           </button>
 
-          {isType1 && !isTrialEligible ? (
+          {isAdvancePaymentPending ? (
+            <button
+              onClick={() =>
+                toast.error(
+                  '🔒 Advance Payment Pending: Practical lesson booking is restricted until your advance deposit is approved by your branch officer.'
+                )
+              }
+              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-80 border border-amber-400/40 text-amber-300 cursor-not-allowed"
+              title="Lesson booking locked until advance payment is verified"
+            >
+              <Lock className="w-4 h-4 text-amber-400" /> Booking Locked (Payment Pending)
+            </button>
+          ) : isType1 && !isTrialEligible ? (
             <button
               onClick={() =>
                 toast.error(
@@ -200,6 +227,56 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      {/* PENDING ADVANCE PAYMENT NOTICE BANNER */}
+      {isAdvancePaymentPending && (
+        <div className="card p-6 bg-gradient-to-r from-amber-950/80 via-slate-900/90 to-orange-950/80 border-2 border-amber-400/50 space-y-4 shadow-[0_10px_35px_rgba(245,158,11,0.2)]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 flex-shrink-0">
+                <Clock className="w-6 h-6 text-amber-400 animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-extrabold text-white text-base sm:text-lg">
+                    Account Status: Pending Verification
+                  </h3>
+                  <span className="badge badge-warning text-xs font-bold uppercase tracking-wider">
+                    Payment Incomplete / Awaiting Approval
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+                  Your student account is created and in <strong className="text-amber-300 font-mono">Pending Verification</strong> status. You can explore your portal and review your curriculum, but practical lesson scheduling is locked until your advance deposit of <strong className="text-amber-300">Rs. {Number(profile?.advancePaymentAmount || 5000).toLocaleString()}.00</strong> is verified by our Data Entry Officer or paid at the <strong>{profile?.branch} Branch</strong>.
+                </p>
+                <div className="flex items-center gap-4 text-xs text-slate-400 pt-1 flex-wrap">
+                  {profile?.advancePaymentReference && (
+                    <span>Reference Code: <strong className="text-amber-300 font-mono">{profile.advancePaymentReference}</strong></span>
+                  )}
+                  <span>Registered Branch: <strong className="text-white">{profile?.branch} Branch</strong></span>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2.5 flex-shrink-0">
+              <Link
+                to="/payment-gateway"
+                state={{
+                  studentName: user?.name,
+                  studentId: profile?._id,
+                  userId: user?.id || user?._id,
+                  branch: profile?.branch,
+                  nic: profile?.nic,
+                  email: user?.email,
+                  advanceAmount: profile?.advancePaymentAmount || 5000,
+                  registrationReference: profile?.advancePaymentReference,
+                }}
+                className="btn-accent text-xs py-3 px-5 font-bold flex items-center justify-center gap-2 shadow-lg"
+              >
+                <CreditCard className="w-4 h-4 text-slate-950" /> Complete Payment / Upload Slip
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TYPE 1: US-09 DMT LEARNER EXAM GATE NOTICE BANNER */}
       {isType1 && !isTrialEligible && (
