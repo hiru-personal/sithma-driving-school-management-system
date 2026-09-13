@@ -211,8 +211,20 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+    if (!/[A-Z]/.test(formData.password)) {
+      toast.error('Password must contain at least one uppercase letter (A-Z)');
+      return;
+    }
+    if (!/[a-z]/.test(formData.password)) {
+      toast.error('Password must contain at least one lowercase letter (a-z)');
+      return;
+    }
+    if (!/[0-9]/.test(formData.password)) {
+      toast.error('Password must contain at least one numeric digit (0-9)');
       return;
     }
 
@@ -756,6 +768,10 @@ export default function RegisterPage() {
                 />
               </div>
             </div>
+
+            <p className="text-[11px] text-slate-400 -mt-2">
+              Password must be at least <span className="text-cyan-300 font-semibold">8 characters</span> and include an <span className="text-cyan-300 font-semibold">uppercase letter</span> (A-Z), <span className="text-cyan-300 font-semibold">lowercase letter</span> (a-z), and a <span className="text-cyan-300 font-semibold">number</span> (0-9).
+            </p>
 
             {/* Type 2 Immediate Advance Payment Section (Exact Business Rule Flow) */}
             {formData.studentType === 'Type2_TrialReady' && (

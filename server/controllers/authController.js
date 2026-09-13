@@ -44,7 +44,7 @@ const validatePasswordPolicy = (password, username, email) => {
   if (!/[0-9]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one numeric digit (0-9).' };
   }
-  if (username && password.toLowerCase().includes(username.toLowerCase().trim())) {
+  if (username && username.trim().length >= 3 && password.toLowerCase().includes(username.toLowerCase().trim())) {
     return { valid: false, message: 'Password cannot contain your username.' };
   }
   if (email) {

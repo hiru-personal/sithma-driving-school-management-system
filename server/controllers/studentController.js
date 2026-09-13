@@ -520,18 +520,35 @@ exports.toggleAdvancePaid = async (req, res) => {
 
     student.isAdvancePaid = !student.isAdvancePaid;
     student.isPremium = student.isAdvancePaid;
-    if (student.isAdvancePaid && student.registrationStatus === 'pending_payment') {
+
+    if (student.isAdvancePaid) {
+      student.accountStatus = 'active';
+      student.advancePaymentStatus = 'verified';
       student.registrationStatus = 'registered';
-    } else if (!student.isAdvancePaid) {
+      student.verifiedBy = req.user?._id || null;
+      student.verifiedAt = new Date();
+      await User.findByIdAndUpdate(student.userId, { status: 'active' });
+
+      // Confirm any pending advance payment records
+      const Payment = require('../models/Payment');
+      await Payment.updateMany(
+        { studentId: student._id, paymentType: 'advance', status: 'pending' },
+        { status: 'confirmed', verifiedBy: req.user?._id || null, verifiedAt: new Date() }
+      );
+    } else {
+      student.accountStatus = 'pending_verification';
+      student.advancePaymentStatus = 'pending';
       student.registrationStatus = 'pending_payment';
+      await User.findByIdAndUpdate(student.userId, { status: 'pending_verification' });
     }
+
     await student.save();
 
     return res.status(200).json({
       success: true,
       message: student.isAdvancePaid
-        ? 'Student marked as Advance Paid & Premium User'
-        : 'Student marked as Non-Premium (Advance Pending)',
+        ? 'Student verified successfully! Login access is now granted.'
+        : 'Student reset to pending verification (Login access restricted).',
       student,
     });
   } catch (error) {

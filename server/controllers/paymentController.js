@@ -360,7 +360,8 @@ exports.verifyPayment = async (req, res) => {
           student.verifiedAt = new Date();
 
           // Also activate User account status so login succeeds
-          await User.findByIdAndUpdate(payment.userId._id, { status: 'active' });
+          const targetUserId = payment.userId?._id || payment.userId || student.userId;
+          await User.findByIdAndUpdate(targetUserId, { status: 'active' });
 
           notificationTitle = 'Advance Payment Verified — Account Activated!';
           notificationMessage = `Your advance payment of Rs. ${payment.amount?.toLocaleString()} has been verified by ${req.user.name}. Your account is now active! You can now log in and select your course package to start booking lessons.`;
@@ -542,7 +543,7 @@ exports.payAdvancePending = async (req, res) => {
     const txRef = transactionReference || `ONPAY-${Date.now().toString().slice(-8)}`;
     const payAmount = parseFloat(amount) || 5000;
 
-    // Simulate payment — mark as confirmed immediately (online gateway auto-approves)
+    // Online advance payment requires Data Entry Officer verification before activation
     const payment = await Payment.create({
       studentId: student._id,
       userId: user._id,
@@ -551,36 +552,38 @@ exports.payAdvancePending = async (req, res) => {
       amount: payAmount,
       bankName: bankName || 'Sithma Pay Online Gateway',
       transactionReference: txRef,
-      status: 'confirmed',
-      verifiedAt: new Date(),
+      status: 'pending',
       uploadedAt: new Date(),
     });
 
-    // Auto-activate student account (online payment is auto-verified)
-    student.accountStatus = 'active';
-    student.advancePaymentStatus = 'verified';
-    student.isAdvancePaid = true;
-    student.isPremium = true;
-    student.registrationStatus = 'registered';
+    // Account remains pending verification until Data Entry Officer approves
+    student.accountStatus = 'pending_verification';
+    student.advancePaymentStatus = 'pending';
+    student.isAdvancePaid = false;
+    student.isPremium = false;
+    student.registrationStatus = 'pending_payment';
     await student.save();
 
-    await User.findByIdAndUpdate(user._id, { status: 'active' });
-
-    // Notify student
-    await Notification.create({
-      recipientId: user._id,
-      recipientRole: 'student',
-      title: '✅ Online Payment Confirmed — Account Activated!',
-      message: `Your online advance payment of Rs. ${payAmount.toLocaleString()} via card ****${cardLast4 || '0000'} has been confirmed. Your account is now active! Log in to select your package.`,
-      type: 'payment',
-      link: '/student/dashboard',
-    });
+    // Notify branch staff and Data Entry Officers
+    const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] }, branch: { $in: [student.branch, 'All'] } });
+    if (staffUsers.length > 0) {
+      await Notification.insertMany(
+        staffUsers.map((s) => ({
+          recipientId: s._id,
+          recipientRole: s.role,
+          title: '💳 Online Advance Payment Received (Pending Verification)',
+          message: `${user.name} (${student.branch} Branch) paid Rs. ${payAmount.toLocaleString()} via online card (Ref: ${txRef}). Verification required before account activation.`,
+          type: 'payment',
+          link: '/staff/payments',
+        }))
+      );
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Online payment confirmed. Your account is now active!',
+      message: 'Online payment received successfully! Your account will be activated once verified by our Data Entry Officer.',
       payment: { ...payment.toObject(), transactionReference: txRef },
-      activated: true,
+      activated: false,
     });
   } catch (error) {
     console.error('Pending online payment error:', error);
