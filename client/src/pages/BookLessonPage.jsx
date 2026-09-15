@@ -58,14 +58,21 @@ export default function BookLessonPage() {
     fetchSlots();
   }, [selectedBranch, selectedDate, selectedVehicle]);
 
-  const isType1 = student?.studentType === 'Type1_NewLearner';
-  const isType2 = student?.studentType === 'Type2_TrialReady';
-  const isTrialEligible = Boolean(
-    student?.trialEligible ||
-    student?.learnerExamStatus === 'passed' ||
-    student?.dmtDates?.learnerExamPassed ||
-    isType2
+  const isType1 = Boolean(
+    student?.studentType === 'Type1_NewLearner' ||
+    student?.studentType === 'Type 1' ||
+    student?.student_type === 'Type 1'
   );
+  const isType2 = Boolean(
+    student?.studentType === 'Type2_TrialReady' ||
+    student?.studentType === 'Type 2' ||
+    student?.student_type === 'Type 2'
+  );
+  const isExamPassed = Boolean(
+    student?.learnerExamStatus === 'passed' ||
+    student?.dmtDates?.learnerExamPassed
+  );
+  const isTrialEligible = Boolean(isType2 || isExamPassed);
   const isPackagePaymentConfirmed = student?.packagePaymentStatus === 'confirmed';
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
 

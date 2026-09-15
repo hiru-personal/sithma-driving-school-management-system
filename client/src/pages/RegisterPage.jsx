@@ -1,211 +1,306 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import StudentTypeSelectModal from '../components/StudentTypeSelectModal';
 import {
   UserPlus,
-  Car,
-  Bike,
-  Bus,
+  GraduationCap,
+  Award,
+  Calendar,
+  Mail,
+  Phone,
+  Lock,
+  Eye,
+  EyeOff,
+  Building2,
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  ArrowLeft,
-  Building2,
+  ShieldCheck,
   Sparkles,
-  ShieldAlert,
   CreditCard,
-  FileCheck,
+  Car,
+  Bike,
+  Truck,
+  Gift,
+  Check,
+  Minus,
+  Plus,
+  Layers,
+  Package as PackageIcon,
 } from 'lucide-react';
+
 import toast from 'react-hot-toast';
 
+// Official Vehicle Training Package Catalog for Sithma Driving School
+const FALLBACK_PACKAGES = [
+  // A. Individual / Private Single Lessons (Pay-Per-Lesson)
+  {
+    type: 'Bike_Individual',
+    name: 'Bike (Individual / Private)',
+    categoryGroup: 'A',
+    vehicleCategory: 'Bike',
+    lessons: 1,
+    price: 2000,
+    isPerLesson: true,
+    desc: '1-on-1 private lesson with dedicated instructor. LKR 2,000 / lesson.',
+  },
+  {
+    type: 'ThreeWheeler_Individual',
+    name: 'Three-Wheel (Individual / Private)',
+    categoryGroup: 'A',
+    vehicleCategory: 'Three-Wheel',
+    lessons: 1,
+    price: 2500,
+    isPerLesson: true,
+    desc: '1-on-1 private lesson with dedicated instructor. LKR 2,500 / lesson.',
+  },
+  {
+    type: 'Car_Individual',
+    name: 'Car (Auto / Manual — Individual / Private)',
+    categoryGroup: 'A',
+    vehicleCategory: 'Car',
+    lessons: 1,
+    price: 3000,
+    isPerLesson: true,
+    desc: '1-on-1 private lesson with dual-control vehicle. LKR 3,000 / lesson.',
+  },
+  {
+    type: 'HeavyVehicle_Individual',
+    name: 'Heavy Vehicle (Individual / Private)',
+    categoryGroup: 'A',
+    vehicleCategory: 'Heavy',
+    lessons: 1,
+    price: 3500,
+    isPerLesson: true,
+    desc: '1-on-1 private heavy vehicle commercial training. LKR 3,500 / lesson.',
+  },
+
+  // B. Standard Single Lessons (Pay-Per-Lesson)
+  {
+    type: 'Bike_Standard',
+    name: 'Bike (Standard Single Lesson)',
+    categoryGroup: 'B',
+    vehicleCategory: 'Bike',
+    lessons: 1,
+    price: 800,
+    isPerLesson: true,
+    desc: 'Standard single practice lesson. LKR 800 / lesson.',
+  },
+  {
+    type: 'ThreeWheeler_Standard',
+    name: 'Three-Wheel (Standard Single Lesson)',
+    categoryGroup: 'B',
+    vehicleCategory: 'Three-Wheel',
+    lessons: 1,
+    price: 1500,
+    isPerLesson: true,
+    desc: 'Standard single practice lesson. LKR 1,500 / lesson.',
+  },
+  {
+    type: 'Car_Standard',
+    name: 'Car (Standard Single Lesson)',
+    categoryGroup: 'B',
+    vehicleCategory: 'Car',
+    lessons: 1,
+    price: 2000,
+    isPerLesson: true,
+    desc: 'Standard single practice session (Auto/Manual). LKR 2,000 / lesson.',
+  },
+  {
+    type: 'HeavyVehicle_Standard',
+    name: 'Heavy Vehicle (Standard Single Lesson)',
+    categoryGroup: 'B',
+    vehicleCategory: 'Heavy',
+    lessons: 1,
+    price: 2500,
+    isPerLesson: true,
+    desc: 'Standard single heavy vehicle session. LKR 2,500 / lesson.',
+  },
+
+  // C. Full Course Packages (Includes 15 Standard Lessons)
+  {
+    type: 'Car_Full',
+    name: 'Car Package (Auto Car OR Manual Car)',
+    categoryGroup: 'C',
+    vehicleCategory: 'Car',
+    lessons: 15,
+    price: 40000,
+    isPerLesson: false,
+    bonusText: 'Includes 2 FREE Bike lessons + 2 FREE Three-Wheel lessons.',
+    bonusLessons: { bike: 2, threeWheeler: 2 },
+    desc: 'Includes 15 standard lessons + 2 FREE Bike lessons + 2 FREE Three-Wheel lessons.',
+  },
+  {
+    type: 'Combo_Full',
+    name: 'Combo Package (Car + Bike + Three-Wheel)',
+    categoryGroup: 'C',
+    vehicleCategory: 'Combo',
+    lessons: 15,
+    price: 65000,
+    isPerLesson: false,
+    bonusText: 'Includes full access to 15 standard lessons across all three categories.',
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    desc: 'Includes full access to 15 standard lessons across all three categories.',
+  },
+  {
+    type: 'HeavyVehicle_Full',
+    name: 'Heavy Vehicle Full Package',
+    categoryGroup: 'C',
+    vehicleCategory: 'Heavy',
+    lessons: 15,
+    price: 70000,
+    isPerLesson: false,
+    bonusText: 'Includes 15 standard heavy vehicle training lessons.',
+    bonusLessons: { bike: 0, threeWheeler: 0 },
+    desc: 'Includes 15 standard heavy vehicle training lessons.',
+  },
+];
+
 export default function RegisterPage() {
-  const { register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialPkg = searchParams.get('pkg');
 
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [submittedType2, setSubmittedType2] = useState(null);
-  const [dbPackages, setDbPackages] = useState([]);
+  // Normalize student type parameter: "Type 1" (Full Course) or "Type 2" (Trial Only)
+  const rawType = searchParams.get('type') || '';
+  const initialStudentType = rawType.toLowerCase().includes('2') ? 'Type 2' : 'Type 1';
 
-  // Fetch dynamic packages maintained by Data Entry Officer (US-13, US-14)
-  useEffect(() => {
-    const fetchPkgs = async () => {
-      try {
-        const res = await api.get('/packages');
-        if (res.data?.success && res.data?.packages) {
-          setDbPackages(res.data.packages);
-        }
-      } catch (e) {
-        console.warn('Could not fetch dynamic packages:', e);
-      }
-    };
-    fetchPkgs();
-  }, []);
+  const [studentType, setStudentType] = useState(initialStudentType);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Type 2 Vehicle Package State (Only for Type 2 students)
+  const [availablePackages, setAvailablePackages] = useState([]);
+  const [selectedTier, setSelectedTier] = useState('C'); // 'C' (Full Course), 'A' (Individual), 'B' (Standard)
+  const [selectedPackageType, setSelectedPackageType] = useState('Car_Full');
+  const [lessonQty, setLessonQty] = useState(1);
 
   // Form State
   const [formData, setFormData] = useState({
-    studentType: 'Type1_NewLearner',
-    branch: 'Maharagama',
-    packageType: initialPkg || 'Car_Individual',
-    customLessonsCount: 1,
-    lightVehicleLicenseDate: '',
     name: '',
+    dob: '',
     email: '',
     phone: '',
     nic: '',
-    advanceAmount: 5000,
+    branch: 'Maharagama',
     password: '',
     confirmPassword: '',
   });
 
-  const [packageCategoryTab, setPackageCategoryTab] = useState(
-    ['Car_Full', 'Car_Refresher', 'HeavyVehicle_Bus'].includes(initialPkg)
-      ? 'comprehensive'
-      : 'individual'
-  );
+  // Calculate live age from DOB string
+  const calculatedAge = useMemo(() => {
+    if (!formData.dob) return null;
+    const dob = new Date(formData.dob);
+    if (isNaN(dob.getTime())) return null;
 
-  const individualPackagesList = [
-    {
-      id: 'Car_Individual',
-      name: 'Car (Auto/Manual) — Individual Package',
-      category: 'Light Vehicle',
-      rate: 3000,
-      price: 'Rs. 3,000 / hr',
-      lessons: 'One lesson per hour',
-      bonus: 'Automatic & Manual Options',
-      desc: 'Car(Auto/Manual) one lesson per hour - Rs.3000.00. 1-on-1 practical driving session with certified coach.',
-      icon: Car,
-    },
-    {
-      id: 'Bike_Individual',
-      name: 'Bike — Individual Package',
-      category: 'Light Vehicle',
-      rate: 1500,
-      price: 'Rs. 1,500 / hr',
-      lessons: 'One lesson per hour',
-      bonus: 'Balance & Figure-8 Training',
-      desc: 'Bike one lesson per hour - Rs.1500.00. Obstacle and Figure-8 test track coaching.',
-      icon: Bike,
-    },
-    {
-      id: 'HeavyVehicle_Individual',
-      name: 'Heavy Vehicle — Individual Package',
-      category: 'Heavy Vehicle',
-      rate: 3500,
-      price: 'Rs. 3,500 / hr',
-      lessons: 'One lesson per hour',
-      bonus: 'Strict Requirement: 2+ Years Light License',
-      desc: 'Heavy Vehicle one lesson per hour - Rs.3500. Commercial bus coaching & air brake mechanics.',
-      icon: Bus,
-    },
-    {
-      id: 'ThreeWheeler_Individual',
-      name: 'Three Wheel — Individual Package',
-      category: 'Light Vehicle',
-      rate: 2000,
-      price: 'Rs. 2,000 / hr',
-      lessons: 'One lesson per hour',
-      bonus: 'Maneuvering & Bay Parking',
-      desc: 'Three Wheel one lesson per hour - Rs.2000.00. Handlebar control & reverse trial maneuvers.',
-      icon: Car,
-    },
-  ];
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  }, [formData.dob]);
 
-  const comprehensivePackagesList = [
-    {
-      id: 'Car_Full',
-      name: 'Car — Full License Package',
-      category: 'Light Vehicle',
-      lessons: '15 Lessons (30 min each)',
-      price: 'Rs. 45,000',
-      bonus: '🎁 Includes 2 FREE Bike + 2 FREE Three-Wheeler Lessons',
-      desc: 'Complete training from basic controls to DMT trial examination readiness.',
-      icon: Car,
-    },
-    {
-      id: 'Car_Refresher',
-      name: 'Car — Refresher Package',
-      category: 'Light Vehicle',
-      lessons: '6 Lessons (30 min each)',
-      price: 'Rs. 15,000',
-      bonus: 'For existing license holders needing road confidence',
-      desc: 'Tailored for students who already hold a driving license and want to refresh skills.',
-      icon: Car,
-    },
-    {
-      id: 'HeavyVehicle_Bus',
-      name: 'Heavy Vehicle (Bus) Package',
-      category: 'Heavy Vehicle',
-      lessons: '15 Lessons (30 min each)',
-      price: 'Rs. 65,000',
-      bonus: 'Strict Requirement: Must have held Light Vehicle license for 2+ years',
-      desc: 'Comprehensive heavy vehicle commercial driver training and DMT trial coaching.',
-      icon: Bus,
-    },
-  ];
+  // Password validation rules
+  const passwordErrors = useMemo(() => {
+    const p = formData.password;
+    if (!p) return [];
+    const errors = [];
+    if (p.length < 8) errors.push('At least 8 characters');
+    if (!/[A-Za-z]/.test(p)) errors.push('At least one letter');
+    if (!/[0-9]/.test(p)) errors.push('At least one numeric digit');
+    return errors;
+  }, [formData.password]);
 
-  const getHourlyRate = (pkgId) => {
-    switch (pkgId) {
-      case 'Car_Individual':
-        return 3000;
-      case 'Bike_Individual':
-      case 'Bike':
-        return 1500;
-      case 'HeavyVehicle_Individual':
-        return 3500;
-      case 'ThreeWheeler_Individual':
-      case 'ThreeWheeler':
-        return 2000;
-      default:
-        return 0;
+  const passwordsMatch = formData.confirmPassword
+    ? formData.password === formData.confirmPassword
+    : true;
+
+  // Fetch packages from backend to get live DB IDs
+  useEffect(() => {
+    api.get('/packages').then((res) => {
+      if (res.data?.success && res.data?.packages) {
+        setAvailablePackages(res.data.packages);
+      }
+    }).catch((err) => {
+      console.warn('Using catalog fallbacks for packages:', err);
+    });
+  }, []);
+
+  // Merge live packages with fallback catalog
+  const displayedPackages = useMemo(() => {
+    return FALLBACK_PACKAGES.map((fallback) => {
+      const live = availablePackages.find((p) => p.type === fallback.type);
+      return {
+        ...fallback,
+        _id: live?._id || fallback.type,
+        price: live?.price || fallback.price,
+        name: live?.name || fallback.name,
+      };
+    });
+  }, [availablePackages]);
+
+  const activePackagesForTier = useMemo(() => {
+    return displayedPackages.filter((p) => p.categoryGroup === selectedTier);
+  }, [displayedPackages, selectedTier]);
+
+  const activeSelectedPackage = useMemo(() => {
+    return (
+      displayedPackages.find((p) => p.type === selectedPackageType) ||
+      displayedPackages[0]
+    );
+  }, [displayedPackages, selectedPackageType]);
+
+  const handleTierChange = (tier) => {
+    setSelectedTier(tier);
+    const firstInTier = displayedPackages.find((p) => p.categoryGroup === tier);
+    if (firstInTier) {
+      setSelectedPackageType(firstInTier.type);
     }
   };
 
-  const isIndividualPackage = [
-    'Car_Individual',
-    'Bike_Individual',
-    'Bike',
-    'ThreeWheeler_Individual',
-    'ThreeWheeler',
-    'HeavyVehicle_Individual',
-  ].includes(formData.packageType);
-
-  const handleNext = () => {
-    if (
-      step === 3 &&
-      (formData.packageType === 'HeavyVehicle_Bus' ||
-        formData.packageType === 'HeavyVehicle_Individual')
-    ) {
-      if (!formData.lightVehicleLicenseDate) {
-        toast.error('Please specify your Light Vehicle license issued date');
-        return;
-      }
-      const issued = new Date(formData.lightVehicleLicenseDate);
-      const twoYearsAgo = new Date();
-      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-
-      if (issued > twoYearsAgo) {
-        toast.error(
-          'DMT Rule: You must have held a light vehicle license for at least 2 years before enrolling for heavy vehicle!'
-        );
-        return;
-      }
-    }
-    setStep((prev) => Math.min(prev + 1, 4));
+  const getVehicleIcon = (category) => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('bike')) return <Bike className="w-5 h-5" />;
+    if (cat.includes('heavy') || cat.includes('bus') || cat.includes('truck')) return <Truck className="w-5 h-5" />;
+    if (cat.includes('combo')) return <Layers className="w-5 h-5" />;
+    return <Car className="w-5 h-5" />;
   };
 
-  const handlePrev = () => {
-    setStep((prev) => Math.max(prev - 1, 1));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+    // 1. Validation
+    if (!formData.name.trim()) {
+      toast.error('Please enter your full name');
+      return;
+    }
+
+    if (!formData.dob) {
+      toast.error('Please select your date of birth');
+      return;
+    }
+
+    if (calculatedAge === null || calculatedAge < 18) {
+      toast.error('Under DMT Sri Lanka regulations, applicants must be at least 18 years old to register.');
+      return;
+    }
+
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      toast.error('Please provide a valid email address');
+      return;
+    }
+
+    if (!formData.phone.trim() || formData.phone.length < 9) {
+      toast.error('Please provide a valid phone number (e.g. 07XXXXXXXX)');
       return;
     }
 
@@ -213,598 +308,653 @@ export default function RegisterPage() {
       toast.error('Password must be at least 8 characters long');
       return;
     }
-    if (!/[A-Z]/.test(formData.password)) {
-      toast.error('Password must contain at least one uppercase letter (A-Z)');
-      return;
-    }
-    if (!/[a-z]/.test(formData.password)) {
-      toast.error('Password must contain at least one lowercase letter (a-z)');
-      return;
-    }
-    if (!/[0-9]/.test(formData.password)) {
-      toast.error('Password must contain at least one numeric digit (0-9)');
+
+    if (passwordErrors.length > 0) {
+      toast.error(`Password requirement: ${passwordErrors.join(', ')}`);
       return;
     }
 
-    setLoading(true);
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
 
-    const payload = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      phone: formData.phone,
-      nic: formData.nic,
-      branch: formData.branch,
-      studentType: formData.studentType,
-      packageType: formData.packageType,
-      customLessonsCount: formData.customLessonsCount,
-      lightVehicleLicenseDate: formData.lightVehicleLicenseDate || null,
-      advanceAmount: formData.advanceAmount || 5000,
-      advanceReference: `ADV-${Date.now().toString().slice(-6)}`,
-    };
+    if (studentType === 'Type 2' && !selectedPackageType) {
+      toast.error('Please select a vehicle package for your Type 2 registration');
+      return;
+    }
 
+    setSubmitting(true);
 
-    const res = await register(payload);
-    setLoading(false);
-
-    if (res && res.success) {
-      const pendingData = {
-        studentName: formData.name,
-        studentId: res.student?._id || null,
-        userId: res.user?.id || null,
+    try {
+      const activePkg = displayedPackages.find((p) => p.type === selectedPackageType);
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        nic: formData.nic.trim() || null,
+        dob: formData.dob,
+        age: calculatedAge,
+        password: formData.password,
+        student_type: studentType,
+        studentType: studentType,
         branch: formData.branch,
-        nic: formData.nic,
-        email: formData.email,
-        advanceAmount: payload.advanceAmount || 5000,
-        registrationReference: payload.advanceReference,
+        packageType: studentType === 'Type 2' ? selectedPackageType : null,
+        packageId: studentType === 'Type 2' ? (activePkg?._id || null) : null,
+        customLessonsCount: studentType === 'Type 2' && activePkg?.isPerLesson ? lessonQty : (activePkg?.lessons || 15),
       };
 
-      try {
-        sessionStorage.setItem('sithma_pending_registration', JSON.stringify(pendingData));
-      } catch (e) {}
+      const res = await api.post('/auth/register', payload);
 
-      // Category 2 (Type 2: Trial-Ready) redirects directly to student dashboard
-      navigate('/student/dashboard');
+      if (res.data?.success) {
+        const pendingUserId = res.data.pendingUserId || res.data.user?._id || res.data.student?.userId;
+
+        // Persist pending registration context locally so Step 3 gateway knows who is paying
+        const pendingPayload = {
+          pendingUserId,
+          studentId: res.data.student?._id || null,
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          branch: formData.branch,
+          student_type: studentType,
+          studentType: studentType,
+          dob: formData.dob,
+          age: calculatedAge,
+          advanceAmount: 5000,
+          selectedPackage: studentType === 'Type 2' ? {
+            type: selectedPackageType,
+            name: activePkg?.name,
+            price: activePkg?.isPerLesson ? (Number(activePkg.price) * lessonQty) : activePkg?.price,
+            lessons: activePkg?.isPerLesson ? lessonQty : (activePkg?.lessons || 15),
+            tier: selectedTier,
+          } : null,
+        };
+
+        try {
+          localStorage.setItem('sithma_pending_registration', JSON.stringify(pendingPayload));
+          sessionStorage.setItem('sithma_pending_registration', JSON.stringify(pendingPayload));
+        } catch (storageErr) {
+          console.warn('Storage persistence warning:', storageErr);
+        }
+
+        toast.success('Registration details saved! Proceed to advance payment of LKR 5,000.');
+
+        // Navigate directly to Step 3 (Advance Payment Screen) without logging into active dashboard
+        navigate('/payment-gateway', { state: pendingPayload });
+      } else {
+        toast.error(res.data?.message || 'Registration failed');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      const serverMsg =
+        err.response?.data?.message ||
+        (err.response?.data?.errors ? Object.values(err.response.data.errors).join(', ') : 'Registration request failed. Please check your details.');
+      toast.error(serverMsg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (submittedType2) {
-    return (
-      <div className="py-12 px-4 sm:px-6 max-w-2xl mx-auto w-full text-center">
-        <div className="p-8 sm:p-10 rounded-3xl bg-slate-900/90 border border-amber-400/30 shadow-[0_20px_60px_rgba(245,158,11,0.2)] space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-            <CheckCircle2 className="w-9 h-9" />
-          </div>
-          <div>
-            <span className="badge badge-warning text-xs font-bold uppercase tracking-wider mb-2">
-              Registration Submitted • Pending Verification
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">
-              Advance Payment Awaiting Officer Approval
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-              Thank you, <strong className="text-white">{submittedType2.name}</strong>. Your Type 2 (Trial-Ready) registration and advance payment slip of <strong className="text-amber-300">Rs. {submittedType2.amount.toLocaleString()}</strong> have been queued.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left text-xs space-y-2.5 text-slate-300">
-            <div className="flex justify-between">
-              <span className="text-slate-400">NIC Number:</span>
-              <span className="font-semibold text-white">{submittedType2.nic || 'Provided'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Branch:</span>
-              <span className="font-semibold text-white">{submittedType2.branch}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Transaction Reference:</span>
-              <span className="font-semibold text-accent">{submittedType2.reference}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Account Status:</span>
-              <span className="text-amber-400 font-bold">Pending Officer Verification (Login Blocked)</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 leading-relaxed text-left">
-            ℹ️ <strong>What happens next?</strong> Our branch Data Entry Officer will verify your deposit slip. As soon as verified, your account will be activated, granting you portal access to select your course package and start booking lessons.
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link to="/login" className="btn-primary py-3 px-6 text-xs font-bold">
-              Go to Sign In Portal
-            </Link>
-            <Link to="/" className="btn-secondary py-3 px-6 text-xs font-bold">
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const isType1 = studentType === 'Type 1';
 
   return (
-    <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
-      {/* Header */}
-      <div className="text-center mb-8 space-y-2">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary via-blue-600 to-accent text-white shadow-[0_0_25px_rgba(11,95,165,0.7)] border border-white/30">
-          <UserPlus className="w-6 h-6 drop-shadow" />
+    <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+      {/* Step Header Stepper */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-amber-500/20 border border-white/15 text-xs font-bold text-slate-200 mb-3 backdrop-blur-xl shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+          <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
+          <span>Step 2 of 3: Student Registration Form</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading drop-shadow">
-          Student Registration
+
+        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+          Create Your Student Profile
         </h1>
-        <p className="text-xs text-slate-400">
-          Join Sithma Driving School across Maharagama, Werahara, or Delgoda
+        <p className="text-sm text-slate-300 mt-2 max-w-xl mx-auto">
+          Please fill in your legal details. Once registered, you will proceed directly to Step 3 to complete the mandatory advance payment.
         </p>
       </div>
 
-      {/* Step Progress Indicators */}
-      <div className="grid grid-cols-4 gap-2 mb-8">
-        {[
-          { num: 1, label: 'Student Type' },
-          { num: 2, label: 'Branch' },
-          { num: 3, label: 'Course Package' },
-          { num: 4, label: 'Account Details' },
-        ].map((s) => (
-          <div
-            key={s.num}
-            className={`text-center pb-2 border-b-2 transition-colors ${
-              step >= s.num
-                ? 'border-cyan-400 text-cyan-300 font-bold'
-                : 'border-white/10 text-slate-500 font-medium'
-            }`}
-          >
-            <span className="text-[10px] uppercase tracking-wider">Step {s.num}</span>
-            <p className="text-xs hidden sm:block mt-0.5">{s.label}</p>
+      {/* Prominent Read-Only Student Type Badge */}
+      <div className="mb-8 p-4 sm:p-5 rounded-2xl backdrop-blur-xl border transition-all duration-300 shadow-lg bg-slate-900/80 relative overflow-hidden">
+        {isType1 ? (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-cyan-400 pl-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center font-black flex-shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-white">Category: Type 1 Student</span>
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
+                    Full Course Learner
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Complete program: DMT medical, written exam preparation, practical training & trial exam.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setTypeModalOpen(true)}
+              className="text-xs text-cyan-300 hover:text-white font-bold underline cursor-pointer self-end sm:self-center"
+            >
+              Change Category
+            </button>
           </div>
-        ))}
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-amber-400 pl-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center font-black flex-shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-white">Category: Type 2 Student</span>
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                    Trial Only Learner
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Already DMT-cleared elsewhere. Directly book practical trial sessions upon payment verification.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setTypeModalOpen(true)}
+              className="text-xs text-amber-300 hover:text-white font-bold underline cursor-pointer self-end sm:self-center"
+            >
+              Change Category
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Form Container */}
-      <div className="card shadow-[0_20px_50px_rgba(0,0,0,0.7)] p-6 sm:p-8">
-        {/* STEP 1: Student Category */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-white">Step 1: Choose Your Student Category</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Select your current progress with the Department of Motor Traffic (DMT).
-              </p>
+      {/* Main Registration Form Card */}
+      <div className="backdrop-blur-2xl bg-slate-900/85 border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Full Name */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+              Full Legal Name <span className="text-rose-400">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="e.g. Kasun Chamara Perera"
+                required
+                className="w-full bg-slate-950/70 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
             </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Enter name exactly as printed on your National Identity Card (NIC) or Passport.
+            </p>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Type 1 Card */}
-              <div
-                onClick={() => setFormData({ ...formData, studentType: 'Type1_NewLearner' })}
-                className={`p-6 rounded-2xl border cursor-pointer transition-all ${
-                  formData.studentType === 'Type1_NewLearner'
-                    ? 'border-cyan-400 bg-cyan-500/15 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                    : 'border-white/10 hover:border-white/20 bg-white/5 text-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="badge badge-info">Category 1</span>
-                  {formData.studentType === 'Type1_NewLearner' && (
-                    <CheckCircle2 className="w-5 h-5 text-cyan-400" />
-                  )}
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">Type 1 - New Learner Student</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                  You have <strong>not yet registered with the DMT</strong>. Sithma Driving School will assist you with medical appointments, learner license registration, and exam milestones.
-                </p>
-                <ul className="text-xs text-slate-300 space-y-1.5 list-disc pl-4 text-left">
-                  <li>DMT Medical exam assistance</li>
-                  <li>Learner written exam tracking</li>
-                  <li>Full practical driving lessons</li>
-                </ul>
-              </div>
-
-              {/* Type 2 Card */}
-              <div
-                onClick={() => setFormData({ ...formData, studentType: 'Type2_TrialReady' })}
-                className={`p-6 rounded-2xl border cursor-pointer transition-all ${
-                  formData.studentType === 'Type2_TrialReady'
-                    ? 'border-amber-400 bg-amber-500/15 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)] ring-1 ring-amber-400'
-                    : 'border-white/10 hover:border-white/20 bg-white/5 text-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="badge badge-warning">Category 2</span>
-                  {formData.studentType === 'Type2_TrialReady' && (
-                    <CheckCircle2 className="w-5 h-5 text-amber-400" />
-                  )}
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">Type 2 - Trial-Ready Student</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                  You have <strong>already passed your DMT Medical & Learner's Exam</strong> independently and are joining specifically for practical Trial preparation.
-                </p>
-                <ul className="text-xs text-slate-300 space-y-1.5 list-disc pl-4 text-left">
-                  <li>Direct practical Trial slot booking</li>
-                  <li>Track 1.5-year Trial exam deadline</li>
-                  <li>Up to 3 Trial attempt tracking</li>
-                </ul>
+          {/* Date of Birth & Live Calculated Age */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Date of Birth <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleChange}
+                  max={new Date().toISOString().split('T')[0]}
+                  required
+                  className="w-full bg-slate-950/70 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors [color-scheme:dark]"
+                />
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-white/10">
-              <button type="button" onClick={handleNext} className="btn-primary">
-                Continue to Branch Selection <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: Branch Selection */}
-        {step === 2 && (
-          <div className="space-y-6">
+            {/* Live Visual Age Display */}
             <div>
-              <h2 className="text-lg font-bold text-white">Step 2: Choose Your Training Branch</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Select the branch where you will attend driving lessons and practical trials.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { name: 'Maharagama', addr: 'High Level Road, Maharagama', instructors: '2 Assigned Instructors' },
-                { name: 'Werahara', addr: 'DMT Main Hub, Werahara', instructors: '2 Assigned Instructors' },
-                { name: 'Delgoda', addr: 'Main Town Road, Delgoda', instructors: '2 Assigned Instructors' },
-              ].map((b) => (
-                <div
-                  key={b.name}
-                  onClick={() => setFormData({ ...formData, branch: b.name })}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                    formData.branch === b.name
-                      ? 'border-cyan-400 bg-cyan-500/15 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                      : 'border-white/10 hover:border-white/20 bg-white/5 text-slate-300'
-                  }`}
-                >
-                  <Building2 className="w-6 h-6 text-cyan-400 mb-2" />
-                  <h3 className="text-base font-bold text-white">{b.name} Branch</h3>
-                  <p className="text-xs text-slate-400 mt-1 mb-3">{b.addr}</p>
-                  <span className="text-[11px] font-semibold text-cyan-300">{b.instructors}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-between pt-4 border-t border-white/10">
-              <button type="button" onClick={handlePrev} className="btn-secondary">
-                <ArrowLeft className="w-4 h-4" /> Back
-              </button>
-              <button type="button" onClick={handleNext} className="btn-primary">
-                Continue to Package Selection <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: Course Package Selection */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-white">Step 3: Choose Your Course Package</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Select an individual hourly package or an all-inclusive comprehensive course package.
-              </p>
-            </div>
-
-            {/* Package Category Switcher */}
-            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10 w-fit">
-              <button
-                type="button"
-                onClick={() => {
-                  setPackageCategoryTab('individual');
-                  if (!isIndividualPackage) {
-                    setFormData({ ...formData, packageType: 'Car_Individual' });
-                  }
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  packageCategoryTab === 'individual'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                Individual Packages (Hourly)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setPackageCategoryTab('comprehensive');
-                  if (isIndividualPackage) {
-                    setFormData({ ...formData, packageType: 'Car_Full' });
-                  }
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  packageCategoryTab === 'comprehensive'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Full Course Packages
-              </button>
-            </div>
-
-            {/* Packages List */}
-            <div className="space-y-3">
-              {(packageCategoryTab === 'individual'
-                ? individualPackagesList
-                : comprehensivePackagesList
-              ).map((pkg) => {
-                const Icon = pkg.icon;
-                const isSelected = formData.packageType === pkg.id;
-
-                return (
-                  <div
-                    key={pkg.id}
-                    onClick={() => setFormData({ ...formData, packageType: pkg.id })}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                      isSelected
-                        ? 'border-cyan-400 bg-cyan-500/15 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                        : 'border-white/10 hover:border-white/20 bg-white/5 text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{pkg.name}</h3>
-                          <span className="badge badge-info text-[10px] py-0 px-2">{pkg.category}</span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5">{pkg.desc}</p>
-                        <p className="text-xs font-semibold text-amber-300 mt-1">{pkg.bonus}</p>
-                      </div>
-                    </div>
-
-                    <div className="text-right sm:flex-shrink-0">
-                      <div className="text-base font-black text-accent">{pkg.price}</div>
-                      <div className="text-xs text-slate-400">{pkg.lessons}</div>
-                    </div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Calculated Age (DMT 18+ Rule)
+              </label>
+              <div className="h-[46px] rounded-xl flex items-center px-4 transition-all duration-300 border">
+                {calculatedAge === null ? (
+                  <div className="text-xs text-slate-400 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <span>Select DOB to calculate age</span>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Heavy Vehicle Regulatory Prerequisite */}
-            {(formData.packageType === 'HeavyVehicle_Bus' ||
-              formData.packageType === 'HeavyVehicle_Individual') && (
-              <div className="p-4 bg-amber-500/10 border border-amber-400/20 rounded-2xl space-y-2 text-xs">
-                <div className="flex items-center gap-2 font-bold text-amber-300">
-                  <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  Heavy Vehicle Regulatory Prerequisite
-                </div>
-                <p className="text-slate-300">
-                  Department of Motor Traffic regulations require holding a Light Vehicle driving license for at least <strong>2 years</strong> before enrolling for a Heavy Vehicle license or lesson.
-                </p>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Light Vehicle License Issued Date:
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.lightVehicleLicenseDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lightVehicleLicenseDate: e.target.value })
-                    }
-                    className="px-3.5 py-2 border border-white/15 rounded-xl text-xs bg-slate-900/90 text-white outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Flexible quantity for Individual Packages */}
-            {isIndividualPackage && (
-              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <span className="text-xs font-semibold text-white block">
-                    Number of Practical Hours to book:
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Rate: Rs. {getHourlyRate(formData.packageType).toLocaleString()} / hour
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 4, 6].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, customLessonsCount: num })}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
-                          formData.customLessonsCount === num
-                            ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300'
-                            : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        {num}h
-                      </button>
-                    ))}
+                ) : calculatedAge >= 18 ? (
+                  <div className="text-xs font-bold text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>
+                      {calculatedAge} Years Old — <strong className="font-extrabold text-white">Eligible</strong> under DMT
+                    </span>
                   </div>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={formData.customLessonsCount}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        customLessonsCount: parseInt(e.target.value, 10) || 1,
-                      })
-                    }
-                    className="w-16 px-2 py-1.5 border border-white/15 bg-slate-900/90 text-white rounded-xl text-sm text-center font-bold"
-                  />
-                  <span className="text-xs text-accent font-bold whitespace-nowrap pl-1">
-                    = Rs.{' '}
-                    {(
-                      formData.customLessonsCount * getHourlyRate(formData.packageType)
-                    ).toLocaleString()}
-                  </span>
-                </div>
+                ) : (
+                  <div className="text-xs font-bold text-rose-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                    <span>
+                      {calculatedAge} Years Old — <strong className="font-extrabold text-white">Underage</strong> (Must be 18+)
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-
-            <div className="flex justify-between pt-4 border-t border-white/10">
-              <button type="button" onClick={handlePrev} className="btn-secondary">
-                <ArrowLeft className="w-4 h-4" /> Back
-              </button>
-              <button type="button" onClick={handleNext} className="btn-primary">
-                Continue to Personal Details <ArrowRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
-        )}
 
-        {/* STEP 4: Personal & Account Details */}
-        {step === 4 && (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email & Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <h2 className="text-lg font-bold text-white">Step 4: Personal & Account Details</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Create your student login credentials.
-              </p>
-            </div>
-
-            {/* Summary Pill */}
-            <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-xs flex flex-wrap items-center justify-between gap-2">
-              <span className="text-slate-300">
-                <strong className="text-white">Selected:</strong> {formData.branch} Branch •{' '}
-                {formData.studentType === 'Type1_NewLearner' ? 'Type 1 (New Learner)' : 'Type 2 (Trial Ready)'}
-              </span>
-              <span className="font-bold text-accent">
-                Package: {formData.packageType.replace('_', ' ')}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Full Name <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Kasun Perera"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  National Identity Card (NIC) <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 200012345678 or 981234567V"
-                  value={formData.nic}
-                  onChange={(e) => setFormData({ ...formData, nic: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Contact Phone (WhatsApp) <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="e.g. 0771234567"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Email Address <span className="text-rose-400">*</span>
-                </label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Email Address <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
                 <input
                   type="email"
-                  required
-                  placeholder="e.g. student@gmail.com"
+                  name="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
+                  onChange={handleChange}
+                  placeholder="name@example.com"
+                  required
+                  className="w-full bg-slate-950/70 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Password <span className="text-rose-400">*</span>
-                </label>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Phone Number <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
                 <input
-                  type="password"
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="077 123 4567"
                   required
-                  placeholder="••••••••"
+                  className="w-full bg-slate-950/70 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Preferred Branch & NIC Number */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Preferred Branch <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="branch"
+                  value={formData.branch}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-slate-950/70 border border-white/15 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                >
+                  <option value="Maharagama">Maharagama (Headquarters & Training Ground)</option>
+                  <option value="Werahara">Werahara (DMT Central Exam Hub)</option>
+                  <option value="Delgoda">Delgoda (Gampaha District Center)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                NIC / Passport Number
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="nic"
+                  value={formData.nic}
+                  onChange={handleChange}
+                  placeholder="e.g. 200012345678 or 981234567V"
+                  className="w-full bg-slate-950/70 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Password & Confirm Password */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Password <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Confirm Password <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="password"
-                  required
+                  onChange={handleChange}
                   placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-sm outline-none"
+                  required
+                  className="w-full bg-slate-950/70 border border-white/15 rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 -mt-2">
-              Password must be at least <span className="text-cyan-300 font-semibold">8 characters</span> and include an <span className="text-cyan-300 font-semibold">uppercase letter</span> (A-Z), <span className="text-cyan-300 font-semibold">lowercase letter</span> (a-z), and a <span className="text-cyan-300 font-semibold">number</span> (0-9).
-            </p>
-
-            {/* Type 2 Immediate Advance Payment Section (Exact Business Rule Flow) */}
-            {formData.studentType === 'Type2_TrialReady' && (
-              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
-                    <CreditCard className="w-4 h-4 text-amber-400" />
-                    <span>Mandatory Advance Payment (Type 2 Trial-Ready)</span>
-                  </div>
-                  <span className="badge badge-warning text-xs font-bold">Rs. 5,000</span>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Trial-ready students are required to submit an initial advance deposit of <strong>Rs. 5,000</strong>. Your account will remain in <code className="text-amber-300 bg-amber-950/60 px-1 py-0.5 rounded">pending_verification</code> status until our Data Entry Officer verifies your payment.
-                </p>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Confirm Password <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  className={`w-full bg-slate-950/70 border rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors ${
+                    passwordsMatch
+                      ? 'border-white/15 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
+                      : 'border-rose-500 focus:border-rose-500'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+            </div>
+          </div>
+
+          {/* Password Guidance Note */}
+          <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-3">
+            <span>Must contain:</span>
+            <span className={formData.password.length >= 8 ? 'text-emerald-400' : 'text-slate-500'}>
+              ✓ 8+ characters
+            </span>
+            <span className={/[A-Za-z]/.test(formData.password) ? 'text-emerald-400' : 'text-slate-500'}>
+              ✓ Letters
+            </span>
+            <span className={/[0-9]/.test(formData.password) ? 'text-emerald-400' : 'text-slate-500'}>
+              ✓ Numbers
+            </span>
+            {!passwordsMatch && (
+              <span className="text-rose-400 font-bold ml-auto">Passwords do not match</span>
             )}
+          </div>
 
-            <div className="flex justify-between pt-4 border-t border-white/10">
-              <button type="button" onClick={handlePrev} className="btn-secondary">
-                <ArrowLeft className="w-4 h-4" /> Back
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-accent px-6 py-2.5 font-bold shadow-lg"
-              >
-                {loading ? 'Submitting Registration...' : 'Complete Registration'}
-              </button>
+          {/* ========================================================================= */}
+          {/* TYPE 2 ONLY: VEHICLE TRAINING PACKAGE SELECTION */}
+          {/* ========================================================================= */}
+          {studentType === 'Type 2' && (
+            <div className="pt-6 border-t border-white/10 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                      Mandatory For Type 2
+                    </span>
+                    <span className="text-xs text-slate-400 font-semibold">Select Vehicle Package</span>
+                  </div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <PackageIcon className="w-5 h-5 text-accent" />
+                    Select Your Vehicle Training Package
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    As a Trial-Ready student, choose your full course trial package or pay-per-lesson plan.
+                  </p>
+                </div>
+              </div>
+
+              {/* Category Tier Selector: C (Full Course), A (Individual), B (Standard) */}
+              <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-slate-950/80 border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => handleTierChange('C')}
+                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 ${
+                    selectedTier === 'C'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/30 font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                    <Layers className="w-3.5 h-3.5" /> Full Packages
+                  </span>
+                  <span className="text-[10px] opacity-85">Group C • 15 Lessons</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleTierChange('A')}
+                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 ${
+                    selectedTier === 'A'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/30 font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                    <Award className="w-3.5 h-3.5" /> Individual / Private
+                  </span>
+                  <span className="text-[10px] opacity-85">Group A • Pay-Per-Lesson</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleTierChange('B')}
+                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 ${
+                    selectedTier === 'B'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/30 font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Standard Single
+                  </span>
+                  <span className="text-[10px] opacity-85">Group B • Pay-Per-Lesson</span>
+                </button>
+              </div>
+
+              {/* Package Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {activePackagesForTier.map((pkg) => {
+                  const isSelected = selectedPackageType === pkg.type;
+                  return (
+                    <div
+                      key={pkg.type}
+                      onClick={() => setSelectedPackageType(pkg.type)}
+                      className={`cursor-pointer rounded-2xl p-4 border transition-all relative flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-gradient-to-br from-amber-500/20 via-slate-900/95 to-slate-950 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.3)] ring-2 ring-amber-400/80'
+                          : 'bg-slate-950/60 border-white/10 hover:border-white/25 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                                isSelected
+                                  ? 'bg-amber-400 text-slate-950 shadow-md'
+                                  : 'bg-white/10 text-cyan-300'
+                              }`}
+                            >
+                              {getVehicleIcon(pkg.vehicleCategory || pkg.type)}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-white leading-snug">
+                                {pkg.name}
+                              </h4>
+                              <span className="text-[11px] text-slate-400 font-medium">
+                                {pkg.isPerLesson ? 'Pay-Per-Lesson' : `${pkg.lessons} Standard Lessons`}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                              isSelected
+                                ? 'bg-amber-400 text-slate-950 shadow-sm'
+                                : 'border border-white/20'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          </div>
+                        </div>
+
+                        {/* Price Tag */}
+                        <div className="pt-2 flex items-baseline justify-between border-t border-white/10">
+                          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                            Rate / Price
+                          </span>
+                          <span className="text-base font-black text-amber-300 font-mono">
+                            LKR {Number(pkg.price).toLocaleString()}
+                            {pkg.isPerLesson && (
+                              <span className="text-xs text-slate-400 font-normal"> / lesson</span>
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Bonus Callout */}
+                        {pkg.bonusText && (
+                          <div className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 flex items-center gap-2 mt-1">
+                            <Gift className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+                            <span>{pkg.bonusText}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Stepper for Pay-Per-Lesson packages */}
+              {activeSelectedPackage?.isPerLesson && (
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="space-y-0.5 text-center sm:text-left">
+                    <span className="text-xs font-bold text-slate-200">
+                      Initial Practice Lessons to Register
+                    </span>
+                    <p className="text-[11px] text-slate-400">
+                      Flexible: you can top up more trial lessons anytime.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setLessonQty(Math.max(1, lessonQty - 1))}
+                      className="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center hover:bg-white/20 font-bold transition-colors"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="w-10 text-center font-mono font-black text-base text-cyan-300">
+                      {lessonQty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLessonQty(lessonQty + 1)}
+                      className="w-8 h-8 rounded-lg bg-white/10 text-white flex items-center justify-center hover:bg-white/20 font-bold transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-300 font-mono ml-2">
+                      = LKR {(Number(activeSelectedPackage.price) * lessonQty).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Package Confirmation Box */}
+              {activeSelectedPackage && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-950 to-cyan-500/10 border border-amber-400/40 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="badge badge-warning text-[10px] font-black uppercase">
+                        Selected Package
+                      </span>
+                      <span className="text-xs font-bold text-white">
+                        {activeSelectedPackage.name}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-400 font-semibold mr-1.5">Package Total:</span>
+                      <span className="text-sm font-black text-amber-300 font-mono">
+                        LKR{' '}
+                        {activeSelectedPackage.isPerLesson
+                          ? (Number(activeSelectedPackage.price) * lessonQty).toLocaleString()
+                          : Number(activeSelectedPackage.price).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-slate-400 leading-normal flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Advance Payment Notice:</strong> Today you only pay the fixed advance deposit of <strong>LKR 5,000</strong> to submit your application for officer verification. Package balance is paid after your account is approved.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          </form>
-        )}
+          )}
+
+          {/* Fixed Advance Payment Notice Box */}
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-400/30 flex items-start gap-3">
+            <CreditCard className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-200 leading-relaxed">
+              <strong className="font-extrabold text-white">Next Step: Fixed Advance Payment of LKR 5,000</strong>
+              <p className="mt-0.5 text-amber-300/90">
+                Submitting this form creates your account in <em>Pending Payment</em> status. On the next screen, you can choose between Bank Deposit Slip Upload, Online Card Gateway, or Physical Cash Payment at the branch.
+              </p>
+            </div>
+          </div>
+
+          {/* Submit CTA Button */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={submitting || (calculatedAge !== null && calculatedAge < 18)}
+              className="w-full py-4 rounded-2xl font-black text-sm text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark hover:scale-[1.01] active:scale-95 shadow-[0_0_25px_rgba(242,169,59,0.4)] border border-amber-300/40 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                  <span>Saving Registration...</span>
+                </>
+              ) : (
+                <>
+                  <span>Proceed to Advance Payment (LKR 5,000)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* Footer info link */}
+        <div className="mt-6 pt-6 border-t border-white/10 text-center text-xs text-slate-400">
+          Already registered and paid?{' '}
+          <Link to="/login" className="text-cyan-300 font-bold hover:underline">
+            Sign In to Portal
+          </Link>
+        </div>
       </div>
 
-      <div className="text-center mt-6 text-xs text-slate-400">
-        Already registered?{' '}
-        <Link to="/login" className="text-cyan-300 font-bold hover:underline">
-          Login to your portal
-        </Link>
-      </div>
+      {/* Student Type Selection Modal */}
+      <StudentTypeSelectModal
+        isOpen={typeModalOpen}
+        onClose={() => setTypeModalOpen(false)}
+      />
     </div>
   );
 }

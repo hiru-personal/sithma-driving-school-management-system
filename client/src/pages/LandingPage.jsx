@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import StudentTypeSelectModal from '../components/StudentTypeSelectModal';
 import {
   Car,
   Bike,
@@ -27,6 +28,8 @@ import {
 export default function LandingPage() {
   const { user } = useAuth();
   const [selectedBranch, setSelectedBranch] = useState('Maharagama');
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
+
 
   const branches = [
     {
@@ -283,12 +286,13 @@ export default function LandingPage() {
                 </Link>
               ) : (
                 <>
-                  <Link
-                    to="/register"
-                    className="btn-accent px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center gap-2 hover:scale-105"
+                  <button
+                    type="button"
+                    onClick={() => setTypeModalOpen(true)}
+                    className="btn-accent px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center gap-2 hover:scale-105 cursor-pointer"
                   >
                     Enroll as Student <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </button>
                   <Link
                     to="/login"
                     className="btn-secondary px-6 py-3.5 font-bold text-sm bg-white/10 hover:bg-white/20 border-white/20 text-white flex items-center gap-2"
@@ -296,6 +300,7 @@ export default function LandingPage() {
                     Portal Sign In
                   </Link>
                 </>
+
               )}
             </div>
           </div>
@@ -621,12 +626,13 @@ export default function LandingPage() {
                   </div>
 
                   <div className="p-5 pt-0">
-                    <Link
-                      to={`/register?pkg=${pkg.packageType}`}
+                    <button
+                      type="button"
+                      onClick={() => setTypeModalOpen(true)}
                       className="btn-accent w-full py-3 font-bold text-xs text-center shadow-lg hover:scale-105 block"
                     >
-                      Enroll in Package
-                    </Link>
+                      Register to Enroll
+                    </button>
                   </div>
                 </div>
               );
@@ -694,12 +700,13 @@ export default function LandingPage() {
                   </div>
 
                   <div className="p-6 pt-0">
-                    <Link
-                      to={`/register?pkg=${pkg.packageType}`}
+                    <button
+                      type="button"
+                      onClick={() => setTypeModalOpen(true)}
                       className="btn-accent w-full py-3 font-bold text-xs text-center shadow-lg hover:scale-105 block"
                     >
-                      Enroll in Package
-                    </Link>
+                      Register to Enroll
+                    </button>
                   </div>
                 </div>
               );
@@ -752,7 +759,15 @@ export default function LandingPage() {
           <div>
             <h4 className="font-bold text-white mb-2">Quick Navigation</h4>
             <div className="space-y-1.5 text-[11px]">
-              <p><Link to="/register" className="hover:text-cyan-300">Student Self-Registration</Link></p>
+              <p>
+                <button
+                  type="button"
+                  onClick={() => setTypeModalOpen(true)}
+                  className="hover:text-cyan-300 text-left cursor-pointer"
+                >
+                  Student Self-Registration
+                </button>
+              </p>
               <p><Link to="/login" className="hover:text-cyan-300">Student & Staff Portal Sign In</Link></p>
               <p><Link to="/student/quiz" className="hover:text-cyan-300">Multilingual Practice Quiz</Link></p>
             </div>
@@ -772,6 +787,13 @@ export default function LandingPage() {
           © {new Date().getFullYear()} Sithma Driving School Management System. Designed for academic demonstration & evaluation.
         </div>
       </footer>
+
+      {/* Student Type Selection Modal (Step 1) */}
+      <StudentTypeSelectModal
+        isOpen={typeModalOpen}
+        onClose={() => setTypeModalOpen(false)}
+      />
     </div>
   );
 }
+

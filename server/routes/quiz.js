@@ -7,12 +7,13 @@ const {
   createQuizQuestion,
   deleteQuizQuestion,
 } = require('../controllers/quizController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, requireVerifiedStudent } = require('../middleware/auth');
 
 // Questions & Quiz submission
 router.get('/questions', getQuizQuestions);
-router.post('/attempt', authenticate, submitQuizAttempt);
+router.post('/attempt', authenticate, requireVerifiedStudent, submitQuizAttempt);
 router.get('/attempts/student/:id', authenticate, getStudentQuizAttempts);
+
 
 // Staff Question Bank Management
 router.post('/questions', authenticate, authorize('staff', 'admin'), createQuizQuestion);

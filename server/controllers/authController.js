@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Student = require('../models/Student');
 const Package = require('../models/Package');
@@ -7,6 +8,7 @@ const Payment = require('../models/Payment');
 const Notification = require('../models/Notification');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const { revokeToken } = require('../middleware/auth');
+const { ADVANCE_PAYMENT_AMOUNT, MIN_REGISTRATION_AGE } = require('../config/constants');
 
 // Maximum failed login attempts before temporary lockout
 const MAX_FAILED_ATTEMPTS = 5;
@@ -59,28 +61,34 @@ const validatePasswordPolicy = (password, username, email) => {
 // @desc    Register a new student (Self-Registration - Path A)
 // @route   POST /api/auth/register
 // @access  Public
+// @desc    Register a new student (Step 2: Full Course or Trial Only)
+// @route   POST /api/auth/register
+// @access  Public
 exports.registerStudent = async (req, res) => {
   try {
     const {
       name,
+      full_name,
       username,
       email,
       phone,
       nic,
+      dob,
+      dateOfBirth,
       password,
       branch,
       studentType,
+      student_type,
       packageType,
       packageId,
       paymentPlan,
       customLessonsCount,
       lightVehicleLicenseDate,
-      advancePaymentAmount,
-      advancePaymentMethod,
-      advancePaymentReference,
-      advanceSlipImageUrl,
       role, // Must be rejected if someone tries to register as staff/instructor/admin
     } = req.body;
+
+    const studentFullName = (full_name || name || '').trim();
+    const rawDob = dob || dateOfBirth;
 
     // Security Gate: No public sign-up path exists for Staff, Instructor, or Admin
     if (role && role !== 'student') {
@@ -90,18 +98,82 @@ exports.registerStudent = async (req, res) => {
       });
     }
 
-    // 1. Validation
-    if (!name || !email || !phone || !password || !branch || !nic) {
+    // 1. Required Fields Validation
+    if (!studentFullName) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required fields: name, email, phone, NIC, branch, and password.',
+        message: 'Please provide your Full Name.',
       });
     }
 
+    if (!email || !phone || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields: Email Address, Phone Number, and Password.',
+      });
+    }
+
+    if (!rawDob) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your Date of Birth (DOB).',
+      });
+    }
+
+    // 2. Email and Phone Format Validation
     const cleanEmail = email.toLowerCase().trim();
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address format.',
+      });
+    }
+
+    const cleanPhone = phone.trim().replace(/[\s\-]/g, '');
+    const phoneRegex = /^(\+94|0)?[0-9]{9,10}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid mobile number format (e.g., 0771234567).',
+      });
+    }
+
+    // 3. Date of Birth & Live Age Validation (DMT Regulation Minimum 18 years)
+    const birthDate = new Date(rawDob);
+    if (isNaN(birthDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid Date of Birth.',
+      });
+    }
+
+    const today = new Date();
+    let computedAge = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      computedAge--;
+    }
+
+    if (computedAge < MIN_REGISTRATION_AGE) {
+      return res.status(400).json({
+        success: false,
+        message: `Minimum age requirement for driving registration is ${MIN_REGISTRATION_AGE} years. (Computed age: ${computedAge})`,
+      });
+    }
+
+    // Database connectivity check
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is offline. Please whitelist your current IP address in MongoDB Atlas Network Access.',
+        error: 'MongoDB Atlas connection required. Please add your current IP or allow 0.0.0.0/0 in cloud.mongodb.com > Network Access.',
+      });
+    }
+
     const cleanUsername = (username || cleanEmail.split('@')[0]).toLowerCase().trim();
 
-    // Validate Password Policy
+    // Validate Password Policy (min 8 chars, 1 uppercase, 1 lowercase, 1 digit)
     const policy = validatePasswordPolicy(password, cleanUsername, cleanEmail);
     if (!policy.valid) {
       return res.status(400).json({
@@ -110,111 +182,118 @@ exports.registerStudent = async (req, res) => {
       });
     }
 
-    // Check unique email and username
-    const existingUser = await User.findOne({
-      $or: [{ email: cleanEmail }, { username: cleanUsername }],
-    });
-    if (existingUser) {
+    // 4. Duplicate Check: Email and Phone must be unique
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail) {
       return res.status(400).json({
         success: false,
-        message:
-          existingUser.email === cleanEmail
-            ? 'A user with this email address is already registered.'
-            : 'This username is already taken. Please choose another username.',
+        message: 'A user with this email address is already registered.',
       });
     }
 
-    const isType2 = studentType === 'Type2_TrialReady' || studentType === 'Type 2';
-
-    // 2. Resolve Package & Pricing dynamically from Database
-    let pkgDoc = null;
-    if (packageId) {
-      pkgDoc = await Package.findById(packageId);
-    }
-    if (!pkgDoc && packageType) {
-      pkgDoc = await Package.findOne({ type: packageType, isActive: true });
-    }
-    if (!pkgDoc) {
-      pkgDoc = await Package.findOne({ type: 'Car_Full', isActive: true });
+    const existingPhone = await User.findOne({ phone: cleanPhone });
+    if (existingPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user with this phone number is already registered.',
+      });
     }
 
-    let lessonsTotal = pkgDoc ? pkgDoc.lessons : 15;
-    let priceTotal = pkgDoc ? pkgDoc.price : 45000;
-    let bonusLessons = pkgDoc?.bonusLessons || { bike: 0, threeWheeler: 0 };
-    let heavyVehicleEligible = false;
+    // Resolve Student Type (Type 1: Full Course, Type 2: Trial Only)
+    const rawType = student_type || studentType || '';
+    const resolvedStudentType =
+      rawType === 'Type 2' || rawType === 'Type2_TrialReady' || rawType.toLowerCase().includes('trial')
+        ? 'Type 2'
+        : 'Type 1';
+    const isType2 = resolvedStudentType === 'Type 2';
+    const isType1 = !isType2;
 
-    if (pkgDoc?.isPerLesson) {
-      const qty = parseInt(customLessonsCount, 10) || 1;
-      lessonsTotal = qty;
-      priceTotal = pkgDoc.price * qty;
-    }
+    // Resolve Branch (default Maharagama)
+    const resolvedBranch = ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)
+      ? branch
+      : 'Maharagama';
 
-    // Check Heavy Vehicle eligibility (2+ years on light vehicle license)
-    if (
-      pkgDoc?.vehicleCategory === 'Heavy' ||
-      packageType === 'HeavyVehicle_Bus' ||
-      packageType === 'HeavyVehicle_Individual'
-    ) {
-      if (!lightVehicleLicenseDate) {
-        return res.status(400).json({
-          success: false,
-          message:
-            'Heavy Vehicle package requires providing your Light Vehicle license date (must be held for 2+ years).',
-        });
-      }
-      const twoYearsAgo = new Date();
-      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-      if (new Date(lightVehicleLicenseDate) > twoYearsAgo) {
-        return res.status(400).json({
-          success: false,
-          message:
-            'Eligibility criteria not met: You must hold a Light Vehicle license for at least 2 years before applying for Heavy Vehicle.',
-        });
-      }
-      heavyVehicleEligible = true;
-    }
-
-    // 3. Create User Account with status = pending_verification
+    // 5. Create User Account Immediately with status = "Unverified / Pending Payment"
     const passwordHash = await User.hashPassword(password);
     const user = await User.create({
-      name,
+      name: studentFullName,
       username: cleanUsername,
       email: cleanEmail,
-      phone,
-      nic: nic.trim(),
+      phone: cleanPhone,
+      nic: (nic || '').trim(),
+      dob: birthDate,
+      dateOfBirth: birthDate,
+      age: computedAge,
       passwordHash,
       role: 'student',
-      status: 'pending_verification', // Verification gate for all self-registered students
-      branch,
+      student_type: resolvedStudentType,
+      account_status: 'Unverified / Pending Payment',
+      status: 'pending_verification',
+      branch: resolvedBranch,
       mustChangePassword: false,
     });
 
-    // 4. Create Student Profile
-    const chosenPlan = paymentPlan || 'full';
-    const advanceAmount = parseFloat(advancePaymentAmount) || 5000;
-    const resolvedRef =
-      advancePaymentReference || `ADV-${Date.now().toString().slice(-6)}`;
+    // 6. Create Student Profile
+    // Resolve Package: Type 1 students do NOT select a vehicle package at initial registration
+    let pkgDoc = null;
+    let lessonsTotal = 0;
+    let priceTotal = 0;
+    let bonusLessons = { bike: 0, threeWheeler: 0 };
+    let heavyVehicleEligible = false;
 
+    if (isType2) {
+      if (packageId) {
+        pkgDoc = await Package.findById(packageId).catch(() => null);
+      }
+      if (!pkgDoc && packageType) {
+        pkgDoc = await Package.findOne({ type: packageType, isActive: true }).catch(() => null);
+      }
+      if (!pkgDoc) {
+        pkgDoc = await Package.findOne({ type: 'Car_Full', isActive: true }).catch(() => null);
+      }
+
+      lessonsTotal = pkgDoc ? pkgDoc.lessons : 15;
+      priceTotal = pkgDoc ? pkgDoc.price : 40000;
+      bonusLessons = pkgDoc?.bonusLessons || { bike: 2, threeWheeler: 2 };
+
+      if (pkgDoc?.isPerLesson) {
+        const qty = parseInt(customLessonsCount, 10) || 1;
+        lessonsTotal = qty;
+        priceTotal = pkgDoc.price * qty;
+      }
+    }
+
+    const chosenPlan = paymentPlan || 'full';
     const student = await Student.create({
       userId: user._id,
-      nic: nic.trim(),
-      studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
-      branch,
+      nic: (nic || '').trim(),
+      dob: birthDate,
+      dateOfBirth: birthDate,
+      age: computedAge,
+      studentType: resolvedStudentType,
+      student_type: resolvedStudentType,
+      branch: resolvedBranch,
       accountStatus: 'pending_verification',
-      advancePaymentStatus: 'pending',
-      advancePaymentReference: resolvedRef,
+      account_status: 'Unverified / Pending Payment',
+      advancePaymentStatus: 'none',
       packagePaymentStatus: 'none',
       paymentPlan: chosenPlan,
       lessonsUnlocked: 0,
       lessonsUsed: 0,
       trialEligible: isType2 ? true : false,
+      trial_eligible: isType2 ? true : false,
       learnerExamStatus: isType2 ? 'passed' : 'not_taken',
-      lightVehicleLicenseDate: lightVehicleLicenseDate
-        ? new Date(lightVehicleLicenseDate)
-        : null,
+      lightVehicleLicenseDate: lightVehicleLicenseDate ? new Date(lightVehicleLicenseDate) : null,
       heavyVehicleEligible,
-      package: {
-        type: pkgDoc?.type || packageType || 'Car_Full',
+      package: isType1 ? {
+        type: null,
+        packageId: null,
+        lessonsTotal: 0,
+        lessonsUsed: 0,
+        priceTotal: 0,
+        bonusLessons: { bike: 0, threeWheeler: 0 },
+      } : {
+        type: pkgDoc?.type || packageType || 'Car_Refresher',
         packageId: pkgDoc?._id || null,
         lessonsTotal,
         lessonsUsed: 0,
@@ -224,67 +303,43 @@ exports.registerStudent = async (req, res) => {
       registrationStatus: 'pending_payment',
       isAdvancePaid: false,
       isPremium: false,
-      advancePaymentAmount: advanceAmount,
+      advancePaymentAmount: ADVANCE_PAYMENT_AMOUNT,
     });
 
-    // 5. Create Advance Payment Record in Pending Queue
-    const payment = await Payment.create({
-      studentId: student._id,
-      userId: user._id,
-      packageId: pkgDoc?._id || null,
-      paymentType: 'advance',
-      slipImageUrl:
-        advanceSlipImageUrl || `/uploads/slips/advance-${Date.now()}.png`,
-      amount: advanceAmount,
-      bankName: advancePaymentMethod || 'Bank of Ceylon',
-      transactionReference: resolvedRef,
-      status: 'pending',
-      uploadedAt: new Date(),
-    });
-
-    // 6. Notify Data Entry Officers and Admins
-    const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
-    const notifications = staffUsers.map((staff) => ({
-      recipientId: staff._id,
-      recipientRole: staff.role,
-      title: 'New Student Registration (Advance Payment Pending)',
-      message: `Student ${user.name} (${nic}) registered for ${student.studentType} at ${branch} Branch. Advance payment ref ${resolvedRef} (Rs. ${advanceAmount.toLocaleString()}) awaits verification.`,
-      type: 'payment',
-      link: '/staff/payments',
-    }));
-    if (notifications.length > 0) {
-      await Notification.insertMany(notifications);
-    }
-
-    const token = generateToken(user);
-
+    // Per Step 2: Account exists in database immediately with status "Unverified / Pending Payment".
+    // Proceed directly to Step 3 (Advance Payment) — do not allow login access yet.
     return res.status(201).json({
       success: true,
-      token,
-      pendingVerification: true,
-      accountStatus: 'pending_verification',
-      message: 'Registration submitted successfully! Welcome to Sithma Driving School.',
-      studentId: student._id,
-      paymentId: payment._id,
+      pendingPayment: true,
+      pendingUserId: user._id,
+      account_status: 'Unverified / Pending Payment',
+      message: 'Account created successfully! Please proceed to advance payment.',
+
+      student: {
+        id: student._id,
+        _id: student._id,
+        student_type: student.student_type,
+        branch: student.branch,
+        advancePaymentAmount: ADVANCE_PAYMENT_AMOUNT,
+      },
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
-        username: user.username,
         email: user.email,
         phone: user.phone,
-        nic: user.nic,
+        dob: user.dob,
+        age: user.age,
+        student_type: user.student_type,
+        account_status: user.account_status,
         branch: user.branch,
-        role: user.role,
-        status: user.status,
       },
-      student,
     });
   } catch (error) {
     console.error('Registration error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Server error during student registration',
-      error: error.message,
+      message: error.message || 'Server error during student registration',
     });
   }
 };
@@ -301,6 +356,15 @@ exports.login = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide both email/username and password.',
+      });
+    }
+
+    // Database connectivity check
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is offline. Please whitelist your current IP address in MongoDB Atlas Network Access.',
+        error: 'MongoDB Atlas connection required. Please add your current IP or allow 0.0.0.0/0 in cloud.mongodb.com > Network Access.',
       });
     }
 
@@ -392,32 +456,59 @@ exports.login = async (req, res) => {
       await user.save();
     }
 
-    // 5. Fetch Student Profile
+    // 5. Fetch Student Profile & Latest Payment
     let studentProfile = null;
+    let latestPayment = null;
     if (user.role === 'student') {
       studentProfile = await Student.findOne({ userId: user._id });
+      latestPayment = await Payment.findOne({
+        userId: user._id,
+        paymentType: 'advance',
+      }).sort({ createdAt: -1 });
     }
 
     const token = generateToken(user);
+
+    const paymentMethod =
+      latestPayment?.payment_method || latestPayment?.paymentMethod || 'physical_branch';
+    const isVerified =
+      (user.account_status === 'Verified' || user.status === 'active') &&
+      studentProfile?.advancePaymentStatus === 'verified';
 
     return res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
       mustChangePassword: user.mustChangePassword || false,
+      isVerified,
+      account_status:
+        user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+      payment_method: paymentMethod,
+      payment_status:
+        latestPayment?.payment_status ||
+        (paymentMethod === 'physical_branch'
+          ? 'Pending Branch Payment'
+          : 'Pending Verification'),
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         username: user.username,
         email: user.email,
         phone: user.phone,
         nic: user.nic,
+        dob: user.dob || user.dateOfBirth,
+        age: user.age,
+        student_type: user.student_type || studentProfile?.student_type || 'Type 1',
+        account_status:
+          user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
         role: user.role,
         status: user.status,
         branch: user.branch,
         mustChangePassword: user.mustChangePassword || false,
       },
       student: studentProfile,
+      latestPayment,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -665,13 +756,363 @@ exports.logout = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
     let studentProfile = null;
+    let latestPayment = null;
     if (user.role === 'student') {
       studentProfile = await Student.findOne({ userId: user._id });
+      latestPayment = await Payment.findOne({
+        userId: user._id,
+        paymentType: 'advance',
+      }).sort({ createdAt: -1 });
+    }
+
+    const paymentMethod =
+      latestPayment?.payment_method || latestPayment?.paymentMethod || 'physical_branch';
+    const isVerified =
+      (user.account_status === 'Verified' || user.status === 'active') &&
+      studentProfile?.advancePaymentStatus === 'verified';
+
+    return res.status(200).json({
+      success: true,
+      isVerified,
+      account_status:
+        user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+      payment_method: paymentMethod,
+      payment_status:
+        latestPayment?.payment_status ||
+        (paymentMethod === 'physical_branch'
+          ? 'Pending Branch Payment'
+          : 'Pending Verification'),
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        nic: user.nic,
+        dob: user.dob || user.dateOfBirth,
+        age: user.age,
+        student_type: user.student_type || studentProfile?.student_type || 'Type 1',
+        account_status:
+          user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+        role: user.role,
+        status: user.status,
+        branch: user.branch,
+        teachingCategories: user.teachingCategories,
+        mustChangePassword: user.mustChangePassword || false,
+        createdAt: user.createdAt,
+      },
+      student: studentProfile,
+      latestPayment,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve profile',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Check Username Availability
+// @route   GET /api/auth/check-username
+// @access  Public
+exports.checkUsernameAvailability = async (req, res) => {
+  try {
+    const { username } = req.query;
+    if (!username || !username.trim()) {
+      return res.status(400).json({
+        success: false,
+        available: false,
+        message: 'Please provide a username to check.',
+      });
+    }
+
+    const cleanUsername = username.toLowerCase().trim();
+    if (cleanUsername.length < 3) {
+      return res.status(400).json({
+        success: false,
+        available: false,
+        message: 'Username must be at least 3 characters long.',
+      });
+    }
+
+    const existingUser = await User.findOne({ username: cleanUsername });
+    if (existingUser) {
+      return res.status(200).json({
+        success: true,
+        available: false,
+        message: 'This username is already taken. Please choose another username.',
+      });
     }
 
     return res.status(200).json({
       success: true,
+      available: true,
+      message: 'Username is available.',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      available: false,
+      message: 'Error checking username availability.',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Register as Type 2 (Trial-Ready) Student (User Story US-02)
+// @route   POST /api/auth/register-type2
+// @access  Public
+exports.registerType2Student = async (req, res) => {
+  try {
+    const {
+      name,
+      nic,
+      dob,
+      dateOfBirth,
+      phone,
+      email,
+      branch,
+      username,
+      password,
+      confirmPassword,
+    } = req.body;
+
+    // 1. Validate Required Fields
+    const resolvedDob = dob || dateOfBirth;
+    if (!name || !nic || !resolvedDob || !phone || !email || !branch || !username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields: Full name, NIC, Date of birth, Phone, Email, Preferred branch, Username, and Password.',
+      });
+    }
+
+    // 2. Validate Proof of DMT Clearance File (Strictly Required for Type 2)
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Proof of existing DMT clearance is required for Type 2 (Trial-Ready) registration. Please upload your learner exam pass certificate or DMT document (JPG, PNG, or PDF, max 5MB).',
+      });
+    }
+
+    // 3. Validate Sri Lankan NIC format (old 9-digit+V/X or new 12-digit)
+    const cleanNic = nic.trim().toUpperCase();
+    const nicRegex = /^([0-9]{9}[VX]|[0-9]{12})$/;
+    if (!nicRegex.test(cleanNic)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Sri Lankan NIC format. Must be 9 digits followed by V or X (e.g., 981234567V) or 12 digits (e.g., 200012345678).',
+      });
+    }
+
+    // 4. Validate Date of Birth
+    const parsedDob = new Date(resolvedDob);
+    if (isNaN(parsedDob.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Date of Birth. Please select a valid date.',
+      });
+    }
+    const today = new Date();
+    let age = today.getFullYear() - parsedDob.getFullYear();
+    const m = today.getMonth() - parsedDob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < parsedDob.getDate())) {
+      age--;
+    }
+    if (age < 17) {
+      return res.status(400).json({
+        success: false,
+        message: 'Eligibility criteria not met: Candidate must be at least 17 years of age for DMT learner clearance certification.',
+      });
+    }
+
+    // 5. Validate Sri Lankan Mobile Phone format
+    const cleanPhone = phone.trim();
+    const phoneRegex = /^(?:\+94|0)?(7[0-9]{8})$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Sri Lankan mobile number. Must start with 07X or +947X followed by 7 digits (e.g., 0771234567).',
+      });
+    }
+
+    // 6. Validate Email format
+    const cleanEmail = email.toLowerCase().trim();
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.',
+      });
+    }
+
+    // 7. Validate Branch
+    const validBranches = ['Maharagama', 'Werahara', 'Delgoda'];
+    if (!validBranches.includes(branch)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a valid branch: Maharagama, Werahara, or Delgoda.',
+      });
+    }
+
+    // 8. Validate Password and Confirmation
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password and Confirm Password do not match.',
+      });
+    }
+
+    const cleanUsername = username.toLowerCase().trim();
+    if (cleanUsername.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username must be at least 3 characters long.',
+      });
+    }
+
+    // Check project password policy
+    const policy = validatePasswordPolicy(password, cleanUsername, cleanEmail);
+    if (!policy.valid) {
+      return res.status(400).json({
+        success: false,
+        message: policy.message,
+      });
+    }
+
+    // 9. Check Unique Username across all accounts (specific error)
+    const existingUserByUsername = await User.findOne({ username: cleanUsername });
+    if (existingUserByUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'This username is already taken. Please choose another username.',
+      });
+    }
+
+    // 10. Check Unique Email
+    const existingUserByEmail = await User.findOne({ email: cleanEmail });
+    if (existingUserByEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'An account with this email address already exists. Please sign in or use another email.',
+      });
+    }
+
+    // 11. Hash Password (never plaintext)
+    const passwordHash = await User.hashPassword(password);
+
+    // 12. Create User Record (role = 'student', status = 'pending_verification')
+    let user = null;
+    let student = null;
+    const clearanceProofUrl = `/uploads/clearance_proofs/${req.file.filename}`;
+
+    try {
+      user = await User.create({
+        name: name.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
+        phone: cleanPhone,
+        nic: cleanNic,
+        dateOfBirth: parsedDob,
+        passwordHash,
+        role: 'student',
+        status: 'pending_verification', // Strictly pending verification per project auth rules
+        branch,
+        mustChangePassword: false,
+      });
+
+      // 13. Create Student Record with US-02 Initial State:
+      // - student_type = "Type 2"
+      // - trial_eligible = true
+      // - account status = "Pending Verification"
+      // - dmt_clearance_proof = stored file reference
+      // - dmt_clearance_verified = false
+      student = await Student.create({
+        userId: user._id,
+        nic: cleanNic,
+        dateOfBirth: parsedDob,
+        student_type: 'Type 2',
+        studentType: 'Type2_TrialReady',
+        trial_eligible: true,
+        trialEligible: true,
+        accountStatus: 'pending_verification',
+        dmt_clearance_proof: clearanceProofUrl,
+        dmt_clearance_verified: false,
+        branch,
+        registrationStatus: 'pending_payment',
+        isAdvancePaid: false,
+        isPremium: false,
+        learnerExamStatus: 'passed',
+        package: {
+          type: 'Car_Full',
+          packageId: null,
+          lessonsTotal: 15,
+          lessonsUsed: 0,
+          priceTotal: 45000,
+          bonusLessons: { bike: 0, threeWheeler: 0 },
+        },
+        dmtDates: {
+          medicalExamPassed: true,
+          learnerExamPassed: true,
+          learnerExamPassedDate: new Date(),
+        },
+      });
+    } catch (createErr) {
+      if (user && user._id) {
+        await User.findByIdAndDelete(user._id);
+      }
+      throw createErr;
+    }
+
+    // 14. Create Queued In-App Notification for Branch Data Entry Officers / Staff
+    const branchStaff = await User.find({
+      role: { $in: ['staff', 'admin'] },
+      $or: [{ branch: branch }, { branch: 'All' }],
+    });
+
+    const staffRecipients =
+      branchStaff.length > 0
+        ? branchStaff
+        : await User.find({ role: { $in: ['staff', 'admin'] } });
+
+    const notifications = staffRecipients.map((staffUser) => ({
+      recipientId: staffUser._id,
+      recipientRole: staffUser.role,
+      title: 'New Type 2 Registration (DMT Clearance Review Required)',
+      message: `Trial-Ready (Type 2) student ${user.name} (${cleanNic}) registered at ${branch} Branch. DMT clearance certificate proof awaits officer review.`,
+      type: 'dmt-date',
+      link: '/staff/students?type=Type2_TrialReady',
+    }));
+
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
+
+    // 15. Do NOT log in automatically / Do NOT issue token
+    return res.status(201).json({
+      success: true,
+      token: null, // Zero auto-login per requirements
+      pendingVerification: true,
+      accountStatus: 'pending_verification',
+      message: 'Registration received! Your Type 2 (Trial-Ready) application is pending verification by our branch staff. You will be notified once your account is active.',
+      student: {
+        id: student._id,
+        student_type: 'Type 2',
+        studentType: 'Type2_TrialReady',
+        trial_eligible: true,
+        trialEligible: true,
+        accountStatus: 'pending_verification',
+        dmt_clearance_proof: clearanceProofUrl,
+        dmt_clearance_verified: false,
+        branch: student.branch,
+        nic: student.nic,
+      },
       user: {
         id: user._id,
         name: user.name,
@@ -682,17 +1123,15 @@ exports.getMe = async (req, res) => {
         role: user.role,
         status: user.status,
         branch: user.branch,
-        teachingCategories: user.teachingCategories,
-        mustChangePassword: user.mustChangePassword || false,
-        createdAt: user.createdAt,
       },
-      student: studentProfile,
     });
   } catch (error) {
+    console.error('Type 2 Registration Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to retrieve profile',
+      message: 'Registration failed due to a server error. Please try again.',
       error: error.message,
     });
   }
 };
+

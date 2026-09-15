@@ -21,8 +21,53 @@ import {
   ChevronRight,
   X,
   Info,
+  FileText,
+  ExternalLink,
+  Copy,
+  Check,
+  Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+// ─── 4 Official Sithma Bank Accounts ──────────────────────────────────────────
+export const SITHMA_OFFICIAL_BANKS = [
+  {
+    id: 'BOC',
+    name: 'Bank of Ceylon (BOC)',
+    shortName: 'Bank of Ceylon (BOC)',
+    accountName: 'Sithma Driving School (Pvt) Ltd',
+    accountNo: '00892014782',
+    branch: 'Maharagama Branch',
+    badge: 'State Bank',
+  },
+  {
+    id: 'PEOPLES',
+    name: "People's Bank",
+    shortName: "People's Bank",
+    accountName: 'Sithma Driving School (Pvt) Ltd',
+    accountNo: '04420018903124',
+    branch: 'Maharagama Branch',
+    badge: 'State Bank',
+  },
+  {
+    id: 'COMBANK',
+    name: 'Commercial Bank of Ceylon',
+    shortName: 'Commercial Bank',
+    accountName: 'Sithma Driving School (Pvt) Ltd',
+    accountNo: '1000492817',
+    branch: 'Maharagama Branch',
+    badge: 'Private Bank',
+  },
+  {
+    id: 'HNB',
+    name: 'Hatton National Bank (HNB)',
+    shortName: 'Hatton National Bank (HNB)',
+    accountName: 'Sithma Driving School (Pvt) Ltd',
+    accountNo: '014210034891',
+    branch: 'Maharagama Branch',
+    badge: 'Private Bank',
+  },
+];
 
 // ─── Branch contact details ───────────────────────────────────────────────────
 const BRANCHES = {
@@ -40,7 +85,7 @@ const BRANCHES = {
     phone: '011-2518492',
     hours: 'Mon–Sat: 8:00 AM – 5:00 PM',
     map: 'https://maps.google.com/?q=Werahara,+Sri+Lanka',
-    accountNo: '11094820194',
+    accountNo: '1000492817',
     bank: 'Commercial Bank',
     swiftBranch: 'Werahara',
   },
@@ -49,13 +94,13 @@ const BRANCHES = {
     phone: '011-2974820',
     hours: 'Mon–Sat: 8:00 AM – 5:00 PM',
     map: 'https://maps.google.com/?q=Delgoda,+Sri+Lanka',
-    accountNo: '01847290123',
-    bank: 'Sampath Bank',
+    accountNo: '014210034891',
+    bank: 'Hatton National Bank (HNB)',
     swiftBranch: 'Delgoda',
   },
 };
 
-// ─── Fake card brands ─────────────────────────────────────────────────────────
+// Dummy card numbers for simulation demo
 const DUMMY_CARDS = [
   { number: '4111 1111 1111 1111', type: 'Visa', color: 'from-blue-600 to-blue-800' },
   { number: '5500 0000 0000 0004', type: 'Mastercard', color: 'from-red-600 to-orange-600' },
@@ -67,10 +112,14 @@ export default function PaymentGatewayPage() {
   const navigate = useNavigate();
   const fileRef = useRef(null);
 
-  // ── State passed from RegisterPage OR sessionStorage fallback ──────────────
+  // ── State passed from RegisterPage OR storage fallback ──────────────
   const savedPending = (() => {
     try {
-      return JSON.parse(sessionStorage.getItem('sithma_pending_registration') || 'null');
+      const sess = sessionStorage.getItem('sithma_pending_registration');
+      if (sess) return JSON.parse(sess);
+      const loc = localStorage.getItem('sithma_pending_registration');
+      if (loc) return JSON.parse(loc);
+      return null;
     } catch {
       return null;
     }
@@ -78,9 +127,9 @@ export default function PaymentGatewayPage() {
 
   const regData = location.state || savedPending || {};
   const {
-    studentName = 'Student',
+    studentName = regData.name || 'Student',
     studentId = null,
-    userId = null,
+    userId = regData.pendingUserId || null,
     branch = 'Maharagama',
     nic = '',
     email = '',
@@ -89,9 +138,10 @@ export default function PaymentGatewayPage() {
   } = regData;
 
   React.useEffect(() => {
-    if (location.state?.studentName) {
+    if (location.state?.studentName || location.state?.name) {
       try {
         sessionStorage.setItem('sithma_pending_registration', JSON.stringify(location.state));
+        localStorage.setItem('sithma_pending_registration', JSON.stringify(location.state));
       } catch (e) {}
     }
   }, [location.state]);
@@ -104,8 +154,11 @@ export default function PaymentGatewayPage() {
   // Slip Upload
   const [slipFile, setSlipFile] = useState(null);
   const [slipPreview, setSlipPreview] = useState(null);
+  const [selectedBankId, setSelectedBankId] = useState('BOC');
+  const [copiedBankId, setCopiedBankId] = useState(null);
+  const [showAllBanks, setShowAllBanks] = useState(false);
   const [slipForm, setSlipForm] = useState({
-    bankName: BRANCHES[branch]?.bank || 'Bank of Ceylon',
+    bankName: 'Bank of Ceylon (BOC)',
     amount: advanceAmount,
     reference: '',
   });
@@ -127,6 +180,20 @@ export default function PaymentGatewayPage() {
   const branchInfo = BRANCHES[branch] || BRANCHES['Maharagama'];
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
+  const handleSelectBank = (bank) => {
+    setSelectedBankId(bank.id);
+    setSlipForm((prev) => ({ ...prev, bankName: bank.name }));
+  };
+
+  const handleCopyAccountNo = (accNo, id) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(accNo);
+      setCopiedBankId(id);
+      toast.success('Account number copied to clipboard!');
+      setTimeout(() => setCopiedBankId(null), 2500);
+    }
+  };
+
   const formatCardNumber = (val) =>
     val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
 
@@ -368,7 +435,7 @@ export default function PaymentGatewayPage() {
                 <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-xs text-slate-300 text-left flex gap-2.5">
                   <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                   <span>
-                    <strong className="text-cyan-300">What happens next?</strong> Our branch Data Entry Officer will verify your payment slip within 1–2 business hours. Once verified, you can log in and start selecting your course package.
+                    <strong className="text-cyan-300">What happens next?</strong> Our branch Data Entry Officer will verify your payment slip within 1–2 business hours. Once verified, you will gain full access to your student dashboard.
                   </span>
                 </div>
               )}
@@ -643,32 +710,152 @@ export default function PaymentGatewayPage() {
                     </button>
                   </div>
 
-                  {/* Bank Account Details */}
-                  <div className="rounded-2xl bg-gradient-to-r from-slate-800/80 via-cyan-900/20 to-slate-800/80 border border-cyan-400/20 p-5 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 uppercase tracking-wider">
-                      <Landmark className="w-3.5 h-3.5" /> Transfer To This Account
+                  {/* Bank Account Details - 4 Official Banks */}
+                  <div className="rounded-2xl bg-gradient-to-r from-slate-800/90 via-cyan-950/30 to-slate-800/90 border border-cyan-400/25 p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 uppercase tracking-wider">
+                        <Landmark className="w-4 h-4 text-cyan-400" /> Transfer to Official Sithma Bank Account
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-medium">
+                        Select any of our 4 official bank accounts:
+                      </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                      <div>
-                        <p className="text-slate-400 mb-0.5">Bank</p>
-                        <p className="font-bold text-white">{branchInfo.bank}</p>
-                        <p className="text-cyan-300 text-[11px]">{branchInfo.swiftBranch} Branch</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400 mb-0.5">Account Name</p>
-                        <p className="font-bold text-white">Sithma Driving School (Pvt) Ltd</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400 mb-0.5">Account Number</p>
-                        <p className="font-mono font-black text-base text-amber-300 tracking-wider">{branchInfo.accountNo}</p>
-                        <p className="text-slate-400 text-[11px]">Amount: Rs. {Number(advanceAmount).toLocaleString()}</p>
-                      </div>
+
+                    {/* 4 Banks Selector Tabs */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {SITHMA_OFFICIAL_BANKS.map((b) => {
+                        const isSelected = selectedBankId === b.id;
+                        return (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => handleSelectBank(b)}
+                            className={`p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                              isSelected
+                                ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/50'
+                                : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/30 hover:bg-white/5'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                {b.id}
+                              </span>
+                              {isSelected ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                              ) : (
+                                <span className="w-2 h-2 rounded-full bg-white/20" />
+                              )}
+                            </div>
+                            <p className="text-xs font-bold truncate text-white">{b.shortName}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Selected Bank Details Card */}
+                    {(() => {
+                      const currentBank =
+                        SITHMA_OFFICIAL_BANKS.find((b) => b.id === selectedBankId) ||
+                        SITHMA_OFFICIAL_BANKS[0];
+                      return (
+                        <div className="bg-slate-950/80 rounded-xl p-4 border border-white/10 space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div>
+                              <p className="text-slate-400 mb-0.5">Selected Bank</p>
+                              <p className="font-bold text-white text-sm">{currentBank.name}</p>
+                              <p className="text-cyan-300 text-[11px] font-medium">{currentBank.branch}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-400 mb-0.5">Account Name</p>
+                              <p className="font-bold text-white text-sm">{currentBank.accountName}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-400 mb-0.5">Account Number</p>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-black text-lg text-amber-300 tracking-wider">
+                                  {currentBank.accountNo}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyAccountNo(currentBank.accountNo, currentBank.id)}
+                                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+                                  title="Copy Account Number"
+                                >
+                                  {copiedBankId === currentBank.id ? (
+                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                              <p className="text-slate-400 text-[11px] mt-0.5">
+                                Advance: <span className="text-white font-bold">Rs. {Number(advanceAmount).toLocaleString()}.00</span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Expandable: View All 4 Bank Accounts At Once */}
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllBanks(!showAllBanks)}
+                        className="text-[11px] text-cyan-300 hover:text-cyan-200 underline flex items-center gap-1 font-semibold"
+                      >
+                        {showAllBanks ? '▲ Hide all banks list' : '▼ View all 4 bank accounts at once'}
+                      </button>
+
+                      {showAllBanks && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2.5 pt-2.5 border-t border-white/10">
+                          {SITHMA_OFFICIAL_BANKS.map((b) => (
+                            <div
+                              key={b.id}
+                              onClick={() => handleSelectBank(b)}
+                              className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                                selectedBankId === b.id
+                                  ? 'bg-cyan-500/10 border-cyan-400/50 ring-1 ring-cyan-400/30'
+                                  : 'bg-slate-900/50 border-white/10 hover:border-white/25'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-white">{b.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyAccountNo(b.accountNo, b.id);
+                                  }}
+                                  className="text-[11px] text-cyan-300 hover:underline flex items-center gap-1 font-semibold"
+                                >
+                                  {copiedBankId === b.id ? (
+                                    <span className="text-emerald-400 font-bold">Copied!</span>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" /> Copy
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                              <p className="font-mono text-amber-300 font-bold mt-1 text-sm tracking-wider">
+                                {b.accountNo}
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                {b.branch} • {b.accountName}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">Amount Deposited (LKR) <span className="text-rose-400">*</span></label>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Amount Deposited (LKR) <span className="text-rose-400">*</span>
+                      </label>
                       <input
                         type="number"
                         value={slipForm.amount}
@@ -677,14 +864,25 @@ export default function PaymentGatewayPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">Your Bank Name <span className="text-rose-400">*</span></label>
-                      <input
-                        type="text"
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Your Bank Name <span className="text-rose-400">*</span>
+                      </label>
+                      <select
                         value={slipForm.bankName}
-                        onChange={(e) => setSlipForm({ ...slipForm, bankName: e.target.value })}
-                        placeholder="e.g. Bank of Ceylon, Commercial Bank"
-                        className="w-full px-4 py-3 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm outline-none focus:border-cyan-400/50"
-                      />
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSlipForm({ ...slipForm, bankName: val });
+                          const matched = SITHMA_OFFICIAL_BANKS.find((b) => b.name === val);
+                          if (matched) setSelectedBankId(matched.id);
+                        }}
+                        className="w-full px-4 py-3 bg-slate-950/80 border border-white/15 text-white font-semibold rounded-xl text-sm outline-none focus:border-cyan-400/50 cursor-pointer"
+                      >
+                        {SITHMA_OFFICIAL_BANKS.map((b) => (
+                          <option key={b.id} value={b.name} className="bg-slate-900 text-white">
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -695,7 +893,7 @@ export default function PaymentGatewayPage() {
                     </label>
                     <div
                       onClick={() => fileRef.current?.click()}
-                      className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                      className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
                         slipFile
                           ? 'border-cyan-400/60 bg-cyan-500/5'
                           : 'border-white/20 hover:border-cyan-400/40 bg-white/5 hover:bg-cyan-500/5'
@@ -710,9 +908,87 @@ export default function PaymentGatewayPage() {
                       />
                       {slipPreview ? (
                         <div className="space-y-3">
-                          <img src={slipPreview} alt="Slip Preview" className="max-h-40 mx-auto rounded-xl border border-white/20 shadow-lg object-contain" />
-                          <p className="text-xs text-cyan-300 font-semibold">{slipFile?.name}</p>
-                          <p className="text-[11px] text-slate-400">Click to change file</p>
+                          {slipFile?.type === 'application/pdf' ||
+                          slipFile?.name?.toLowerCase().endsWith('.pdf') ? (
+                            /* PDF Document Preview Card */
+                            <div className="max-w-md mx-auto p-4 rounded-xl bg-slate-900/90 border border-rose-500/30 text-left space-y-3 shadow-xl">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 flex-shrink-0 shadow-inner">
+                                  <FileText className="w-6 h-6" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold text-[10px] uppercase tracking-wider">
+                                      PDF Document
+                                    </span>
+                                    <span className="text-slate-400 text-[11px]">
+                                      {slipFile?.size ? `${(slipFile.size / 1024).toFixed(1)} KB` : ''}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs font-bold text-white truncate mt-0.5" title={slipFile?.name}>
+                                    {slipFile?.name}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Action link & preview note */}
+                              <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+                                <a
+                                  href={slipPreview}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-300 font-bold inline-flex items-center gap-1.5 transition-colors"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" /> View / Open PDF in New Tab
+                                </a>
+                                <span className="text-[11px] text-slate-400">Click box to replace file</span>
+                              </div>
+
+                              {/* Mini PDF preview embed */}
+                              <div className="rounded-lg overflow-hidden border border-white/10 bg-black/40 h-44 w-full relative">
+                                <iframe
+                                  src={slipPreview}
+                                  title="PDF Document Preview"
+                                  className="w-full h-full pointer-events-none"
+                                />
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(slipPreview, '_blank');
+                                  }}
+                                  className="absolute inset-0 bg-transparent hover:bg-white/5 cursor-pointer flex items-end justify-center pb-2"
+                                  title="Click to view full PDF"
+                                >
+                                  <span className="text-[10px] bg-slate-950/80 text-cyan-300 px-2 py-0.5 rounded border border-cyan-400/30 backdrop-blur-sm">
+                                    Click to open full document
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Image Preview Card */
+                            <div className="space-y-2">
+                              <div className="relative inline-block">
+                                <img
+                                  src={slipPreview}
+                                  alt="Bank Deposit Slip"
+                                  className="max-h-48 mx-auto rounded-xl border border-white/20 shadow-lg object-contain bg-black/30"
+                                />
+                                <a
+                                  href={slipPreview}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-slate-950/80 border border-white/20 text-[10px] font-bold text-cyan-300 hover:text-white flex items-center gap-1 backdrop-blur-sm"
+                                >
+                                  <ExternalLink className="w-3 h-3" /> Enlarge
+                                </a>
+                              </div>
+                              <p className="text-xs text-cyan-300 font-semibold">{slipFile?.name}</p>
+                              <p className="text-[11px] text-slate-400">Click anywhere in this box to change file</p>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-2">

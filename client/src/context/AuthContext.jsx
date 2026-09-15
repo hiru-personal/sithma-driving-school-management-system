@@ -128,8 +128,11 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user, student, pendingVerification, message };
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed.';
-      toast.error(msg);
+      const msg =
+        err.response?.data?.error && err.response?.data?.message
+          ? `${err.response.data.message}: ${err.response.data.error}`
+          : (err.response?.data?.message || err.response?.data?.error || 'Registration failed.');
+      toast.error(msg, { duration: 8000 });
       return { success: false, message: msg };
     }
   };
@@ -192,10 +195,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isAdvancePaid = !!(
-    student?.isAdvancePaid ||
-    student?.isPremium ||
-    (student?.registrationStatus && student?.registrationStatus !== 'pending_payment')
+  const isAdvancePaid = Boolean(
+    student?.isAdvancePaid &&
+    (student?.advancePaymentStatus === 'verified' || student?.accountStatus === 'active')
   );
   const isPremium = user?.role === 'student' ? isAdvancePaid : true;
 

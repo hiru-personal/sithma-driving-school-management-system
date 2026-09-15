@@ -38,11 +38,28 @@ const studentSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
+    dob: {
+      type: Date,
+      default: null,
+    },
+    age: {
+      type: Number,
+      default: null,
+    },
     studentType: {
       type: String,
       enum: ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'],
       required: true,
-      default: 'Type1_NewLearner',
+      default: 'Type 1',
+    },
+    student_type: {
+      type: String,
+      enum: ['Type 1', 'Type 2'],
+      default: 'Type 1',
     },
     branch: {
       type: String,
@@ -51,8 +68,13 @@ const studentSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ['pending_verification', 'active'],
-      default: 'active',
+      enum: ['pending_verification', 'active', 'Unverified / Pending Payment', 'Verified'],
+      default: 'pending_verification',
+    },
+    account_status: {
+      type: String,
+      enum: ['Unverified / Pending Payment', 'Verified'],
+      default: 'Unverified / Pending Payment',
     },
     advancePaymentStatus: {
       type: String,
@@ -67,6 +89,28 @@ const studentSchema = new mongoose.Schema(
     trialEligible: {
       type: Boolean,
       default: false,
+    },
+    trial_eligible: {
+      type: Boolean,
+      default: false,
+    },
+    // DMT Clearance proof for Type 2 (Trial-Ready) students
+    dmt_clearance_proof: {
+      type: String,
+      default: null,
+    },
+    dmt_clearance_verified: {
+      type: Boolean,
+      default: false,
+    },
+    dmtClearanceVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    dmtClearanceVerifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     packagePaymentStatus: {
       type: String,
@@ -117,7 +161,7 @@ const studentSchema = new mongoose.Schema(
     lightVehicleLicenseDate: { type: Date, default: null },
     heavyVehicleEligible: { type: Boolean, default: false },
     
-    // Package & Lesson Balance
+    // Package & Lesson Balance (Selected in US-14)
     package: {
       type: {
         type: String,
@@ -131,17 +175,23 @@ const studentSchema = new mongoose.Schema(
           'Bike_Individual',
           'ThreeWheeler_Individual',
           'HeavyVehicle_Individual',
+          'Bike_Standard',
+          'ThreeWheeler_Standard',
+          'Car_Standard',
+          'HeavyVehicle_Standard',
+          'Combo_Full',
+          'HeavyVehicle_Full',
         ],
-        required: true,
+        default: null,
       },
       packageId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Package',
+        default: null,
       },
       lessonsTotal: {
         type: Number,
-        required: true,
-        default: 15,
+        default: 0,
       },
       lessonsUsed: {
         type: Number,
@@ -149,7 +199,7 @@ const studentSchema = new mongoose.Schema(
       },
       priceTotal: {
         type: Number,
-        required: true,
+        default: 0,
       },
       bonusLessons: {
         bike: { type: Number, default: 0 },
@@ -214,18 +264,30 @@ studentSchema.pre('save', function (next) {
     }
   }
 
-  // Derive trialEligible status
-  if (this.studentType === 'Type2_TrialReady' || this.studentType === 'Type 2') {
+  // Derive trialEligible and trial_eligible status (US-02 vs US-01)
+  const isType2 =
+    this.student_type === 'Type 2' ||
+    this.studentType === 'Type2_TrialReady' ||
+    this.studentType === 'Type 2';
+
+  if (isType2) {
+    this.student_type = 'Type 2';
+    this.studentType = 'Type2_TrialReady';
     this.trialEligible = true;
+    this.trial_eligible = true;
     this.learnerExamStatus = 'passed';
     if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
   } else {
+    this.student_type = 'Type 1';
+    this.studentType = this.studentType || 'Type1_NewLearner';
     if (this.learnerExamStatus === 'passed' || this.dmtDates?.learnerExamPassed) {
       this.trialEligible = true;
+      this.trial_eligible = true;
       this.learnerExamStatus = 'passed';
       if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
     } else {
       this.trialEligible = false;
+      this.trial_eligible = false;
     }
   }
   // 1. Calculate Heavy Vehicle Eligibility if lightVehicleLicenseDate is provided (2+ years)

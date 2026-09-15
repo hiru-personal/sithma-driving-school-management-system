@@ -36,6 +36,28 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
+    dob: {
+      type: Date,
+      default: null,
+    },
+    age: {
+      type: Number,
+      default: null,
+    },
+    student_type: {
+      type: String,
+      enum: ['Type 1', 'Type 2'],
+      default: 'Type 1',
+    },
+    account_status: {
+      type: String,
+      enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated'],
+      default: 'Unverified / Pending Payment',
+    },
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],

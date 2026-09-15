@@ -126,11 +126,17 @@ exports.getQuizQuestions = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sithma_super_secret_jwt_key_2026_ispm');
         if (decoded && decoded.id) {
           const student = await Student.findOne({ userId: decoded.id });
-          if (student && student.studentType === 'Type1_NewLearner') {
-            return res.status(403).json({
-              success: false,
-              message: 'Access Restricted: Type 1 (New Learner) accounts are designated for lesson booking only and cannot access exam questions or quizzes.',
-            });
+          if (student) {
+            const isType1 =
+              student.studentType === 'Type1_NewLearner' ||
+              student.studentType === 'Type 1' ||
+              student.student_type === 'Type 1';
+            if (!isType1) {
+              return res.status(403).json({
+                success: false,
+                message: 'Access Restricted: DMT Exam practice quizzes are available exclusively for Type 1 (New Learner) students preparing for their theory exam.',
+              });
+            }
           }
         }
       } catch (e) {
@@ -184,11 +190,15 @@ exports.submitQuizAttempt = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student profile not found' });
     }
 
-    // Type 1 Scope Restriction
-    if (student.studentType === 'Type1_NewLearner') {
+    // Type 1 Exclusive Access: Only Type 1 students can submit exam quizzes
+    const isType1 =
+      student.studentType === 'Type1_NewLearner' ||
+      student.studentType === 'Type 1' ||
+      student.student_type === 'Type 1';
+    if (!isType1) {
       return res.status(403).json({
         success: false,
-        message: 'Access Restricted: Type 1 (New Learner) accounts cannot access or submit exam quizzes.',
+        message: 'Access Restricted: DMT Exam practice quizzes are available exclusively for Type 1 (New Learner) students.',
       });
     }
 

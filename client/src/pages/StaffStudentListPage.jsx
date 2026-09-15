@@ -30,6 +30,8 @@ import {
   File,
   Package as PackageIcon,
   Car,
+  Info,
+  Gift,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -127,7 +129,11 @@ export default function StaffStudentListPage() {
     e.preventDefault();
     setSubmittingWalkIn(true);
     try {
-      const res = await api.post('/students/walk-in', walkInForm);
+      const payload = {
+        ...walkInForm,
+        packageType: walkInForm.studentType === 'Type1_NewLearner' ? null : walkInForm.packageType,
+      };
+      const res = await api.post('/students/walk-in', payload);
       if (res.data.success) {
         toast.success(`Walk-in student ${res.data.student.userId?.name} registered successfully!`);
         setStudents((prev) => [res.data.student, ...prev]);
@@ -385,10 +391,19 @@ export default function StaffStudentListPage() {
 
                       {/* Package */}
                       <td className="px-6 py-4">
-                        <div className="font-bold text-sm sm:text-base text-white">{st.package?.type?.replace('_', ' ')}</div>
-                        <div className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                          {st.package?.lessonsUsed || 0} / {st.package?.lessonsTotal || 15} used
-                        </div>
+                        {st.package?.type ? (
+                          <>
+                            <div className="font-bold text-sm sm:text-base text-white">{st.package.type.replace(/_/g, ' ')}</div>
+                            <div className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                              {st.package.lessonsUsed || 0} / {st.package.lessonsTotal || 0} used
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-semibold text-xs text-cyan-300">Pending Theory Exam</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">Selected at Step 5</div>
+                          </>
+                        )}
                       </td>
 
                       {/* DMT Learner Exam */}
@@ -837,31 +852,114 @@ export default function StaffStudentListPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Enrolled Course Package (US-14)
-                </label>
-                <select
-                  value={walkInForm.packageType}
-                  onChange={(e) => setWalkInForm({ ...walkInForm, packageType: e.target.value })}
-                  className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
-                >
-                  {availablePackages.length > 0 ? (
-                    availablePackages.map((pkg) => (
-                      <option key={pkg._id} value={pkg.type}>
-                        {pkg.name} — Rs. {pkg.price?.toLocaleString()} ({pkg.lessons} lessons)
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="Car_Full">Car — Full License Package (15 lessons, Rs. 45,000)</option>
-                      <option value="Car_Refresher">Car — Refresher Package (6 lessons, Rs. 15,000)</option>
-                      <option value="HeavyVehicle_Bus">Heavy Vehicle (Bus) Package (15 lessons, Rs. 65,000)</option>
-                      <option value="Car_Individual">Car Individual Package (Rs. 3,000/hr)</option>
-                    </>
-                  )}
-                </select>
-              </div>
+              {/* Type 1 Notice: Course package is NOT chosen at registration */}
+              {walkInForm.studentType === 'Type1_NewLearner' && (
+                <div className="p-3.5 bg-cyan-500/10 border border-cyan-400/20 rounded-2xl flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-slate-300 leading-relaxed">
+                    <strong className="text-cyan-300 font-semibold block mb-0.5">
+                      Course Package Not Required at Registration
+                    </strong>
+                    Type 1 (Full Course) students enroll for the DMT medical clearance and theory prep first. The vehicle training package will be selected after passing the learner's written exam.
+                  </div>
+                </div>
+              )}
+
+              {/* Type 2: Vehicle Package Selection */}
+              {walkInForm.studentType === 'Type2_TrialReady' && (
+                <div className="space-y-2.5 p-3.5 bg-amber-500/5 border border-amber-400/30 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-amber-300">
+                      Select Training Package <span className="text-rose-400">*</span>
+                    </label>
+                    <span className="text-[10px] uppercase font-bold text-amber-400/80 tracking-wider">
+                      Type 2 Trial Learner
+                    </span>
+                  </div>
+
+                  <select
+                    value={walkInForm.packageType}
+                    onChange={(e) => setWalkInForm({ ...walkInForm, packageType: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/20 bg-slate-900 text-white rounded-xl focus:border-amber-400 focus:ring-1 focus:ring-amber-400 text-xs"
+                  >
+                    {availablePackages.length > 0 ? (
+                      <>
+                        <optgroup label="A. Individual / Private Single Lessons (Pay-Per-Lesson)">
+                          {availablePackages
+                            .filter((p) => p.categoryGroup === 'A' || p.type.includes('Individual'))
+                            .map((pkg) => (
+                              <option key={pkg._id} value={pkg.type}>
+                                {pkg.name} — Rs. {Number(pkg.price).toLocaleString()} / lesson
+                              </option>
+                            ))}
+                        </optgroup>
+                        <optgroup label="B. Standard Single Lessons (Pay-Per-Lesson)">
+                          {availablePackages
+                            .filter((p) => p.categoryGroup === 'B' || p.type.includes('Standard'))
+                            .map((pkg) => (
+                              <option key={pkg._id} value={pkg.type}>
+                                {pkg.name} — Rs. {Number(pkg.price).toLocaleString()} / lesson
+                              </option>
+                            ))}
+                        </optgroup>
+                        <optgroup label="C. Full Course Packages (Includes 15 Lessons)">
+                          {availablePackages
+                            .filter((p) => p.categoryGroup === 'C' || (!p.type.includes('Individual') && !p.type.includes('Standard')))
+                            .map((pkg) => (
+                              <option key={pkg._id} value={pkg.type}>
+                                {pkg.name} — Rs. {Number(pkg.price).toLocaleString()}
+                                {pkg.bonusLessons?.bike > 0 ? ` (+ ${pkg.bonusLessons.bike} Bike & ${pkg.bonusLessons.threeWheeler} 3-Wheel Free)` : ''}
+                              </option>
+                            ))}
+                        </optgroup>
+                      </>
+                    ) : (
+                      <>
+                        <optgroup label="A. Individual / Private Single Lessons (Pay-Per-Lesson)">
+                          <option value="Bike_Individual">Bike (Individual / Private) — Rs. 2,000 / lesson</option>
+                          <option value="ThreeWheeler_Individual">Three-Wheel (Individual / Private) — Rs. 2,500 / lesson</option>
+                          <option value="Car_Individual">Car (Auto/Manual — Individual / Private) — Rs. 3,000 / lesson</option>
+                          <option value="HeavyVehicle_Individual">Heavy Vehicle (Individual / Private) — Rs. 3,500 / lesson</option>
+                        </optgroup>
+                        <optgroup label="B. Standard Single Lessons (Pay-Per-Lesson)">
+                          <option value="Bike_Standard">Bike (Standard Single Lesson) — Rs. 800 / lesson</option>
+                          <option value="ThreeWheeler_Standard">Three-Wheel (Standard Single Lesson) — Rs. 1,500 / lesson</option>
+                          <option value="Car_Standard">Car (Standard Single Lesson) — Rs. 2,000 / lesson</option>
+                          <option value="HeavyVehicle_Standard">Heavy Vehicle (Standard Single Lesson) — Rs. 2,500 / lesson</option>
+                        </optgroup>
+                        <optgroup label="C. Full Course Packages">
+                          <option value="Car_Full">Car Package (Auto / Manual) — Rs. 40,000 (15 Lessons + 2 Free Bike + 2 Free 3-Wheel)</option>
+                          <option value="Combo_Full">Combo Package (Car + Bike + Three-Wheel) — Rs. 65,000 (15 Lessons across all 3)</option>
+                          <option value="HeavyVehicle_Full">Heavy Vehicle Full Package — Rs. 70,000 (15 Lessons)</option>
+                        </optgroup>
+                      </>
+                    )}
+                  </select>
+
+                  {/* Selected Package Details Pill */}
+                  {(() => {
+                    const sel = availablePackages.find((p) => p.type === walkInForm.packageType);
+                    if (!sel) return null;
+                    return (
+                      <div className="text-[11px] p-2.5 rounded-xl bg-slate-900/90 border border-white/10 space-y-1">
+                        <div className="flex justify-between items-center text-slate-200">
+                          <span className="font-semibold text-white">{sel.name}</span>
+                          <span className="font-mono font-bold text-amber-300">
+                            Rs. {Number(sel.price).toLocaleString()}
+                            {sel.isPerLesson ? ' / lesson' : ' total'}
+                          </span>
+                        </div>
+                        {sel.bonusLessons?.bike > 0 && (
+                          <div className="text-emerald-400 font-medium flex items-center gap-1">
+                            <Gift className="w-3 h-3 text-emerald-400" />
+                            <span>Bonus: 2 FREE Bike lessons + 2 FREE Three-Wheel lessons</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {walkInForm.studentType === 'Type2_TrialReady' && (
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
@@ -987,12 +1085,20 @@ export default function StaffStudentListPage() {
                     <span className="text-slate-400 block text-[11px] font-semibold">Enrolled Course Package</span>
                     <div className="p-2.5 rounded-xl bg-slate-900/80 border border-white/10">
                       <div className="text-xs font-black text-white">
-                        {verifyModalStudent.package?.packageId?.name || (verifyModalStudent.package?.type?.replace(/_/g, ' ')) || 'Car — Full License Package'}
+                        {verifyModalStudent.package?.packageId?.name ||
+                          (verifyModalStudent.package?.type?.replace(/_/g, ' ')) ||
+                          (verifyModalStudent.studentType?.includes('Type2') || verifyModalStudent.student_type === 'Type 2'
+                            ? 'Trial Practical Package'
+                            : 'Not selected yet (DMT Theory Phase)')}
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-300 mt-1">
-                        <span className="text-cyan-300 font-semibold">{verifyModalStudent.package?.lessonsTotal || 15} Practical Lessons</span>
+                        <span className="text-cyan-300 font-semibold">
+                          {verifyModalStudent.package?.lessonsTotal ? `${verifyModalStudent.package.lessonsTotal} Practical Lessons` : '0 Practical Lessons (Theory First)'}
+                        </span>
                         <span className="text-amber-300 font-mono font-bold">
-                          Course Fee: Rs. {Number(verifyModalStudent.package?.priceTotal || 45000).toLocaleString()}
+                          {verifyModalStudent.package?.priceTotal > 0
+                            ? `Course Fee: Rs. ${Number(verifyModalStudent.package.priceTotal).toLocaleString()}`
+                            : 'Advance Deposit: Rs. 5,000'}
                         </span>
                       </div>
                     </div>
@@ -1012,6 +1118,41 @@ export default function StaffStudentListPage() {
                       </span>
                     </div>
                   </div>
+
+                  {/* DMT Clearance Proof for Type 2 Student (US-02) */}
+                  {verifyModalStudent.dmt_clearance_proof && (
+                    <div className="pt-2 border-t border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-amber-400" /> DMT Clearance Proof
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            verifyModalStudent.dmt_clearance_verified
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : 'bg-amber-500/20 text-amber-300'
+                          }`}
+                        >
+                          {verifyModalStudent.dmt_clearance_verified ? 'Verified' : 'Pending Review'}
+                        </span>
+                      </div>
+                      <a
+                        href={
+                          verifyModalStudent.dmt_clearance_proof.startsWith('http')
+                            ? verifyModalStudent.dmt_clearance_proof
+                            : `http://localhost:5001${verifyModalStudent.dmt_clearance_proof}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between text-xs text-cyan-300 transition-colors group"
+                      >
+                        <span className="truncate max-w-[180px] font-mono text-[11px]">
+                          {verifyModalStudent.dmt_clearance_proof.split('/').pop()}
+                        </span>
+                        <ExternalLink className="w-3.5 h-3.5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 

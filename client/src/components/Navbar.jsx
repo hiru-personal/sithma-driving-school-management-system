@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
+import StudentTypeSelectModal from './StudentTypeSelectModal';
 import {
   Car,
   Bell,
@@ -19,13 +20,29 @@ import {
   TrendingUp,
   Sparkles,
   BarChart3,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function Navbar() {
   const { user, student, isStudent, isStaff, isInstructor, isPremium, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isType1 = Boolean(
+    student?.studentType === 'Type1_NewLearner' ||
+    student?.studentType === 'Type 1' ||
+    student?.student_type === 'Type 1' ||
+    user?.studentType === 'Type1_NewLearner' ||
+    user?.studentType === 'Type 1' ||
+    user?.student_type === 'Type 1'
+  );
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -83,6 +100,18 @@ export default function Navbar() {
                   >
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
+                  {isType1 && (
+                    <Link
+                      to="/student/quiz"
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                        isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
+                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <BookOpen className="w-4 h-4" /> Exam Practice
+                    </Link>
+                  )}
                   {isPremium && (
                     <>
                       <Link
@@ -105,18 +134,6 @@ export default function Navbar() {
                       >
                         <CreditCard className="w-4 h-4" /> Payments
                       </Link>
-                      {student?.studentType !== 'Type1_NewLearner' && (
-                        <Link
-                          to="/student/quiz"
-                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                            isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
-                              ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                              : 'text-slate-300 hover:text-white hover:bg-white/10'
-                          }`}
-                        >
-                          <BookOpen className="w-4 h-4" /> Exam Practice
-                        </Link>
-                      )}
                       <Link
                         to="/student/profile"
                         className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
@@ -266,21 +283,26 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <Link
                   to="/login"
-                  className="px-5 py-2 text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 rounded-full transition-colors border border-transparent hover:border-white/15"
+                  className="px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white hover:bg-white/10 rounded-full transition-colors border border-transparent hover:border-white/15"
                 >
                   Sign In
                 </Link>
-                <Link
-                  to="/register"
-                  className="px-5 py-2 text-sm font-extrabold text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark hover:scale-105 rounded-full shadow-[0_0_15px_rgba(242,169,59,0.4)] border border-amber-300/40 transition-all duration-300"
+
+                {/* Single Register Button Opening Student Type Selection Modal */}
+                <button
+                  type="button"
+                  onClick={() => setTypeModalOpen(true)}
+                  className="px-5 py-2 text-xs font-black text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark hover:scale-105 rounded-full shadow-[0_0_15px_rgba(242,169,59,0.4)] border border-amber-300/40 transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
                 >
-                  Register as Learner
-                </Link>
+                  <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                  <span>Register</span>
+                </button>
               </div>
             )}
+
           </div>
 
           {/* Mobile Menu Button */}
@@ -318,6 +340,15 @@ export default function Navbar() {
                   >
                     Dashboard & DMT Timeline
                   </Link>
+                  {isType1 && (
+                    <Link
+                      to="/student/quiz"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium"
+                    >
+                      DMT Exam Practice
+                    </Link>
+                  )}
                   {isPremium && (
                     <>
                       <Link
@@ -334,15 +365,6 @@ export default function Navbar() {
                       >
                         Payments
                       </Link>
-                      {student?.studentType !== 'Type1_NewLearner' && (
-                        <Link
-                          to="/student/quiz"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                        >
-                          Exam Practice
-                        </Link>
-                      )}
                     </>
                   )}
                 </div>
@@ -424,17 +446,29 @@ export default function Navbar() {
               >
                 Sign In
               </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-center py-2.5 rounded-xl text-slate-950 bg-accent font-extrabold shadow-md"
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setTypeModalOpen(true);
+                }}
+                className="w-full py-2.5 rounded-xl text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark font-black text-xs shadow-md border border-amber-300/40 flex items-center justify-center gap-2"
               >
-                Register as Learner
-              </Link>
+                <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                <span>Register (Choose Category)</span>
+              </button>
             </div>
           )}
         </div>
       )}
+
+      {/* Student Type Selection Modal (Step 1) */}
+      <StudentTypeSelectModal
+        isOpen={typeModalOpen}
+        onClose={() => setTypeModalOpen(false)}
+      />
     </header>
   );
 }
+

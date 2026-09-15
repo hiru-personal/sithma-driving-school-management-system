@@ -13,6 +13,7 @@ import {
   Eye,
   ShieldCheck,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -185,13 +186,16 @@ export default function UploadPaymentPage() {
                   <label className="block font-semibold text-slate-300 mb-1">
                     Paying Bank Name:
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.bankName}
                     onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                    placeholder="e.g. Bank of Ceylon / Commercial Bank"
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl outline-none"
-                  />
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl outline-none font-medium cursor-pointer"
+                  >
+                    <option value="Bank of Ceylon (BOC)" className="bg-slate-900 text-white">Bank of Ceylon (BOC)</option>
+                    <option value="Commercial Bank of Ceylon" className="bg-slate-900 text-white">Commercial Bank of Ceylon</option>
+                    <option value="People's Bank" className="bg-slate-900 text-white">People's Bank</option>
+                    <option value="Sampath Bank" className="bg-slate-900 text-white">Sampath Bank</option>
+                  </select>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -236,14 +240,30 @@ export default function UploadPaymentPage() {
               {/* Preview Thumbnail */}
               {previewUrl && (
                 <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
-                  <img
-                    src={previewUrl}
-                    alt="Slip Preview"
-                    className="w-16 h-16 object-cover rounded-xl border border-white/10"
-                  />
-                  <div className="text-xs">
-                    <p className="font-bold text-white">Slip Image Ready</p>
-                    <p className="text-slate-400">{selectedFile?.name}</p>
+                  {selectedFile?.type === 'application/pdf' || selectedFile?.name?.toLowerCase().endsWith('.pdf') ? (
+                    <div className="w-14 h-14 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 flex-shrink-0">
+                      <FileText className="w-7 h-7" />
+                    </div>
+                  ) : (
+                    <img
+                      src={previewUrl}
+                      alt="Slip Preview"
+                      className="w-14 h-14 object-cover rounded-xl border border-white/10"
+                    />
+                  )}
+                  <div className="text-xs flex-1 min-w-0">
+                    <p className="font-bold text-white truncate">{selectedFile?.name}</p>
+                    <p className="text-[11px] text-slate-400">
+                      {selectedFile?.size ? `${(selectedFile.size / 1024).toFixed(1)} KB` : 'Ready to upload'}
+                    </p>
+                    <a
+                      href={previewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-cyan-300 hover:text-cyan-200 inline-flex items-center gap-1 font-bold mt-1 text-[11px]"
+                    >
+                      <ExternalLink className="w-3 h-3" /> View Selected Document
+                    </a>
                   </div>
                 </div>
               )}

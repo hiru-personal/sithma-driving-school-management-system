@@ -27,9 +27,14 @@ import {
   Mail,
   Phone,
   MapPin,
-  Hash,
   Edit3,
   Package as PackageIcon,
+  AlertTriangle,
+  Building,
+  PhoneCall,
+  MessageCircle,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -38,6 +43,7 @@ export default function StudentDashboard() {
   const { user, student, updateStudentData } = useAuth();
   const [profile, setProfile] = useState(student);
   const [loading, setLoading] = useState(!student);
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   // Dynamic Packages for Step 5 Package Selection (US-13, US-14)
   const [availablePackages, setAvailablePackages] = useState([]);
@@ -59,6 +65,49 @@ export default function StudentDashboard() {
     studentType: 'Type1_NewLearner',
     packageId: '',
   });
+
+  // DMT Milestone Dates Update Modal (For Type 1 student milestone tracking)
+  const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false);
+  const [savingMilestones, setSavingMilestones] = useState(false);
+  const [milestoneForm, setMilestoneForm] = useState({
+    medicalExamDate: '',
+    learnerRegistrationDate: '',
+    learnerExamDate: '',
+  });
+
+  const openMilestoneModal = () => {
+    setMilestoneForm({
+      medicalExamDate: profile?.dmtDates?.medicalExamDate ? profile.dmtDates.medicalExamDate.split('T')[0] : '',
+      learnerRegistrationDate: profile?.dmtDates?.learnerRegistrationDate ? profile.dmtDates.learnerRegistrationDate.split('T')[0] : '',
+      learnerExamDate: profile?.dmtDates?.learnerExamDate ? profile.dmtDates.learnerExamDate.split('T')[0] : '',
+    });
+    setIsMilestoneModalOpen(true);
+  };
+
+  const handleSaveMilestones = async (e) => {
+    e.preventDefault();
+    setSavingMilestones(true);
+    try {
+      const studentId = profile?._id || student?._id;
+      const res = await api.patch(`/students/${studentId}/dmt-dates`, {
+        medicalExamDate: milestoneForm.medicalExamDate || null,
+        learnerRegistrationDate: milestoneForm.learnerRegistrationDate || null,
+        learnerExamDate: milestoneForm.learnerExamDate || null,
+      });
+      if (res.data.success) {
+        toast.success('DMT milestone dates updated successfully!');
+        if (res.data.student) {
+          setProfile(res.data.student);
+          updateStudentData(res.data.student);
+        }
+        setIsMilestoneModalOpen(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update milestone dates');
+    } finally {
+      setSavingMilestones(false);
+    }
+  };
 
   const openEditModal = () => {
     const currentPkgId =
@@ -93,7 +142,16 @@ export default function StudentDashboard() {
     setSavingDetails(true);
     try {
       const studentId = profile?._id || student?._id;
-      const res = await api.patch(`/students/${studentId}/profile`, editForm);
+      const isType2Student = Boolean(
+        editForm.studentType?.includes('Type2') || editForm.studentType === 'Type 2'
+      );
+      const payload = { ...editForm };
+      if (!isType2Student) {
+        // Type 1 students do not select a vehicle package at the registration stage
+        delete payload.packageId;
+        delete payload.packageType;
+      }
+      const res = await api.patch(`/students/${studentId}/profile`, payload);
       if (res.data.success) {
         toast.success(res.data.message || 'Details updated successfully!');
         setProfile(res.data.student);
@@ -107,19 +165,30 @@ export default function StudentDashboard() {
     }
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (showToast = false) => {
+    if (showToast) setCheckingStatus(true);
     try {
-      if (student?._id) {
-        const res = await api.get(`/students/${student._id}`);
+      const targetId = profile?._id || student?._id;
+      if (targetId) {
+        const res = await api.get(`/students/${targetId}`);
         if (res.data.success) {
           setProfile(res.data.student);
           updateStudentData(res.data.student);
+          if (res.data.student?.isAdvancePaid && res.data.student?.advancePaymentStatus === 'verified') {
+            toast.success('🎉 Advance payment verified! Welcome to your student dashboard!');
+          } else if (showToast) {
+            toast('⏳ Payment is still pending officer verification. Please check back shortly.', {
+              icon: 'ℹ️',
+            });
+          }
         }
       }
     } catch (err) {
       console.error('Error fetching student profile:', err);
+      if (showToast) toast.error('Could not refresh verification status. Please try again.');
     } finally {
       setLoading(false);
+      if (showToast) setCheckingStatus(false);
     }
   };
 
@@ -196,24 +265,52 @@ export default function StudentDashboard() {
     ? Math.min(Math.round((usedLessons / unlockedLessons) * 100), 100)
     : 0;
 
-  const isType1 = profile?.studentType === 'Type1_NewLearner' || profile?.studentType === 'Type 1';
-  const isType2 = profile?.studentType === 'Type2_TrialReady' || profile?.studentType === 'Type 2';
-  const isTrialEligible = Boolean(
-    profile?.trialEligible ||
-    profile?.learnerExamStatus === 'passed' ||
-    profile?.dmtDates?.learnerExamPassed ||
-    isType2
+  const isType1 = Boolean(
+    profile?.studentType === 'Type1_NewLearner' ||
+    profile?.studentType === 'Type 1' ||
+    profile?.student_type === 'Type 1' ||
+    user?.studentType === 'Type 1' ||
+    user?.studentType === 'Type1_NewLearner' ||
+    user?.student_type === 'Type 1'
   );
+  const isType2 = Boolean(
+    profile?.studentType === 'Type2_TrialReady' ||
+    profile?.studentType === 'Type 2' ||
+    profile?.student_type === 'Type 2' ||
+    user?.studentType === 'Type 2' ||
+    user?.student_type === 'Type 2'
+  );
+  const isExamPassed = Boolean(
+    profile?.learnerExamStatus === 'passed' ||
+    profile?.dmtDates?.learnerExamPassed
+  );
+  const isTrialEligible = Boolean(isType2 || isExamPassed);
+
+  const isVerifiedAccount = Boolean(
+    (profile?.account_status === 'Verified' || profile?.accountStatus === 'active') &&
+    (user?.account_status === 'Verified' || user?.status === 'active')
+  );
+
   const isAdvancePaymentPending = Boolean(
-    profile?.advancePaymentStatus !== 'verified' ||
+    !isVerifiedAccount ||
+    profile?.account_status === 'Unverified / Pending Payment' ||
     profile?.accountStatus === 'pending_verification' ||
     user?.status === 'pending_verification' ||
     !profile?.isAdvancePaid
   );
+
+  const paymentMethod =
+    profile?.payment_method ||
+    profile?.paymentMethod ||
+    user?.payment_method ||
+    'bank_slip';
+  const isPhysicalCash = paymentMethod === 'physical_branch';
+
   const isPackagePaymentPending = profile?.packagePaymentStatus === 'pending';
   const isPackagePaymentConfirmed = profile?.packagePaymentStatus === 'confirmed';
   const showPackagePaymentBanner =
     !isPackagePaymentConfirmed && (isType2 || (isType1 && isTrialEligible));
+
 
   const renderEditModal = () => {
     if (!isEditModalOpen) return null;
@@ -346,62 +443,64 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            {/* Course Training Package */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-200 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <PackageIcon className="w-3.5 h-3.5 text-cyan-400" /> Enrolled Training Package <span className="text-rose-400">*</span>
-                </span>
-                {editForm.packageId && availablePackages.find((p) => p._id === editForm.packageId) && (
-                  <span className="text-amber-400 font-extrabold text-xs">
-                    Rs. {Number(availablePackages.find((p) => p._id === editForm.packageId)?.price || 0).toLocaleString()}.00
+            {/* Course Training Package - Only for Type 2 (Trial-Ready) students at registration stage. Type 1 students do NOT select package at registration stage. */}
+            {Boolean(editForm.studentType?.includes('Type2') || editForm.studentType === 'Type 2') && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <PackageIcon className="w-3.5 h-3.5 text-cyan-400" /> Enrolled Training Package <span className="text-rose-400">*</span>
                   </span>
-                )}
-              </label>
-              <div className="relative">
-                <PackageIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <select
-                  value={editForm.packageId}
-                  onChange={(e) => setEditForm({ ...editForm, packageId: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
-                >
-                  {availablePackages.length > 0 ? (
-                    availablePackages.map((p) => (
-                      <option key={p._id} value={p._id}>
-                        {p.name} ({p.lessons} Lessons) — Rs. {Number(p.price).toLocaleString()}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Loading available packages...</option>
+                  {editForm.packageId && availablePackages.find((p) => p._id === editForm.packageId) && (
+                    <span className="text-amber-400 font-extrabold text-xs">
+                      Rs. {Number(availablePackages.find((p) => p._id === editForm.packageId)?.price || 0).toLocaleString()}.00
+                    </span>
                   )}
-                </select>
-              </div>
+                </label>
+                <div className="relative">
+                  <PackageIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={editForm.packageId}
+                    onChange={(e) => setEditForm({ ...editForm, packageId: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                  >
+                    {availablePackages.length > 0 ? (
+                      availablePackages.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.name} ({p.lessons} Lessons) — Rs. {Number(p.price).toLocaleString()}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Loading available packages...</option>
+                    )}
+                  </select>
+                </div>
 
-              {(() => {
-                const sel = availablePackages.find((p) => p._id === editForm.packageId);
-                if (!sel) return null;
-                return (
-                  <div className="text-xs text-slate-300 bg-white/5 rounded-xl p-3 border border-white/10 space-y-1">
-                    <div className="flex items-center justify-between font-semibold">
-                      <span className="text-cyan-300">
-                        {sel.lessons} Practical Driving Lessons ({sel.vehicleCategory || 'Light'} Vehicle)
-                      </span>
-                      <span className="text-amber-300 font-mono">
-                        {sel.isPerLesson ? `Rs. ${sel.price}/lesson` : `Total Rs. ${Number(sel.price).toLocaleString()}`}
-                      </span>
-                    </div>
-                    {sel.notes && (
-                      <p className="text-[11px] text-slate-400 leading-normal">{sel.notes}</p>
-                    )}
-                    {sel.bonusLessons?.bike > 0 && (
-                      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 mt-1">
-                        <Gift className="w-3 h-3" /> Includes {sel.bonusLessons.bike} Bike &amp; {sel.bonusLessons.threeWheeler} Three-Wheeler bonus lessons
+                {(() => {
+                  const sel = availablePackages.find((p) => p._id === editForm.packageId);
+                  if (!sel) return null;
+                  return (
+                    <div className="text-xs text-slate-300 bg-white/5 rounded-xl p-3 border border-white/10 space-y-1">
+                      <div className="flex items-center justify-between font-semibold">
+                        <span className="text-cyan-300">
+                          {sel.lessons} Practical Driving Lessons ({sel.vehicleCategory || 'Light'} Vehicle)
+                        </span>
+                        <span className="text-amber-300 font-mono">
+                          {sel.isPerLesson ? `Rs. ${sel.price}/lesson` : `Total Rs. ${Number(sel.price).toLocaleString()}`}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
+                      {sel.notes && (
+                        <p className="text-[11px] text-slate-400 leading-normal">{sel.notes}</p>
+                      )}
+                      {sel.bonusLessons?.bike > 0 && (
+                        <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 mt-1">
+                          <Gift className="w-3 h-3" /> Includes {sel.bonusLessons.bike} Bike &amp; {sel.bonusLessons.threeWheeler} Three-Wheeler bonus lessons
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
             {/* Modal Buttons */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
@@ -433,251 +532,438 @@ export default function StudentDashboard() {
     );
   };
 
+  const renderMilestoneModal = () => {
+    if (!isMilestoneModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="card max-w-md w-full p-6 sm:p-7 bg-slate-950/95 border border-cyan-400/40 shadow-[0_25px_70px_rgba(0,0,0,0.85)] space-y-5 relative rounded-3xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="space-y-0.5">
+              <span className="badge badge-info text-[10px] font-bold uppercase">
+                DMT Milestone Tracking
+              </span>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-cyan-400" /> Update DMT Milestone Dates
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMilestoneModalOpen(false)}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed">
+            As a <strong>Type 1 student</strong>, enter or update your schedule dates for DMT processing below:
+          </p>
+
+          <form onSubmit={handleSaveMilestones} className="space-y-3.5 text-xs">
+            {/* 1. Medical Exam Date */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-white/5 border border-white/10">
+              <label className="block font-bold text-slate-200 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Stethoscope className="w-3.5 h-3.5 text-emerald-400" /> 1. DMT Medical Exam Date
+                </span>
+                <span className={`text-[10px] font-semibold ${profile?.dmtDates?.medicalExamPassed ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {profile?.dmtDates?.medicalExamPassed ? '✓ Passed' : 'Pending'}
+                </span>
+              </label>
+              <input
+                type="date"
+                value={milestoneForm.medicalExamDate}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, medicalExamDate: e.target.value })}
+                className="w-full px-3 py-2 border border-white/15 bg-slate-900 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
+              />
+              <p className="text-[10px] text-slate-400">
+                National Transport Medical Institute (NTMI) examination appointment date.
+              </p>
+            </div>
+
+            {/* 2. Learner Registration Date */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-white/5 border border-white/10">
+              <label className="block font-bold text-slate-200 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-blue-400" /> 2. DMT Registration Date
+                </span>
+                <span className="text-[10px] text-cyan-300 font-semibold">
+                  {milestoneForm.learnerRegistrationDate ? 'Enrolled' : 'Pending'}
+                </span>
+              </label>
+              <input
+                type="date"
+                value={milestoneForm.learnerRegistrationDate}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, learnerRegistrationDate: e.target.value })}
+                className="w-full px-3 py-2 border border-white/15 bg-slate-900 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
+              />
+              <p className="text-[10px] text-slate-400">
+                Official date your learner permit application was submitted to DMT.
+              </p>
+            </div>
+
+            {/* 3. Learner Written Exam Date */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-white/5 border border-white/10">
+              <label className="block font-bold text-slate-200 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-purple-400" /> 3. Learner's Written Exam Date
+                </span>
+                <span className={`text-[10px] font-bold ${profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed ? '✓ Passed (Lessons Unlocked)' : 'Pass Required'}
+                </span>
+              </label>
+              <input
+                type="date"
+                value={milestoneForm.learnerExamDate}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, learnerExamDate: e.target.value })}
+                className="w-full px-3 py-2 border border-white/15 bg-slate-900 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
+              />
+              <p className="text-[10px] text-slate-400">
+                Date scheduled to sit for the DMT written theory examination.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                disabled={savingMilestones}
+                onClick={() => setIsMilestoneModalOpen(false)}
+                className="btn-secondary text-xs py-2 px-4"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingMilestones}
+                className="btn-accent text-xs py-2 px-5 font-bold shadow-lg flex items-center gap-1.5"
+              >
+                {savingMilestones ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  'Save Milestone Dates'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   if (isAdvancePaymentPending) {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1280px] mx-auto w-full">
-        {/* Welcome Header */}
-        <div className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/80 to-slate-900/90 rounded-3xl p-6 sm:p-8 text-white border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
-          <div className="space-y-2 relative z-10">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="badge badge-warning text-xs font-bold py-1">
-                {profile?.branch || user?.branch} Branch
-              </span>
-              <span className="badge bg-white/15 text-cyan-300 text-xs border border-white/20">
-                {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
-              </span>
-              <span className="badge bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
-                <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Status: Pending Verification
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-white drop-shadow">
-              Ayubowan, {user?.name}!
-            </h1>
-            <p className="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">
-              Your student profile has been created. Please complete your advance payment to activate your account and unlock your portal features.
-            </p>
+        {/* Top Status Bar */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <span className="badge badge-warning text-xs font-bold py-1">
+              {profile?.branch || user?.branch} Branch
+            </span>
+            <span className="badge bg-white/10 text-cyan-300 text-xs border border-white/15">
+              {isType2 ? 'Category 2: Trial-Ready' : 'Category 1: New Learner'}
+            </span>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openEditModal()}
+              className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-sm"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Registration Details
+            </button>
+            <button
+              onClick={() => fetchProfile(true)}
+              disabled={checkingStatus}
+              className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 hover:border-cyan-400 text-cyan-300 shadow-sm"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${checkingStatus ? 'animate-spin' : ''}`} />
+              {checkingStatus ? 'Checking...' : 'Refresh Status'}
+            </button>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap gap-3 sm:self-center relative z-10">
+        {/* Primary Warning Hero Card */}
+        <div className="relative rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-amber-950/80 via-slate-900/95 to-slate-950/90 border-2 border-amber-400/60 p-6 sm:p-10 shadow-[0_15px_50px_rgba(245,158,11,0.25)] overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600" />
+
+          <div className="flex flex-col lg:flex-row items-start gap-6 relative z-10">
+            {/* Glowing Icon Badge */}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-amber-500/20 border-2 border-amber-400/50 flex items-center justify-center text-amber-400 flex-shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.35)] animate-pulse">
+              <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-400" />
+            </div>
+
+            <div className="space-y-4 flex-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" /> Payment Verification In Progress
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  Ref: {profile?.advancePaymentReference || 'ADV-PENDING'}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  {isPhysicalCash
+                    ? `Ayubowan, ${user?.name}! Branch Advance Payment Pending`
+                    : `Ayubowan, ${user?.name}! Payment Verification In Progress`}
+                </h1>
+
+                {/* EXACT REQUIRED STATUS PROMPT */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/15 border-2 border-amber-400/50 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm sm:text-base font-extrabold text-amber-100 leading-relaxed">
+                      {isPhysicalCash
+                        ? 'Please visit your nearest branch to complete your advance payment of LKR 5,000. You will gain full system access once the payment is verified by our team.'
+                        : 'Your payment is currently being verified by a Data Entry Officer. You cannot access the system until your account is verified.'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning Notice Details Box */}
+              <div className="rounded-2xl bg-black/40 border border-amber-400/30 p-4 sm:p-5 space-y-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p>
+                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-amber-300">Rs. 5,000.00</strong> is verified by our branch Staff Officer or Data Entry Officer.
+                </p>
+                <p className="text-slate-400 text-xs">
+                  {isPhysicalCash
+                    ? 'Our staff will record your payment upon counter visit and immediately activate your account.'
+                    : 'As soon as our Data Entry Officer approves your bank slip or gateway submission, your dashboard and practical lesson booking privileges will unlock automatically.'}
+                </p>
+              </div>
+
+
+              {/* Real-time Status Pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                  <span className="text-slate-400 block text-[11px]">Enrolled Category</span>
+                  <span className="font-bold text-white">
+                    {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                  <span className="text-slate-400 block text-[11px]">Advance Fee Amount</span>
+                  <span className="font-bold text-amber-300">
+                    Rs. {Number(profile?.advancePaymentAmount || 5000).toLocaleString()}.00
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                  <span className="text-slate-400 block text-[11px]">Verification Status</span>
+                  <span className="font-bold text-amber-400 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 animate-pulse" /> Awaiting Officer Verification
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => fetchProfile(true)}
+                  disabled={checkingStatus}
+                  className="btn-accent text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
+                >
+                  <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
+                  {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
+                </button>
+
+                <Link
+                  to="/payment-gateway"
+                  state={{
+                    studentName: user?.name,
+                    studentId: profile?._id,
+                    userId: user?.id || user?._id,
+                    branch: profile?.branch || user?.branch,
+                    nic: profile?.nic || user?.nic,
+                    email: user?.email,
+                    advanceAmount: profile?.advancePaymentAmount || 5000,
+                    registrationReference: profile?.advancePaymentReference,
+                  }}
+                  className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 border-white/20 text-white hover:border-cyan-400"
+                >
+                  <CreditCard className="w-4 h-4 text-cyan-400" /> Re-upload / Change Payment Slip
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary of Submitted Details */}
+        <div className="rounded-3xl bg-slate-900/80 border border-white/10 p-6 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-cyan-400" /> Your Submitted Registration Profile
+            </h3>
             <button
               onClick={openEditModal}
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-md"
+              className="text-xs text-cyan-300 hover:text-cyan-200 underline font-semibold flex items-center gap-1"
             >
-              <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Details
+              <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Correct Typo / Edit Details
             </button>
-            <button
-              onClick={fetchProfile}
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
-            >
-              <RefreshCw className="w-4 h-4 text-cyan-300" /> Refresh Status
-            </button>
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-bold">
-              <Lock className="w-4 h-4 text-amber-400" /> Booking Locked (Payment Pending)
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+              <span className="text-slate-400 block text-[11px]">Full Name</span>
+              <span className="font-bold text-white">{user?.name || profile?.name || 'N/A'}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+              <span className="text-slate-400 block text-[11px]">NIC Number</span>
+              <span className="font-bold text-white font-mono">{profile?.nic || user?.nic || 'N/A'}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+              <span className="text-slate-400 block text-[11px]">Contact Phone</span>
+              <span className="font-bold text-white">{user?.phone || profile?.phone || 'N/A'}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+              <span className="text-slate-400 block text-[11px]">Registered Branch</span>
+              <span className="font-bold text-cyan-300">{profile?.branch || user?.branch} Branch</span>
             </div>
           </div>
         </div>
 
-        {/* Prominent Payment Pending Alert & Complete Payment CTA */}
-        <div className="card p-6 sm:p-8 bg-gradient-to-r from-amber-950/80 via-slate-900/90 to-orange-950/80 border-2 border-amber-400/50 space-y-6 shadow-[0_12px_40px_rgba(245,158,11,0.25)]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 flex-shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-                <Clock className="w-7 h-7 text-amber-400 animate-pulse" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="font-extrabold text-white text-lg sm:text-xl">
-                    Account Status: Pending Verification
-                  </h3>
-                  <span className="badge badge-warning text-xs font-bold uppercase tracking-wider">
-                    Payment Incomplete / Awaiting Approval
-                  </span>
-                </div>
-                <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
-                  Your student account is currently in <strong className="text-amber-300 font-semibold">Pending Verification</strong> status. Practical driving lesson bookings, package selections, and DMT milestone scheduling are locked until your advance deposit of <strong className="text-amber-300 text-base">Rs. {Number(profile?.advancePaymentAmount || 5000).toLocaleString()}.00</strong> is verified.
-                </p>
-                <div className="flex items-center gap-4 text-xs text-slate-400 pt-2 flex-wrap">
-                  {profile?.advancePaymentReference && (
-                    <span>Reference Code: <strong className="text-amber-300 font-mono text-sm">{profile.advancePaymentReference}</strong></span>
-                  )}
-                  <span>Registered Branch: <strong className="text-white">{profile?.branch || user?.branch} Branch</strong></span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-              <Link
-                to="/payment-gateway"
-                state={{
-                  studentName: user?.name,
-                  studentId: profile?._id,
-                  userId: user?.id || user?._id,
-                  branch: profile?.branch || user?.branch,
-                  nic: profile?.nic || user?.nic,
-                  email: user?.email,
-                  advanceAmount: profile?.advancePaymentAmount || 5000,
-                  registrationReference: profile?.advancePaymentReference,
-                }}
-                className="btn-accent text-sm py-3.5 px-6 font-extrabold flex items-center justify-center gap-2.5 shadow-xl hover:scale-105 transition-transform"
-              >
-                <CreditCard className="w-5 h-5 text-slate-950" /> Complete Payment / Upload Slip
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Student Registered Details Card */}
-        <div className="card p-6 sm:p-8 space-y-6 border border-white/15 bg-slate-900/85 shadow-xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-3">
+        {/* ─── CONTACT DETAILS SECTION (REQUIRED BY USER) ────────────────────────── */}
+        <div className="rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-blue-950/30 border border-white/15 p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-              <span className="badge badge-info text-xs font-bold uppercase tracking-wider mb-1.5">
-                Official Registration File
+              <span className="badge bg-cyan-500/15 text-cyan-300 text-[11px] font-bold uppercase tracking-wider mb-1">
+                Official Support &amp; Verification Helpdesk
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-cyan-400" /> Your Enrolled Student Details
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                These are your submitted personal and registration records on file with Sithma Driving School.
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <PhoneCall className="w-5 h-5 text-cyan-400" /> Contact Sithma Driving School
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                If your payment is urgent or if you have any questions regarding your verification, contact our branch officers directly.
               </p>
             </div>
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={openEditModal}
-                className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 hover:border-cyan-400 text-cyan-300 transition-colors shadow-md"
-              >
-                <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Details
-              </button>
-              <span className="text-xs font-mono text-slate-400 bg-white/5 px-3 py-2 rounded-xl border border-white/10">
-                Reference: {profile?.advancePaymentReference || 'ADV-PENDING'}
-              </span>
-            </div>
+            <a
+              href="https://wa.me/94772849201?text=Hello%20Sithma%20Driving%20School,%20I%20have%20submitted%20my%20advance%20payment%20and%20am%20waiting%20for%20verification."
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold flex items-center gap-2 transition-all self-start sm:self-center shadow-lg"
+            >
+              <MessageCircle className="w-4 h-4 text-emerald-400" /> WhatsApp Verification Support
+            </a>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-cyan-400" /> Full Name
-              </span>
-              <p className="text-sm font-bold text-white">{user?.name || profile?.name || 'N/A'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <Hash className="w-3.5 h-3.5 text-cyan-400" /> Username / Login ID
-              </span>
-              <p className="text-sm font-bold text-cyan-300 font-mono">{user?.username || 'N/A'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-cyan-400" /> Email Address
-              </span>
-              <p className="text-sm font-bold text-white">{user?.email || 'N/A'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-cyan-400" /> Contact Phone
-              </span>
-              <p className="text-sm font-bold text-white">{user?.phone || profile?.phone || 'Not provided'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-cyan-400" /> National Identity Card (NIC)
-              </span>
-              <p className="text-sm font-bold text-white font-mono">{profile?.nic || user?.nic || 'Not provided'}</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <Car className="w-3.5 h-3.5 text-cyan-400" /> Learner Category
-              </span>
-              <p className="text-sm font-bold text-cyan-300">
-                {isType2 ? 'Category 2: Trial-Ready (Existing Permit)' : 'Category 1: New Learner (DMT Direct)'}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-cyan-400" /> Registered Branch
-              </span>
-              <p className="text-sm font-bold text-white">{profile?.branch || user?.branch} Branch</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-amber-400" /> Advance Fee Required
-              </span>
-              <p className="text-sm font-extrabold text-amber-300">
-                Rs. {Number(profile?.advancePaymentAmount || 5000).toLocaleString()}.00
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-400" /> Payment Status
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400">
-                <Clock className="w-3.5 h-3.5 animate-pulse" /> Pending Verification
-              </span>
-            </div>
-
-            {/* Enrolled Training Package */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-amber-950/30 border border-cyan-500/30 space-y-1.5 sm:col-span-2 lg:col-span-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-xs text-cyan-300 font-bold flex items-center gap-1.5">
-                  <PackageIcon className="w-4 h-4 text-cyan-400" /> Enrolled Training Package
-                </span>
-                <span className="text-xs font-black text-amber-300 bg-amber-500/15 px-3 py-1 rounded-xl border border-amber-500/30">
-                  Course Fee: Rs. {Number(profile?.package?.priceTotal || profile?.package?.packageId?.price || 45000).toLocaleString()}.00
+          {/* 3 Branch Contact Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Maharagama Branch */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
+                  <Building className="w-4 h-4 text-cyan-400" /> Maharagama Branch
+                </h4>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">
+                  Main Office
                 </span>
               </div>
-              <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
-                <p className="text-base font-extrabold text-white">
-                  {profile?.package?.packageId?.name || (availablePackages.find((p) => p.type === profile?.package?.type)?.name) || (profile?.package?.type?.replace(/_/g, ' ')) || 'Car — Full License Package'}
+              <div className="space-y-1.5 text-xs text-slate-300">
+                <p className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span>High Level Road, Maharagama</span>
                 </p>
-                <div className="flex items-center gap-2 text-xs flex-wrap">
-                  <span className="px-2.5 py-1 bg-white/10 text-cyan-300 rounded-lg font-bold">
-                    {profile?.package?.lessonsTotal || 15} Practical Lessons
-                  </span>
-                  {(profile?.package?.bonusLessons?.bike > 0 || profile?.package?.packageId?.bonusLessons?.bike > 0) && (
-                    <span className="px-2.5 py-1 bg-emerald-500/15 text-emerald-300 rounded-lg font-bold border border-emerald-500/20">
-                      + Bonus: {profile?.package?.bonusLessons?.bike || profile?.package?.packageId?.bonusLessons?.bike} Bike, {profile?.package?.bonusLessons?.threeWheeler || profile?.package?.packageId?.bonusLessons?.threeWheeler} Three-Wheeler
-                    </span>
-                  )}
-                </div>
+                <p className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <a href="tel:0112849201" className="font-bold text-cyan-300 hover:underline">011-2849201</a>
+                  <span className="text-slate-500">/</span>
+                  <a href="tel:0772849201" className="font-bold text-cyan-300 hover:underline">077-2849201</a>
+                </p>
+                <p className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                  <span>Mon–Sat: 8:00 AM – 5:00 PM</span>
+                </p>
               </div>
+              <a
+                href="tel:0112849201"
+                className="w-full btn-secondary text-xs py-2 text-center font-bold block"
+              >
+                Call Maharagama Branch
+              </a>
+            </div>
+
+            {/* Werahara Branch */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
+                  <Building className="w-4 h-4 text-cyan-400" /> Werahara Branch
+                </h4>
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold">
+                  DMT Central
+                </span>
+              </div>
+              <div className="space-y-1.5 text-xs text-slate-300">
+                <p className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span>Near DMT Central Office, Werahara</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <a href="tel:0112518492" className="font-bold text-cyan-300 hover:underline">011-2518492</a>
+                  <span className="text-slate-500">/</span>
+                  <a href="tel:0772518492" className="font-bold text-cyan-300 hover:underline">077-2518492</a>
+                </p>
+                <p className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                  <span>Mon–Sat: 8:00 AM – 5:00 PM</span>
+                </p>
+              </div>
+              <a
+                href="tel:0112518492"
+                className="w-full btn-secondary text-xs py-2 text-center font-bold block"
+              >
+                Call Werahara Branch
+              </a>
+            </div>
+
+            {/* Delgoda Branch */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
+                  <Building className="w-4 h-4 text-cyan-400" /> Delgoda Branch
+                </h4>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                  Branch Office
+                </span>
+              </div>
+              <div className="space-y-1.5 text-xs text-slate-300">
+                <p className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span>Main Street, Delgoda</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <a href="tel:0112974820" className="font-bold text-cyan-300 hover:underline">011-2974820</a>
+                  <span className="text-slate-500">/</span>
+                  <a href="tel:0772974820" className="font-bold text-cyan-300 hover:underline">077-2974820</a>
+                </p>
+                <p className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                  <span>Mon–Sat: 8:00 AM – 5:00 PM</span>
+                </p>
+              </div>
+              <a
+                href="tel:0112974820"
+                className="w-full btn-secondary text-xs py-2 text-center font-bold block"
+              >
+                Call Delgoda Branch
+              </a>
             </div>
           </div>
-        </div>
 
-        {/* Steps to Unlock Access */}
-        <div className="p-6 rounded-2xl bg-slate-900/60 border border-white/10 space-y-4">
-          <h4 className="text-sm font-bold text-white flex items-center gap-2">
-            <Lock className="w-4 h-4 text-amber-400" /> Steps to Unlock Full Portal Access:
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-300">
-            <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
-              <span className="font-bold text-cyan-300">1. Submit Advance Payment</span>
-              <p className="text-slate-400 leading-relaxed">
-                Click "Complete Payment / Upload Slip" above to pay online or deposit slip at {profile?.branch || user?.branch} Branch.
-              </p>
+          {/* Quick Support Footer Note */}
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-cyan-400" />
+              <span>General inquiries: <a href="mailto:info@sithmadrivingschool.lk" className="text-white font-semibold hover:underline">info@sithmadrivingschool.lk</a></span>
             </div>
-            <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
-              <span className="font-bold text-cyan-300">2. Officer Verification</span>
-              <p className="text-slate-400 leading-relaxed">
-                Our branch Data Entry Officer will confirm your slip or cash payment in the system.
-              </p>
-            </div>
-            <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
-              <span className="font-bold text-emerald-400">3. Portal Unlocked</span>
-              <p className="text-slate-400 leading-relaxed">
-                Once approved, course package selection, practical driving lesson bookings, and instructor scheduling unlock immediately.
-              </p>
-            </div>
+            <p className="text-[11px] text-slate-400 text-center sm:text-right">
+              Branch officers verify payment slips between 8:00 AM – 5:00 PM daily.
+            </p>
           </div>
         </div>
 
@@ -977,23 +1263,37 @@ export default function StudentDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left 2 Cols: DMT Timeline & Consolidated Read-Only Records (US-06) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* US-06: Consolidated Read-Only View of Trial, Learner Exam, and Medical Dates */}
+          {/* US-06: Consolidated View of Trial, Learner Exam, and Medical Dates */}
           <div className="card p-6 space-y-4 border border-cyan-400/30 bg-slate-900/80">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-3">
               <div>
                 <span className="badge badge-info text-[10px] font-bold uppercase mb-1">
-                  US-06 • DMT Official Record
+                  DMT Milestone Tracking
                 </span>
                 <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-cyan-400" /> Government DMT Milestone Schedule (Read-Only)
+                  <ShieldCheck className="w-5 h-5 text-cyan-400" /> Government DMT Milestone Schedule
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Maintained and verified exclusively by your branch Data Entry Officer.
+                  {isType1
+                    ? 'Track and update your official medical exam, learner registration, and written exam dates.'
+                    : 'Verified DMT records for practical trial readiness.'}
                 </p>
               </div>
-              <span className="text-xs text-slate-400 font-mono">
-                {profile?.branch} Branch
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-400 font-mono">
+                  {profile?.branch} Branch
+                </span>
+                {isType1 && (
+                  <button
+                    type="button"
+                    onClick={openMilestoneModal}
+                    className="btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Update Milestone Dates</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
@@ -1085,11 +1385,13 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white">Course Package</h3>
-                <p className="text-xs text-slate-400">{pkg.type?.replace('_', ' ')}</p>
+                <p className="text-xs text-slate-400">
+                  {pkg.type ? pkg.type.replace('_', ' ') : 'Select at Step 5 (Theory Passed)'}
+                </p>
               </div>
               <div className="text-right">
                 <span className="text-base font-black text-accent">
-                  Rs. {pkg.priceTotal?.toLocaleString()}
+                  {pkg.priceTotal > 0 ? `Rs. ${pkg.priceTotal.toLocaleString()}` : 'Advance: Rs. 5,000'}
                 </span>
                 {profile?.paymentPlan && (
                   <div className="text-[10px] text-slate-400 font-semibold uppercase">
@@ -1185,19 +1487,24 @@ export default function StudentDashboard() {
               <Sparkles className="w-4 h-4 text-accent" /> Student Quick Hub
             </h3>
             <div className="space-y-2 text-xs">
-              {/* Type 1 Scope Restriction: Exam/Quiz is strictly hidden for Type 1 */}
-              {!isType1 && (
+              {/* Type 1 Exclusive Access: Exam/Quiz practice is available for Type 1 learners */}
+              {isType1 && (
                 <Link
                   to="/student/quiz"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-purple-500/15 via-cyan-500/10 to-transparent hover:from-purple-500/25 border border-purple-400/30 transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
                     <BookOpen className="w-4 h-4 text-cyan-300" />
-                    <span className="font-semibold text-slate-200 group-hover:text-white">
-                      DMT Exam Practice Quiz
-                    </span>
+                    <div>
+                      <span className="font-semibold text-slate-200 group-hover:text-white block">
+                        DMT Exam Practice Quiz
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Sinhala, Tamil & English • Multilingual Quizzes
+                      </span>
+                    </div>
                   </div>
-                  <span className="badge badge-info text-[10px]">3 Languages</span>
+                  <span className="badge badge-accent text-[10px] font-bold">Practice Now</span>
                 </Link>
               )}
 
@@ -1264,6 +1571,7 @@ export default function StudentDashboard() {
       </div>
 
       {renderEditModal()}
+      {renderMilestoneModal()}
     </div>
   );
 }

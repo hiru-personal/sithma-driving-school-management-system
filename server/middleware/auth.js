@@ -129,9 +129,58 @@ const checkStudentOwnership = async (req, res, next) => {
   }
 };
 
+// Middleware: Ensure Student Account is Verified
+const requireVerifiedStudent = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    // Staff and Admin are exempt
+    if (['admin', 'staff', 'instructor'].includes(req.user.role)) {
+      return next();
+    }
+
+    if (req.user.role === 'student') {
+      const student = await Student.findOne({ userId: req.user._id });
+      const isVerified =
+        (req.user.account_status === 'Verified' || req.user.status === 'active') &&
+        (student?.account_status === 'Verified' || student?.accountStatus === 'active');
+
+      if (!isVerified) {
+        const paymentMethod = student?.payment_method || student?.advancePaymentStatus || 'bank_slip';
+        let customMessage =
+          'Your payment is currently being verified by a Data Entry Officer. You cannot access the system until your account is verified.';
+
+        if (paymentMethod === 'physical_branch') {
+          customMessage =
+            'Please visit your nearest branch to complete your advance payment of LKR 5,000. You will gain full system access once the payment is verified by our team.';
+        }
+
+        return res.status(403).json({
+          success: false,
+          account_status: student?.account_status || 'Unverified / Pending Payment',
+          payment_method: paymentMethod,
+          message: customMessage,
+        });
+      }
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to verify account authorization',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   authenticate,
   authorize,
   checkStudentOwnership,
+  requireVerifiedStudent,
   revokeToken,
 };
+

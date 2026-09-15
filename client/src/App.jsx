@@ -8,6 +8,7 @@ import DarkVeil from './components/DarkVeil';
 import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
+
 import StudentDashboard from './pages/StudentDashboard';
 import StudentProfilePage from './pages/StudentProfilePage';
 import BookLessonPage from './pages/BookLessonPage';
@@ -34,7 +35,7 @@ import PremiumLockOverlay from './components/PremiumLockOverlay';
 import PaymentGatewayPage from './pages/PaymentGatewayPage';
 import { Clock } from 'lucide-react';
 
-function ProtectedRoute({ children, allowedRoles, blockType1 = false, requirePremium = false }) {
+function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePremium = false }) {
   const { user, student, isPremium, loading } = useAuth();
 
   if (loading) {
@@ -55,19 +56,21 @@ function ProtectedRoute({ children, allowedRoles, blockType1 = false, requirePre
     return <Navigate to="/" replace />;
   }
 
-  // Learner Advance Payment & Premium Access Gate only for routes that require it
+  // Learner Advance Payment & Verification Gate
   if (requirePremium && user.role === 'student' && !isPremium) {
-    return <PremiumLockOverlay />;
+    return <Navigate to="/student/dashboard" replace />;
   }
 
-  // Type 1 restriction: cannot access quiz/exam routes anywhere
+  // Only Type 1 students can do exam practices (US-04/US-09 curriculum)
   const isType1 =
     student?.studentType === 'Type1_NewLearner' ||
     student?.studentType === 'type1' ||
     student?.studentType === 'Type 1' ||
+    student?.student_type === 'Type 1' ||
     user?.studentType === 'Type1_NewLearner' ||
-    user?.studentType === 'type1';
-  if (blockType1 && isType1) {
+    user?.studentType === 'Type 1' ||
+    user?.student_type === 'Type 1';
+  if (onlyType1 && !isType1) {
     return <Navigate to="/student/dashboard" replace />;
   }
 
@@ -93,8 +96,11 @@ export default function App() {
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/register/type-2" element={<Navigate to="/register?type=Type%202" replace />} />
+            <Route path="/register/type2" element={<Navigate to="/register?type=Type%202" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/payment-gateway" element={<PaymentGatewayPage />} />
+
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -110,7 +116,7 @@ export default function App() {
             <Route
               path="/student/profile"
               element={
-                <ProtectedRoute allowedRoles={['student']} requirePremium>
+                <ProtectedRoute allowedRoles={['student']}>
                   <StudentProfilePage />
                 </ProtectedRoute>
               }
@@ -150,7 +156,7 @@ export default function App() {
             <Route
               path="/student/quiz"
               element={
-                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1>
                   <QuizSetupPage />
                 </ProtectedRoute>
               }
@@ -158,7 +164,7 @@ export default function App() {
             <Route
               path="/student/quiz/take"
               element={
-                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1>
                   <QuizTakingPage />
                 </ProtectedRoute>
               }
@@ -166,7 +172,7 @@ export default function App() {
             <Route
               path="/student/quiz/result"
               element={
-                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1>
                   <QuizResultPage />
                 </ProtectedRoute>
               }
@@ -174,7 +180,7 @@ export default function App() {
             <Route
               path="/student/quiz/history"
               element={
-                <ProtectedRoute allowedRoles={['student']} requirePremium blockType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1>
                   <QuizHistoryPage />
                 </ProtectedRoute>
               }
