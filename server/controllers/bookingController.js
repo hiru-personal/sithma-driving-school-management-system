@@ -67,15 +67,27 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 5. Gate: Check Lessons Balance & Monthly Payment Quota Cap
-    const totalAllowed = student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null
-      ? student.lessonsUnlocked
+    // 5. Gate: Check Lessons Balance & Single / Installment / Monthly Quota Cap
+    const totalAllowed = (student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null)
+      ? (student.lessonsUnlocked + (student.package?.additionalLessonsRequested || 0))
       : ((student.package?.lessonsTotal || 15) + (student.package?.additionalLessonsRequested || 0));
     const currentUsed = student.lessonsUsed !== undefined && student.lessonsUsed !== null
       ? student.lessonsUsed
       : (student.package?.lessonsUsed || 0);
 
     if (currentUsed >= totalAllowed) {
+      if (student.paymentPlan === 'single') {
+        return res.status(403).json({
+          success: false,
+          message: 'You have completed your single lesson quota (1 lesson). Please pay for another single lesson or upgrade to a full package on your dashboard to continue booking.',
+        });
+      }
+      if (student.paymentPlan === 'installments' && (student.installmentsPaidCount || 0) < 3) {
+        return res.status(403).json({
+          success: false,
+          message: `Installment limit reached: You have used all ${totalAllowed} unlocked lessons for Installment #${student.installmentsPaidCount || 1}. Please pay your next installment on your dashboard to unlock 5 more lessons.`,
+        });
+      }
       if (student.paymentPlan === 'monthly') {
         return res.status(403).json({
           success: false,
@@ -84,7 +96,7 @@ exports.createBooking = async (req, res) => {
       }
       return res.status(400).json({
         success: false,
-        message: 'You have used all unlocked lessons in your course package. Please buy additional lessons in your profile to continue booking.',
+        message: 'You have used all unlocked lessons in your course package. Please buy additional lessons on your dashboard to continue booking.',
       });
     }
 

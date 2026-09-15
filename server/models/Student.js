@@ -25,6 +25,35 @@ const trialAttemptSchema = new mongoose.Schema(
   { _id: true, timestamps: true }
 );
 
+const learnerExamAttemptSchema = new mongoose.Schema(
+  {
+    attemptNumber: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 3,
+    },
+    date: {
+      type: Date,
+      default: Date.now,
+    },
+    result: {
+      type: String,
+      enum: ['passed', 'failed'],
+      required: true,
+    },
+    marks: {
+      type: Number,
+      default: null,
+    },
+    notes: {
+      type: String,
+      default: '',
+    },
+  },
+  { _id: true, timestamps: true }
+);
+
 const studentSchema = new mongoose.Schema(
   {
     userId: {
@@ -68,12 +97,12 @@ const studentSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ['pending_verification', 'active', 'Unverified / Pending Payment', 'Verified'],
+      enum: ['pending_verification', 'active', 'Unverified / Pending Payment', 'Verified', 'cancelled'],
       default: 'pending_verification',
     },
     account_status: {
       type: String,
-      enum: ['Unverified / Pending Payment', 'Verified'],
+      enum: ['Unverified / Pending Payment', 'Verified', 'Cancelled'],
       default: 'Unverified / Pending Payment',
     },
     advancePaymentStatus: {
@@ -119,8 +148,16 @@ const studentSchema = new mongoose.Schema(
     },
     paymentPlan: {
       type: String,
-      enum: ['full', 'monthly'],
+      enum: ['full', 'installments', 'single', 'monthly'],
       default: 'full',
+    },
+    installmentsPaidCount: {
+      type: Number,
+      default: 0,
+    },
+    totalInstallments: {
+      type: Number,
+      default: 3,
     },
     lessonsUnlocked: {
       type: Number,
@@ -138,10 +175,27 @@ const studentSchema = new mongoose.Schema(
     dmtDates: {
       medicalExamDate: { type: Date, default: null },
       medicalExamPassed: { type: Boolean, default: null },
+      medicalDone: { type: Boolean, default: false },
+      medicalDoneDate: { type: Date, default: null },
       learnerRegistrationDate: { type: Date, default: null },
+      registrationDone: { type: Boolean, default: false },
+      registrationDoneDate: { type: Date, default: null },
       learnerExamDate: { type: Date, default: null },
       learnerExamPassed: { type: Boolean, default: false },
       learnerExamPassedDate: { type: Date, default: null },
+      learnerExamMarks: { type: Number, default: null },
+    },
+    // Theory / Learner Written Exam Attempts (Max 3 attempts before auto-cancellation)
+    learnerExamAttempts: [learnerExamAttemptSchema],
+    learnerExamAttemptsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 3,
+    },
+    learnerExamMarks: {
+      type: Number,
+      default: null,
     },
     // Practical Trial Management
     trial: {

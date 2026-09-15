@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema(
     },
     account_status: {
       type: String,
-      enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated'],
+      enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled'],
       default: 'Unverified / Pending Payment',
     },
     passwordHash: {
@@ -70,7 +70,7 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending_verification', 'active', 'inactive', 'suspended'],
+      enum: ['pending_verification', 'active', 'inactive', 'suspended', 'cancelled'],
       default: 'active',
     },
     branch: {

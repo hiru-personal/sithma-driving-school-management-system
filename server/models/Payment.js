@@ -29,8 +29,12 @@ const paymentSchema = new mongoose.Schema(
     },
     paymentType: {
       type: String,
-      enum: ['advance', 'package', 'monthly', 'general', 'additional_lessons'],
+      enum: ['advance', 'package', 'installment', 'single_lesson', 'monthly', 'general', 'additional_lessons'],
       default: 'advance',
+    },
+    installmentNumber: {
+      type: Number,
+      default: null,
     },
     payment_method: {
       type: String,
@@ -97,7 +101,7 @@ const paymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'rejected'],
+      enum: ['pending', 'confirmed', 'verified', 'rejected'],
       default: 'pending',
     },
     verifiedAt: {

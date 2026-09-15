@@ -118,7 +118,17 @@ exports.uploadPaymentSlip = async (req, res) => {
 // @access  Student
 exports.submitPackagePayment = async (req, res) => {
   try {
-    const { packageId, packageType, paymentPlan = 'full', amount, bankName, transactionReference, slipImageUrl } = req.body;
+    const {
+      packageId,
+      packageType,
+      paymentPlan = 'full',
+      paymentMethod = 'bank_slip',
+      installmentNumber,
+      amount,
+      bankName,
+      transactionReference,
+      slipImageUrl,
+    } = req.body;
 
     const student = await Student.findOne({ userId: req.user._id });
     if (!student) {
@@ -134,33 +144,105 @@ exports.submitPackagePayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid course package selected.' });
     }
 
-    const payAmount = parseFloat(amount) || (paymentPlan === 'monthly' ? Math.round(pkgDoc.price / 3) : pkgDoc.price);
+    // Determine installment schedule / amounts
+    const pkgPrice = pkgDoc.price || 40000;
+    let inst1 = 15000, inst2 = 15000, inst3 = 10000;
+    if (pkgPrice === 65000) {
+      inst1 = 25000; inst2 = 25000; inst3 = 15000;
+    } else if (pkgPrice === 70000) {
+      inst1 = 30000; inst2 = 25000; inst3 = 15000;
+    } else if (pkgPrice !== 40000) {
+      inst1 = Math.round((pkgPrice * 0.375) / 1000) * 1000;
+      inst2 = Math.round((pkgPrice * 0.375) / 1000) * 1000;
+      inst3 = pkgPrice - inst1 - inst2;
+    }
 
+    const currentPaidCount = student.installmentsPaidCount || 0;
+    const currentInstNum = parseInt(installmentNumber) || Math.min(3, currentPaidCount + 1);
+
+    let payAmount = parseFloat(amount);
+    let resolvedPaymentType = 'package';
+
+    if (pkgDoc.isPerLesson || paymentPlan === 'single') {
+      resolvedPaymentType = 'single_lesson';
+      payAmount = payAmount || pkgPrice;
+    } else if (paymentPlan === 'installments') {
+      resolvedPaymentType = 'installment';
+      if (!payAmount) {
+        if (currentInstNum === 1) payAmount = inst1;
+        else if (currentInstNum === 2) payAmount = inst2;
+        else payAmount = inst3;
+      }
+    } else {
+      resolvedPaymentType = 'package';
+      payAmount = payAmount || pkgPrice;
+    }
+
+    // Setup package on student if not already matching
     student.package = {
       type: pkgDoc.type,
       packageId: pkgDoc._id,
-      lessonsTotal: pkgDoc.lessons,
+      lessonsTotal: pkgDoc.isPerLesson || paymentPlan === 'single' ? 1 : pkgDoc.lessons,
       lessonsUsed: student.lessonsUsed || 0,
       priceTotal: pkgDoc.price,
       bonusLessons: pkgDoc.bonusLessons || { bike: 0, threeWheeler: 0 },
       additionalLessonsRequested: student.package?.additionalLessonsRequested || 0,
     };
     student.paymentPlan = paymentPlan;
-    student.packagePaymentStatus = 'pending';
+
+    const isInstantCard = paymentMethod === 'online_gateway';
+    const isPhysicalCash = paymentMethod === 'physical_branch';
+    const slip = req.file
+      ? `/uploads/slips/${req.file.filename}`
+      : (slipImageUrl || (isInstantCard ? 'online_gateway_paid' : (isPhysicalCash ? 'physical_branch_cash' : `/uploads/slips/package-${Date.now()}.png`)));
+
+    if (isInstantCard) {
+      // Instant online payment
+      student.packagePaymentStatus = 'confirmed';
+      if (resolvedPaymentType === 'single_lesson') {
+        student.lessonsUnlocked = (student.lessonsUnlocked || 0) + 1;
+      } else if (resolvedPaymentType === 'installment') {
+        student.installmentsPaidCount = currentInstNum;
+        student.lessonsUnlocked = currentInstNum * 5;
+      } else {
+        student.lessonsUnlocked = pkgDoc.lessons || 15;
+        student.installmentsPaidCount = 3;
+      }
+    } else {
+      // If student was already confirmed from previous installment, keep confirmed so existing unlocked lessons remain bookable
+      if (!student.packagePaymentStatus || student.packagePaymentStatus === 'none') {
+        student.packagePaymentStatus = 'pending';
+      }
+    }
+
     await student.save();
 
-    const slip = req.file ? `/uploads/slips/${req.file.filename}` : (slipImageUrl || `/uploads/slips/package-${Date.now()}.png`);
+    const resolvedBankName = isInstantCard
+      ? 'Online Payment Gateway (Visa/Mastercard)'
+      : (isPhysicalCash
+        ? `Physical Cash Deposit - ${student.branch || 'Maharagama'} Branch`
+        : (bankName || 'Bank of Ceylon (BOC)'));
+
+    const resolvedTxRef = transactionReference || (isInstantCard
+      ? `CARD-PAY-${Date.now()}`
+      : (isPhysicalCash ? `CASH-PKG-${Date.now()}` : `PKG-SLIP-${Date.now()}`));
 
     const payment = await Payment.create({
       studentId: student._id,
       userId: req.user._id,
       packageId: pkgDoc._id,
-      paymentType: paymentPlan === 'monthly' ? 'monthly' : 'package',
+      paymentType: resolvedPaymentType,
+      paymentPlan,
+      installmentNumber: resolvedPaymentType === 'installment' ? currentInstNum : null,
+      paymentMethod,
+      payment_method: paymentMethod,
       slipImageUrl: slip,
       amount: payAmount,
-      bankName: bankName || 'Bank of Ceylon',
-      transactionReference: transactionReference || `PKG-${Date.now()}`,
-      status: 'pending',
+      bankName: resolvedBankName,
+      transactionReference: resolvedTxRef,
+      status: isInstantCard ? 'verified' : 'pending',
+      payment_status: isInstantCard ? 'Verified' : 'Pending Verification',
+      paymentStatus: isInstantCard ? 'Verified' : 'Pending Verification',
       uploadedAt: new Date(),
     });
 
@@ -169,8 +251,8 @@ exports.submitPackagePayment = async (req, res) => {
     const notifications = staffUsers.map((staff) => ({
       recipientId: staff._id,
       recipientRole: staff.role,
-      title: 'New Package Payment Uploaded',
-      message: `Student ${req.user.name} submitted package payment of Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) for verification.`,
+      title: isInstantCard ? 'Online Package Payment Confirmed' : 'New Package Payment Uploaded',
+      message: `Student ${req.user.name} paid Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) via ${paymentMethod}.`,
       type: 'payment',
       link: '/staff/payments',
     }));
@@ -180,7 +262,9 @@ exports.submitPackagePayment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Package payment submitted successfully. Your lesson balance will unlock once verified by our branch officer.',
+      message: isInstantCard
+        ? 'Card payment processed successfully! Your driving lessons are now unlocked for booking.'
+        : 'Package payment submitted successfully. Your lesson balance will unlock once verified by our branch officer.',
       payment,
       student,
     });
@@ -439,12 +523,24 @@ exports.verifyPayment = async (req, res) => {
           student.packagePaymentStatus = 'confirmed';
           const totalPackageLessons = student.package?.lessonsTotal || 15;
 
-          if (student.paymentPlan === 'monthly' || payment.paymentType === 'monthly') {
+          if (payment.paymentType === 'single_lesson' || student.paymentPlan === 'single') {
+            student.lessonsUnlocked = (student.lessonsUnlocked || 0) + 1;
+            notificationTitle = 'Single Lesson Payment Confirmed!';
+            notificationMessage = `Your single lesson payment of Rs. ${payment.amount?.toLocaleString()} has been confirmed. 1 lesson has been unlocked for booking!`;
+          } else if (payment.paymentType === 'installment' || student.paymentPlan === 'installments') {
+            const currentPaid = student.installmentsPaidCount || 0;
+            const instNum = payment.installmentNumber || (currentPaid + 1);
+            student.installmentsPaidCount = Math.min(3, Math.max(currentPaid + 1, instNum));
+            student.lessonsUnlocked = Math.min(student.installmentsPaidCount * 5, totalPackageLessons);
+            notificationTitle = `Installment ${student.installmentsPaidCount}/3 Confirmed!`;
+            notificationMessage = `Your installment #${student.installmentsPaidCount} payment of Rs. ${payment.amount?.toLocaleString()} has been confirmed. 5 lessons unlocked for booking! (Total unlocked: ${student.lessonsUnlocked}/${totalPackageLessons})`;
+          } else if (student.paymentPlan === 'monthly' || payment.paymentType === 'monthly') {
             student.lessonsUnlocked = Math.min((student.lessonsUsed || 0) + 4, totalPackageLessons);
             notificationTitle = 'Monthly Package Payment Confirmed!';
             notificationMessage = `Your monthly payment has been confirmed. 4 lessons have been unlocked for this billing month (Total unlocked: ${student.lessonsUnlocked}/${totalPackageLessons}).`;
           } else {
             student.lessonsUnlocked = totalPackageLessons;
+            student.installmentsPaidCount = 3;
             notificationTitle = 'Full Course Package Payment Confirmed!';
             notificationMessage = `Your full package payment of Rs. ${payment.amount?.toLocaleString()} has been confirmed. All ${totalPackageLessons} lessons are now unlocked!`;
           }

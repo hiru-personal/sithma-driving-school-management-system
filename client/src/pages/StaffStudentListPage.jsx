@@ -83,11 +83,14 @@ export default function StaffStudentListPage() {
   const [dmtForm, setDmtForm] = useState({
     medicalExamDate: '',
     medicalExamPassed: false,
+    medicalDone: false,
     learnerRegistrationDate: '',
+    registrationDone: false,
     learnerExamDate: '',
     learnerExamPassed: false,
     learnerExamStatus: 'not_taken',
     learnerExamPassedDate: '',
+    learnerExamMarks: '',
   });
 
   const fetchStudents = async () => {
@@ -165,10 +168,12 @@ export default function StaffStudentListPage() {
         medicalExamDate: student.dmtDates.medicalExamDate
           ? student.dmtDates.medicalExamDate.split('T')[0]
           : '',
-        medicalExamPassed: student.dmtDates.medicalExamPassed || false,
+        medicalExamPassed: student.dmtDates.medicalExamPassed || student.dmtDates.medicalDone || false,
+        medicalDone: student.dmtDates.medicalDone || student.dmtDates.medicalExamPassed || false,
         learnerRegistrationDate: student.dmtDates.learnerRegistrationDate
           ? student.dmtDates.learnerRegistrationDate.split('T')[0]
           : '',
+        registrationDone: student.dmtDates.registrationDone || false,
         learnerExamDate: student.dmtDates.learnerExamDate
           ? student.dmtDates.learnerExamDate.split('T')[0]
           : '',
@@ -177,6 +182,7 @@ export default function StaffStudentListPage() {
         learnerExamPassedDate: student.dmtDates.learnerExamPassedDate
           ? student.dmtDates.learnerExamPassedDate.split('T')[0]
           : '',
+        learnerExamMarks: student.learnerExamMarks || student.dmtDates.learnerExamMarks || '',
       });
     }
     setTrialForm({
@@ -410,8 +416,21 @@ export default function StaffStudentListPage() {
                       <td className="px-6 py-4">
                         {isType2 ? (
                           <span className="badge badge-success text-xs">Pre-Cleared</span>
+                        ) : st.registrationStatus === 'cancelled' ? (
+                          <span className="badge badge-danger text-xs font-bold">Failed 3/3 Attempts</span>
                         ) : st.dmtDates?.learnerExamPassed ? (
-                          <span className="badge badge-success text-xs">Passed Written Exam</span>
+                          <span className="badge badge-success text-xs font-bold">
+                            Passed {st.learnerExamMarks ? `(${st.learnerExamMarks}/40)` : 'Written Exam'}
+                          </span>
+                        ) : st.learnerExamAttemptsCount > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="badge badge-danger text-xs">Failed ({st.learnerExamAttemptsCount}/3)</span>
+                            {st.dmtDates?.learnerExamDate && (
+                              <span className="text-[10px] text-amber-300">
+                                Next: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
+                              </span>
+                            )}
+                          </div>
                         ) : st.dmtDates?.learnerExamDate ? (
                           <span className="badge badge-warning text-xs">
                             Exam: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
@@ -458,15 +477,17 @@ export default function StaffStudentListPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-col items-start gap-1">
                           <span
-                            className={`badge text-xs ${
+                            className={`badge text-xs font-bold ${
                               isLicensed
                                 ? 'badge-success'
+                                : st.registrationStatus === 'cancelled'
+                                ? 'badge-danger bg-rose-500/20 text-rose-300 border border-rose-500/40'
                                 : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
                                 ? 'badge-info'
                                 : 'badge-warning'
                             }`}
                           >
-                            {isLicensed ? 'Licensed' : st.registrationStatus?.replace('_', ' ')}
+                            {isLicensed ? 'Licensed' : st.registrationStatus === 'cancelled' ? '❌ CANCELLED' : st.registrationStatus?.replace('_', ' ')}
                           </span>
 
                           {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment' ? (
@@ -575,10 +596,28 @@ export default function StaffStudentListPage() {
             {/* DMT Dates Edit Form (US-04, US-05, US-09) */}
             {modalMode === 'edit_dmt' && (
               <form onSubmit={handleSaveDmtDates} className="space-y-4 text-xs">
+                {selectedStudent.registrationStatus === 'cancelled' && (
+                  <div className="p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-xl space-y-1">
+                    <div className="font-bold text-rose-300 flex items-center gap-1.5 text-xs">
+                      <XCircle className="w-4 h-4 text-rose-400" /> Registration Auto-Cancelled (3 Failed Written Exam Attempts)
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      This learner has failed all 3 allowed DMT written exam attempts. Their registration was cancelled and account locked. They need to re-register as a new learner and pay the Rs. 5,000 advance fee to restart.
+                    </p>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    1. DMT Medical Examination Date (US-04):
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-300">
+                      1. DMT Medical Examination Date (US-04):
+                    </label>
+                    {selectedStudent.dmtDates?.medicalDone && (
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        ✓ Student Marked Done
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="date"
                     value={dmtForm.medicalExamDate}
@@ -593,19 +632,30 @@ export default function StaffStudentListPage() {
                     id="staffMedPassed"
                     checked={dmtForm.medicalExamPassed}
                     onChange={(e) =>
-                      setDmtForm({ ...dmtForm, medicalExamPassed: e.target.checked })
+                      setDmtForm({
+                        ...dmtForm,
+                        medicalExamPassed: e.target.checked,
+                        medicalDone: e.target.checked,
+                      })
                     }
                     className="w-4 h-4 text-primary rounded"
                   />
                   <label htmlFor="staffMedPassed" className="font-medium text-slate-200 cursor-pointer">
-                    Passed DMT Medical Examination
+                    Passed DMT Medical Examination (Cleared)
                   </label>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    2. DMT Learner Registration Date (US-05):
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-300">
+                      2. DMT Learner Registration Date (US-05):
+                    </label>
+                    {selectedStudent.dmtDates?.registrationDone && (
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        ✓ Student Marked Done
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="date"
                     value={dmtForm.learnerRegistrationDate}
@@ -615,9 +665,14 @@ export default function StaffStudentListPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    3. DMT Learner Written Exam Date:
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-300">
+                      3. DMT Learner Written Exam Date:
+                    </label>
+                    <span className="text-[10px] text-cyan-300 font-mono">
+                      {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
+                    </span>
+                  </div>
                   <input
                     type="date"
                     value={dmtForm.learnerExamDate}
@@ -626,27 +681,82 @@ export default function StaffStudentListPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    4. Learner Exam Status (US-09 — Trial Eligibility Gate):
-                  </label>
-                  <select
-                    value={dmtForm.learnerExamStatus}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setDmtForm({
-                        ...dmtForm,
-                        learnerExamStatus: val,
-                        learnerExamPassed: val === 'passed',
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold"
-                  >
-                    <option value="not_taken">Not Taken / In Progress</option>
-                    <option value="passed">PASSED (Unlocks Practical Trial Lessons - US-09)</option>
-                    <option value="failed">FAILED</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">
+                      4. Learner Exam Status:
+                    </label>
+                    <select
+                      value={dmtForm.learnerExamStatus}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDmtForm({
+                          ...dmtForm,
+                          learnerExamStatus: val,
+                          learnerExamPassed: val === 'passed',
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold"
+                    >
+                      <option value="not_taken">Not Taken / In Progress</option>
+                      <option value="passed">PASSED (Unlocks Trial Lessons)</option>
+                      <option value="failed">FAILED</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">
+                      5. Exam Marks Scored (out of 40):
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="40"
+                      placeholder="e.g. 35"
+                      value={dmtForm.learnerExamMarks}
+                      onChange={(e) => setDmtForm({ ...dmtForm, learnerExamMarks: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-mono"
+                    />
+                  </div>
                 </div>
+
+                {/* Exam Attempt History List */}
+                {selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.length > 0 && (
+                  <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
+                    <div className="font-bold text-slate-200 text-xs flex items-center justify-between">
+                      <span>Recorded Written Exam Attempts:</span>
+                      <span className="text-cyan-300 font-mono">
+                        {selectedStudent.learnerExamAttempts.length} of 3
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {selectedStudent.learnerExamAttempts.map((att, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-[11px] p-2 bg-slate-900/60 rounded-lg border border-white/5"
+                        >
+                          <span className="font-semibold text-slate-300">
+                            Attempt #{att.attemptNumber} ({att.date ? format(new Date(att.date), 'MMM dd, yyyy') : 'No date'})
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {att.marks !== undefined && att.marks !== null && (
+                              <span className="font-mono text-cyan-300 font-bold">{att.marks}/40</span>
+                            )}
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                att.result === 'passed'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                              }`}
+                            >
+                              {att.result?.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {dmtForm.learnerExamStatus === 'passed' && (
                   <div className="p-3 bg-emerald-500/10 border border-emerald-400/30 rounded-xl text-emerald-300 space-y-1">

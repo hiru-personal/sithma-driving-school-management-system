@@ -143,15 +143,18 @@ exports.updateDmtDates = async (req, res) => {
       medicalExamDate,
       medicalExamPassed,
       learnerRegistrationDate,
+      registrationDone,
+      medicalDone,
       learnerExamDate,
       learnerExamPassed,
       learnerExamPassedDate,
       learnerExamStatus,
+      learnerExamMarks,
     } = req.body;
 
     const updates = [];
 
-    // US-04: Update student DMT medical exam date
+    // Medical Exam Date & Medical Done
     if (medicalExamDate !== undefined) {
       student.dmtDates.medicalExamDate = medicalExamDate ? new Date(medicalExamDate) : null;
       if (medicalExamDate) updates.push(`Medical Exam Date (${new Date(medicalExamDate).toLocaleDateString()})`);
@@ -159,16 +162,34 @@ exports.updateDmtDates = async (req, res) => {
     if (medicalExamPassed !== undefined) {
       student.dmtDates.medicalExamPassed = Boolean(medicalExamPassed);
     }
+    if (medicalDone !== undefined) {
+      student.dmtDates.medicalDone = Boolean(medicalDone);
+      student.dmtDates.medicalDoneDate = medicalDone ? new Date() : null;
+      if (medicalDone) {
+        student.dmtDates.medicalExamPassed = true;
+        updates.push('DMT Medical Marked as Completed');
+      }
+    }
 
-    // US-05: Update student DMT learner registration date
+    // Learner Registration Date & Registration Done
     if (learnerRegistrationDate !== undefined) {
       student.dmtDates.learnerRegistrationDate = learnerRegistrationDate ? new Date(learnerRegistrationDate) : null;
       if (learnerRegistrationDate) updates.push(`Learner Registration Date (${new Date(learnerRegistrationDate).toLocaleDateString()})`);
+    }
+    if (registrationDone !== undefined) {
+      student.dmtDates.registrationDone = Boolean(registrationDone);
+      student.dmtDates.registrationDoneDate = registrationDone ? new Date() : null;
+      if (registrationDone) updates.push('DMT Registration Marked as Completed');
     }
 
     if (learnerExamDate !== undefined) {
       student.dmtDates.learnerExamDate = learnerExamDate ? new Date(learnerExamDate) : null;
       if (learnerExamDate) updates.push(`Learner Exam Date (${new Date(learnerExamDate).toLocaleDateString()})`);
+    }
+    if (learnerExamMarks !== undefined) {
+      student.dmtDates.learnerExamMarks = learnerExamMarks !== null && learnerExamMarks !== '' ? Number(learnerExamMarks) : null;
+      student.learnerExamMarks = student.dmtDates.learnerExamMarks;
+      if (learnerExamMarks !== null && learnerExamMarks !== '') updates.push(`Learner Exam Marks (${learnerExamMarks})`);
     }
 
     // US-09: Learner exam status passed unlocks trial lesson booking for Type 1
@@ -589,11 +610,13 @@ exports.toggleAdvancePaid = async (req, res) => {
 
     if (shouldVerify) {
       student.accountStatus = 'active';
+      student.account_status = 'Verified';
+      student.payment_status = 'Verified';
       student.advancePaymentStatus = 'verified';
       student.registrationStatus = 'registered';
       student.verifiedBy = req.user?._id || null;
       student.verifiedAt = new Date();
-      await User.findByIdAndUpdate(student.userId, { status: 'active' });
+      await User.findByIdAndUpdate(student.userId, { status: 'active', account_status: 'Verified' });
 
       // Confirm any pending advance payment records
       const Payment = require('../models/Payment');
@@ -614,9 +637,11 @@ exports.toggleAdvancePaid = async (req, res) => {
       });
     } else {
       student.accountStatus = 'pending_verification';
+      student.account_status = 'Unverified / Pending Payment';
+      student.payment_status = 'Pending Payment';
       student.advancePaymentStatus = 'pending';
       student.registrationStatus = 'pending_payment';
-      await User.findByIdAndUpdate(student.userId, { status: 'pending_verification' });
+      await User.findByIdAndUpdate(student.userId, { status: 'pending_verification', account_status: 'Unverified / Pending Payment' });
     }
 
     await student.save();
@@ -948,4 +973,226 @@ exports.updateStudentProfile = async (req, res) => {
     });
   }
 };
+
+// @desc    Record a Learner Theory Exam attempt with pass/fail and marks (Type 1 - Max 3 attempts)
+// @route   POST /api/students/:id/exam-attempt
+// @access  Student (self) OR Staff/Admin
+exports.recordExamAttempt = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    // Ownership check
+    if (req.user.role === 'student' && student.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // Check if already cancelled
+    if (student.registrationStatus === 'cancelled' || student.accountStatus === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration is cancelled. Please re-register as a new student.',
+        isCancelled: true,
+      });
+    }
+
+    const { result, marks, examDate, notes } = req.body;
+    if (!['passed', 'failed'].includes(result)) {
+      return res.status(400).json({ success: false, message: "Result must be 'passed' or 'failed'" });
+    }
+
+    const currentAttempts = student.learnerExamAttempts || [];
+    const attemptNumber = currentAttempts.length + 1;
+
+    if (attemptNumber > 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 3 exam attempts have already been reached. Registration has been cancelled.',
+        isCancelled: true,
+      });
+    }
+
+    const numericMarks = marks !== undefined && marks !== null && marks !== '' ? Number(marks) : null;
+    const attemptRecord = {
+      attemptNumber,
+      date: examDate ? new Date(examDate) : new Date(),
+      result,
+      marks: numericMarks,
+      notes: notes || '',
+    };
+
+    student.learnerExamAttempts.push(attemptRecord);
+    student.learnerExamAttemptsCount = student.learnerExamAttempts.length;
+    student.learnerExamMarks = numericMarks;
+    student.dmtDates.learnerExamMarks = numericMarks;
+
+    let isAutoCancelled = false;
+
+    if (result === 'passed') {
+      student.learnerExamStatus = 'passed';
+      student.dmtDates.learnerExamPassed = true;
+      student.dmtDates.learnerExamPassedDate = attemptRecord.date;
+      student.trialEligible = true;
+      student.trial_eligible = true;
+
+      // Notification
+      await Notification.create({
+        recipientId: student.userId._id || student.userId,
+        recipientRole: 'student',
+        title: '🎉 DMT Written Exam Passed!',
+        message: `Congratulations! You passed your DMT Written Theory Exam with ${numericMarks !== null ? `${numericMarks} marks` : 'flying colors'} on Attempt ${attemptNumber}. On-road practical lessons are now unlocked!`,
+        type: 'dmt-date',
+        link: '/student/dashboard',
+      });
+    } else {
+      // Failed
+      student.learnerExamStatus = 'failed';
+      student.dmtDates.learnerExamPassed = false;
+      student.trialEligible = false;
+      student.trial_eligible = false;
+
+      // Check 3 failed attempts
+      if (student.learnerExamAttempts.length >= 3) {
+        student.registrationStatus = 'cancelled';
+        student.accountStatus = 'cancelled';
+        student.account_status = 'Cancelled';
+        student.isAdvancePaid = false;
+        student.isPremium = false;
+        isAutoCancelled = true;
+
+        await User.findByIdAndUpdate(student.userId._id || student.userId, {
+          status: 'active',
+          account_status: 'Cancelled',
+        });
+
+        await Notification.create({
+          recipientId: student.userId._id || student.userId,
+          recipientRole: 'student',
+          title: '⚠️ Registration Cancelled — 3 Exam Attempts Failed',
+          message: 'You have exhausted all 3 attempts for the DMT written theory exam. As per DMT regulations, your learner registration has been automatically cancelled. You must re-register like a new user and pay the advance deposit to restart.',
+          type: 'dmt-date',
+          link: '/student/dashboard',
+        });
+      } else {
+        const remaining = 3 - student.learnerExamAttempts.length;
+        await Notification.create({
+          recipientId: student.userId._id || student.userId,
+          recipientRole: 'student',
+          title: `DMT Exam Attempt ${attemptNumber} Result: Failed`,
+          message: `Attempt ${attemptNumber} recorded as Failed (${numericMarks !== null ? `${numericMarks} marks` : 'No marks entered'}). You have ${remaining} attempt(s) remaining. Please contact branch staff to get a new exam date.`,
+          type: 'dmt-date',
+          link: '/student/dashboard',
+        });
+      }
+    }
+
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: result === 'passed'
+        ? `Congratulations! Exam passed with ${numericMarks !== null ? numericMarks : ''} marks. Practical lessons are now unlocked!`
+        : (isAutoCancelled
+            ? '3 failed attempts reached. Registration has been automatically cancelled.'
+            : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining. Please obtain a new exam date from staff.`),
+      student: populatedStudent,
+      isAutoCancelled,
+      attemptsRemaining: Math.max(0, 3 - populatedStudent.learnerExamAttempts.length),
+    });
+  } catch (error) {
+    console.error('Error recording exam attempt:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to record exam attempt',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Re-register student as a new learner after 3 failed exam attempts
+// @route   POST /api/students/:id/re-register
+// @access  Student (self) OR Staff/Admin
+exports.reRegisterStudent = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    if (req.user.role === 'student' && student.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // Reset student record to clean initial state
+    student.registrationStatus = 'pending_payment';
+    student.accountStatus = 'pending_verification';
+    student.account_status = 'Unverified / Pending Payment';
+    student.advancePaymentStatus = 'pending';
+    student.isAdvancePaid = false;
+    student.isPremium = false;
+    student.trialEligible = false;
+    student.trial_eligible = false;
+    student.learnerExamStatus = 'not_taken';
+    student.learnerExamMarks = null;
+    student.learnerExamAttempts = [];
+    student.learnerExamAttemptsCount = 0;
+    student.advancePaymentReference = '';
+
+    student.dmtDates = {
+      medicalExamDate: null,
+      medicalExamPassed: null,
+      medicalDone: false,
+      medicalDoneDate: null,
+      learnerRegistrationDate: null,
+      registrationDone: false,
+      registrationDoneDate: null,
+      learnerExamDate: null,
+      learnerExamPassed: false,
+      learnerExamPassedDate: null,
+      learnerExamMarks: null,
+    };
+
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    await User.findByIdAndUpdate(student.userId._id || student.userId, {
+      status: 'pending_verification',
+      account_status: 'Unverified / Pending Payment',
+    });
+
+    await Notification.create({
+      recipientId: student.userId._id || student.userId,
+      recipientRole: 'student',
+      title: 'Re-Registration Initialized',
+      message: 'Your new enrolment has been initialized. Please pay the advance fee of Rs. 5,000 to submit for officer verification.',
+      type: 'payment',
+      link: '/student/dashboard',
+    });
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Re-registration initialized! Please complete your Rs. 5,000 advance payment to proceed.',
+      student: populatedStudent,
+    });
+  } catch (error) {
+    console.error('Error re-registering student:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to re-register student',
+      error: error.message,
+    });
+  }
+};
+
 
