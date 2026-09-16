@@ -412,41 +412,79 @@ export default function BookLessonPage() {
             <p className="text-xs text-slate-400">Please choose another date or contact the branch.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
             {slots.map((slot) => {
-              const isBooked = slot.status === 'booked' || !!slot.bookedBy;
+              const bookedCount = slot.bookedCount || 0;
+              const capacity = slot.capacity || 10;
+              const isFull = slot.isFull || bookedCount >= capacity || slot.status === 'full';
+              const remainingSpots = slot.remainingSpots !== undefined ? slot.remainingSpots : Math.max(0, capacity - bookedCount);
+              const fillPercentage = Math.min(100, Math.round((bookedCount / capacity) * 100));
+              const isStudentAlreadyBooked = Boolean(slot.isStudentBooked);
               const hasInstructor = !!slot.instructorId;
+
+              const isLockedByExam = isType1 && !isTrialEligible;
+              const isLockedByPackage = !isPackagePaymentConfirmed && lessonsRemaining <= 0;
+              const isLockedByQuota = lessonsRemaining <= 0;
+
+              const isDisabled =
+                isStudentAlreadyBooked ||
+                isFull ||
+                isLockedByExam ||
+                isLockedByPackage ||
+                isLockedByQuota;
 
               return (
                 <div
                   key={slot._id}
                   className={`card p-5 flex flex-col justify-between space-y-4 border transition-all ${
-                    isBooked
-                      ? 'bg-slate-950/40 border-white/5 opacity-50'
-                      : 'border-white/15 hover:border-cyan-400/40 card-hover bg-slate-900/70'
+                    isStudentAlreadyBooked
+                      ? 'bg-emerald-950/25 border-emerald-400/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                      : isFull
+                      ? 'bg-slate-950/50 border-white/5 opacity-60'
+                      : 'border-white/15 hover:border-cyan-400/40 card-hover bg-slate-900/80'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-extrabold text-white">
+                  <div className="space-y-3">
+                    {/* Header with Time & Capacity Badge */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-black text-white">
                         {slot.startTime} – {slot.endTime}
                       </span>
                       <span
-                        className={`badge ${
-                          isBooked
-                            ? 'badge-danger bg-rose-500/10 text-rose-400'
+                        className={`badge text-[10px] font-bold ${
+                          isStudentAlreadyBooked
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : isFull
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : bookedCount > 0
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
                             : 'badge-success'
                         }`}
                       >
-                        {isBooked ? 'Booked' : 'Available'}
+                        {isStudentAlreadyBooked
+                          ? '✓ Booked by You'
+                          : isFull
+                          ? 'FULL (10/10)'
+                          : `${remainingSpots} spots left`}
                       </span>
                     </div>
 
-                    <div className="space-y-1 text-xs text-slate-400">
-                      <p className="flex items-center gap-1.5">
+                    {/* Lesson Title & Topic */}
+                    <div>
+                      <h4 className="text-xs font-bold text-white leading-snug">
+                        {slot.lessonTitle || `${slot.vehicleType || selectedVehicle} Practical Session`}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                        {slot.lessonTopic || 'Dual-control road training, clutch control, and maneuvers.'}
+                      </p>
+                    </div>
+
+                    {/* Branch & Instructor */}
+                    <div className="p-2.5 bg-slate-950/60 rounded-xl border border-white/5 space-y-1 text-xs text-slate-300">
+                      <p className="flex items-center gap-1.5 text-[11px]">
                         <MapPin className="w-3.5 h-3.5 text-cyan-400" /> {slot.branch} Branch
                       </p>
-                      <p className="flex items-center gap-1.5">
+                      <p className="flex items-center gap-1.5 text-[11px]">
                         <User className="w-3.5 h-3.5 text-amber-400" />
                         Instructor:{' '}
                         {hasInstructor ? (
@@ -456,24 +494,61 @@ export default function BookLessonPage() {
                         )}
                       </p>
                     </div>
+
+                    {/* 10-Student Capacity Meter */}
+                    <div className="space-y-1 pt-1">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-400">Class Attendance:</span>
+                        <strong className="text-slate-200">
+                          {bookedCount} / {capacity} Students
+                        </strong>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden border border-white/10">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            isFull
+                              ? 'bg-rose-500'
+                              : fillPercentage >= 70
+                              ? 'bg-amber-400'
+                              : 'bg-cyan-400'
+                          }`}
+                          style={{ width: `${fillPercentage}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Action Button */}
                   <button
-                    disabled={isBooked || isType2PackagePending || lessonsRemaining <= 0}
+                    disabled={isDisabled}
                     onClick={() => setSelectedSlot(slot)}
                     className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
-                      isBooked || isType2PackagePending || lessonsRemaining <= 0
-                        ? 'bg-white/5 text-slate-500 cursor-not-allowed border border-white/5'
-                        : 'btn-accent text-slate-950 hover:scale-105'
+                      isStudentAlreadyBooked
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
+                        : isFull
+                        ? 'bg-rose-500/10 text-rose-400/60 border border-rose-500/20 cursor-not-allowed'
+                        : isLockedByExam
+                        ? 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
+                        : isLockedByPackage
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20 cursor-not-allowed'
+                        : isLockedByQuota
+                        ? 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
+                        : 'btn-accent text-slate-950 hover:scale-105 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
                     }`}
                   >
-                    {isBooked
-                      ? 'Slot Unavailable'
-                      : isType2PackagePending
-                      ? 'Package Payment Required'
-                      : lessonsRemaining <= 0
-                      ? 'No Lessons Remaining'
-                      : 'Book This Slot'}
+                    {isStudentAlreadyBooked
+                      ? '✓ You Are Enrolled in This Lesson'
+                      : isFull
+                      ? 'Lesson Full (10/10 Limit)'
+                      : isLockedByExam
+                      ? 'DMT Theory Exam Pass Required'
+                      : isLockedByPackage
+                      ? 'Course Package Payment Required'
+                      : isLockedByQuota
+                      ? student?.paymentPlan === 'single'
+                        ? 'Single Lesson Quota Used (Pay in Dashboard)'
+                        : 'No Lessons Remaining (Pay Next Installment)'
+                      : 'Book This Lesson'}
                   </button>
                 </div>
               );

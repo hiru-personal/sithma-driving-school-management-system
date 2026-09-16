@@ -67,6 +67,43 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    // 4b. Validate vehicleType against student's enrolled package
+    const pkgType = student.package?.type || '';
+    if (pkgType) {
+      const lowerPkg = pkgType.toLowerCase();
+      let isVehicleAllowed = true;
+      let allowedNames = '';
+
+      if (lowerPkg.includes('combo')) {
+        isVehicleAllowed = ['Car', 'Bike', 'ThreeWheeler'].includes(vehicleType);
+        allowedNames = 'Car, Bike, or Three-Wheeler';
+      } else if (lowerPkg.includes('car')) {
+        const hasBonusBike = (student.package?.bonusLessons?.bike || 0) > 0;
+        const hasBonusThree = (student.package?.bonusLessons?.threeWheeler || 0) > 0;
+        const allowed = ['Car'];
+        if (hasBonusBike) allowed.push('Bike');
+        if (hasBonusThree) allowed.push('ThreeWheeler');
+        isVehicleAllowed = allowed.includes(vehicleType);
+        allowedNames = allowed.join(', ');
+      } else if (lowerPkg.includes('bike')) {
+        isVehicleAllowed = vehicleType === 'Bike';
+        allowedNames = 'Bike / Motorcycle';
+      } else if (lowerPkg.includes('three')) {
+        isVehicleAllowed = vehicleType === 'ThreeWheeler';
+        allowedNames = 'Three-Wheeler';
+      } else if (lowerPkg.includes('heavy')) {
+        isVehicleAllowed = vehicleType === 'HeavyVehicle_Bus';
+        allowedNames = 'Heavy Vehicle (Bus/Truck)';
+      }
+
+      if (!isVehicleAllowed) {
+        return res.status(400).json({
+          success: false,
+          message: `Vehicle mismatch: Your enrolled package (${student.package?.type}) permits booking lessons for: ${allowedNames}. You selected '${vehicleType}'.`,
+        });
+      }
+    }
+
     // 5. Gate: Check Lessons Balance & Single / Installment / Monthly Quota Cap
     const totalAllowed = (student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null)
       ? (student.lessonsUnlocked + (student.package?.additionalLessonsRequested || 0))
@@ -100,19 +137,50 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 6. Find & Lock TimeSlot
+    // 6. Find & Check 10-Student Lesson Capacity (Hard limit: only 10 students per lesson)
     const timeSlot = await TimeSlot.findById(timeSlotId);
     if (!timeSlot) {
       return res.status(404).json({
         success: false,
-        message: 'Time slot not found',
+        message: 'Lesson session not found',
       });
     }
 
-    if (timeSlot.status !== 'available' || timeSlot.bookedBy) {
+    if (timeSlot.status === 'cancelled') {
       return res.status(400).json({
         success: false,
-        message: 'This time slot is already booked. Please choose another available time slot.',
+        message: 'This lesson session has been cancelled by the branch or instructor.',
+      });
+    }
+
+    // Check active bookings count for this lesson session
+    const activeBookingsCount = await Booking.countDocuments({
+      timeSlotId: timeSlot._id,
+      status: { $in: ['confirmed', 'pending'] },
+    });
+
+    // Check if this student has ALREADY booked this lesson slot
+    const existingSlotBooking = await Booking.findOne({
+      studentId: student._id,
+      timeSlotId: timeSlot._id,
+      status: { $in: ['confirmed', 'pending'] },
+    });
+
+    if (existingSlotBooking) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already booked a spot in this lesson session.',
+      });
+    }
+
+    const maxCapacity = timeSlot.capacity || 10;
+    if (activeBookingsCount >= maxCapacity || timeSlot.status === 'full') {
+      timeSlot.status = 'full';
+      timeSlot.bookedCount = activeBookingsCount;
+      await timeSlot.save();
+      return res.status(400).json({
+        success: false,
+        message: `This lesson session is full (${activeBookingsCount}/${maxCapacity} students booked). Only 10 students can book each lesson. Please choose another lesson session.`,
       });
     }
 
@@ -135,9 +203,14 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 7. Update TimeSlot & Student Lessons Used & Activity Metadata
-    timeSlot.status = 'booked';
-    timeSlot.bookedBy = student._id;
+    // 7. Update TimeSlot Booked Count & Capacity Status
+    const newBookedCount = activeBookingsCount + 1;
+    timeSlot.bookedCount = newBookedCount;
+    if (newBookedCount >= maxCapacity) {
+      timeSlot.status = 'full';
+    } else {
+      timeSlot.status = 'available';
+    }
     await timeSlot.save();
 
     student.lessonsUsed = currentUsed + 1;
@@ -152,26 +225,37 @@ exports.createBooking = async (req, res) => {
       studentId: student._id,
       timeSlotId: timeSlot._id,
       branch: timeSlot.branch,
-      vehicleType,
+      vehicleType: vehicleType || timeSlot.vehicleType || 'Car',
       lessonType,
       status: 'confirmed',
     });
 
-    // 9. Trigger Exactly 1 In-App Notification
+    // 9. Trigger In-App Notification to Student & Instructor
     const remainingCount = Math.max(0, totalAllowed - student.lessonsUsed);
     await Notification.create({
       recipientId: req.user._id,
       recipientRole: 'student',
       title: 'Lesson Booking Confirmed',
-      message: `Your ${vehicleType} lesson (${lessonType}) on ${new Date(timeSlot.date).toDateString()} at ${timeSlot.startTime} (${timeSlot.branch} Branch) has been confirmed. Lessons remaining: ${remainingCount}.`,
+      message: `Your ${vehicleType || timeSlot.vehicleType} lesson on ${new Date(timeSlot.date).toDateString()} at ${timeSlot.startTime} (${timeSlot.branch} Branch) is confirmed. (${newBookedCount}/10 students booked in this session). Lessons remaining: ${remainingCount}.`,
       type: 'booking',
       link: '/student/dashboard',
     });
 
+    if (timeSlot.instructorId) {
+      await Notification.create({
+        recipientId: timeSlot.instructorId,
+        recipientRole: 'instructor',
+        title: 'New Student Booked Your Lesson',
+        message: `Student ${req.user.name} booked your ${timeSlot.lessonTitle || timeSlot.vehicleType} session on ${new Date(timeSlot.date).toDateString()} at ${timeSlot.startTime} (${newBookedCount}/10 students booked).`,
+        type: 'booking',
+        link: '/instructor/schedule',
+      });
+    }
+
     const populated = await Booking.findById(booking._id)
       .populate({
         path: 'timeSlotId',
-        populate: { path: 'instructorId', select: 'name phone' },
+        populate: { path: 'instructorId', select: 'name phone email' },
       })
       .populate('studentId');
 
@@ -179,6 +263,7 @@ exports.createBooking = async (req, res) => {
       success: true,
       message: 'Lesson slot booked successfully!',
       booking: populated,
+      remainingLessons: remainingCount,
       lessonsRemaining: remainingCount,
       lessonsUsed: student.lessonsUsed,
     });

@@ -46,44 +46,40 @@ export default function DmtMilestoneTimeline({ student }) {
       status: 'completed',
       icon: FileText,
     },
-    {
-      id: 'medical',
-      title: 'DMT Medical Exam',
-      desc: isType2
-        ? 'Completed independently prior to joining'
-        : dmtDates.medicalExamPassed
-        ? 'Passed medical examination'
-        : dmtDates.medicalExamDate
-        ? `Scheduled for: ${format(new Date(dmtDates.medicalExamDate), 'MMM dd, yyyy')}`
-        : 'Awaiting DMT Medical Date',
-      date: isType2
-        ? 'Pre-requisite'
-        : dmtDates.medicalExamDate
-        ? format(new Date(dmtDates.medicalExamDate), 'MMM dd, yyyy')
-        : 'Pending',
-      status: isType2 || dmtDates.medicalExamPassed ? 'completed' : dmtDates.medicalExamDate ? 'in_progress' : 'pending',
-      icon: Stethoscope,
-    },
-    {
-      id: 'learner_exam',
-      title: 'DMT Learner Written Exam',
-      desc: isType2
-        ? 'Passed prior to joining Sithma'
-        : dmtDates.learnerExamPassed
-        ? `Passed on ${format(new Date(dmtDates.learnerExamPassedDate || dmtDates.learnerExamDate), 'MMM dd, yyyy')}`
-        : dmtDates.learnerExamDate
-        ? `Scheduled for: ${format(new Date(dmtDates.learnerExamDate), 'MMM dd, yyyy')}`
-        : 'Awaiting DMT Written Exam Date',
-      date: isType2
-        ? 'Passed (Verified)'
-        : dmtDates.learnerExamPassedDate
-        ? format(new Date(dmtDates.learnerExamPassedDate), 'MMM dd, yyyy')
-        : dmtDates.learnerExamDate
-        ? format(new Date(dmtDates.learnerExamDate), 'MMM dd, yyyy')
-        : 'Pending',
-      status: isType2 || dmtDates.learnerExamPassed ? 'completed' : dmtDates.learnerExamDate ? 'in_progress' : 'pending',
-      icon: BookOpen,
-    },
+    ...(!isType2
+      ? [
+          {
+            id: 'medical',
+            title: 'DMT Medical Exam',
+            desc: dmtDates.medicalExamPassed
+              ? 'Passed medical examination'
+              : dmtDates.medicalExamDate
+              ? `Scheduled for: ${format(new Date(dmtDates.medicalExamDate), 'MMM dd, yyyy')}`
+              : 'Awaiting DMT Medical Date',
+            date: dmtDates.medicalExamDate
+              ? format(new Date(dmtDates.medicalExamDate), 'MMM dd, yyyy')
+              : 'Pending',
+            status: dmtDates.medicalExamPassed ? 'completed' : dmtDates.medicalExamDate ? 'in_progress' : 'pending',
+            icon: Stethoscope,
+          },
+          {
+            id: 'learner_exam',
+            title: 'DMT Learner Written Exam',
+            desc: dmtDates.learnerExamPassed
+              ? `Passed on ${format(new Date(dmtDates.learnerExamPassedDate || dmtDates.learnerExamDate), 'MMM dd, yyyy')}`
+              : dmtDates.learnerExamDate
+              ? `Scheduled for: ${format(new Date(dmtDates.learnerExamDate), 'MMM dd, yyyy')}`
+              : 'Awaiting DMT Written Exam Date',
+            date: dmtDates.learnerExamPassedDate
+              ? format(new Date(dmtDates.learnerExamPassedDate), 'MMM dd, yyyy')
+              : dmtDates.learnerExamDate
+              ? format(new Date(dmtDates.learnerExamDate), 'MMM dd, yyyy')
+              : 'Pending',
+            status: dmtDates.learnerExamPassed ? 'completed' : dmtDates.learnerExamDate ? 'in_progress' : 'pending',
+            icon: BookOpen,
+          },
+        ]
+      : []),
     {
       id: 'trial',
       title: 'Practical Driving Trial',

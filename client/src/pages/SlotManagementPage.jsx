@@ -159,28 +159,38 @@ export default function SlotManagementPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950/90 border-b border-white/10 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                 <tr>
-                  <th className="px-4 py-3.5">Session Time</th>
-                  <th className="px-4 py-3.5">Category</th>
+                  <th className="px-4 py-3.5">Session Time & Title</th>
+                  <th className="px-4 py-3.5">Vehicle</th>
                   <th className="px-4 py-3.5">Assigned Instructor</th>
-                  <th className="px-4 py-3.5">Booked Student</th>
+                  <th className="px-4 py-3.5">Capacity & Enrolled</th>
                   <th className="px-4 py-3.5">Status</th>
                   <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
                 {slots.map((slot) => {
-                  const isBooked = slot.status === 'booked' || !!slot.bookedBy;
+                  const bookedCount = slot.bookedCount || 0;
+                  const capacity = slot.capacity || 10;
+                  const isFull = bookedCount >= capacity || slot.status === 'full';
+                  const remaining = Math.max(0, capacity - bookedCount);
 
                   return (
                     <tr key={slot._id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-3.5 font-extrabold text-white">
-                        {slot.startTime} – {slot.endTime}
+                      <td className="px-4 py-3.5">
+                        <div className="font-extrabold text-white text-sm">
+                          {slot.startTime} – {slot.endTime}
+                        </div>
+                        <div className="text-[11px] text-cyan-300 font-semibold mt-0.5">
+                          {slot.lessonTitle || 'Practical Driving Session'}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="badge badge-info text-[10px]">{slot.vehicleCategory} Vehicle</span>
+                        <span className="badge badge-info text-[10px] font-bold">
+                          {slot.vehicleType || slot.vehicleCategory}
+                        </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="font-semibold text-cyan-300">
+                        <div className="font-semibold text-white">
                           {slot.instructorId?.name || (
                             <span className="text-amber-300 font-normal">Unassigned</span>
                           )}
@@ -190,30 +200,32 @@ export default function SlotManagementPage() {
                         )}
                       </td>
                       <td className="px-4 py-3.5">
-                        {slot.bookedBy?.userId ? (
-                          <div>
-                            <p className="font-bold text-white">{slot.bookedBy.userId.name}</p>
-                            <p className="text-[11px] text-slate-400">{slot.bookedBy.userId.phone}</p>
-                          </div>
-                        ) : (
-                          <span className="text-slate-500 italic">None (Open)</span>
-                        )}
+                        <div className="font-extrabold text-white text-xs">
+                          {bookedCount} / {capacity} Students
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {isFull ? 'Capacity Full' : `${remaining} seat(s) open`}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className={`badge text-[10px] ${
-                            isBooked ? 'badge-danger bg-rose-500/15 text-rose-400' : 'badge-success'
+                          className={`badge text-[10px] font-bold ${
+                            isFull
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : bookedCount > 0
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                              : 'badge-success'
                           }`}
                         >
-                          {isBooked ? 'Booked' : 'Available'}
+                          {isFull ? 'FULL (10/10)' : `${remaining} Available`}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <button
-                          disabled={isBooked}
+                          disabled={bookedCount > 0}
                           onClick={() => handleDeleteSlot(slot._id)}
                           className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                          title="Delete slot"
+                          title={bookedCount > 0 ? 'Cannot delete slot with active booked students' : 'Delete slot'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

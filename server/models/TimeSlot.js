@@ -19,6 +19,14 @@ const timeSlotSchema = new mongoose.Schema(
       type: String, // e.g., "09:30"
       required: true,
     },
+    lessonTitle: {
+      type: String,
+      default: 'Practical Driving Session',
+    },
+    lessonTopic: {
+      type: String,
+      default: 'Road Maneuvers & Handling',
+    },
     instructorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -29,9 +37,19 @@ const timeSlotSchema = new mongoose.Schema(
       enum: ['Light', 'Heavy', 'All'],
       default: 'Light',
     },
+    vehicleType: {
+      type: String,
+      enum: ['Car', 'Bike', 'ThreeWheeler', 'HeavyVehicle_Bus', 'All'],
+      default: 'Car',
+    },
     capacity: {
       type: Number,
-      default: 1,
+      default: 10,
+      max: 10,
+    },
+    bookedCount: {
+      type: Number,
+      default: 0,
     },
     bookedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -40,7 +58,7 @@ const timeSlotSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['available', 'booked', 'cancelled'],
+      enum: ['available', 'full', 'booked', 'cancelled'],
       default: 'available',
     },
   },

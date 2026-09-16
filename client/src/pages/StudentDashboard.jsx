@@ -491,8 +491,8 @@ export default function StudentDashboard() {
     }
 
     if (activePaymentMethod === 'slip') {
-      if (!slipRef.trim() && !slipFile) {
-        toast.error('Please enter a deposit reference number or upload your payment slip');
+      if (!slipFile) {
+        toast.error('Please upload your payment slip or transfer screenshot');
         return;
       }
       setSubmittingPkgPayment(true);
@@ -507,7 +507,7 @@ export default function StudentDashboard() {
         formData.append('amount', payAmount);
         formData.append('paymentMethod', 'bank_slip');
         formData.append('bankName', bankName);
-        formData.append('transactionReference', slipRef.trim() || `SLIP-${Date.now()}`);
+        formData.append('transactionReference', `SLIP-${Date.now().toString().slice(-6)}`);
         if (slipFile) {
           formData.append('slipImage', slipFile);
         }
@@ -2215,25 +2215,11 @@ export default function StudentDashboard() {
                         );
                       })()}
 
-                      {/* Reference Number & Slip File Upload */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      {/* Slip File Upload */}
+                      <div className="pt-1">
                         <div>
                           <label className="block text-xs font-semibold text-slate-300 mb-1">
-                            Deposit Reference / Transaction Number <span className="text-rose-400">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="e.g. BOC-DEP-849204 or Mobile Banking Ref"
-                            value={slipRef}
-                            onChange={(e) => setSlipRef(e.target.value)}
-                            className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950 text-white rounded-xl text-xs outline-none focus:border-cyan-400"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-300 mb-1">
-                            Upload Deposit Slip / Transfer Screenshot
+                            Upload Deposit Slip / Transfer Screenshot <span className="text-rose-400">*</span>
                           </label>
                           <div className="relative">
                             <input
@@ -2245,7 +2231,7 @@ export default function StudentDashboard() {
                             />
                             <label
                               htmlFor="package-slip-file-input"
-                              className="flex items-center justify-center gap-2 w-full px-3.5 py-2.5 border border-dashed border-white/25 rounded-xl text-xs text-slate-300 hover:text-white hover:border-cyan-400 cursor-pointer bg-slate-900/80 transition-colors"
+                              className="flex items-center justify-center gap-2 w-full px-4 py-3 border border-dashed border-white/25 rounded-xl text-xs text-slate-300 hover:text-white hover:border-cyan-400 cursor-pointer bg-slate-900/80 transition-colors"
                             >
                               <Upload className="w-4 h-4 text-cyan-400" />
                               <span>{slipFile ? slipFile.name : 'Choose Slip Image / PDF'}</span>
@@ -2466,8 +2452,9 @@ export default function StudentDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left 2 Cols: DMT Timeline & Consolidated Read-Only Records (US-06) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* US-06: Consolidated View of Trial, Learner Exam, and Medical Dates */}
-          <div className="card p-6 space-y-4 border border-cyan-400/30 bg-slate-900/80">
+          {/* US-06: Consolidated View of Trial, Learner Exam, and Medical Dates (Type 1 New Learners Only) */}
+          {isType1 && (
+            <div className="card p-6 space-y-4 border border-cyan-400/30 bg-slate-900/80">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-3">
               <div>
                 <span className="badge badge-info text-[10px] font-bold uppercase mb-1">
@@ -2702,6 +2689,7 @@ export default function StudentDashboard() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Stepper Timeline */}
           <DmtMilestoneTimeline student={profile} />
