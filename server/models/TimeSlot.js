@@ -44,8 +44,8 @@ const timeSlotSchema = new mongoose.Schema(
     },
     capacity: {
       type: Number,
-      default: 10,
-      max: 10,
+      default: () => parseInt(process.env.DEFAULT_SLOT_CAPACITY, 10) || 10,
+      min: 1,
     },
     bookedCount: {
       type: Number,

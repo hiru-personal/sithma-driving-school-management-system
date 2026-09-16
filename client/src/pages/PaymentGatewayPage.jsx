@@ -215,9 +215,10 @@ export default function PaymentGatewayPage() {
     }
     setLoading(true);
     try {
+      const fixedAmount = 5000;
       const fd = new FormData();
       fd.append('slipImage', slipFile);
-      fd.append('amount', slipForm.amount);
+      fd.append('amount', fixedAmount);
       fd.append('bankName', slipForm.bankName);
       fd.append('transactionReference', slipForm.reference || `BOC-ADV-${Date.now().toString().slice(-6)}`);
       fd.append('paymentType', 'advance');
@@ -235,7 +236,7 @@ export default function PaymentGatewayPage() {
         setDoneData({
           method: 'slip',
           reference: slipForm.reference || res.data.payment?.transactionReference || 'N/A',
-          amount: slipForm.amount,
+          amount: fixedAmount,
         });
         setDone(true);
       }
@@ -853,15 +854,30 @@ export default function PaymentGatewayPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                        Amount Deposited (LKR) <span className="text-rose-400">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        value={slipForm.amount}
-                        onChange={(e) => setSlipForm({ ...slipForm, amount: e.target.value })}
-                        className="w-full px-4 py-3 bg-slate-950/80 border border-white/15 text-white font-bold rounded-xl text-sm outline-none focus:border-cyan-400/50"
-                      />
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-300">
+                          Amount Deposited (LKR) <span className="text-rose-400">*</span>
+                        </label>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          <Lock className="w-2.5 h-2.5" /> Fixed Advance
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value="5000"
+                          readOnly
+                          disabled
+                          className="w-full px-4 py-3 bg-slate-900/90 border border-white/10 text-white font-bold rounded-xl text-sm outline-none cursor-not-allowed select-none opacity-90"
+                        />
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 font-medium select-none pointer-events-none">
+                          <Lock className="w-3.5 h-3.5 text-amber-400/80" />
+                          <span className="text-slate-400 font-semibold">LKR (Fixed)</span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Registration advance fee is fixed at LKR 5,000 and cannot be changed.
+                      </p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1.5">

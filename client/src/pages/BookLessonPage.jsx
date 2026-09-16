@@ -76,6 +76,16 @@ export default function BookLessonPage() {
   const isPackagePaymentConfirmed = student?.packagePaymentStatus === 'confirmed';
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
 
+  // Shared Trial Date Tracking
+  const hasTrialDate = Boolean(student?.trial_date);
+  const trialDateObj = hasTrialDate ? new Date(student.trial_date) : null;
+  const isTrialDatePassed = Boolean(
+    trialDateObj && new Date().getTime() > new Date(trialDateObj).setHours(23, 59, 59, 999)
+  );
+  const daysUntilTrial = trialDateObj
+    ? Math.max(0, Math.ceil((new Date(trialDateObj).setHours(23, 59, 59, 999) - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
+
   const unlockedCount =
     student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
       ? student.lessonsUnlocked
@@ -93,12 +103,34 @@ export default function BookLessonPage() {
       return;
     }
 
+    // Gate 1b: Type 2 Trial Date Requirement Gate
+    if (isType2 && !hasTrialDate) {
+      toast.error('Your practical trial date has not been set yet by the branch officer. Please contact your branch data entry officer to schedule your trial date before booking lessons.');
+      return;
+    }
+
+    // Gate 1c: Trial Date Passed Gate
+    if (isTrialDatePassed) {
+      toast.error('Your practical trial date has already passed. Please contact the branch officer to reschedule your trial date.');
+      return;
+    }
+
+    // Gate 1d: Selected Slot after Trial Date Gate
+    if (trialDateObj && selectedSlot) {
+      const slotTime = new Date(selectedSlot.date).setHours(0, 0, 0, 0);
+      const trialLimit = new Date(trialDateObj).setHours(23, 59, 59, 999);
+      if (slotTime > trialLimit) {
+        toast.error(`You can only book lessons up until your scheduled Trial Date (${trialDateObj.toISOString().split('T')[0]}). Please choose an earlier slot.`);
+        return;
+      }
+    }
+
     // Gate 2: Package Payment Gate
     if (!isPackagePaymentConfirmed && lessonsRemaining <= 0) {
       if (isPackagePaymentPending) {
-        toast.error('Your course package payment is awaiting branch officer verification.');
+        toast.error('Payment Pending Verification: Your course package payment slip is awaiting branch officer verification.');
       } else {
-        toast.error('Please select and pay for your course package to unlock lessons for booking.');
+        toast.error('Package Payment Required: Please select and pay for your course package to unlock lessons for booking.');
       }
       return;
     }
@@ -269,6 +301,76 @@ export default function BookLessonPage() {
         </div>
       </div>
 
+      {/* Shared Trial Date Tracking Banner (Visible to both Type 1 and Type 2) */}
+      {hasTrialDate ? (
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 border border-purple-400/30 shadow-[0_0_25px_rgba(168,85,247,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 font-bold flex-shrink-0">
+              <CalendarIcon className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/40 text-[10px] font-extrabold uppercase">
+                  Practical Trial Exam Scheduled
+                </span>
+                {isTrialDatePassed ? (
+                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold">
+                    Trial Date Passed
+                  </span>
+                ) : (
+                  <span className="badge bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[10px] font-bold">
+                    {daysUntilTrial} Days Remaining
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-black text-white mt-1">
+                Trial Date: {format(new Date(student.trial_date), 'EEEE, MMMM dd, yyyy')}
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                {isTrialDatePassed
+                  ? 'Your scheduled trial date has expired. Booking is restricted until rescheduled by branch officer.'
+                  : 'You can book practical driving lessons up until this scheduled trial date.'}
+              </p>
+            </div>
+          </div>
+          {student.trial_date_set_by && (
+            <div className="text-xs text-slate-400 bg-white/5 px-3.5 py-2 rounded-xl border border-white/10 flex-shrink-0">
+              Scheduled by:{' '}
+              <strong className="text-white">
+                {student.trial_date_set_by?.name || 'Branch Staff'}
+              </strong>
+            </div>
+          )}
+        </div>
+      ) : isType2 ? (
+        <div className="p-5 rounded-2xl bg-amber-500/15 border border-amber-400/40 shadow-[0_0_25px_rgba(245,158,11,0.15)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 flex-shrink-0 mt-0.5">
+              <AlertCircle className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="badge badge-warning text-[10px] font-extrabold uppercase">
+                  Action Required
+                </span>
+                <span className="text-xs font-bold text-amber-300">
+                  Trial Date Not Scheduled Yet
+                </span>
+              </div>
+              <h4 className="text-sm font-black text-white mt-1">
+                Branch Officer Scheduling Required
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Under DMT regulations, your branch Data Entry Officer must set your official practical trial exam date before practical lesson sessions can be reserved.
+              </p>
+            </div>
+          </div>
+          <div className="bg-slate-950/70 border border-amber-400/20 rounded-xl p-3 text-xs text-amber-200 whitespace-nowrap">
+            Contact Branch: <strong className="text-white">011-2849201</strong>
+          </div>
+        </div>
+      ) : null}
+
       {/* Package Payment Pending or Required Warning (US-09 Payment Gate) */}
       {!isPackagePaymentConfirmed && lessonsRemaining <= 0 && (
         <div className="p-4 bg-amber-500/15 border border-amber-400/30 rounded-2xl backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
@@ -281,11 +383,14 @@ export default function BookLessonPage() {
               <p className="text-slate-300 mt-0.5">
                 {isPackagePaymentPending
                   ? 'Your course package payment slip is awaiting review by our branch officer. Lessons will unlock immediately once confirmed.'
-                  : 'You have cleared the DMT Learner Exam! Please select and pay for your course package to unlock practical driving lessons.'}
+                  : 'Please select and pay for your course package to unlock practical driving lessons.'}
               </p>
             </div>
           </div>
-          <Link to="/student/dashboard" className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap">
+          <Link
+            to={isType2 ? "/student/payments" : "/student/dashboard"}
+            className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap"
+          >
             {isPackagePaymentPending ? 'Check Payment Status' : 'Select Package & Pay'} <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -422,13 +527,18 @@ export default function BookLessonPage() {
               const isStudentAlreadyBooked = Boolean(slot.isStudentBooked);
               const hasInstructor = !!slot.instructorId;
 
+              const isSlotPastTrial = Boolean(
+                trialDateObj && new Date(slot.date).setHours(0, 0, 0, 0) > new Date(trialDateObj).setHours(23, 59, 59, 999)
+              );
+              const isLockedByTrial = (isType2 && !hasTrialDate) || isTrialDatePassed || isSlotPastTrial;
               const isLockedByExam = isType1 && !isTrialEligible;
-              const isLockedByPackage = !isPackagePaymentConfirmed && lessonsRemaining <= 0;
+              const isLockedByPackage = (!isPackagePaymentConfirmed && lessonsRemaining <= 0) || isPackagePaymentPending;
               const isLockedByQuota = lessonsRemaining <= 0;
 
               const isDisabled =
                 isStudentAlreadyBooked ||
                 isFull ||
+                isLockedByTrial ||
                 isLockedByExam ||
                 isLockedByPackage ||
                 isLockedByQuota;
@@ -527,8 +637,16 @@ export default function BookLessonPage() {
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
                         : isFull
                         ? 'bg-rose-500/10 text-rose-400/60 border border-rose-500/20 cursor-not-allowed'
+                        : isType2 && !hasTrialDate
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 cursor-not-allowed'
+                        : isTrialDatePassed
+                        ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 cursor-not-allowed'
+                        : isSlotPastTrial
+                        ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 cursor-not-allowed'
                         : isLockedByExam
                         ? 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
+                        : isPackagePaymentPending
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 cursor-not-allowed'
                         : isLockedByPackage
                         ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20 cursor-not-allowed'
                         : isLockedByQuota
@@ -540,8 +658,16 @@ export default function BookLessonPage() {
                       ? '✓ You Are Enrolled in This Lesson'
                       : isFull
                       ? 'Lesson Full (10/10 Limit)'
+                      : isType2 && !hasTrialDate
+                      ? 'Trial Date Required to Book'
+                      : isTrialDatePassed
+                      ? 'Trial Date Has Passed'
+                      : isSlotPastTrial
+                      ? 'Slot is After Trial Date'
                       : isLockedByExam
                       ? 'DMT Theory Exam Pass Required'
+                      : isPackagePaymentPending
+                      ? 'Payment Pending Officer Approval'
                       : isLockedByPackage
                       ? 'Course Package Payment Required'
                       : isLockedByQuota

@@ -62,7 +62,7 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
     return <Navigate to="/student/dashboard" replace />;
   }
 
-  // Only Type 1 students can do exam practices (US-04/US-09 curriculum)
+  // Only Type 1 students can do exam practices & DMT milestones (US-04/US-09 curriculum)
   const isType1 =
     student?.studentType === 'Type1_NewLearner' ||
     student?.studentType === 'type1' ||
@@ -72,7 +72,7 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
     user?.studentType === 'Type 1' ||
     user?.student_type === 'Type 1';
   if (onlyType1 && !isType1) {
-    return <Navigate to="/student/dashboard" replace />;
+    return <Navigate to="/student/lessons" replace />;
   }
 
   return children;
@@ -117,7 +117,7 @@ export default function App() {
             <Route
               path="/student/milestones"
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute allowedRoles={['student']} onlyType1>
                   <DmtMilestonesPage />
                 </ProtectedRoute>
               }

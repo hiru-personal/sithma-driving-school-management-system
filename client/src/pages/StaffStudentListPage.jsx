@@ -79,6 +79,10 @@ export default function StaffStudentListPage() {
     examinerNotes: '',
   });
 
+  // Form State for Setting Practical Trial Date (Shared for Type 1 & Type 2)
+  const [trialDateInput, setTrialDateInput] = useState('');
+  const [savingTrialDate, setSavingTrialDate] = useState(false);
+
   // Form State for Updating DMT Dates (US-04, US-05, US-09)
   const [dmtForm, setDmtForm] = useState({
     medicalExamDate: '',
@@ -185,11 +189,39 @@ export default function StaffStudentListPage() {
         learnerExamMarks: student.learnerExamMarks || student.dmtDates.learnerExamMarks || '',
       });
     }
+    if (student.trial_date) {
+      setTrialDateInput(student.trial_date.split('T')[0]);
+    } else {
+      setTrialDateInput('');
+    }
     setTrialForm({
       attemptDate: new Date().toISOString().split('T')[0],
       result: 'passed',
       examinerNotes: '',
     });
+  };
+
+  const handleSaveTrialDate = async (e) => {
+    e.preventDefault();
+    if (!trialDateInput) {
+      toast.error('Please select a valid trial date');
+      return;
+    }
+    setSavingTrialDate(true);
+    try {
+      const res = await api.patch(`/students/${selectedStudent._id}/trial-date`, {
+        trialDate: trialDateInput,
+      });
+      if (res.data.success) {
+        toast.success('Practical trial date scheduled successfully!');
+        setSelectedStudent(null);
+        fetchStudents();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to set trial date');
+    } finally {
+      setSavingTrialDate(false);
+    }
   };
 
   const handleSaveDmtDates = async (e) => {
@@ -371,7 +403,11 @@ export default function StaffStudentListPage() {
                 {students.map((st) => {
                   const isLicensed = st.trial?.licenseObtained;
                   const attemptsCount = st.trial?.attempts?.length || 0;
-                  const isType2 = st.studentType === 'Type2_TrialReady';
+                  const isType2 =
+                    st.studentType === 'Type2_TrialReady' ||
+                    st.studentType === 'Type 2' ||
+                    st.studentType === 'type2' ||
+                    st.student_type === 'Type 2';
 
                   return (
                     <tr key={st._id} className="hover:bg-white/5 transition-colors">
@@ -393,6 +429,13 @@ export default function StaffStudentListPage() {
                         >
                           {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
                         </span>
+                        {st.trial_date && (
+                          <div className="mt-1">
+                            <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-bold">
+                              📅 Trial: {format(new Date(st.trial_date), 'MMM dd')}
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Package */}
@@ -538,13 +581,26 @@ export default function StaffStudentListPage() {
                               : 'Verify Payment & Upgrade User'}
                           </button>
 
+                          {/* Schedule Practical Trial Date (Shared for Type 1 & Type 2) */}
                           <button
-                            onClick={() => openStudentModal(st, 'edit_dmt')}
-                            className="p-2 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
-                            title="Update DMT Exam Dates"
+                            onClick={() => openStudentModal(st, 'set_trial_date')}
+                            className="p-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 transition-all"
+                            title="Schedule or Reschedule Practical Trial Date"
                           >
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-4 h-4 text-purple-300" />
                           </button>
+
+                          {/* DMT Milestone Dates (Only for Type 1 New Learners) */}
+                          {!isType2 && (
+                            <button
+                              onClick={() => openStudentModal(st, 'edit_dmt')}
+                              className="p-2 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
+                              title="Update DMT Milestone Dates (Type 1 Only)"
+                            >
+                              <Calendar className="w-4 h-4 text-cyan-400" />
+                            </button>
+                          )}
+
                           <button
                             onClick={() => openStudentModal(st, 'record_trial')}
                             disabled={isLicensed || attemptsCount >= 3}
@@ -575,6 +631,10 @@ export default function StaffStudentListPage() {
                     <>
                       <Calendar className="w-5 h-5 text-cyan-400" /> DMT Regulatory Dates: {selectedStudent.userId?.name}
                     </>
+                  ) : modalMode === 'set_trial_date' ? (
+                    <>
+                      <Calendar className="w-5 h-5 text-purple-400" /> Practical Trial Date: {selectedStudent.userId?.name}
+                    </>
                   ) : (
                     <>
                       <Award className="w-5 h-5 text-amber-400" /> Record Practical Trial Attempt: {selectedStudent.userId?.name}
@@ -592,6 +652,57 @@ export default function StaffStudentListPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Set Practical Trial Date Form (Shared for Type 1 & Type 2) */}
+            {modalMode === 'set_trial_date' && (
+              <form onSubmit={handleSaveTrialDate} className="space-y-4 text-xs">
+                <div className="p-3.5 bg-purple-500/10 border border-purple-400/20 rounded-xl space-y-1">
+                  <p className="font-bold text-purple-300 text-xs flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-purple-400" /> Schedule Practical Driving Trial Exam
+                  </p>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    Setting the official practical trial date allows the student to book lesson sessions up until this date. If not set (for Type 2) or passed, booking will be locked.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Select Practical Trial Date:
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    value={trialDateInput}
+                    onChange={(e) => setTrialDateInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/15 rounded-xl text-cyan-300 font-bold outline-none"
+                  />
+                </div>
+
+                {selectedStudent.trial_date && (
+                  <div className="text-[11px] text-slate-400 p-2.5 bg-white/5 rounded-xl border border-white/10">
+                    Currently Assigned: <strong className="text-white">{format(new Date(selectedStudent.trial_date), 'EEEE, MMMM dd, yyyy')}</strong>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudent(null)}
+                    className="btn-secondary text-xs py-2 px-4"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingTrialDate || !trialDateInput}
+                    className="btn-accent text-xs py-2 px-5 font-bold shadow-md disabled:opacity-50"
+                  >
+                    {savingTrialDate ? 'Saving...' : 'Set Practical Trial Date'}
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* DMT Dates Edit Form (US-04, US-05, US-09) */}
             {modalMode === 'edit_dmt' && (

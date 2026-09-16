@@ -35,9 +35,14 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 3. Gate: Type 1 (New Learner) DMT Learner's Exam Gate (US-09)
-    // Type 1 students can ONLY book lessons after passing their learner exam
-    const isType1 = student.studentType === 'Type1_NewLearner' || student.studentType === 'Type 1';
+    // 3. Gate: Type 1 vs Type 2 DMT / Trial Date Rules
+    const isType2 =
+      student.studentType === 'Type 2' ||
+      student.studentType === 'Type2_TrialReady' ||
+      student.studentType === 'type2';
+    const isType1 = !isType2;
+
+    // Type 1: Learner Theory Exam Gate (US-09)
     if (isType1) {
       const isLearnerPassed =
         student.trialEligible ||
@@ -53,6 +58,29 @@ exports.createBooking = async (req, res) => {
       }
     }
 
+    // Type 2: Trial Date Requirement Gate
+    if (isType2) {
+      if (!student.trial_date) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your practical trial date has not been set yet by the branch officer. Please contact your branch data entry officer to schedule your trial date before booking lessons.',
+        });
+      }
+    }
+
+    // Shared: Check if scheduled Trial Date has already passed
+    if (student.trial_date) {
+      const trialMidnight = new Date(student.trial_date);
+      trialMidnight.setHours(23, 59, 59, 999);
+      if (new Date() > trialMidnight) {
+        const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
+        return res.status(403).json({
+          success: false,
+          message: `Your practical trial date (${formattedTrialDate}) has already passed. Please contact the branch officer to reschedule your trial date.`,
+        });
+      }
+    }
+
     // 4. Gate: Course Package Payment Gate
     // Passed students (both Type 1 and Type 2) must have confirmed package payment or unlocked lessons before booking
     const hasConfirmedPayment = student.packagePaymentStatus === 'confirmed';
@@ -62,8 +90,8 @@ exports.createBooking = async (req, res) => {
         success: false,
         message:
           student.packagePaymentStatus === 'pending'
-            ? 'Your course package payment is pending verification by our branch officer. Lessons will unlock as soon as payment is confirmed.'
-            : 'Please select and pay for your course package to unlock lessons for booking.',
+            ? 'Payment Pending Verification: Your course package payment slip has been uploaded and is currently awaiting verification by a branch officer. Lesson booking will be unlocked immediately once approved.'
+            : 'Package Payment Required: Please select a package and complete your payment to unlock lesson bookings.',
       });
     }
 
@@ -137,7 +165,7 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 6. Find & Check 10-Student Lesson Capacity (Hard limit: only 10 students per lesson)
+    // 6. Find & Check 10-Student Lesson Capacity and Trial Date Boundary
     const timeSlot = await TimeSlot.findById(timeSlotId);
     if (!timeSlot) {
       return res.status(404).json({
@@ -153,11 +181,21 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Check active bookings count for this lesson session
-    const activeBookingsCount = await Booking.countDocuments({
-      timeSlotId: timeSlot._id,
-      status: { $in: ['confirmed', 'pending'] },
-    });
+    // Gating Rule: Booking only allowed on or before the Trial Date
+    if (student.trial_date) {
+      const slotDateObj = new Date(timeSlot.date);
+      slotDateObj.setHours(0, 0, 0, 0);
+      const trialDateObj = new Date(student.trial_date);
+      trialDateObj.setHours(23, 59, 59, 999);
+
+      if (slotDateObj > trialDateObj) {
+        const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
+        return res.status(400).json({
+          success: false,
+          message: `You can only book lessons up until your scheduled Trial Date (${formattedTrialDate}). Please select a lesson slot on or before your trial date.`,
+        });
+      }
+    }
 
     // Check if this student has ALREADY booked this lesson slot
     const existingSlotBooking = await Booking.findOne({
@@ -170,17 +208,6 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'You have already booked a spot in this lesson session.',
-      });
-    }
-
-    const maxCapacity = timeSlot.capacity || 10;
-    if (activeBookingsCount >= maxCapacity || timeSlot.status === 'full') {
-      timeSlot.status = 'full';
-      timeSlot.bookedCount = activeBookingsCount;
-      await timeSlot.save();
-      return res.status(400).json({
-        success: false,
-        message: `This lesson session is full (${activeBookingsCount}/${maxCapacity} students booked). Only 10 students can book each lesson. Please choose another lesson session.`,
       });
     }
 
@@ -203,15 +230,36 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // 7. Update TimeSlot Booked Count & Capacity Status
-    const newBookedCount = activeBookingsCount + 1;
-    timeSlot.bookedCount = newBookedCount;
-    if (newBookedCount >= maxCapacity) {
-      timeSlot.status = 'full';
-    } else {
-      timeSlot.status = 'available';
+    const defaultCapacity = parseInt(process.env.DEFAULT_SLOT_CAPACITY, 10) || 10;
+    const maxCapacity = timeSlot.capacity || defaultCapacity;
+
+    // 7. Atomic Concurrency-Safe TimeSlot Capacity Check & Reservation
+    const updatedSlot = await TimeSlot.findOneAndUpdate(
+      {
+        _id: timeSlot._id,
+        status: { $ne: 'cancelled' },
+        bookedCount: { $lt: maxCapacity },
+      },
+      {
+        $inc: { bookedCount: 1 },
+      },
+      { new: true }
+    );
+
+    if (!updatedSlot) {
+      return res.status(400).json({
+        success: false,
+        message: `This lesson session is full (${timeSlot.bookedCount || maxCapacity}/${maxCapacity} students booked). Max capacity is ${maxCapacity} students per lesson. Please choose another lesson session.`,
+      });
     }
-    await timeSlot.save();
+
+    // Mark full if max reached
+    if (updatedSlot.bookedCount >= maxCapacity) {
+      updatedSlot.status = 'full';
+      await updatedSlot.save();
+    }
+
+    const newBookedCount = updatedSlot.bookedCount;
 
     student.lessonsUsed = currentUsed + 1;
     if (student.package) {

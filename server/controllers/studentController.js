@@ -74,6 +74,26 @@ exports.getAllStudents = async (req, res) => {
   }
 };
 
+// Helper to remove all DMT milestone data for Type 2 (Trial-Only) students
+const sanitizeStudentForType = (student) => {
+  if (!student) return student;
+  const isType2 =
+    student.studentType === 'Type 2' ||
+    student.studentType === 'Type2_TrialReady' ||
+    student.studentType === 'type2';
+  if (!isType2) return student;
+
+  const obj = typeof student.toObject === 'function' ? student.toObject() : { ...student };
+  delete obj.dmtDates;
+  delete obj.learnerExamAttempts;
+  delete obj.learnerExamAttemptsCount;
+  delete obj.learnerExamMarks;
+  delete obj.learnerExamStatus;
+  delete obj.medicalCertificateUrl;
+  return obj;
+};
+exports.sanitizeStudentForType = sanitizeStudentForType;
+
 // @desc    Get single student profile by ID
 // @route   GET /api/students/:id
 // @access  Student (self), Staff, Admin
@@ -81,7 +101,8 @@ exports.getStudentById = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id)
       .populate('userId', 'name email phone role branch createdAt')
-      .populate('package.packageId');
+      .populate('package.packageId')
+      .populate('trial_date_set_by', 'name role');
 
     if (!student) {
       return res.status(404).json({
@@ -103,7 +124,7 @@ exports.getStudentById = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      student,
+      student: sanitizeStudentForType(student),
     });
   } catch (error) {
     return res.status(500).json({
@@ -136,6 +157,18 @@ exports.updateDmtDates = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'Unauthorized to modify these milestone dates',
+      });
+    }
+
+    // Zero DMT milestone exposure for Type 2 (Trial-Only) students
+    const isType2 =
+      student.studentType === 'Type 2' ||
+      student.studentType === 'Type2_TrialReady' ||
+      student.studentType === 'type2';
+    if (isType2) {
+      return res.status(403).json({
+        success: false,
+        message: 'DMT milestone tracking is not applicable for Type 2 (Trial-Only) students.',
       });
     }
 
@@ -989,6 +1022,18 @@ exports.recordExamAttempt = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
 
+    // Zero DMT milestone exposure for Type 2 (Trial-Only) students
+    const isType2 =
+      student.studentType === 'Type 2' ||
+      student.studentType === 'Type2_TrialReady' ||
+      student.studentType === 'type2';
+    if (isType2) {
+      return res.status(403).json({
+        success: false,
+        message: 'Learner theory exams are not applicable for Type 2 (Trial-Only) students.',
+      });
+    }
+
     // Check if already cancelled
     if (student.registrationStatus === 'cancelled' || student.accountStatus === 'cancelled') {
       return res.status(400).json({
@@ -1130,6 +1175,18 @@ exports.reRegisterStudent = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
 
+    // Zero DMT milestone exposure for Type 2 (Trial-Only) students
+    const isType2 =
+      student.studentType === 'Type 2' ||
+      student.studentType === 'Type2_TrialReady' ||
+      student.studentType === 'type2';
+    if (isType2) {
+      return res.status(403).json({
+        success: false,
+        message: 'Re-registration workflow is only applicable for Type 1 learners.',
+      });
+    }
+
     // Reset student record to clean initial state
     student.registrationStatus = 'pending_payment';
     student.accountStatus = 'pending_verification';
@@ -1194,5 +1251,80 @@ exports.reRegisterStudent = async (req, res) => {
     });
   }
 };
+
+// @desc    Set or update Practical Trial Date for a student (Staff / Admin only)
+// @route   PATCH /api/students/:id/trial-date
+// @access  Staff, Admin
+exports.setTrialDate = async (req, res) => {
+  try {
+    const { trialDate } = req.body;
+    if (!trialDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid trial date',
+      });
+    }
+
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student record not found',
+      });
+    }
+
+    const parsedDate = new Date(trialDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid trial date format',
+      });
+    }
+
+    student.trial_date = parsedDate;
+    student.trial_date_set_by = req.user._id;
+    student.trial_date_set_at = new Date();
+    student.lastActivityDate = new Date();
+
+    await student.save();
+
+    // Trigger in-app notification for student
+    const dateFormatted = parsedDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    await Notification.create({
+      recipientId: student.userId._id || student.userId,
+      recipientRole: 'student',
+      title: '📅 Practical Trial Date Scheduled',
+      message: `Your practical trial exam has been scheduled for ${dateFormatted} by ${req.user.name || 'Branch Staff'}. You may book practical lessons up until this date.`,
+      type: 'trial',
+      link: '/student/lessons',
+    });
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch createdAt')
+      .populate('package.packageId')
+      .populate('trial_date_set_by', 'name role');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Trial date scheduled successfully',
+      trialDate: student.trial_date,
+      student: sanitizeStudentForType(populatedStudent),
+    });
+  } catch (error) {
+    console.error('Error setting trial date:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to set trial date',
+      error: error.message,
+    });
+  }
+};
+
 
 

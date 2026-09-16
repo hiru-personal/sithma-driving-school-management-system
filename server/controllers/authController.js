@@ -58,6 +58,26 @@ const validatePasswordPolicy = (password, username, email) => {
   return { valid: true };
 };
 
+// Helper to remove all DMT milestone data for Type 2 (Trial-Only) students
+const sanitizeStudentForType = (student) => {
+  if (!student) return student;
+  const isType2 =
+    student.studentType === 'Type 2' ||
+    student.studentType === 'Type2_TrialReady' ||
+    student.studentType === 'type2' ||
+    student.student_type === 'Type 2';
+  if (!isType2) return student;
+
+  const obj = typeof student.toObject === 'function' ? student.toObject() : { ...student };
+  delete obj.dmtDates;
+  delete obj.learnerExamAttempts;
+  delete obj.learnerExamAttemptsCount;
+  delete obj.learnerExamMarks;
+  delete obj.learnerExamStatus;
+  delete obj.medicalCertificateUrl;
+  return obj;
+};
+
 // @desc    Register a new student (Self-Registration - Path A)
 // @route   POST /api/auth/register
 // @access  Public
@@ -507,7 +527,7 @@ exports.login = async (req, res) => {
         branch: user.branch,
         mustChangePassword: user.mustChangePassword || false,
       },
-      student: studentProfile,
+      student: sanitizeStudentForType(studentProfile),
       latestPayment,
     });
   } catch (error) {
@@ -807,7 +827,7 @@ exports.getMe = async (req, res) => {
         mustChangePassword: user.mustChangePassword || false,
         createdAt: user.createdAt,
       },
-      student: studentProfile,
+      student: sanitizeStudentForType(studentProfile),
       latestPayment,
     });
   } catch (error) {

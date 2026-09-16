@@ -211,6 +211,17 @@ const studentSchema = new mongoose.Schema(
       licenseObtained: { type: Boolean, default: false },
       licenseIssuedDate: { type: Date, default: null },
     },
+    // Shared Officer-assigned Trial Date (applies to both Type 1 and Type 2)
+    trial_date: { type: Date, default: null },
+    trial_date_set_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    trial_date_set_at: {
+      type: Date,
+      default: null,
+    },
     // Heavy Vehicle Eligibility & Prior Licensing
     lightVehicleLicenseDate: { type: Date, default: null },
     heavyVehicleEligible: { type: Boolean, default: false },

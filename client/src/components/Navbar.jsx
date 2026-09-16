@@ -31,14 +31,16 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isType1 = Boolean(
-    student?.studentType === 'Type1_NewLearner' ||
-    student?.studentType === 'Type 1' ||
-    student?.student_type === 'Type 1' ||
-    user?.studentType === 'Type1_NewLearner' ||
-    user?.studentType === 'Type 1' ||
-    user?.student_type === 'Type 1'
+  const isType2 = Boolean(
+    student?.studentType === 'Type 2' ||
+    student?.studentType === 'Type2_TrialReady' ||
+    student?.studentType === 'type2' ||
+    student?.student_type === 'Type 2' ||
+    user?.studentType === 'Type 2' ||
+    user?.studentType === 'Type2_TrialReady' ||
+    user?.student_type === 'Type 2'
   );
+  const isType1 = !isType2;
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function Navbar() {
 
         <div className="flex items-center justify-between">
           {/* Logo & School Branding */}
-          <Link to="/" className="flex items-center gap-3.5 group">
+          <Link to={user && isStudent && isType2 ? "/student/lessons" : "/"} className="flex items-center gap-3.5 group">
             <div className="relative w-11 h-11 rounded-xl sm:rounded-full bg-slate-950/80 p-1.5 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/30 group-hover:scale-105 group-hover:border-cyan-400 transition-all duration-300">
               <img
                 src="/images/sithma-emblem.png"
@@ -91,18 +93,32 @@ export default function Navbar() {
                       <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Status: Pending Verification
                     </span>
                   )}
-                  <Link
-                    to="/student/dashboard"
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                      isActive('/student/dashboard')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <LayoutDashboard className="w-4 h-4" /> Dashboard
-                  </Link>
-                  {isType1 && (
+
+                  {/* Type 2 (Trial-Only) Students: ONLY Book Lessons */}
+                  {isType2 ? (
+                    <Link
+                      to="/student/lessons"
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                        isActive('/student/lessons') || isActive('/student/lessons/book')
+                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4" /> Book Lessons
+                    </Link>
+                  ) : (
+                    /* Type 1 Full Course Learner Navigation */
                     <>
+                      <Link
+                        to="/student/dashboard"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/dashboard')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <LayoutDashboard className="w-4 h-4" /> Dashboard
+                      </Link>
                       <Link
                         to="/student/milestones"
                         className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
@@ -123,40 +139,40 @@ export default function Navbar() {
                       >
                         <BookOpen className="w-4 h-4" /> Exam Practice
                       </Link>
-                    </>
-                  )}
-                  {isPremium && (
-                    <>
-                      <Link
-                        to="/student/lessons"
-                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                          isActive('/student/lessons') || isActive('/student/lessons/book')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <Calendar className="w-4 h-4" /> Book Lessons
-                      </Link>
-                      <Link
-                        to="/student/payments"
-                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                          isActive('/student/payments')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <CreditCard className="w-4 h-4" /> Payments
-                      </Link>
-                      <Link
-                        to="/student/profile"
-                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                          isActive('/student/profile')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <User className="w-4 h-4" /> Profile ID
-                      </Link>
+                      {isPremium && (
+                        <>
+                          <Link
+                            to="/student/lessons"
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                              isActive('/student/lessons') || isActive('/student/lessons/book')
+                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <Calendar className="w-4 h-4" /> Book Lessons
+                          </Link>
+                          <Link
+                            to="/student/payments"
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                              isActive('/student/payments')
+                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <CreditCard className="w-4 h-4" /> Payments
+                          </Link>
+                          <Link
+                            to="/student/profile"
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                              isActive('/student/profile')
+                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <User className="w-4 h-4" /> Profile ID
+                          </Link>
+                        </>
+                      )}
                     </>
                   )}
                 </>
@@ -346,15 +362,23 @@ export default function Navbar() {
 
               {isStudent && (
                 <div className="space-y-1 text-xs">
-                  <Link
-                    to="/student/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                  >
-                    Dashboard
-                  </Link>
-                  {isType1 && (
+                  {isType2 ? (
+                    <Link
+                      to="/student/lessons"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium flex items-center gap-2"
+                    >
+                      <Calendar className="w-4 h-4 text-cyan-400" /> Book Lessons
+                    </Link>
+                  ) : (
                     <>
+                      <Link
+                        to="/student/dashboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                      >
+                        Dashboard
+                      </Link>
                       <Link
                         to="/student/milestones"
                         onClick={() => setMobileMenuOpen(false)}
@@ -369,24 +393,24 @@ export default function Navbar() {
                       >
                         DMT Exam Practice
                       </Link>
-                    </>
-                  )}
-                  {isPremium && (
-                    <>
-                      <Link
-                        to="/student/lessons"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                      >
-                        Book Lessons
-                      </Link>
-                      <Link
-                        to="/student/payments"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                      >
-                        Payments
-                      </Link>
+                      {isPremium && (
+                        <>
+                          <Link
+                            to="/student/lessons"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                          >
+                            Book Lessons
+                          </Link>
+                          <Link
+                            to="/student/payments"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                          >
+                            Payments
+                          </Link>
+                        </>
+                      )}
                     </>
                   )}
                 </div>

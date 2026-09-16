@@ -48,7 +48,7 @@ export default function LoginPage() {
       if (res.mustChangePassword) {
         setShowForcePasswordModal(true);
       } else {
-        redirectBasedOnRole(res.user.role);
+        redirectBasedOnRole(res.user.role, res.user, res.student);
       }
     } else {
       if (res?.pendingVerification) {
@@ -62,9 +62,21 @@ export default function LoginPage() {
     }
   };
 
-  const redirectBasedOnRole = (role) => {
+  const redirectBasedOnRole = (role, userObj, studentObj) => {
     if (role === 'student') {
-      navigate('/student/dashboard');
+      const isType2 = Boolean(
+        userObj?.studentType === 'Type 2' ||
+        userObj?.studentType === 'Type2_TrialReady' ||
+        userObj?.student_type === 'Type 2' ||
+        studentObj?.studentType === 'Type 2' ||
+        studentObj?.studentType === 'Type2_TrialReady' ||
+        studentObj?.student_type === 'Type 2'
+      );
+      if (isType2) {
+        navigate('/student/lessons');
+      } else {
+        navigate('/student/dashboard');
+      }
     } else if (role === 'admin') {
       navigate('/admin/dashboard');
     } else if (role === 'instructor') {

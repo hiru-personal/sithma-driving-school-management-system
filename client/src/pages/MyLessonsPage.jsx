@@ -26,11 +26,27 @@ export default function MyLessonsPage() {
   const [loading, setLoading] = useState(true);
 
   const isType1 = student?.studentType === 'Type1_NewLearner' || student?.studentType === 'Type 1';
+  const isType2 = Boolean(
+    student?.studentType === 'Type2_TrialReady' ||
+    student?.studentType === 'Type 2' ||
+    student?.student_type === 'Type 2'
+  );
   const isTrialEligible = Boolean(
+    isType2 ||
     student?.trialEligible ||
     student?.learnerExamStatus === 'passed' ||
     student?.dmtDates?.learnerExamPassed
   );
+
+  // Shared Trial Date Tracking
+  const hasTrialDate = Boolean(student?.trial_date);
+  const trialDateObj = hasTrialDate ? new Date(student.trial_date) : null;
+  const isTrialDatePassed = Boolean(
+    trialDateObj && new Date().getTime() > new Date(trialDateObj).setHours(23, 59, 59, 999)
+  );
+  const daysUntilTrial = trialDateObj
+    ? Math.max(0, Math.ceil((new Date(trialDateObj).setHours(23, 59, 59, 999) - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   // Free Weekly Class Modal
   const [isFreeModalOpen, setIsFreeModalOpen] = useState(false);
@@ -109,11 +125,11 @@ export default function MyLessonsPage() {
     e.preventDefault();
     setExtraLoading(true);
     try {
-      const res = await api.post(`/bookings/students/${student._id}/additional-lessons`, {
+      const res = await api.post(`/students/${student._id}/additional-lessons`, {
         extraLessons: extraCount,
       });
       if (res.data.success) {
-        toast.success(res.data.message);
+        toast.success(`Success! Added ${extraCount} additional lessons to your account.`);
         setIsExtraModalOpen(false);
         if (student?._id) {
           const profileRes = await api.get(`/students/${student._id}`);
@@ -158,6 +174,9 @@ export default function MyLessonsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 font-bold shadow-sm flex items-center gap-1.5">
+            <Calendar className="w-4 h-4" /> Book New Lesson
+          </Link>
           <button onClick={openFreeClassModal} className="btn-accent text-xs py-2 px-4 font-bold shadow-sm">
             <Gift className="w-4 h-4 text-slate-950" /> Book Free Weekly Class
           </button>
@@ -166,6 +185,59 @@ export default function MyLessonsPage() {
           </button>
         </div>
       </div>
+
+      {/* Shared Trial Date Tracking Banner */}
+      {hasTrialDate ? (
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 border border-purple-400/30 shadow-[0_0_25px_rgba(168,85,247,0.15)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 font-bold flex-shrink-0">
+              <Calendar className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/40 text-[10px] font-extrabold uppercase">
+                  Practical Trial Exam Scheduled
+                </span>
+                {isTrialDatePassed ? (
+                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold">
+                    Trial Date Passed
+                  </span>
+                ) : (
+                  <span className="badge bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[10px] font-bold">
+                    {daysUntilTrial} Days Remaining
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-black text-white mt-1">
+                Trial Date: {format(new Date(student.trial_date), 'EEEE, MMMM dd, yyyy')}
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                {isTrialDatePassed
+                  ? 'Your scheduled trial date has passed. Please contact the branch officer to reschedule.'
+                  : 'Practical lesson bookings are permitted on or before your scheduled trial date.'}
+              </p>
+            </div>
+          </div>
+          <Link to="/student/lessons/book" className="btn-accent text-xs py-2.5 px-4 font-bold whitespace-nowrap flex items-center gap-1.5">
+            Book Next Lesson <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      ) : isType2 ? (
+        <div className="p-4 bg-amber-500/15 border border-amber-400/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-300 text-sm">Practical Trial Date Not Scheduled Yet</p>
+              <p className="text-slate-300 mt-0.5">
+                As a Type 2 Trial-Only student, your practical trial date must be assigned by the branch Data Entry Officer before slots can be booked.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs font-bold text-amber-200 bg-slate-950/60 px-3 py-2 rounded-xl border border-amber-400/20 whitespace-nowrap">
+            Contact Branch Staff
+          </div>
+        </div>
+      ) : null}
 
       {/* Type 1 US-09 DMT Lock Banner */}
       {isType1 && !isTrialEligible && (
@@ -179,7 +251,7 @@ export default function MyLessonsPage() {
               </p>
             </div>
           </div>
-          <Link to="/student/dashboard" className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap">
+          <Link to="/student/milestones" className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap">
             View DMT Milestone Schedule →
           </Link>
         </div>

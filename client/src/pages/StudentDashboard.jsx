@@ -430,6 +430,28 @@ export default function StudentDashboard() {
     }).catch(() => {});
   }, []);
 
+  // Strict First-Login Landing & Section Access for Type 2: Redirect to Book Lessons once verified
+  useEffect(() => {
+    const isType2Student = Boolean(
+      profile?.studentType === 'Type 2' ||
+      profile?.studentType === 'Type2_TrialReady' ||
+      profile?.studentType === 'type2' ||
+      profile?.student_type === 'Type 2' ||
+      user?.studentType === 'Type 2' ||
+      user?.studentType === 'Type2_TrialReady' ||
+      user?.student_type === 'Type 2'
+    );
+    const isVerified =
+      user?.account_status === 'Verified' ||
+      user?.status === 'active' ||
+      profile?.advancePaymentStatus === 'verified' ||
+      profile?.accountStatus === 'active';
+
+    if (isType2Student && isVerified) {
+      navigate('/student/lessons', { replace: true });
+    }
+  }, [profile, user, navigate]);
+
   const handleSelectBank = (b) => {
     setSelectedBankId(b.id);
     setBankName(b.name);

@@ -13,6 +13,7 @@ const {
   updateStudentProfile,
   recordExamAttempt,
   reRegisterStudent,
+  setTrialDate,
 } = require('../controllers/studentController');
 const { authenticate, authorize, checkStudentOwnership } = require('../middleware/auth');
 
@@ -30,6 +31,7 @@ router.post('/:id/re-register', authenticate, checkStudentOwnership, reRegisterS
 router.get('/:id/heavy-vehicle-eligibility', authenticate, checkStudentOwnership, checkHeavyVehicleEligibility);
 
 // Staff/Admin only actions
+router.patch('/:id/trial-date', authenticate, authorize('staff', 'admin'), setTrialDate);
 router.patch('/:id/trial', authenticate, authorize('staff', 'admin'), recordTrialAttempt);
 router.patch('/:id/package', authenticate, authorize('staff', 'admin'), updateStudentPackage);
 router.patch('/:id/toggle-premium', authenticate, authorize('staff', 'admin'), toggleAdvancePaid);
