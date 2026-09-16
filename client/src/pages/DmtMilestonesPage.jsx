@@ -149,6 +149,17 @@ export default function DmtMilestonesPage() {
   }, [profile]);
 
   const handleSaveRegistrationRemarks = async () => {
+    const regDate = profile?.registration_date || profile?.dmtDates?.learnerRegistrationDate;
+    if (!regDate) {
+      toast.error('DMT Registration date has not been assigned by staff yet.');
+      return;
+    }
+    const todayTime = new Date().setHours(0, 0, 0, 0);
+    const regTime = new Date(regDate).setHours(0, 0, 0, 0);
+    if (todayTime < regTime) {
+      toast.error(`You cannot submit remarks before your scheduled date (${new Date(regDate).toLocaleDateString()}).`);
+      return;
+    }
     if (!registrationRemarksInput.trim()) {
       toast.error('Please enter remarks first');
       return;
@@ -175,6 +186,17 @@ export default function DmtMilestonesPage() {
 
   const handleUploadMedicalProof = async (e) => {
     e.preventDefault();
+    const medDate = profile?.medical_date || profile?.dmtDates?.medicalExamDate;
+    if (!medDate) {
+      toast.error('DMT Medical Exam date has not been assigned by staff yet.');
+      return;
+    }
+    const todayTime = new Date().setHours(0, 0, 0, 0);
+    const medTime = new Date(medDate).setHours(0, 0, 0, 0);
+    if (todayTime < medTime) {
+      toast.error(`You cannot update status or upload proof before your scheduled date (${new Date(medDate).toLocaleDateString()}).`);
+      return;
+    }
     setSubmittingMedical(true);
     try {
       const studentId = profile?._id || student?._id;
@@ -208,6 +230,17 @@ export default function DmtMilestonesPage() {
 
   const handleUploadRegistrationProof = async (e) => {
     e.preventDefault();
+    const regDate = profile?.registration_date || profile?.dmtDates?.learnerRegistrationDate;
+    if (!regDate) {
+      toast.error('DMT Registration submission date has not been assigned by staff yet.');
+      return;
+    }
+    const todayTime = new Date().setHours(0, 0, 0, 0);
+    const regTime = new Date(regDate).setHours(0, 0, 0, 0);
+    if (todayTime < regTime) {
+      toast.error(`You cannot mark registration as completed or upload proof before your scheduled date (${new Date(regDate).toLocaleDateString()}).`);
+      return;
+    }
     setSubmittingRegistration(true);
     try {
       const studentId = profile?._id || student?._id;
@@ -506,14 +539,20 @@ export default function DmtMilestonesPage() {
           {/* 1. Medical Exam Card */}
           {(() => {
             const medDate = profile?.medical_date || profile?.dmtDates?.medicalExamDate;
-            const isMedPassed = Boolean(
+            const isMedDateAssigned = Boolean(medDate);
+            const isMedDateReached = isMedDateAssigned && new Date().setHours(0, 0, 0, 0) >= new Date(medDate).setHours(0, 0, 0, 0);
+
+            const isMedPassed = isMedDateAssigned && Boolean(
               profile?.dmtDates?.medicalExamPassed ||
               profile?.dmtDates?.medicalExamStatus === 'passed' ||
               profile?.dmtDates?.medicalDone
             );
-            const isMedFailed = profile?.dmtDates?.medicalExamStatus === 'failed' || profile?.dmtDates?.medicalExamPassed === false;
-            const medProofUrl = profile?.medicalDocumentUrl || profile?.dmtDates?.medicalDocumentUrl;
-            const medRemarks = profile?.medicalRemarks || profile?.dmtDates?.medicalRemarks;
+            const isMedFailed = isMedDateAssigned && (
+              profile?.dmtDates?.medicalExamStatus === 'failed' ||
+              profile?.dmtDates?.medicalExamPassed === false
+            );
+            const medProofUrl = isMedDateAssigned ? (profile?.medicalDocumentUrl || profile?.dmtDates?.medicalDocumentUrl) : null;
+            const medRemarks = isMedDateAssigned ? (profile?.medicalRemarks || profile?.dmtDates?.medicalRemarks) : null;
             const medPendingReq = myRescheduleRequests.find(
               (r) => r.milestone_type === 'medical' && r.status === 'Pending'
             );
@@ -526,15 +565,25 @@ export default function DmtMilestonesPage() {
                       <Stethoscope className="w-5 h-5 text-emerald-400" /> 1. DMT Medical Exam
                     </span>
                     <span className={`badge text-xs font-bold py-1 px-3 ${
-                      isMedPassed
+                      !isMedDateAssigned
+                        ? 'bg-slate-800 text-slate-400'
+                        : isMedPassed
                         ? 'badge-success'
                         : isMedFailed
                         ? 'badge-error'
-                        : medDate
+                        : isMedDateReached
                         ? 'badge-warning'
-                        : 'bg-slate-800 text-slate-400'
+                        : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
                     }`}>
-                      {isMedPassed ? '✓ PASSED' : isMedFailed ? '✕ FAILED' : medDate ? '⏳ SCHEDULED' : 'PENDING DATE'}
+                      {!isMedDateAssigned
+                        ? 'PENDING DATE'
+                        : isMedPassed
+                        ? '✓ PASSED'
+                        : isMedFailed
+                        ? '✕ FAILED'
+                        : isMedDateReached
+                        ? '⏳ ACTION REQUIRED'
+                        : '⏳ SCHEDULED'}
                     </span>
                   </div>
 
@@ -588,7 +637,12 @@ export default function DmtMilestonesPage() {
                 </div>
 
                 <div className="pt-2">
-                  {isMedPassed ? (
+                  {!isMedDateAssigned ? (
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center justify-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Awaiting Staff to Assign Initial Date</span>
+                    </div>
+                  ) : isMedPassed ? (
                     <div className="space-y-2">
                       <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -645,7 +699,29 @@ export default function DmtMilestonesPage() {
                         </button>
                       </div>
                     </div>
-                  ) : medDate ? (
+                  ) : !isMedDateReached ? (
+                    <div className="space-y-2">
+                      <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span>Status update & proof unlock on exam day ({new Date(medDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</span>
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRescheduleMilestone('medical');
+                          setRescheduleReason('');
+                          setPreferredDate('');
+                          setShowRescheduleModal(true);
+                        }}
+                        className="w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>📅 Request Date for Another Day</span>
+                      </button>
+                    </div>
+                  ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <button
                         type="button"
@@ -675,11 +751,6 @@ export default function DmtMilestonesPage() {
                         <span>📅 Request Date for Another Day</span>
                       </button>
                     </div>
-                  ) : (
-                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center justify-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Awaiting Staff to Assign Initial Date</span>
-                    </div>
                   )}
                 </div>
               </div>
@@ -689,9 +760,12 @@ export default function DmtMilestonesPage() {
           {/* 2. Learner Registration Card */}
           {(() => {
             const regDate = profile?.registration_date || profile?.dmtDates?.learnerRegistrationDate;
-            const isRegDone = Boolean(profile?.dmtDates?.registrationDone);
-            const regProofUrl = profile?.registrationDocumentUrl || profile?.dmtDates?.registrationDocumentUrl;
-            const regRemarks = profile?.registrationRemarks || profile?.dmtDates?.registrationRemarks;
+            const isRegDateAssigned = Boolean(regDate);
+            const isRegDateReached = isRegDateAssigned && new Date().setHours(0, 0, 0, 0) >= new Date(regDate).setHours(0, 0, 0, 0);
+
+            const isRegDone = isRegDateAssigned && Boolean(profile?.dmtDates?.registrationDone);
+            const regProofUrl = isRegDateAssigned ? (profile?.registrationDocumentUrl || profile?.dmtDates?.registrationDocumentUrl) : null;
+            const regRemarks = isRegDateAssigned ? (profile?.registrationRemarks || profile?.dmtDates?.registrationRemarks) : null;
             const regPendingReq = myRescheduleRequests.find(
               (r) => r.milestone_type === 'registration' && r.status === 'Pending'
             );
@@ -704,13 +778,21 @@ export default function DmtMilestonesPage() {
                       <FileText className="w-5 h-5 text-blue-400" /> 2. DMT Registration
                     </span>
                     <span className={`badge text-xs font-bold py-1 px-3 ${
-                      isRegDone
+                      !isRegDateAssigned
+                        ? 'bg-slate-800 text-slate-400'
+                        : isRegDone
                         ? 'badge-success'
-                        : regDate
+                        : isRegDateReached
                         ? 'badge-warning'
-                        : 'bg-slate-800 text-slate-400'
+                        : 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
                     }`}>
-                      {isRegDone ? '✓ Done' : regDate ? '⏳ Pending Submission' : 'PENDING DATE'}
+                      {!isRegDateAssigned
+                        ? 'PENDING DATE'
+                        : isRegDone
+                        ? '✓ Done'
+                        : isRegDateReached
+                        ? '⏳ Pending Submission'
+                        : '⏳ SCHEDULED'}
                     </span>
                   </div>
 
@@ -756,7 +838,12 @@ export default function DmtMilestonesPage() {
                 </div>
 
                 <div className="pt-2">
-                  {isRegDone ? (
+                  {!isRegDateAssigned ? (
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center justify-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Awaiting Staff to Assign Initial Date</span>
+                    </div>
+                  ) : isRegDone ? (
                     <div className="space-y-2">
                       <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-blue-400" />
@@ -777,7 +864,29 @@ export default function DmtMilestonesPage() {
                         <span>Update Registration Slip / Proof Document</span>
                       </button>
                     </div>
-                  ) : regDate ? (
+                  ) : !isRegDateReached ? (
+                    <div className="space-y-2">
+                      <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-200 text-xs flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <span>Completion & proof unlock on scheduled date ({new Date(regDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</span>
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRescheduleMilestone('registration');
+                          setRescheduleReason(registrationRemarksInput || regRemarks || '');
+                          setPreferredDate('');
+                          setShowRescheduleModal(true);
+                        }}
+                        className="w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>⏳ Request Date for Another Day</span>
+                      </button>
+                    </div>
+                  ) : (
                     <div className="space-y-3">
                       {/* Box for entering remarks */}
                       <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-1.5">
@@ -834,11 +943,6 @@ export default function DmtMilestonesPage() {
                           <span>⏳ Request Date for Another Day</span>
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center justify-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Awaiting Staff to Assign Initial Date</span>
                     </div>
                   )}
                 </div>

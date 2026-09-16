@@ -75,7 +75,7 @@ exports.getAllStudents = async (req, res) => {
   }
 };
 
-// Helper to remove all DMT milestone data for Type 2 (Trial-Only) students
+// Helper to remove all DMT milestone data for Type 2 (Trial-Only) students, and sanitize unassigned milestone states
 const sanitizeStudentForType = (student) => {
   if (!student) return student;
   const isType2 =
@@ -83,19 +83,55 @@ const sanitizeStudentForType = (student) => {
     student.studentType === 'Type2_TrialReady' ||
     student.studentType === 'type2' ||
     student.student_type === 'Type 2';
-  if (!isType2) return student;
+  if (isType2) {
+    const obj = typeof student.toObject === 'function' ? student.toObject() : { ...student };
+    delete obj.dmtDates;
+    delete obj.learnerExamAttempts;
+    delete obj.learnerExamAttemptsCount;
+    delete obj.learnerExamMarks;
+    delete obj.learnerExamStatus;
+    delete obj.medicalCertificateUrl;
+    delete obj.medical_date;
+    delete obj.registration_date;
+    delete obj.written_exam_date;
+    delete obj.written_exam_status;
+    return obj;
+  }
 
   const obj = typeof student.toObject === 'function' ? student.toObject() : { ...student };
-  delete obj.dmtDates;
-  delete obj.learnerExamAttempts;
-  delete obj.learnerExamAttemptsCount;
-  delete obj.learnerExamMarks;
-  delete obj.learnerExamStatus;
-  delete obj.medicalCertificateUrl;
-  delete obj.medical_date;
-  delete obj.registration_date;
-  delete obj.written_exam_date;
-  delete obj.written_exam_status;
+  if (!obj.dmtDates) obj.dmtDates = {};
+
+  // If medical date is not assigned, student cannot have passed/failed or uploaded proof
+  const medDate = obj.medical_date || obj.dmtDates?.medicalExamDate;
+  if (!medDate) {
+    obj.dmtDates.medicalExamPassed = false;
+    obj.dmtDates.medicalExamStatus = null;
+    obj.dmtDates.medicalDone = false;
+    obj.medicalDocumentUrl = null;
+    if (obj.dmtDates) obj.dmtDates.medicalDocumentUrl = null;
+    obj.medicalRemarks = null;
+    if (obj.dmtDates) obj.dmtDates.medicalRemarks = null;
+  }
+
+  // If registration date is not assigned, student cannot have completed registration or uploaded proof
+  const regDate = obj.registration_date || obj.dmtDates?.learnerRegistrationDate;
+  if (!regDate) {
+    obj.dmtDates.registrationDone = false;
+    obj.registrationDocumentUrl = null;
+    if (obj.dmtDates) obj.dmtDates.registrationDocumentUrl = null;
+    obj.registrationRemarks = null;
+    if (obj.dmtDates) obj.dmtDates.registrationRemarks = null;
+  }
+
+  // If written exam date is not assigned, student cannot have passed written exam
+  const examDate = obj.written_exam_date || obj.dmtDates?.learnerExamDate;
+  if (!examDate) {
+    obj.dmtDates.learnerExamPassed = false;
+    obj.dmtDates.learnerExamStatus = null;
+    obj.learnerExamStatus = null;
+    obj.learnerExamPassed = false;
+  }
+
   return obj;
 };
 exports.sanitizeStudentForType = sanitizeStudentForType;
@@ -267,13 +303,28 @@ exports.updateDmtDates = async (req, res) => {
 
     const isStudentUser = req.user.role === 'student';
 
-    // Student restriction: Cannot mark medical as done without staff assigning a date or before the assigned date
-    if (isStudentUser && medicalDone === true) {
+    // Student restriction: Cannot directly set or modify milestone dates
+    if (isStudentUser && (regDateInput !== undefined || medDateInput !== undefined || examDateInput !== undefined)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Students are not authorized to directly set or modify DMT milestone dates. Please request a date reschedule from branch staff.',
+      });
+    }
+
+    // Student restriction: Cannot update medical status, done flag, remarks or document without staff assigning a date or before the assigned date
+    if (
+      isStudentUser &&
+      (medicalDone !== undefined ||
+        medicalExamStatus !== undefined ||
+        medicalExamPassed !== undefined ||
+        medicalRemarks !== undefined ||
+        medicalDocumentUrl !== undefined)
+    ) {
       const medDate = student.medical_date || student.dmtDates?.medicalExamDate;
       if (!medDate) {
         return res.status(400).json({
           success: false,
-          message: 'DMT Medical Exam date has not been assigned by staff yet. You cannot mark it as done until a date is assigned.',
+          message: 'DMT Medical Exam date has not been assigned by staff yet. You cannot update medical status, remarks, or proof until a date is assigned.',
         });
       }
       const todayTime = new Date().setHours(0, 0, 0, 0);
@@ -281,18 +332,23 @@ exports.updateDmtDates = async (req, res) => {
       if (todayTime < medTime) {
         return res.status(400).json({
           success: false,
-          message: `You cannot mark DMT Medical Exam as done before your scheduled date (${new Date(medDate).toLocaleDateString()}).`,
+          message: `You cannot update DMT Medical Exam status, remarks, or proof before your scheduled date (${new Date(medDate).toLocaleDateString()}).`,
         });
       }
     }
 
-    // Student restriction: Cannot mark registration as done without staff assigning a date or before the assigned date
-    if (isStudentUser && registrationDone === true) {
+    // Student restriction: Cannot mark registration as done or submit remarks/document without staff assigning a date or before the assigned date
+    if (
+      isStudentUser &&
+      (registrationDone !== undefined ||
+        registrationRemarks !== undefined ||
+        registrationDocumentUrl !== undefined)
+    ) {
       const regDate = student.registration_date || student.dmtDates?.learnerRegistrationDate;
       if (!regDate) {
         return res.status(400).json({
           success: false,
-          message: 'DMT Registration submission date has not been assigned by staff yet. You cannot mark it as done until a date is assigned.',
+          message: 'DMT Registration submission date has not been assigned by staff yet. You cannot mark it as done or submit remarks until a date is assigned.',
         });
       }
       const todayTime = new Date().setHours(0, 0, 0, 0);
@@ -300,7 +356,7 @@ exports.updateDmtDates = async (req, res) => {
       if (todayTime < regTime) {
         return res.status(400).json({
           success: false,
-          message: `You cannot mark DMT Registration as done before your scheduled submission date (${new Date(regDate).toLocaleDateString()}).`,
+          message: `You cannot mark DMT Registration as done or submit remarks before your scheduled submission date (${new Date(regDate).toLocaleDateString()}).`,
         });
       }
     }
@@ -458,13 +514,14 @@ exports.updateDmtDates = async (req, res) => {
       });
     }
 
+    const sanitized = sanitizeStudentForType(populatedStudent);
     return res.status(200).json({
       success: true,
       message: 'DMT milestone dates updated successfully',
-      dmtDates: populatedStudent.dmtDates,
-      learnerExamStatus: populatedStudent.learnerExamStatus,
-      trialEligible: populatedStudent.trialEligible,
-      student: populatedStudent,
+      dmtDates: sanitized.dmtDates,
+      learnerExamStatus: sanitized.learnerExamStatus,
+      trialEligible: sanitized.trialEligible,
+      student: sanitized,
     });
   } catch (error) {
     console.error('Error updating DMT dates:', error);
@@ -1886,6 +1943,24 @@ exports.uploadMilestoneProof = async (req, res) => {
     }
 
     if (milestoneType === 'medical') {
+      if (req.user.role === 'student') {
+        const medDate = student.medical_date || student.dmtDates?.medicalExamDate;
+        if (!medDate) {
+          return res.status(400).json({
+            success: false,
+            message: 'DMT Medical Exam date has not been assigned by staff yet. You cannot update status or upload proof until a date is assigned.',
+          });
+        }
+        const todayTime = new Date().setHours(0, 0, 0, 0);
+        const medTime = new Date(medDate).setHours(0, 0, 0, 0);
+        if (todayTime < medTime) {
+          return res.status(400).json({
+            success: false,
+            message: `You cannot update DMT Medical Exam status or upload proof before your scheduled date (${new Date(medDate).toLocaleDateString()}).`,
+          });
+        }
+      }
+
       if (fileUrl) {
         student.medicalDocumentUrl = fileUrl;
         student.dmtDates.medicalDocumentUrl = fileUrl;
@@ -1905,6 +1980,24 @@ exports.uploadMilestoneProof = async (req, res) => {
         student.dmtDates.medicalDone = false;
       }
     } else if (milestoneType === 'registration') {
+      if (req.user.role === 'student') {
+        const regDate = student.registration_date || student.dmtDates?.learnerRegistrationDate;
+        if (!regDate) {
+          return res.status(400).json({
+            success: false,
+            message: 'DMT Registration submission date has not been assigned by staff yet. You cannot mark registration as completed or upload proof until a date is assigned.',
+          });
+        }
+        const todayTime = new Date().setHours(0, 0, 0, 0);
+        const regTime = new Date(regDate).setHours(0, 0, 0, 0);
+        if (todayTime < regTime) {
+          return res.status(400).json({
+            success: false,
+            message: `You cannot mark DMT Registration as completed or upload proof before your scheduled date (${new Date(regDate).toLocaleDateString()}).`,
+          });
+        }
+      }
+
       if (fileUrl) {
         student.registrationDocumentUrl = fileUrl;
         student.dmtDates.registrationDocumentUrl = fileUrl;
@@ -1920,6 +2013,24 @@ exports.uploadMilestoneProof = async (req, res) => {
         student.dmtDates.registrationDone = false;
       }
     } else if (milestoneType === 'theory_exam') {
+      if (req.user.role === 'student') {
+        const examDate = student.written_exam_date || student.dmtDates?.learnerExamDate;
+        if (!examDate) {
+          return res.status(400).json({
+            success: false,
+            message: 'DMT Written Theory Exam date has not been assigned by staff yet. You cannot upload proof until a date is assigned.',
+          });
+        }
+        const todayTime = new Date().setHours(0, 0, 0, 0);
+        const examTime = new Date(examDate).setHours(0, 0, 0, 0);
+        if (todayTime < examTime) {
+          return res.status(400).json({
+            success: false,
+            message: `You cannot upload Written Theory Exam proof before your scheduled date (${new Date(examDate).toLocaleDateString()}).`,
+          });
+        }
+      }
+
       if (fileUrl) {
         student.dmtDates.learnerExamDocumentUrl = fileUrl;
       }
@@ -1938,7 +2049,7 @@ exports.uploadMilestoneProof = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Milestone proof document and details saved successfully!',
-      student: populatedStudent,
+      student: sanitizeStudentForType(populatedStudent),
     });
   } catch (error) {
     console.error('Error uploading milestone proof:', error);
