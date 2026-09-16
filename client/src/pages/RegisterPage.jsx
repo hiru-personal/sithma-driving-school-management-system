@@ -166,10 +166,21 @@ export default function RegisterPage() {
   const initialStudentType = rawType.toLowerCase().includes('2') ? 'Type 2' : 'Type 1';
 
   const [studentType, setStudentType] = useState(initialStudentType);
-  const [typeModalOpen, setTypeModalOpen] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(!rawType);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync category type when searchParams change or ensure modal opens if no type in URL
+  useEffect(() => {
+    const currentType = searchParams.get('type');
+    if (currentType) {
+      setStudentType(currentType.toLowerCase().includes('2') ? 'Type 2' : 'Type 1');
+      setTypeModalOpen(false);
+    } else {
+      setTypeModalOpen(true);
+    }
+  }, [searchParams]);
 
   // Type 2 Vehicle Package State (Only for Type 2 students)
   const [availablePackages, setAvailablePackages] = useState([]);
@@ -953,7 +964,12 @@ export default function RegisterPage() {
       {/* Student Type Selection Modal */}
       <StudentTypeSelectModal
         isOpen={typeModalOpen}
-        onClose={() => setTypeModalOpen(false)}
+        onClose={() => {
+          setTypeModalOpen(false);
+          if (!searchParams.get('type')) {
+            navigate('/register?type=Type%201', { replace: true });
+          }
+        }}
       />
     </div>
   );

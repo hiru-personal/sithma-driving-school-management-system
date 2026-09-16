@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import DmtMilestoneTimeline from '../components/DmtMilestoneTimeline';
 import api from '../api/axios';
 import {
   Car,
@@ -1717,8 +1716,18 @@ export default function StudentDashboard() {
                   Practical Trial Lessons Locked Until Learner's Exam Passed
                 </h3>
                 <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                  As a <strong>Type 1 New Learner</strong>, you can review your enrolled details and DMT milestone schedule below. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong>"Passed"</strong> by your branch officer.
+                  As a <strong>Type 1 New Learner</strong>, you can manage your medical exam, learner registration, and written theory test on your dedicated DMT milestone dashboard. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong>"Passed"</strong> by your branch officer.
                 </p>
+                <div className="pt-2">
+                  <Link
+                    to="/student/milestones"
+                    className="btn-accent text-xs py-1.5 px-3.5 font-bold inline-flex items-center gap-1.5 shadow"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Go to DMT Milestones Dashboard</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
             <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-right self-start sm:self-auto min-w-[180px]">
@@ -2448,254 +2457,44 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* Grid: DMT Official Read-Only Milestones View (US-06) + Course Balance & Quick Links */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left 2 Cols: DMT Timeline & Consolidated Read-Only Records (US-06) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* US-06: Consolidated View of Trial, Learner Exam, and Medical Dates (Type 1 New Learners Only) */}
-          {isType1 && (
-            <div className="card p-6 space-y-4 border border-cyan-400/30 bg-slate-900/80">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-3">
-              <div>
-                <span className="badge badge-info text-[10px] font-bold uppercase mb-1">
-                  DMT Milestone Tracking
+      {/* Type 1 Dedicated Milestones Hub Card */}
+      {isType1 && (
+        <div className="card p-6 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-cyan-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_10px_35px_rgba(6,182,212,0.15)]">
+          <div className="flex items-start gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 flex-shrink-0">
+              <ShieldCheck className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="badge badge-info text-[10px] font-bold uppercase">
+                  Type 1 DMT Tracking
                 </span>
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-cyan-400" /> Government DMT Milestone Schedule
-                </h2>
-                <p className="text-xs text-slate-400">
-                  {isType1
-                    ? 'Track and update your official medical exam, learner registration, and written exam dates.'
-                    : 'Verified DMT records for practical trial readiness.'}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
                 <span className="text-xs text-slate-400 font-mono">
                   {profile?.branch} Branch
                 </span>
-                {isType1 && (
-                  <button
-                    type="button"
-                    onClick={openMilestoneModal}
-                    className="btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Update Milestone Dates</span>
-                  </button>
-                )}
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-              {/* 1. Medical Exam */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 flex items-center gap-1.5 font-bold">
-                    <Stethoscope className="w-4 h-4 text-emerald-400" /> 1. DMT Medical Exam
-                  </span>
-                  <span className={`badge text-[10px] ${profile?.dmtDates?.medicalDone || profile?.dmtDates?.medicalExamPassed || isType2 ? 'badge-success' : 'badge-warning'}`}>
-                    {profile?.dmtDates?.medicalDone || profile?.dmtDates?.medicalExamPassed || isType2 ? '✓ Cleared' : 'Pending'}
-                  </span>
-                </div>
-                <div className="text-xs font-semibold text-slate-400">
-                  Scheduled Date:{' '}
-                  <span className="text-white font-bold">
-                    {profile?.dmtDates?.medicalExamDate
-                      ? new Date(profile.dmtDates.medicalExamDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                      : (isType2 ? 'Cleared Prior to Enrolling' : 'Not Yet Assigned by Staff')}
-                  </span>
-                </div>
-                {isType1 && (
-                  <button
-                    type="button"
-                    disabled={togglingMilestone}
-                    onClick={() => handleToggleMilestone('medicalDone', profile?.dmtDates?.medicalDone)}
-                    className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition-all ${
-                      profile?.dmtDates?.medicalDone
-                        ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/25'
-                        : 'bg-white/5 hover:bg-white/10 border-white/15 text-cyan-300'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{profile?.dmtDates?.medicalDone ? '✓ Medical Marked as Done (Click to undo)' : 'Mark Medical as Done ✓'}</span>
-                  </button>
-                )}
-              </div>
-
-              {/* 2. Learner Registration */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 flex items-center gap-1.5 font-bold">
-                    <FileText className="w-4 h-4 text-blue-400" /> 2. DMT Registration
-                  </span>
-                  <span className={`badge text-[10px] ${profile?.dmtDates?.registrationDone || profile?.dmtDates?.learnerRegistrationDate ? 'badge-info' : 'badge-warning'}`}>
-                    {profile?.dmtDates?.registrationDone ? '✓ Completed' : (profile?.dmtDates?.learnerRegistrationDate ? 'Enrolled' : 'Pending')}
-                  </span>
-                </div>
-                <div className="text-xs font-semibold text-slate-400">
-                  DMT Submission Date:{' '}
-                  <span className="text-white font-bold">
-                    {profile?.dmtDates?.learnerRegistrationDate
-                      ? new Date(profile.dmtDates.learnerRegistrationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                      : (isType2 ? 'Registered with DMT' : 'Not Yet Assigned by Staff')}
-                  </span>
-                </div>
-                {isType1 && (
-                  <button
-                    type="button"
-                    disabled={togglingMilestone}
-                    onClick={() => handleToggleMilestone('registrationDone', profile?.dmtDates?.registrationDone)}
-                    className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition-all ${
-                      profile?.dmtDates?.registrationDone
-                        ? 'bg-blue-500/15 border-blue-400/40 text-blue-300 hover:bg-blue-500/25'
-                        : 'bg-white/5 hover:bg-white/10 border-white/15 text-cyan-300'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                    <span>{profile?.dmtDates?.registrationDone ? '✓ Registration Marked as Done (Click to undo)' : 'Mark Registration as Done ✓'}</span>
-                  </button>
-                )}
-              </div>
-
-              {/* 3. Learner Written Theory Exam (Full Width on 2-col layout) */}
-              <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900/90 to-cyan-950/40 border border-purple-400/30 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-purple-400" />
-                    <div>
-                      <h4 className="text-sm font-bold text-white">3. DMT Written Theory Exam</h4>
-                      <p className="text-[11px] text-slate-400">
-                        Official theory examination at DMT. Maximum of 3 attempts allowed.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`badge text-xs font-bold ${
-                      isExamPassed
-                        ? 'badge-success'
-                        : profile?.learnerExamStatus === 'failed'
-                        ? 'badge-error'
-                        : 'badge-warning'
-                    }`}>
-                      {isExamPassed
-                        ? `✓ PASSED (${profile?.dmtDates?.learnerExamMarks || profile?.learnerExamMarks || 'Pass'} Marks)`
-                        : profile?.learnerExamStatus === 'failed'
-                        ? `Attempt ${attemptsCount}/3 Failed`
-                        : `Attempt 1 of 3 (Pending)`}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-slate-400 block text-[11px]">Scheduled Exam Date:</span>
-                    <span className="font-bold text-white text-sm">
-                      {profile?.dmtDates?.learnerExamDate
-                        ? new Date(profile.dmtDates.learnerExamDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                        : (isType2 ? 'Cleared Prior to Enrolling' : 'Date Not Yet Assigned by Staff')}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[11px]">Attempts Status:</span>
-                    <span className="font-bold text-white text-sm">
-                      {isExamPassed
-                        ? '✓ Cleared — Practical Lessons Unlocked'
-                        : `${remainingAttempts} attempt(s) remaining before auto-cancellation`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3 Attempts Indicator Badges */}
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between flex-wrap gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 text-[11px] font-bold">Attempts Track:</span>
-                    {[1, 2, 3].map((num) => {
-                      const att = profile?.learnerExamAttempts?.find((a) => a.attemptNumber === num);
-                      const isPassedAttempt = att?.result === 'passed';
-                      const isFailedAttempt = att?.result === 'failed';
-                      const isCurrentPending = !att && num === attemptsCount + 1 && !isExamPassed;
-
-                      return (
-                        <span
-                          key={num}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border flex items-center gap-1 ${
-                            isPassedAttempt
-                              ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
-                              : isFailedAttempt
-                              ? 'bg-rose-500/20 border-rose-400 text-rose-300 line-through'
-                              : isCurrentPending
-                              ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
-                              : 'bg-white/5 border-white/10 text-slate-500'
-                          }`}
-                        >
-                          Attempt {num}
-                          {isPassedAttempt && ' ✓'}
-                          {isFailedAttempt && ` (${att.marks || 'F'})`}
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  {/* Student Result & Next Date Action Buttons */}
-                  {isType1 && !isExamPassed && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setExamForm({
-                            result: 'passed',
-                            marks: '',
-                            examDate: new Date().toISOString().split('T')[0],
-                            notes: '',
-                          });
-                          setIsExamModalOpen(true);
-                        }}
-                        className="btn-accent text-xs py-1.5 px-3.5 font-bold shadow-md flex items-center gap-1.5"
-                      >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Record Exam Result (Pass / Fail & Marks)</span>
-                      </button>
-
-                      {profile?.learnerExamStatus === 'failed' && remainingAttempts > 0 && (
-                        <button
-                          type="button"
-                          onClick={openMilestoneModal}
-                          className="btn-secondary text-xs py-1.5 px-3 font-bold border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/10 flex items-center gap-1"
-                        >
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>Update Next Exam Date (From Staff)</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 4. Practical Trial Exam */}
-              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-semibold">
-                    <Car className="w-4 h-4 text-accent" /> 4. DMT Practical Driving Trial
-                  </span>
-                  <span className={`badge text-[10px] ${profile?.trial?.licenseObtained ? 'badge-success' : 'badge-warning'}`}>
-                    {profile?.trial?.licenseObtained ? 'Licensed' : `${profile?.trial?.attempts?.length || 0}/3 Attempts Used`}
-                  </span>
-                </div>
-                <div className="text-sm font-bold text-white">
-                  {profile?.trial?.deadlineDate
-                    ? `1.5-Yr Deadline: ${new Date(profile.trial.deadlineDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`
-                    : (isType2 ? 'Ready for Practical Trial' : (isExamPassed ? 'Eligible to Schedule Trial with Instructor' : 'Pending Learner Theory Exam Pass'))}
-                </div>
-              </div>
+              <h3 className="text-base sm:text-lg font-bold text-white">
+                Government DMT Milestone Schedule
+              </h3>
+              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+                Medical exam, DMT registration, written theory exam attempts, and practical trial readiness are organized in your dedicated DMT Milestones dashboard.
+              </p>
             </div>
           </div>
-          )}
-
-          {/* Stepper Timeline */}
-          <DmtMilestoneTimeline student={profile} />
+          <Link
+            to="/student/milestones"
+            className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-2 whitespace-nowrap shadow-lg self-start sm:self-auto"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Open DMT Milestones</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
+      )}
 
-        {/* Right 1 Col: Course Package, Lessons & Quick Links */}
+      {/* Grid: Course Package, Lessons & Quick Links */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        {/* Col 1: Course Package, Installments & Lesson Progress */}
         <div className="space-y-6">
           {/* Course Package Card - Hidden for Type 1 until Written Theory Exam is Passed */}
           {((isType2 && pkg.priceTotal > 0) || (isType1 && isExamPassed && isPackagePaymentConfirmed) || isPackagePaymentConfirmed) ? (
@@ -2884,13 +2683,37 @@ export default function StudentDashboard() {
               </Link>
             </div>
           ) : null}
+        </div>
 
+        {/* Col 2: Student Quick Hub & Actions */}
+        <div className="space-y-6">
           {/* Quick Actions Card (With Type 1 Scope Restriction Applied) */}
           <div className="card space-y-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-accent" /> Student Quick Hub
             </h3>
             <div className="space-y-2 text-xs">
+              {/* Type 1 Exclusive Access: Dedicated DMT Milestones Dashboard */}
+              {isType1 && (
+                <Link
+                  to="/student/milestones"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 transition-all group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-cyan-300" />
+                    <div>
+                      <span className="font-semibold text-slate-200 group-hover:text-white block">
+                        DMT Milestone Dashboard
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Medical, Registration & Theory Exam Tracking
+                      </span>
+                    </div>
+                  </div>
+                  <span className="badge badge-info text-[10px] font-bold">Open</span>
+                </Link>
+              )}
+
               {/* Type 1 Exclusive Access: Exam/Quiz practice is available for Type 1 learners */}
               {isType1 && (
                 <Link
@@ -2975,8 +2798,6 @@ export default function StudentDashboard() {
       </div>
 
       {renderEditModal()}
-      {renderMilestoneModal()}
-      {renderExamResultModal()}
       {renderVerifiedCelebrationModal()}
     </div>
   );

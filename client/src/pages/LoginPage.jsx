@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ForcePasswordChangeModal from '../components/ForcePasswordChangeModal';
+import StudentTypeSelectModal from '../components/StudentTypeSelectModal';
 import {
   Car,
   Lock,
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [isAccountLocked, setIsAccountLocked] = useState(false);
   const [isDeactivated, setIsDeactivated] = useState(false);
   const [showForcePasswordModal, setShowForcePasswordModal] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
 
   const handleLogin = async (loginId, loginPassword) => {
     setLoading(true);
@@ -288,9 +290,13 @@ export default function LoginPage() {
           <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-300">
             <div>
               Don't have an account?{' '}
-              <Link to="/register" className="text-cyan-300 font-bold hover:underline">
+              <button
+                type="button"
+                onClick={() => setTypeModalOpen(true)}
+                className="text-cyan-300 font-bold hover:underline cursor-pointer bg-transparent border-none p-0 inline text-sm"
+              >
                 Register as Learner
-              </Link>
+              </button>
             </div>
             <Link
               to="/"
@@ -301,6 +307,11 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      <StudentTypeSelectModal
+        isOpen={typeModalOpen}
+        onClose={() => setTypeModalOpen(false)}
+      />
     </div>
   );
 }

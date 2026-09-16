@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 
 import StudentDashboard from './pages/StudentDashboard';
+import DmtMilestonesPage from './pages/DmtMilestonesPage';
 import StudentProfilePage from './pages/StudentProfilePage';
 import BookLessonPage from './pages/BookLessonPage';
 import MyLessonsPage from './pages/MyLessonsPage';
@@ -110,6 +111,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/milestones"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <DmtMilestonesPage />
                 </ProtectedRoute>
               }
             />
