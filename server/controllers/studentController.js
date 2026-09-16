@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Package = require('../models/Package');
 const Notification = require('../models/Notification');
 const Payment = require('../models/Payment');
+const RescheduleRequest = require('../models/RescheduleRequest');
 
 // @desc    Get all students with filtering, searching, and pagination (Staff/Admin only)
 // @route   GET /api/students
@@ -80,7 +81,8 @@ const sanitizeStudentForType = (student) => {
   const isType2 =
     student.studentType === 'Type 2' ||
     student.studentType === 'Type2_TrialReady' ||
-    student.studentType === 'type2';
+    student.studentType === 'type2' ||
+    student.student_type === 'Type 2';
   if (!isType2) return student;
 
   const obj = typeof student.toObject === 'function' ? student.toObject() : { ...student };
@@ -90,6 +92,10 @@ const sanitizeStudentForType = (student) => {
   delete obj.learnerExamMarks;
   delete obj.learnerExamStatus;
   delete obj.medicalCertificateUrl;
+  delete obj.medical_date;
+  delete obj.registration_date;
+  delete obj.written_exam_date;
+  delete obj.written_exam_status;
   return obj;
 };
 exports.sanitizeStudentForType = sanitizeStudentForType;
@@ -175,49 +181,205 @@ exports.updateDmtDates = async (req, res) => {
     const {
       medicalExamDate,
       medicalExamPassed,
+      medicalExamStatus,
+      medicalRemarks,
+      medicalDocumentUrl,
       learnerRegistrationDate,
       registrationDone,
+      registrationRemarks,
+      registrationDocumentUrl,
       medicalDone,
       learnerExamDate,
       learnerExamPassed,
       learnerExamPassedDate,
       learnerExamStatus,
       learnerExamMarks,
+      medical_date,
+      registration_date,
+      written_exam_date,
+      written_exam_status,
     } = req.body;
 
-    const updates = [];
+    const regDateInput =
+      registration_date !== undefined
+        ? registration_date
+        : learnerRegistrationDate;
+    const medDateInput =
+      medical_date !== undefined
+        ? medical_date
+        : medicalExamDate;
+    const examDateInput =
+      written_exam_date !== undefined
+        ? written_exam_date
+        : learnerExamDate;
 
-    // Medical Exam Date & Medical Done
-    if (medicalExamDate !== undefined) {
-      student.dmtDates.medicalExamDate = medicalExamDate ? new Date(medicalExamDate) : null;
-      if (medicalExamDate) updates.push(`Medical Exam Date (${new Date(medicalExamDate).toLocaleDateString()})`);
-    }
-    if (medicalExamPassed !== undefined) {
-      student.dmtDates.medicalExamPassed = Boolean(medicalExamPassed);
-    }
-    if (medicalDone !== undefined) {
-      student.dmtDates.medicalDone = Boolean(medicalDone);
-      student.dmtDates.medicalDoneDate = medicalDone ? new Date() : null;
-      if (medicalDone) {
-        student.dmtDates.medicalExamPassed = true;
-        updates.push('DMT Medical Marked as Completed');
+    // Determine effective dates against what's already saved on the student record
+    const effectiveRegDate =
+      regDateInput !== undefined
+        ? (regDateInput ? new Date(regDateInput) : null)
+        : (student.registration_date || student.dmtDates?.learnerRegistrationDate);
+
+    const effectiveMedDate =
+      medDateInput !== undefined
+        ? (medDateInput ? new Date(medDateInput) : null)
+        : (student.medical_date || student.dmtDates?.medicalExamDate);
+
+    const effectiveExamDate =
+      examDateInput !== undefined
+        ? (examDateInput ? new Date(examDateInput) : null)
+        : (student.written_exam_date || student.dmtDates?.learnerExamDate);
+
+    // Rule 1: Medical Date >= Registration Date
+    if (effectiveRegDate && effectiveMedDate) {
+      const regTime = new Date(effectiveRegDate).setHours(0, 0, 0, 0);
+      const medTime = new Date(effectiveMedDate).setHours(0, 0, 0, 0);
+      if (medTime < regTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'Medical Date must be on or after the Registration Date (Medical Date >= Registration Date).',
+        });
       }
     }
 
-    // Learner Registration Date & Registration Done
-    if (learnerRegistrationDate !== undefined) {
-      student.dmtDates.learnerRegistrationDate = learnerRegistrationDate ? new Date(learnerRegistrationDate) : null;
-      if (learnerRegistrationDate) updates.push(`Learner Registration Date (${new Date(learnerRegistrationDate).toLocaleDateString()})`);
+    // Rule 2: Written (Learner's) Exam Date > Medical Date
+    if (effectiveMedDate && effectiveExamDate) {
+      const medTime = new Date(effectiveMedDate).setHours(0, 0, 0, 0);
+      const examTime = new Date(effectiveExamDate).setHours(0, 0, 0, 0);
+      if (examTime <= medTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'Written Exam Date must be after the Medical Date.',
+        });
+      }
+    }
+
+    // Secondary sequence check if no medical date is provided but reg and exam dates are
+    if (effectiveRegDate && effectiveExamDate && !effectiveMedDate) {
+      const regTime = new Date(effectiveRegDate).setHours(0, 0, 0, 0);
+      const examTime = new Date(effectiveExamDate).setHours(0, 0, 0, 0);
+      if (examTime <= regTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'Written Exam Date must be after the Registration Date.',
+        });
+      }
+    }
+
+    const isStudentUser = req.user.role === 'student';
+
+    // Student restriction: Cannot mark medical as done without staff assigning a date or before the assigned date
+    if (isStudentUser && medicalDone === true) {
+      const medDate = student.medical_date || student.dmtDates?.medicalExamDate;
+      if (!medDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'DMT Medical Exam date has not been assigned by staff yet. You cannot mark it as done until a date is assigned.',
+        });
+      }
+      const todayTime = new Date().setHours(0, 0, 0, 0);
+      const medTime = new Date(medDate).setHours(0, 0, 0, 0);
+      if (todayTime < medTime) {
+        return res.status(400).json({
+          success: false,
+          message: `You cannot mark DMT Medical Exam as done before your scheduled date (${new Date(medDate).toLocaleDateString()}).`,
+        });
+      }
+    }
+
+    // Student restriction: Cannot mark registration as done without staff assigning a date or before the assigned date
+    if (isStudentUser && registrationDone === true) {
+      const regDate = student.registration_date || student.dmtDates?.learnerRegistrationDate;
+      if (!regDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'DMT Registration submission date has not been assigned by staff yet. You cannot mark it as done until a date is assigned.',
+        });
+      }
+      const todayTime = new Date().setHours(0, 0, 0, 0);
+      const regTime = new Date(regDate).setHours(0, 0, 0, 0);
+      if (todayTime < regTime) {
+        return res.status(400).json({
+          success: false,
+          message: `You cannot mark DMT Registration as done before your scheduled submission date (${new Date(regDate).toLocaleDateString()}).`,
+        });
+      }
+    }
+
+    const updates = [];
+
+    // Registration Date
+    if (regDateInput !== undefined) {
+      const d = regDateInput ? new Date(regDateInput) : null;
+      student.registration_date = d;
+      student.dmtDates.learnerRegistrationDate = d;
+      if (d) updates.push(`Learner Registration Date (${d.toLocaleDateString()})`);
     }
     if (registrationDone !== undefined) {
       student.dmtDates.registrationDone = Boolean(registrationDone);
       student.dmtDates.registrationDoneDate = registrationDone ? new Date() : null;
       if (registrationDone) updates.push('DMT Registration Marked as Completed');
     }
+    if (registrationRemarks !== undefined) {
+      student.registrationRemarks = registrationRemarks;
+      student.dmtDates.registrationRemarks = registrationRemarks;
+      updates.push('Registration Remarks Updated');
+    }
+    if (registrationDocumentUrl !== undefined) {
+      student.registrationDocumentUrl = registrationDocumentUrl;
+      student.dmtDates.registrationDocumentUrl = registrationDocumentUrl;
+    }
 
-    if (learnerExamDate !== undefined) {
-      student.dmtDates.learnerExamDate = learnerExamDate ? new Date(learnerExamDate) : null;
-      if (learnerExamDate) updates.push(`Learner Exam Date (${new Date(learnerExamDate).toLocaleDateString()})`);
+    // Medical Exam Date & Medical Done
+    if (medDateInput !== undefined) {
+      const d = medDateInput ? new Date(medDateInput) : null;
+      student.medical_date = d;
+      student.dmtDates.medicalExamDate = d;
+      if (d) updates.push(`Medical Exam Date (${d.toLocaleDateString()})`);
+    }
+    if (medicalExamStatus !== undefined) {
+      student.dmtDates.medicalExamStatus = medicalExamStatus;
+      if (medicalExamStatus === 'passed') {
+        student.dmtDates.medicalExamPassed = true;
+        student.dmtDates.medicalDone = true;
+        student.dmtDates.medicalDoneDate = new Date();
+        updates.push('DMT Medical Marked as Passed');
+      } else if (medicalExamStatus === 'failed') {
+        student.dmtDates.medicalExamPassed = false;
+        student.dmtDates.medicalDone = false;
+        updates.push('DMT Medical Marked as Failed');
+      }
+    }
+    if (medicalExamPassed !== undefined) {
+      student.dmtDates.medicalExamPassed = Boolean(medicalExamPassed);
+      if (medicalExamPassed) {
+        student.dmtDates.medicalExamStatus = 'passed';
+      }
+    }
+    if (medicalDone !== undefined) {
+      student.dmtDates.medicalDone = Boolean(medicalDone);
+      student.dmtDates.medicalDoneDate = medicalDone ? new Date() : null;
+      if (medicalDone) {
+        student.dmtDates.medicalExamPassed = true;
+        student.dmtDates.medicalExamStatus = 'passed';
+        updates.push('DMT Medical Marked as Completed');
+      }
+    }
+    if (medicalRemarks !== undefined) {
+      student.medicalRemarks = medicalRemarks;
+      student.dmtDates.medicalRemarks = medicalRemarks;
+      updates.push('Medical Remarks Updated');
+    }
+    if (medicalDocumentUrl !== undefined) {
+      student.medicalDocumentUrl = medicalDocumentUrl;
+      student.dmtDates.medicalDocumentUrl = medicalDocumentUrl;
+    }
+
+    // Learner Written Exam Date
+    if (examDateInput !== undefined) {
+      const d = examDateInput ? new Date(examDateInput) : null;
+      student.written_exam_date = d;
+      student.dmtDates.learnerExamDate = d;
+      if (d) updates.push(`Learner Exam Date (${d.toLocaleDateString()})`);
     }
     if (learnerExamMarks !== undefined) {
       student.dmtDates.learnerExamMarks = learnerExamMarks !== null && learnerExamMarks !== '' ? Number(learnerExamMarks) : null;
@@ -225,24 +387,37 @@ exports.updateDmtDates = async (req, res) => {
       if (learnerExamMarks !== null && learnerExamMarks !== '') updates.push(`Learner Exam Marks (${learnerExamMarks})`);
     }
 
-    // US-09: Learner exam status passed unlocks trial lesson booking for Type 1
-    if (learnerExamStatus !== undefined) {
-      student.learnerExamStatus = learnerExamStatus;
-      if (learnerExamStatus === 'passed') {
+    // Written exam status handling
+    const resolvedStatus = written_exam_status !== undefined ? written_exam_status : learnerExamStatus;
+    if (resolvedStatus !== undefined) {
+      const isPassed = resolvedStatus === 'Pass' || resolvedStatus === 'passed';
+      const isFailed = resolvedStatus === 'Fail' || resolvedStatus === 'failed';
+      if (isPassed) {
+        student.written_exam_status = 'Pass';
+        student.learnerExamStatus = 'passed';
         student.dmtDates.learnerExamPassed = true;
         student.trialEligible = true;
         student.dmtDates.learnerExamPassedDate = learnerExamPassedDate || new Date();
         updates.push('Learner Exam Status (Passed — Trial Lessons Unlocked)');
-      } else if (learnerExamStatus === 'failed') {
+      } else if (isFailed) {
+        student.written_exam_status = 'Fail';
+        student.learnerExamStatus = 'failed';
         student.dmtDates.learnerExamPassed = false;
         if (student.studentType === 'Type1_NewLearner' || student.studentType === 'Type 1') {
           student.trialEligible = false;
         }
         updates.push('Learner Exam Status (Failed)');
+      } else {
+        student.written_exam_status = 'Pending';
+        student.learnerExamStatus = 'not_taken';
+        student.dmtDates.learnerExamPassed = false;
+        student.trialEligible = false;
+        updates.push('Learner Exam Status (Pending)');
       }
     } else if (learnerExamPassed !== undefined) {
       student.dmtDates.learnerExamPassed = Boolean(learnerExamPassed);
       if (learnerExamPassed) {
+        student.written_exam_status = 'Pass';
         student.learnerExamStatus = 'passed';
         student.trialEligible = true;
         if (!student.dmtDates.learnerExamPassedDate) {
@@ -250,6 +425,7 @@ exports.updateDmtDates = async (req, res) => {
         }
         updates.push('Learner Exam (Passed — Trial Lessons Unlocked)');
       } else {
+        student.written_exam_status = 'Fail';
         student.learnerExamStatus = 'failed';
         if (student.studentType === 'Type1_NewLearner' || student.studentType === 'Type 1') {
           student.trialEligible = false;
@@ -1043,6 +1219,25 @@ exports.recordExamAttempt = async (req, res) => {
       });
     }
 
+    // Student restriction: Cannot record exam attempt without staff assigning a date or before the assigned date
+    if (req.user.role === 'student') {
+      const scheduledExamDate = student.written_exam_date || student.dmtDates?.learnerExamDate;
+      if (!scheduledExamDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'DMT Written Theory Exam date has not been assigned by staff yet. You cannot record results until an exam date is assigned.',
+        });
+      }
+      const todayTime = new Date().setHours(0, 0, 0, 0);
+      const scheduledTime = new Date(scheduledExamDate).setHours(0, 0, 0, 0);
+      if (todayTime < scheduledTime) {
+        return res.status(400).json({
+          success: false,
+          message: `You cannot record DMT Written Exam results before your scheduled exam date (${new Date(scheduledExamDate).toLocaleDateString()}).`,
+        });
+      }
+    }
+
     const { result, marks, examDate, notes } = req.body;
     if (!['passed', 'failed'].includes(result)) {
       return res.status(400).json({ success: false, message: "Result must be 'passed' or 'failed'" });
@@ -1326,5 +1521,431 @@ exports.setTrialDate = async (req, res) => {
   }
 };
 
+// @desc    Submit a Date Reschedule Request (Student - Milestones & Trial)
+// @route   POST /api/students/trial-date/reschedule
+// @access  Student
+exports.submitRescheduleRequest = async (req, res) => {
+  try {
+    const { reason, preferredDate, milestoneType = 'trial' } = req.body;
 
+    const validMilestones = ['medical', 'registration', 'theory_exam', 'trial'];
+    const activeMilestone = validMilestones.includes(milestoneType) ? milestoneType : 'trial';
 
+    const milestoneLabels = {
+      medical: 'DMT Medical Exam',
+      registration: 'DMT Registration',
+      theory_exam: 'DMT Written Theory Exam',
+      trial: 'Practical Driving Trial',
+    };
+    const milestoneLabel = milestoneLabels[activeMilestone];
+
+    // Find student record for logged in user
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found',
+      });
+    }
+
+    // Determine current scheduled date for this milestone
+    let previousDate = null;
+    if (activeMilestone === 'medical') {
+      previousDate = student.dmtDates?.medicalExamDate || student.medical_date || null;
+    } else if (activeMilestone === 'registration') {
+      previousDate = student.dmtDates?.learnerRegistrationDate || student.registration_date || null;
+    } else if (activeMilestone === 'theory_exam') {
+      previousDate = student.dmtDates?.learnerExamDate || student.written_exam_date || null;
+    } else {
+      previousDate = student.trial_date || null;
+    }
+
+    if (!previousDate) {
+      return res.status(400).json({
+        success: false,
+        message: `You do not have a scheduled ${milestoneLabel} date yet. A date must be assigned by branch staff before you can request another date.`,
+      });
+    }
+
+    // Check for existing pending request for this specific milestone
+    const existingPending = await RescheduleRequest.findOne({
+      student_id: student._id,
+      milestone_type: activeMilestone,
+      status: 'Pending',
+    });
+
+    if (existingPending) {
+      return res.status(400).json({
+        success: false,
+        message: `You already have a pending reschedule request for ${milestoneLabel} awaiting review by branch staff.`,
+      });
+    }
+
+    const parsedPreferred = preferredDate ? new Date(preferredDate) : null;
+    if (parsedPreferred && isNaN(parsedPreferred.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid preferred date format',
+      });
+    }
+
+    const rescheduleReq = await RescheduleRequest.create({
+      student_id: student._id,
+      requested_by: req.user._id,
+      reason: (reason || '').trim(),
+      preferred_date: parsedPreferred,
+      milestone_type: activeMilestone,
+      previous_date: previousDate,
+      previous_trial_date: activeMilestone === 'trial' ? student.trial_date : previousDate,
+      status: 'Pending',
+    });
+
+    // Notify branch staff
+    try {
+      const staffMembers = await User.find({
+        role: { $in: ['staff', 'admin'] },
+        branch: student.branch,
+      });
+      if (staffMembers.length > 0) {
+        const notifDocs = staffMembers.map((sm) => ({
+          recipientId: sm._id,
+          recipientRole: sm.role,
+          title: `📅 New ${milestoneLabel} Date Reschedule Request`,
+          message: `${req.user.name || 'A student'} submitted a date reschedule request for ${milestoneLabel} (${student.branch} branch).`,
+          type: 'trial',
+          link: '/staff/students',
+        }));
+        await Notification.insertMany(notifDocs);
+      }
+    } catch (notifErr) {
+      console.warn('Could not dispatch staff notifications:', notifErr.message);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `${milestoneLabel} date reschedule request submitted successfully. A branch officer will review it shortly.`,
+      request: rescheduleReq,
+    });
+  } catch (error) {
+    console.error('Error submitting reschedule request:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to submit reschedule request',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get student's own trial/milestone date reschedule requests
+// @route   GET /api/students/trial-date/reschedule
+// @access  Student
+exports.getMyRescheduleRequests = async (req, res) => {
+  try {
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found',
+      });
+    }
+
+    const requests = await RescheduleRequest.find({ student_id: student._id })
+      .sort({ createdAt: -1 })
+      .populate('reviewed_by', 'name role');
+
+    return res.status(200).json({
+      success: true,
+      requests,
+    });
+  } catch (error) {
+    console.error('Error fetching reschedule requests:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve reschedule requests',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get all reschedule requests for DEO/Staff review
+// @route   GET /api/students/reschedule-requests/all
+// @access  Staff, Admin
+exports.getAllRescheduleRequests = async (req, res) => {
+  try {
+    const { status, milestoneType } = req.query;
+    const filter = {};
+    if (status && status !== 'All') {
+      filter.status = status;
+    }
+    if (milestoneType && milestoneType !== 'All') {
+      filter.milestone_type = milestoneType;
+    }
+
+    const requests = await RescheduleRequest.find(filter)
+      .sort({ createdAt: -1 })
+      .populate({
+        path: 'student_id',
+        populate: { path: 'userId', select: 'name email phone branch student_type' },
+      })
+      .populate('requested_by', 'name email phone branch')
+      .populate('reviewed_by', 'name role');
+
+    return res.status(200).json({
+      success: true,
+      requests,
+    });
+  } catch (error) {
+    console.error('Error fetching all reschedule requests:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve reschedule requests',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Review (Approve or Reject) a date reschedule request (DEO/Staff/Admin)
+// @route   PATCH /api/students/reschedule-requests/:id/review
+// @access  Staff, Admin
+exports.reviewRescheduleRequest = async (req, res) => {
+  try {
+    const { status, newTrialDate, newDate, reviewNotes } = req.body;
+
+    if (!['Approved', 'Rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either 'Approved' or 'Rejected'",
+      });
+    }
+
+    const rescheduleReq = await RescheduleRequest.findById(req.params.id)
+      .populate('student_id');
+
+    if (!rescheduleReq) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reschedule request not found',
+      });
+    }
+
+    if (rescheduleReq.status !== 'Pending') {
+      return res.status(400).json({
+        success: false,
+        message: `This reschedule request has already been ${rescheduleReq.status.toLowerCase()}`,
+      });
+    }
+
+    const milestoneType = rescheduleReq.milestone_type || 'trial';
+    const milestoneLabels = {
+      medical: 'DMT Medical Exam',
+      registration: 'DMT Registration',
+      theory_exam: 'DMT Written Theory Exam',
+      trial: 'Practical Driving Trial',
+    };
+    const milestoneLabel = milestoneLabels[milestoneType] || 'Milestone';
+
+    if (status === 'Approved') {
+      const targetDate = newDate || newTrialDate;
+      if (!targetDate) {
+        return res.status(400).json({
+          success: false,
+          message: `A new ${milestoneLabel} date is required when approving a reschedule request`,
+        });
+      }
+
+      const parsedNewDate = new Date(targetDate);
+      if (isNaN(parsedNewDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid new date format',
+        });
+      }
+
+      rescheduleReq.status = 'Approved';
+      rescheduleReq.new_date = parsedNewDate;
+      rescheduleReq.new_trial_date = parsedNewDate;
+      rescheduleReq.reviewed_by = req.user._id;
+      rescheduleReq.reviewed_at = new Date();
+      rescheduleReq.review_notes = (reviewNotes || '').trim();
+      await rescheduleReq.save();
+
+      // Update student's corresponding milestone or trial date
+      const student = await Student.findById(rescheduleReq.student_id._id || rescheduleReq.student_id).populate('userId');
+      if (student) {
+        if (!student.dmtDates) student.dmtDates = {};
+
+        if (milestoneType === 'medical') {
+          student.medical_date = parsedNewDate;
+          student.dmtDates.medicalExamDate = parsedNewDate;
+        } else if (milestoneType === 'registration') {
+          student.registration_date = parsedNewDate;
+          student.dmtDates.learnerRegistrationDate = parsedNewDate;
+        } else if (milestoneType === 'theory_exam') {
+          student.written_exam_date = parsedNewDate;
+          student.dmtDates.learnerExamDate = parsedNewDate;
+          if (student.learnerExamStatus === 'failed') {
+            student.learnerExamStatus = 'scheduled';
+          }
+        } else {
+          // 'trial'
+          student.trial_date = parsedNewDate;
+          student.trial_date_set_by = req.user._id;
+          student.trial_date_set_at = new Date();
+          student.trial_eligible = true;
+          student.trialEligible = true;
+          if (!student.trial) student.trial = {};
+          student.trial.trialDate = parsedNewDate;
+        }
+
+        student.lastActivityDate = new Date();
+        await student.save();
+
+        // In-app notification to student
+        const dateFormatted = parsedNewDate.toLocaleDateString('en-US', {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+        await Notification.create({
+          recipientId: student.userId?._id || student.userId,
+          recipientRole: 'student',
+          title: `✅ ${milestoneLabel} Date Rescheduled`,
+          message: `Your ${milestoneLabel} date reschedule request was approved! Your new date is scheduled for ${dateFormatted}.${milestoneType === 'trial' ? ' Practical lesson booking access has reopened.' : ''}`,
+          type: 'trial',
+          link: milestoneType === 'trial' ? '/student/lessons' : '/student/milestones',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Reschedule request approved and new ${milestoneLabel} date updated successfully.`,
+        request: rescheduleReq,
+        newDate: parsedNewDate,
+        newTrialDate: parsedNewDate,
+      });
+    } else {
+      // Rejected
+      rescheduleReq.status = 'Rejected';
+      rescheduleReq.reviewed_by = req.user._id;
+      rescheduleReq.reviewed_at = new Date();
+      rescheduleReq.review_notes = (reviewNotes || '').trim();
+      await rescheduleReq.save();
+
+      const student = await Student.findById(rescheduleReq.student_id._id || rescheduleReq.student_id).populate('userId');
+      if (student) {
+        await Notification.create({
+          recipientId: student.userId?._id || student.userId,
+          recipientRole: 'student',
+          title: `❌ ${milestoneLabel} Date Reschedule Request Not Approved`,
+          message: `Your ${milestoneLabel} date reschedule request was not approved. ${reviewNotes ? `Officer notes: ${reviewNotes}` : 'Please contact your branch office.'}`,
+          type: 'trial',
+          link: milestoneType === 'trial' ? '/student/dashboard' : '/student/milestones',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Reschedule request rejected',
+        request: rescheduleReq,
+      });
+    }
+  } catch (error) {
+    console.error('Error reviewing reschedule request:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to review reschedule request',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Upload Proof Document & Update Milestone Status (Medical, Registration, Written Exam)
+// @route   POST /api/students/:id/milestone-proof
+// @access  Student (self) OR Staff/Admin
+exports.uploadMilestoneProof = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    // Ownership check
+    if (req.user.role === 'student' && student.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { milestoneType, status, remarks } = req.body;
+    const fileUrl = req.file ? `/uploads/dmt_proofs/${req.file.filename}` : null;
+
+    if (!['medical', 'registration', 'theory_exam'].includes(milestoneType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid milestoneType. Must be medical, registration, or theory_exam.',
+      });
+    }
+
+    if (milestoneType === 'medical') {
+      if (fileUrl) {
+        student.medicalDocumentUrl = fileUrl;
+        student.dmtDates.medicalDocumentUrl = fileUrl;
+      }
+      if (remarks !== undefined) {
+        student.medicalRemarks = remarks.trim();
+        student.dmtDates.medicalRemarks = remarks.trim();
+      }
+      if (status === 'passed') {
+        student.dmtDates.medicalExamStatus = 'passed';
+        student.dmtDates.medicalExamPassed = true;
+        student.dmtDates.medicalDone = true;
+        student.dmtDates.medicalDoneDate = new Date();
+      } else if (status === 'failed') {
+        student.dmtDates.medicalExamStatus = 'failed';
+        student.dmtDates.medicalExamPassed = false;
+        student.dmtDates.medicalDone = false;
+      }
+    } else if (milestoneType === 'registration') {
+      if (fileUrl) {
+        student.registrationDocumentUrl = fileUrl;
+        student.dmtDates.registrationDocumentUrl = fileUrl;
+      }
+      if (remarks !== undefined) {
+        student.registrationRemarks = remarks.trim();
+        student.dmtDates.registrationRemarks = remarks.trim();
+      }
+      if (status === 'done' || status === 'completed') {
+        student.dmtDates.registrationDone = true;
+        student.dmtDates.registrationDoneDate = new Date();
+      } else if (status === 'pending' || status === 'incomplete') {
+        student.dmtDates.registrationDone = false;
+      }
+    } else if (milestoneType === 'theory_exam') {
+      if (fileUrl) {
+        student.dmtDates.learnerExamDocumentUrl = fileUrl;
+      }
+      if (remarks !== undefined) {
+        student.dmtDates.learnerExamRemarks = remarks.trim();
+      }
+    }
+
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Milestone proof document and details saved successfully!',
+      student: populatedStudent,
+    });
+  } catch (error) {
+    console.error('Error uploading milestone proof:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to upload milestone proof document',
+      error: error.message,
+    });
+  }
+};

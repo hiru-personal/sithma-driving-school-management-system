@@ -45,7 +45,19 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { SITHMA_OFFICIAL_BANKS } from './PaymentGatewayPage';
+
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy') => {
+  if (!dateVal) return 'None';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'None';
+    return format(d, formatStr);
+  } catch {
+    return 'None';
+  }
+};
 
 // Official Sithma branch contact & location metadata
 const SITHMA_BRANCHES = {
@@ -128,19 +140,6 @@ export default function StudentDashboard() {
   // Celebratory modal for newly verified student
   const [showVerifiedCelebrationModal, setShowVerifiedCelebrationModal] = useState(false);
 
-  // Exam Result Modal State (Type 1 - max 3 attempts)
-  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
-  const [submittingExamResult, setSubmittingExamResult] = useState(false);
-  const [examForm, setExamForm] = useState({
-    result: 'passed',
-    marks: '',
-    examDate: new Date().toISOString().split('T')[0],
-    notes: '',
-  });
-
-  // Toggling milestone progress (Registration Done / Medical Done)
-  const [togglingMilestone, setTogglingMilestone] = useState(false);
-
   // Re-registration after 3 failed attempts
   const [reRegistering, setReRegistering] = useState(false);
 
@@ -148,6 +147,48 @@ export default function StudentDashboard() {
   const [availablePackages, setAvailablePackages] = useState(FALLBACK_PACKAGES);
   const [selectedCategoryGroup, setSelectedCategoryGroup] = useState('C');
   const [selectedPkgId, setSelectedPkgId] = useState('pkg_car_full');
+
+  // Trial Date Reschedule Request State
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [preferredRescheduleDate, setPreferredRescheduleDate] = useState('');
+  const [submittingReschedule, setSubmittingReschedule] = useState(false);
+  const [myRescheduleRequests, setMyRescheduleRequests] = useState([]);
+
+  const fetchMyRescheduleRequests = async () => {
+    try {
+      const res = await api.get('/students/trial-date/reschedule');
+      if (res.data.success) {
+        setMyRescheduleRequests(res.data.requests);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchMyRescheduleRequests();
+  }, []);
+
+  const handleSubmitReschedule = async (e) => {
+    e.preventDefault();
+    setSubmittingReschedule(true);
+    try {
+      const res = await api.post('/students/trial-date/reschedule', {
+        reason: rescheduleReason,
+        preferredDate: preferredRescheduleDate,
+      });
+      if (res.data.success) {
+        toast.success('Trial date reschedule request submitted successfully!');
+        setRescheduleReason('');
+        setPreferredRescheduleDate('');
+        setShowRescheduleModal(false);
+        fetchMyRescheduleRequests();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit reschedule request');
+    } finally {
+      setSubmittingReschedule(false);
+    }
+  };
   const [selectedPlan, setSelectedPlan] = useState('full'); // 'full' | 'installments' | 'single'
   const [activePaymentMethod, setActivePaymentMethod] = useState('slip'); // 'slip' | 'online' | 'physical'
   const [selectedBankId, setSelectedBankId] = useState('BOC');
@@ -179,111 +220,7 @@ export default function StudentDashboard() {
     packageId: '',
   });
 
-  // DMT Milestone Dates Update Modal (For Type 1 student milestone tracking)
-  const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false);
-  const [savingMilestones, setSavingMilestones] = useState(false);
-  const [milestoneForm, setMilestoneForm] = useState({
-    medicalExamDate: '',
-    learnerRegistrationDate: '',
-    learnerExamDate: '',
-  });
 
-  const openMilestoneModal = () => {
-    setMilestoneForm({
-      medicalExamDate: profile?.dmtDates?.medicalExamDate ? profile.dmtDates.medicalExamDate.split('T')[0] : '',
-      learnerRegistrationDate: profile?.dmtDates?.learnerRegistrationDate ? profile.dmtDates.learnerRegistrationDate.split('T')[0] : '',
-      learnerExamDate: profile?.dmtDates?.learnerExamDate ? profile.dmtDates.learnerExamDate.split('T')[0] : '',
-    });
-    setIsMilestoneModalOpen(true);
-  };
-
-  const handleSaveMilestones = async (e) => {
-    e.preventDefault();
-    setSavingMilestones(true);
-    try {
-      const studentId = profile?._id || student?._id;
-      const res = await api.patch(`/students/${studentId}/dmt-dates`, {
-        medicalExamDate: milestoneForm.medicalExamDate || null,
-        learnerRegistrationDate: milestoneForm.learnerRegistrationDate || null,
-        learnerExamDate: milestoneForm.learnerExamDate || null,
-      });
-      if (res.data.success) {
-        toast.success('DMT milestone dates updated successfully!');
-        if (res.data.student) {
-          setProfile(res.data.student);
-          updateStudentData(res.data.student);
-        }
-        setIsMilestoneModalOpen(false);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update milestone dates');
-    } finally {
-      setSavingMilestones(false);
-    }
-  };
-
-  const handleToggleMilestone = async (field, currentValue) => {
-    setTogglingMilestone(true);
-    try {
-      const studentId = profile?._id || student?._id;
-      const res = await api.patch(`/students/${studentId}/dmt-dates`, {
-        [field]: !currentValue,
-      });
-      if (res.data.success) {
-        toast.success(
-          !currentValue
-            ? `✓ ${field === 'registrationDone' ? 'DMT Registration' : 'DMT Medical'} marked as completed!`
-            : 'Status updated.'
-        );
-        if (res.data.student) {
-          setProfile(res.data.student);
-          updateStudentData(res.data.student);
-        }
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update milestone progress');
-    } finally {
-      setTogglingMilestone(false);
-    }
-  };
-
-  const handleSaveExamResult = async (e) => {
-    e.preventDefault();
-    if (examForm.marks === '' || examForm.marks === null) {
-      toast.error('Please enter marks scored in the examination');
-      return;
-    }
-    setSubmittingExamResult(true);
-    try {
-      const studentId = profile?._id || student?._id;
-      const res = await api.post(`/students/${studentId}/exam-attempt`, {
-        result: examForm.result,
-        marks: Number(examForm.marks),
-        examDate: examForm.examDate,
-        notes: examForm.notes,
-      });
-      if (res.data.success) {
-        if (res.data.isAutoCancelled) {
-          toast.error('⚠️ Maximum 3 failed attempts reached. Registration has been cancelled.');
-        } else if (examForm.result === 'passed') {
-          toast.success(`🎉 Congratulations! Passed with ${examForm.marks} marks. Practical lessons unlocked!`);
-        } else {
-          toast(`⚠️ Exam attempt recorded as failed. ${res.data.attemptsRemaining} attempt(s) remaining.`, {
-            icon: '⚠️',
-          });
-        }
-        if (res.data.student) {
-          setProfile(res.data.student);
-          updateStudentData(res.data.student);
-        }
-        setIsExamModalOpen(false);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to record exam attempt');
-    } finally {
-      setSubmittingExamResult(false);
-    }
-  };
 
   const handleReRegister = async () => {
     if (
@@ -942,252 +879,7 @@ export default function StudentDashboard() {
     );
   };
 
-  const renderMilestoneModal = () => {
-    if (!isMilestoneModalOpen) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="card max-w-md w-full p-6 sm:p-7 bg-slate-950/95 border border-cyan-400/40 shadow-[0_25px_70px_rgba(0,0,0,0.85)] space-y-5 relative rounded-3xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <div className="space-y-0.5">
-              <span className="badge badge-info text-[10px] font-bold uppercase">
-                DMT Milestone Tracking
-              </span>
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-cyan-400" /> Update DMT Milestone Dates
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsMilestoneModalOpen(false)}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <p className="text-xs text-slate-300 leading-relaxed">
-            As a <strong>Type 1 student</strong>, enter or update your schedule dates for DMT processing below:
-          </p>
-
-          <form onSubmit={handleSaveMilestones} className="space-y-3.5 text-xs">
-            {/* 1. Medical Exam Date */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-white/5 border border-white/10">
-              <label className="block font-bold text-slate-200 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Stethoscope className="w-3.5 h-3.5 text-emerald-400" /> 1. DMT Medical Exam Date
-                </span>
-                <span className={`text-[10px] font-semibold ${profile?.dmtDates?.medicalExamPassed ? 'text-emerald-400' : 'text-slate-400'}`}>
-                  {profile?.dmtDates?.medicalExamPassed ? '✓ Passed' : 'Pending'}
-                </span>
-              </label>
-              <input
-                type="date"
-                value={milestoneForm.medicalExamDate}
-                onChange={(e) => setMilestoneForm({ ...milestoneForm, medicalExamDate: e.target.value })}
-                className="w-full px-3 py-2 border border-white/15 bg-slate-900 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
-              />
-              <p className="text-[10px] text-slate-400">
-                National Transport Medical Institute (NTMI) examination appointment date.
-              </p>
-            </div>
-
-            {/* 2. Learner Registration Date */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-white/5 border border-white/10">
-              <label className="block font-bold text-slate-200 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-blue-400" /> 2. DMT Registration Date
-                </span>
-                <span className="text-[10px] text-cyan-300 font-semibold">
-                  {milestoneForm.learnerRegistrationDate ? 'Enrolled' : 'Pending'}
-                </span>
-              </label>
-              <input
-                type="date"
-                value={milestoneForm.learnerRegistrationDate}
-                onChange={(e) => setMilestoneForm({ ...milestoneForm, learnerRegistrationDate: e.target.value })}
-                className="w-full px-3 py-2 border border-white/15 bg-slate-900 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
-              />
-              <p className="text-[10px] text-slate-400">
-                Official date your learner permit application was submitted to DMT.
-              </p>
-            </div>
-
-            {/* 3. Learner Written Exam Date */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-white/5 border border-white/10">
-              <label className="block font-bold text-slate-200 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-purple-400" /> 3. Learner's Written Exam Date
-                </span>
-                <span className={`text-[10px] font-bold ${profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed ? '✓ Passed (Lessons Unlocked)' : 'Pass Required'}
-                </span>
-              </label>
-              <input
-                type="date"
-                value={milestoneForm.learnerExamDate}
-                onChange={(e) => setMilestoneForm({ ...milestoneForm, learnerExamDate: e.target.value })}
-                className="w-full px-3 py-2 border border-white/15 bg-slate-900 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
-              />
-              <p className="text-[10px] text-slate-400">
-                Date scheduled to sit for the DMT written theory examination.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
-              <button
-                type="button"
-                disabled={savingMilestones}
-                onClick={() => setIsMilestoneModalOpen(false)}
-                className="btn-secondary text-xs py-2 px-4"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={savingMilestones}
-                className="btn-accent text-xs py-2 px-5 font-bold shadow-lg flex items-center gap-1.5"
-              >
-                {savingMilestones ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving...
-                  </>
-                ) : (
-                  'Save Milestone Dates'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
-  const renderExamResultModal = () => {
-    if (!isExamModalOpen) return null;
-    const currentAttempts = profile?.learnerExamAttempts?.length || profile?.learnerExamAttemptsCount || 0;
-    const attemptNumber = currentAttempts + 1;
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="card max-w-md w-full p-6 sm:p-7 bg-slate-950/95 border border-purple-400/40 shadow-[0_25px_70px_rgba(168,85,247,0.3)] space-y-5 relative rounded-3xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <div>
-              <span className="badge badge-accent text-[10px] font-bold uppercase">
-                Attempt {attemptNumber} of 3
-              </span>
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2 mt-0.5">
-                <BookOpen className="w-4 h-4 text-cyan-400" /> Record Written Exam Result
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsExamModalOpen(false)}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Record your official DMT Written Theory Examination result. If you pass, practical lessons will be unlocked. You have a maximum of <strong>3 attempts</strong>.
-          </p>
-
-          <form onSubmit={handleSaveExamResult} className="space-y-4 text-xs">
-            {/* Pass or Fail Toggle */}
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-200">Result Outcome</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setExamForm({ ...examForm, result: 'passed' })}
-                  className={`p-3 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all ${
-                    examForm.result === 'passed'
-                      ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                      : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Passed Exam</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExamForm({ ...examForm, result: 'failed' })}
-                  className={`p-3 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all ${
-                    examForm.result === 'failed'
-                      ? 'bg-rose-500/20 border-rose-400 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                      : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
-                  }`}
-                >
-                  <AlertCircle className="w-4 h-4 text-rose-400" />
-                  <span>Failed Attempt</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Marks scored */}
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-200 flex items-center justify-between">
-                <span>Marks Scored (out of 40)</span>
-                <span className="text-[10px] text-slate-400">Passing mark is 30/40</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="40"
-                required
-                placeholder="e.g. 35"
-                value={examForm.marks}
-                onChange={(e) => setExamForm({ ...examForm, marks: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-white/15 text-white rounded-xl focus:border-cyan-400 focus:outline-none font-bold text-sm"
-              />
-            </div>
-
-            {/* Exam Date */}
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-200">Date of Examination</label>
-              <input
-                type="date"
-                required
-                value={examForm.examDate}
-                onChange={(e) => setExamForm({ ...examForm, examDate: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-white/15 text-white rounded-xl focus:border-cyan-400 focus:outline-none"
-              />
-            </div>
-
-            {examForm.result === 'failed' && (
-              <div className="p-3 bg-amber-500/10 border border-amber-400/20 rounded-xl text-amber-200 space-y-1 text-[11px]">
-                <strong>Notice on Failed Attempt:</strong>
-                <p>
-                  {attemptNumber >= 3
-                    ? '⚠️ This is your 3rd attempt. Failing this attempt will automatically cancel your registration!'
-                    : `After recording this attempt, you can obtain a new exam date from branch staff. Remaining attempts: ${3 - attemptNumber}.`}
-                </p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => setIsExamModalOpen(false)}
-                className="btn-secondary text-xs py-2.5 px-4"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submittingExamResult}
-                className="btn-accent text-xs py-2.5 px-5 font-bold shadow-lg flex items-center gap-1.5"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{submittingExamResult ? 'Submitting...' : 'Save Exam Result'}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
 
   const renderVerifiedCelebrationModal = () => {
     if (!showVerifiedCelebrationModal) return null;
@@ -1720,6 +1412,50 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      {/* Shared Practical Trial Date & Reschedule Banner */}
+      {profile?.trial_date && (
+        <div className="card p-6 border border-purple-400/30 bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
+              <Calendar className="w-6 h-6 text-purple-400" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs uppercase tracking-wider font-bold text-purple-300">Official DMT Practical Trial</span>
+                {Boolean(profile.trial_date && new Date(profile.trial_date).getTime() < Date.now() && new Date().toDateString() !== new Date(profile.trial_date).toDateString()) ? (
+                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold">
+                    Trial Date Passed (Booking Locked)
+                  </span>
+                ) : (
+                  <span className="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                    Booking Window Active
+                  </span>
+                )}
+                {myRescheduleRequests.find((r) => r.status === 'Pending') && (
+                  <span className="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
+                    <Clock className="w-3 h-3 animate-pulse" /> Reschedule Pending DEO Review
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                Scheduled Trial Date: {safeFormatDate(profile.trial_date, 'EEEE, MMMM dd, yyyy')}
+              </h2>
+              <p className="text-xs text-slate-300 max-w-xl">
+                {Boolean(profile.trial_date && new Date(profile.trial_date).getTime() < Date.now() && new Date().toDateString() !== new Date(profile.trial_date).toDateString())
+                  ? 'Your scheduled trial date has passed. Practical lesson booking is locked. Submit a reschedule request to have a Data Entry Officer assign a new trial date and reopen lesson booking.'
+                  : 'You can book practical driving lessons up until your scheduled trial date. Need to change your trial date? Submit a reschedule request to your Data Entry Officer.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowRescheduleModal(true)}
+            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-lg shrink-0"
+          >
+            <Clock className="w-4 h-4" /> Request Trial Reschedule
+          </button>
+        </div>
+      )}
 
 
       {/* TYPE 1: US-09 DMT LEARNER EXAM GATE NOTICE BANNER */}
@@ -2821,6 +2557,86 @@ export default function StudentDashboard() {
 
       {renderEditModal()}
       {renderVerifiedCelebrationModal()}
+
+      {/* Trial Date Reschedule Request Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-purple-400" />
+                <h3 className="font-bold text-white text-base">Request Practical Trial Date Reschedule</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRescheduleModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReschedule} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Current Scheduled Trial Date:
+                </label>
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 text-white font-bold text-sm">
+                  {safeFormatDate(profile?.trial_date || profile?.trial?.trialDate, 'MMMM dd, yyyy')}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Reason for Reschedule Request: <span className="text-rose-400">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="e.g., Medical reasons, exam clash, or need more practical preparation..."
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Preferred New Trial Date (Optional):
+                </label>
+                <input
+                  type="date"
+                  value={preferredRescheduleDate}
+                  onChange={(e) => setPreferredRescheduleDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs font-bold"
+                />
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Final trial date assignment will be confirmed by DMT and your branch Data Entry Officer.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowRescheduleModal(false)}
+                  disabled={submittingReschedule}
+                  className="btn-secondary text-xs py-2 px-4"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReschedule || !rescheduleReason.trim()}
+                  className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow"
+                >
+                  {submittingReschedule ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Submit Reschedule Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

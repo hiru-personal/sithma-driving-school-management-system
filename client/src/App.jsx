@@ -117,7 +117,7 @@ export default function App() {
             <Route
               path="/student/milestones"
               element={
-                <ProtectedRoute allowedRoles={['student']} onlyType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1 requirePremium>
                   <DmtMilestonesPage />
                 </ProtectedRoute>
               }
@@ -165,7 +165,7 @@ export default function App() {
             <Route
               path="/student/quiz"
               element={
-                <ProtectedRoute allowedRoles={['student']} onlyType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1 requirePremium>
                   <QuizSetupPage />
                 </ProtectedRoute>
               }
@@ -173,7 +173,7 @@ export default function App() {
             <Route
               path="/student/quiz/take"
               element={
-                <ProtectedRoute allowedRoles={['student']} onlyType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1 requirePremium>
                   <QuizTakingPage />
                 </ProtectedRoute>
               }
@@ -181,7 +181,7 @@ export default function App() {
             <Route
               path="/student/quiz/result"
               element={
-                <ProtectedRoute allowedRoles={['student']} onlyType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1 requirePremium>
                   <QuizResultPage />
                 </ProtectedRoute>
               }
@@ -189,7 +189,7 @@ export default function App() {
             <Route
               path="/student/quiz/history"
               element={
-                <ProtectedRoute allowedRoles={['student']} onlyType1>
+                <ProtectedRoute allowedRoles={['student']} onlyType1 requirePremium>
                   <QuizHistoryPage />
                 </ProtectedRoute>
               }

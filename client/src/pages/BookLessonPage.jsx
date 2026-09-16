@@ -34,6 +34,48 @@ export default function BookLessonPage() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  // Reschedule Modal State
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [preferredRescheduleDate, setPreferredRescheduleDate] = useState('');
+  const [submittingReschedule, setSubmittingReschedule] = useState(false);
+  const [myRescheduleRequests, setMyRescheduleRequests] = useState([]);
+
+  const fetchMyRescheduleRequests = async () => {
+    try {
+      const res = await api.get('/students/trial-date/reschedule');
+      if (res.data.success) {
+        setMyRescheduleRequests(res.data.requests);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchMyRescheduleRequests();
+  }, []);
+
+  const handleSubmitReschedule = async (e) => {
+    e.preventDefault();
+    setSubmittingReschedule(true);
+    try {
+      const res = await api.post('/students/trial-date/reschedule', {
+        reason: rescheduleReason,
+        preferredDate: preferredRescheduleDate,
+      });
+      if (res.data.success) {
+        toast.success('Trial date reschedule request submitted successfully!');
+        setRescheduleReason('');
+        setPreferredRescheduleDate('');
+        setShowRescheduleModal(false);
+        fetchMyRescheduleRequests();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit reschedule request');
+    } finally {
+      setSubmittingReschedule(false);
+    }
+  };
+
   const fetchSlots = async () => {
     setLoading(true);
     try {
@@ -328,9 +370,31 @@ export default function BookLessonPage() {
               </h3>
               <p className="text-xs text-slate-300 mt-0.5">
                 {isTrialDatePassed
-                  ? 'Your scheduled trial date has expired. Booking is restricted until rescheduled by branch officer.'
+                  ? 'Your scheduled trial date has passed and lesson booking is locked. Please request a trial date reschedule below.'
                   : 'You can book practical driving lessons up until this scheduled trial date.'}
               </p>
+
+              {/* Pending Request Notice */}
+              {myRescheduleRequests.find((r) => r.status === 'Pending') && (
+                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5 animate-pulse" />
+                  <span>Trial Date Reschedule Request is currently pending DEO review</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowRescheduleModal(true)}
+                  className={`btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow ${
+                    isTrialDatePassed ? 'ring-2 ring-purple-400 animate-pulse' : ''
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  {isTrialDatePassed ? 'Request Trial Date Reschedule' : 'Request Date Reschedule'}
+                </button>
+              </div>
             </div>
           </div>
           {student.trial_date_set_by && (
@@ -799,6 +863,89 @@ export default function BookLessonPage() {
                 {bookingLoading ? 'Confirming...' : 'Confirm & Reserve Slot'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Request Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-purple-400/30 rounded-3xl w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowRescheduleModal(false)}
+              className="absolute right-5 top-5 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 font-semibold text-xs mb-1">
+                <Clock className="w-3.5 h-3.5" /> DMT Exam Scheduling
+              </div>
+              <h3 className="text-xl font-black text-white">Request Trial Date Reschedule</h3>
+              <p className="text-xs text-slate-300">
+                Submit a reschedule request to your branch Data Entry Officer. Upon approval, your practical trial date will be updated and lesson booking access will reopen automatically.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitReschedule} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Current Scheduled Trial Date:
+                </label>
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 text-white font-bold text-sm">
+                  {student?.trial_date ? format(new Date(student.trial_date), 'MMMM dd, yyyy') : 'None'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Reason for Reschedule Request: <span className="text-rose-400">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="e.g., Medical reasons, exam clash, or need more preparation..."
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Preferred New Trial Date (Optional):
+                </label>
+                <input
+                  type="date"
+                  value={preferredRescheduleDate}
+                  onChange={(e) => setPreferredRescheduleDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs font-bold"
+                />
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Final trial date assignment will be confirmed by DMT and your branch Data Entry Officer.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowRescheduleModal(false)}
+                  disabled={submittingReschedule}
+                  className="btn-secondary text-xs py-2 px-4"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReschedule || !rescheduleReason.trim()}
+                  className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow"
+                >
+                  {submittingReschedule ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Submit Reschedule Request
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

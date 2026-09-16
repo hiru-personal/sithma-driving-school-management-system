@@ -224,8 +224,81 @@ export default function StaffStudentListPage() {
     }
   };
 
+  // Trial Date Reschedule Requests State
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleRequests, setRescheduleRequests] = useState([]);
+  const [loadingReschedule, setLoadingReschedule] = useState(false);
+  const [reviewingRequest, setReviewingRequest] = useState(null);
+  const [reviewNewTrialDate, setReviewNewTrialDate] = useState('');
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  const fetchRescheduleRequests = async () => {
+    setLoadingReschedule(true);
+    try {
+      const res = await api.get('/students/reschedule-requests/all');
+      if (res.data.success) {
+        setRescheduleRequests(res.data.requests);
+      }
+    } catch (err) {
+      toast.error('Failed to load trial reschedule requests');
+    } finally {
+      setLoadingReschedule(false);
+    }
+  };
+
+  const handleReviewReschedule = async (status) => {
+    if (!reviewingRequest) return;
+    if (status === 'Approved' && !reviewNewTrialDate) {
+      toast.error('Please select the new practical trial exam date');
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      const res = await api.patch(`/students/reschedule-requests/${reviewingRequest._id}/review`, {
+        status,
+        newDate: reviewNewTrialDate,
+        newTrialDate: reviewNewTrialDate,
+        reviewNotes,
+      });
+      if (res.data.success) {
+        toast.success(status === 'Approved' ? (res.data.message || 'Date rescheduled successfully!') : 'Reschedule request rejected.');
+        setReviewingRequest(null);
+        setReviewNewTrialDate('');
+        setReviewNotes('');
+        fetchRescheduleRequests();
+        fetchStudents();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to review reschedule request');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   const handleSaveDmtDates = async (e) => {
     e.preventDefault();
+
+    // Client-side validation: Medical Date >= Registration Date
+    if (dmtForm.learnerRegistrationDate && dmtForm.medicalExamDate) {
+      const reg = new Date(dmtForm.learnerRegistrationDate).setHours(0, 0, 0, 0);
+      const med = new Date(dmtForm.medicalExamDate).setHours(0, 0, 0, 0);
+      if (med < reg) {
+        toast.error('Medical Date must be on or after Registration Date');
+        return;
+      }
+    }
+
+    // Client-side validation: Written Exam Date > Medical Date
+    if (dmtForm.medicalExamDate && dmtForm.learnerExamDate) {
+      const med = new Date(dmtForm.medicalExamDate).setHours(0, 0, 0, 0);
+      const exam = new Date(dmtForm.learnerExamDate).setHours(0, 0, 0, 0);
+      if (exam <= med) {
+        toast.error('Written Exam Date must be after the Medical Date');
+        return;
+      }
+    }
+
     try {
       const res = await api.patch(`/students/${selectedStudent._id}/dmt-dates`, dmtForm);
       if (res.data.success) {
@@ -304,7 +377,22 @@ export default function StaffStudentListPage() {
             Manage registrations, track DMT milestone progress, and record practical trial examination attempts.
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+          <button
+            onClick={() => {
+              fetchRescheduleRequests();
+              setShowRescheduleModal(true);
+            }}
+            className="btn-secondary text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg border border-purple-400/40 text-purple-200 hover:border-purple-300"
+          >
+            <Clock className="w-4 h-4 text-purple-400" />
+            Trial Reschedule Requests
+            {rescheduleRequests.filter((r) => r.status === 'Pending').length > 0 && (
+              <span className="badge badge-warning text-[10px] font-black px-2 py-0.5 rounded-full">
+                {rescheduleRequests.filter((r) => r.status === 'Pending').length} Pending
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setShowWalkInModal(true)}
             className="btn-accent text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg shadow-purple-950/40"
@@ -718,10 +806,41 @@ export default function StaffStudentListPage() {
                   </div>
                 )}
 
+                {/* DMT Date Sequence Order Notice */}
+                <div className="p-3 bg-cyan-500/10 border border-cyan-400/25 rounded-xl text-cyan-200 text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-cyan-300">
+                    <Info className="w-4 h-4 text-cyan-400" /> DMT Date Validation Sequence (Server-Enforced)
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    Chronological order required: <strong>Registration Date</strong> &rarr; <strong>Medical Date</strong> (&ge; Registration) &rarr; <strong>Written Exam Date</strong> (&gt; Medical). Inconsistent sequences will be rejected by the server.
+                  </p>
+                </div>
+
+                {/* 1. Registration Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-slate-300">
-                      1. DMT Medical Examination Date (US-04):
+                      1. DMT Learner Registration Date (US-05):
+                    </label>
+                    {selectedStudent.dmtDates?.registrationDone && (
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        ✓ Student Marked Done
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    value={dmtForm.learnerRegistrationDate}
+                    onChange={(e) => setDmtForm({ ...dmtForm, learnerRegistrationDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  />
+                </div>
+
+                {/* 2. Medical Examination Date */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-300">
+                      2. DMT Medical Examination Date (US-04) <span className="text-cyan-400 font-mono text-[11px]">(&ge; Registration Date)</span>:
                     </label>
                     {selectedStudent.dmtDates?.medicalDone && (
                       <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
@@ -756,29 +875,11 @@ export default function StaffStudentListPage() {
                   </label>
                 </div>
 
+                {/* 3. Learner Written Exam Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-slate-300">
-                      2. DMT Learner Registration Date (US-05):
-                    </label>
-                    {selectedStudent.dmtDates?.registrationDone && (
-                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        ✓ Student Marked Done
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="date"
-                    value={dmtForm.learnerRegistrationDate}
-                    onChange={(e) => setDmtForm({ ...dmtForm, learnerRegistrationDate: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-300">
-                      3. DMT Learner Written Exam Date:
+                      3. DMT Learner Written Exam Date <span className="text-cyan-400 font-mono text-[11px]">(&gt; Medical Date)</span>:
                     </label>
                     <span className="text-[10px] text-cyan-300 font-mono">
                       {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
@@ -1582,6 +1683,247 @@ export default function StaffStudentListPage() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trial Date Reschedule Requests Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-purple-400/30 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300">
+                  <Clock className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Practical Trial Date Reschedule Requests</h3>
+                  <p className="text-xs text-slate-300">Review student reschedule submissions, assign new practical trial dates, and reopen lesson booking.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRescheduleModal(false);
+                  setReviewingRequest(null);
+                }}
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {loadingReschedule ? (
+                <div className="py-12 text-center text-slate-400 text-sm flex flex-col items-center gap-2">
+                  <RefreshCw className="w-6 h-6 animate-spin text-purple-400" />
+                  Loading reschedule requests...
+                </div>
+              ) : rescheduleRequests.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-sm space-y-2">
+                  <Clock className="w-10 h-10 text-slate-600 mx-auto" />
+                  <p className="font-semibold text-slate-300">No Reschedule Requests Found</p>
+                  <p className="text-xs text-slate-400">When students submit a request to reschedule their practical trial exam, they will appear here for DEO review.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {rescheduleRequests.map((req) => {
+                    const studentUser = req.student_id?.userId || req.requested_by;
+                    const isPending = req.status === 'Pending';
+                    const isBeingReviewed = reviewingRequest?._id === req._id;
+                    const milestoneLabels = {
+                      medical: '🩺 DMT Medical Exam',
+                      registration: '📄 DMT Registration',
+                      theory_exam: '📖 DMT Written Theory Exam',
+                      trial: '🚗 Practical Driving Trial',
+                    };
+                    const mType = req.milestone_type || 'trial';
+                    const mLabel = milestoneLabels[mType] || 'Practical Trial';
+
+                    return (
+                      <div
+                        key={req._id}
+                        className={`p-5 rounded-2xl border transition-colors ${
+                          isPending ? 'bg-purple-950/20 border-purple-400/40' : 'bg-white/5 border-white/10'
+                        } space-y-3`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-white text-sm">{studentUser?.name || 'Student'}</span>
+                              <span className="badge bg-purple-500/20 border border-purple-400/30 text-purple-200 text-[11px] font-bold">
+                                {mLabel}
+                              </span>
+                              <span className="badge bg-white/10 text-slate-300 text-[10px] font-mono">
+                                {req.student_id?.branch || studentUser?.branch || 'Branch'}
+                              </span>
+                              <span className={`badge text-[10px] font-bold ${
+                                req.status === 'Approved'
+                                  ? 'badge-success'
+                                  : req.status === 'Rejected'
+                                  ? 'badge-error'
+                                  : 'badge-warning animate-pulse'
+                              }`}>
+                                {req.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {studentUser?.email} • {studentUser?.phone || 'No phone'}
+                            </p>
+                          </div>
+                          <div className="text-xs text-slate-400 text-right">
+                            <span className="block text-[11px]">Submitted:</span>
+                            <span className="font-medium text-slate-200">
+                              {req.requested_at ? format(new Date(req.requested_at), 'MMM dd, yyyy HH:mm') : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Dates & Reason Information */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                          <div className="p-3 bg-slate-950/60 rounded-xl border border-white/5">
+                            <span className="text-[11px] text-slate-400 block font-semibold">Previous Scheduled Date:</span>
+                            <span className="font-bold text-rose-300 font-mono">
+                              {req.previous_date || req.previous_trial_date ? format(new Date(req.previous_date || req.previous_trial_date), 'MMM dd, yyyy') : 'None Assigned'}
+                            </span>
+                          </div>
+                          <div className="p-3 bg-slate-950/60 rounded-xl border border-white/5">
+                            <span className="text-[11px] text-slate-400 block font-semibold">Requested / Preferred Date:</span>
+                            <span className="font-bold text-cyan-300 font-mono">
+                              {req.preferred_date ? format(new Date(req.preferred_date), 'MMM dd, yyyy') : 'No preference'}
+                            </span>
+                          </div>
+                          {(req.new_date || req.new_trial_date) && (
+                            <div className="p-3 bg-slate-950/60 rounded-xl border border-emerald-500/20">
+                              <span className="text-[11px] text-emerald-400 block font-semibold">Approved New Date:</span>
+                              <span className="font-black text-emerald-300 font-mono">
+                                {format(new Date(req.new_date || req.new_trial_date), 'MMM dd, yyyy')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {req.reason && (
+                          <div className="text-xs p-3 bg-white/5 rounded-xl border border-white/5">
+                            <span className="text-slate-400 font-semibold block mb-0.5">Student's Stated Reason:</span>
+                            <p className="text-slate-200 italic">"{req.reason}"</p>
+                          </div>
+                        )}
+
+                        {/* If already reviewed, display reviewer info */}
+                        {!isPending && (
+                          <div className="text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 pt-2">
+                            <span>Reviewed by: <strong className="text-white">{req.reviewed_by?.name || 'Officer'}</strong></span>
+                            <span>Date: {req.reviewed_at ? format(new Date(req.reviewed_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                            {req.review_notes && <span className="text-slate-300">Notes: {req.review_notes}</span>}
+                          </div>
+                        )}
+
+                        {/* Review Action Form for Pending Requests */}
+                        {isPending && (
+                          <div className="pt-2 border-t border-white/10">
+                            {isBeingReviewed ? (
+                              <div className="p-4 bg-purple-950/40 rounded-2xl border border-purple-400/40 space-y-3">
+                                <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-4 h-4 text-purple-400" /> DEO Review & Decision ({mLabel})
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                                      New {mLabel} Date <span className="text-rose-400">*</span>
+                                    </label>
+                                    <input
+                                      type="date"
+                                      value={reviewNewTrialDate}
+                                      onChange={(e) => setReviewNewTrialDate(e.target.value)}
+                                      className="w-full px-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs font-bold"
+                                    />
+                                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                                      Required for Approval. Will update student's {mLabel} date in system.
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                                      Officer Review Notes (Optional)
+                                    </label>
+                                    <input
+                                      type="text"
+                                      placeholder="e.g., Scheduled as per DMT batch availability"
+                                      value={reviewNotes}
+                                      onChange={(e) => setReviewNotes(e.target.value)}
+                                      className="w-full px-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-end gap-2 pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setReviewingRequest(null)}
+                                    disabled={reviewSubmitting}
+                                    className="btn-secondary text-xs py-2 px-3"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReviewReschedule('Rejected')}
+                                    disabled={reviewSubmitting}
+                                    className="px-4 py-2 rounded-xl border border-rose-500/40 text-rose-300 hover:bg-rose-500/10 font-bold text-xs"
+                                  >
+                                    Reject Request
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReviewReschedule('Approved')}
+                                    disabled={reviewSubmitting}
+                                    className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5"
+                                  >
+                                    {reviewSubmitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                    Approve & Assign New Date
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReviewingRequest(req);
+                                  setReviewNewTrialDate(
+                                    req.preferred_date ? req.preferred_date.split('T')[0] : ''
+                                  );
+                                  setReviewNotes('');
+                                }}
+                                className="btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow"
+                              >
+                                Review & Reschedule Trial Date
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-white/10 bg-slate-950/60 flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                {rescheduleRequests.filter((r) => r.status === 'Pending').length} pending request(s) awaiting officer action.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRescheduleModal(false);
+                  setReviewingRequest(null);
+                }}
+                className="btn-secondary text-xs py-2 px-4 font-bold"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

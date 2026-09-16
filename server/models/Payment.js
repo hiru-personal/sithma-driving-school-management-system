@@ -48,12 +48,12 @@ const paymentSchema = new mongoose.Schema(
     },
     payment_status: {
       type: String,
-      enum: ['Pending Verification', 'Pending Branch Payment', 'Verified', 'Rejected'],
+      enum: ['Pending Verification', 'Pending Branch Payment', 'Verified', 'Rejected', 'PAID', 'Unpaid', 'paid', 'unpaid'],
       default: 'Pending Verification',
     },
     paymentStatus: {
       type: String,
-      enum: ['Pending Verification', 'Pending Branch Payment', 'Verified', 'Rejected'],
+      enum: ['Pending Verification', 'Pending Branch Payment', 'Verified', 'Rejected', 'PAID', 'Unpaid', 'paid', 'unpaid'],
       default: 'Pending Verification',
     },
     additionalLessonsCount: {

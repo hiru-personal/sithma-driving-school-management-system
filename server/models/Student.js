@@ -172,18 +172,40 @@ const studentSchema = new mongoose.Schema(
       default: Date.now,
     },
     // DMT Milestones Tracking
+    registration_date: { type: Date, default: null },
+    medical_date: { type: Date, default: null },
+    medicalDocumentUrl: { type: String, default: null },
+    medicalRemarks: { type: String, default: null },
+    registrationDocumentUrl: { type: String, default: null },
+    registrationRemarks: { type: String, default: null },
+    written_exam_date: { type: Date, default: null },
+    written_exam_status: {
+      type: String,
+      enum: ['Pending', 'Pass', 'Fail', 'pending', 'passed', 'failed', null],
+      default: 'Pending',
+    },
     dmtDates: {
       medicalExamDate: { type: Date, default: null },
       medicalExamPassed: { type: Boolean, default: null },
+      medicalExamStatus: {
+        type: String,
+        enum: ['pending', 'passed', 'failed', null],
+        default: null,
+      },
       medicalDone: { type: Boolean, default: false },
       medicalDoneDate: { type: Date, default: null },
+      medicalDocumentUrl: { type: String, default: null },
+      medicalRemarks: { type: String, default: null },
       learnerRegistrationDate: { type: Date, default: null },
       registrationDone: { type: Boolean, default: false },
       registrationDoneDate: { type: Date, default: null },
+      registrationDocumentUrl: { type: String, default: null },
+      registrationRemarks: { type: String, default: null },
       learnerExamDate: { type: Date, default: null },
       learnerExamPassed: { type: Boolean, default: false },
       learnerExamPassedDate: { type: Date, default: null },
       learnerExamMarks: { type: Number, default: null },
+      learnerExamDocumentUrl: { type: String, default: null },
     },
     // Theory / Learner Written Exam Attempts (Max 3 attempts before auto-cancellation)
     learnerExamAttempts: [learnerExamAttemptSchema],
@@ -327,6 +349,81 @@ studentSchema.pre('save', function (next) {
     } else if (this.package.lessonsUsed !== undefined) {
       this.lessonsUsed = this.package.lessonsUsed;
     }
+  }
+
+  // Sync top-level dates and statuses with dmtDates & trial
+  if (!this.dmtDates) this.dmtDates = {};
+
+  if (this.registration_date && !this.dmtDates.learnerRegistrationDate) {
+    this.dmtDates.learnerRegistrationDate = this.registration_date;
+  } else if (this.dmtDates.learnerRegistrationDate) {
+    this.registration_date = this.dmtDates.learnerRegistrationDate;
+  }
+
+  if (this.medical_date && !this.dmtDates.medicalExamDate) {
+    this.dmtDates.medicalExamDate = this.medical_date;
+  } else if (this.dmtDates.medicalExamDate) {
+    this.medical_date = this.dmtDates.medicalExamDate;
+  }
+
+  if (this.written_exam_date && !this.dmtDates.learnerExamDate) {
+    this.dmtDates.learnerExamDate = this.written_exam_date;
+  } else if (this.dmtDates.learnerExamDate) {
+    this.written_exam_date = this.dmtDates.learnerExamDate;
+  }
+
+  // Sync proof documents & remarks between top level and dmtDates
+  if (this.medicalDocumentUrl && !this.dmtDates.medicalDocumentUrl) {
+    this.dmtDates.medicalDocumentUrl = this.medicalDocumentUrl;
+  } else if (this.dmtDates.medicalDocumentUrl) {
+    this.medicalDocumentUrl = this.dmtDates.medicalDocumentUrl;
+  }
+  if (this.medicalRemarks && !this.dmtDates.medicalRemarks) {
+    this.dmtDates.medicalRemarks = this.medicalRemarks;
+  } else if (this.dmtDates.medicalRemarks) {
+    this.medicalRemarks = this.dmtDates.medicalRemarks;
+  }
+  if (this.registrationDocumentUrl && !this.dmtDates.registrationDocumentUrl) {
+    this.dmtDates.registrationDocumentUrl = this.registrationDocumentUrl;
+  } else if (this.dmtDates.registrationDocumentUrl) {
+    this.registrationDocumentUrl = this.dmtDates.registrationDocumentUrl;
+  }
+  if (this.registrationRemarks && !this.dmtDates.registrationRemarks) {
+    this.dmtDates.registrationRemarks = this.registrationRemarks;
+  } else if (this.dmtDates.registrationRemarks) {
+    this.registrationRemarks = this.dmtDates.registrationRemarks;
+  }
+
+  if (this.written_exam_status) {
+    if (this.written_exam_status === 'Pass' || this.written_exam_status === 'passed') {
+      this.written_exam_status = 'Pass';
+      this.learnerExamStatus = 'passed';
+      this.dmtDates.learnerExamPassed = true;
+    } else if (this.written_exam_status === 'Fail' || this.written_exam_status === 'failed') {
+      this.written_exam_status = 'Fail';
+      this.learnerExamStatus = 'failed';
+      this.dmtDates.learnerExamPassed = false;
+    } else {
+      this.written_exam_status = 'Pending';
+      if (!this.learnerExamStatus || this.learnerExamStatus === 'not_taken') {
+        this.learnerExamStatus = 'not_taken';
+      }
+    }
+  } else if (this.learnerExamStatus) {
+    if (this.learnerExamStatus === 'passed') {
+      this.written_exam_status = 'Pass';
+    } else if (this.learnerExamStatus === 'failed') {
+      this.written_exam_status = 'Fail';
+    } else {
+      this.written_exam_status = 'Pending';
+    }
+  }
+
+  if (this.trial_date) {
+    if (!this.trial) this.trial = {};
+    this.trial.trialDate = this.trial_date;
+  } else if (this.trial?.trialDate) {
+    this.trial_date = this.trial.trialDate;
   }
 
   // Derive trialEligible and trial_eligible status (US-02 vs US-01)

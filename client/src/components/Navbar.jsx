@@ -119,28 +119,28 @@ export default function Navbar() {
                       >
                         <LayoutDashboard className="w-4 h-4" /> Dashboard
                       </Link>
-                      <Link
-                        to="/student/milestones"
-                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                          isActive('/student/milestones')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
-                      </Link>
-                      <Link
-                        to="/student/quiz"
-                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                          isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <BookOpen className="w-4 h-4" /> Exam Practice
-                      </Link>
                       {isPremium && (
                         <>
+                          <Link
+                            to="/student/milestones"
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                              isActive('/student/milestones')
+                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
+                          </Link>
+                          <Link
+                            to="/student/quiz"
+                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                              isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
+                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <BookOpen className="w-4 h-4" /> Exam Practice
+                          </Link>
                           <Link
                             to="/student/lessons"
                             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
@@ -379,22 +379,22 @@ export default function Navbar() {
                       >
                         Dashboard
                       </Link>
-                      <Link
-                        to="/student/milestones"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium flex items-center gap-2"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
-                      </Link>
-                      <Link
-                        to="/student/quiz"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                      >
-                        DMT Exam Practice
-                      </Link>
                       {isPremium && (
                         <>
+                          <Link
+                            to="/student/milestones"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium flex items-center gap-2"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
+                          </Link>
+                          <Link
+                            to="/student/quiz"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                          >
+                            DMT Exam Practice
+                          </Link>
                           <Link
                             to="/student/lessons"
                             onClick={() => setMobileMenuOpen(false)}

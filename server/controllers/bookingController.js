@@ -3,6 +3,7 @@ const TimeSlot = require('../models/TimeSlot');
 const Student = require('../models/Student');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Payment = require('../models/Payment');
 
 // @desc    Book a practical driving lesson slot
 // @route   POST /api/bookings
@@ -42,56 +43,86 @@ exports.createBooking = async (req, res) => {
       student.studentType === 'type2';
     const isType1 = !isType2;
 
-    // Type 1: Learner Theory Exam Gate (US-09)
+    // Type 1: Learner Written Exam Gate (Section 2)
     if (isType1) {
-      const isLearnerPassed =
-        student.trialEligible ||
+      const isExamPassed =
+        student.written_exam_status === 'Pass' ||
+        student.written_exam_status === 'passed' ||
         student.learnerExamStatus === 'passed' ||
         Boolean(student.dmtDates?.learnerExamPassed);
-      if (!isLearnerPassed) {
+      if (!isExamPassed) {
         return res.status(403).json({
           success: false,
-          message: `DMT Requirement (US-09): As a Type 1 New Learner, practical and trial lessons can only be booked after your Learner Written Exam is officially marked 'Passed' by the branch officer. (Current status: ${
-            student.learnerExamStatus === 'failed' ? 'Failed - Awaiting Retake' : 'Not Faced / In Progress'
+          message: `Lesson booking is locked: The DMT Written (Learner's) Exam must be marked 'Pass' by a Data Entry Officer before booking lessons. (Current status: ${
+            student.written_exam_status || (student.learnerExamStatus === 'failed' ? 'Fail' : 'Pending')
           })`,
         });
       }
     }
 
-    // Type 2: Trial Date Requirement Gate
-    if (isType2) {
-      if (!student.trial_date) {
-        return res.status(403).json({
-          success: false,
-          message: 'Your practical trial date has not been set yet by the branch officer. Please contact your branch data entry officer to schedule your trial date before booking lessons.',
-        });
-      }
-    }
-
-    // Shared: Check if scheduled Trial Date has already passed
+    // Shared: Check Trial Date & 3-Month Booking Window (Section 3)
     if (student.trial_date) {
+      const now = new Date();
       const trialMidnight = new Date(student.trial_date);
       trialMidnight.setHours(23, 59, 59, 999);
-      if (new Date() > trialMidnight) {
+
+      // 1. Check if trial date has already passed
+      if (now > trialMidnight) {
         const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
         return res.status(403).json({
           success: false,
-          message: `Your practical trial date (${formattedTrialDate}) has already passed. Please contact the branch officer to reschedule your trial date.`,
+          message: `Your practical trial date (${formattedTrialDate}) has passed and lesson booking is locked. Please submit a reschedule request or contact the branch to schedule a new trial date.`,
+        });
+      }
+
+      // 2. 3-Month Booking Window leading up to the Trial Date
+      const windowStartDate = new Date(student.trial_date);
+      windowStartDate.setMonth(windowStartDate.getMonth() - 3);
+      windowStartDate.setHours(0, 0, 0, 0);
+
+      if (now < windowStartDate) {
+        const formattedWindowStart = windowStartDate.toISOString().split('T')[0];
+        const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
+        return res.status(403).json({
+          success: false,
+          message: `Lesson booking window is not yet open. Practical lessons can only be booked within the 3-month period leading up to your Trial Date (${formattedTrialDate}). Your booking window opens on ${formattedWindowStart}.`,
         });
       }
     }
 
-    // 4. Gate: Course Package Payment Gate
-    // Passed students (both Type 1 and Type 2) must have confirmed package payment or unlocked lessons before booking
-    const hasConfirmedPayment = student.packagePaymentStatus === 'confirmed';
+    // 4. Gate: Payment Lock on Booking (Section 6)
+    // A student must complete payment for their chosen Package or Lesson, and that payment must be verified in the system ('PAID'), before they can book any lesson slot under it.
+    const verifiedPayment = await Payment.findOne({
+      studentId: student._id,
+      paymentType: { $in: ['package', 'installment', 'single_lesson', 'monthly', 'additional_lessons'] },
+      $or: [
+        { paymentStatus: 'PAID' },
+        { paymentStatus: 'Verified' },
+        { payment_status: 'PAID' },
+        { payment_status: 'Verified' },
+      ],
+    });
+
+    const isPackageConfirmed = student.packagePaymentStatus === 'confirmed';
     const hasUnlockedLessons = (student.lessonsUnlocked || 0) > 0;
-    if (!hasConfirmedPayment && !hasUnlockedLessons) {
+
+    if (!verifiedPayment && !isPackageConfirmed && !hasUnlockedLessons) {
+      const pendingPayment = await Payment.findOne({
+        studentId: student._id,
+        paymentType: { $in: ['package', 'installment', 'single_lesson', 'monthly', 'additional_lessons'] },
+        $or: [
+          { paymentStatus: 'Pending Verification' },
+          { payment_status: 'Pending Verification' },
+          { paymentStatus: 'Pending Branch Payment' },
+          { payment_status: 'Pending Branch Payment' },
+        ],
+      });
+
       return res.status(403).json({
         success: false,
-        message:
-          student.packagePaymentStatus === 'pending'
-            ? 'Payment Pending Verification: Your course package payment slip has been uploaded and is currently awaiting verification by a branch officer. Lesson booking will be unlocked immediately once approved.'
-            : 'Package Payment Required: Please select a package and complete your payment to unlock lesson bookings.',
+        message: pendingPayment || student.packagePaymentStatus === 'pending'
+          ? "Payment Pending Verification: Lesson booking slots only open once payment for your chosen package or lesson is verified with status 'PAID'. Your payment is currently awaiting verification by a branch officer."
+          : "Payment Lock: Please complete payment for your chosen package or lesson. Booking slots will only unlock once payment status is 'PAID'.",
       });
     }
 
