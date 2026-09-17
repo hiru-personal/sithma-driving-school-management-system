@@ -1,0 +1,952 @@
+
+
+=== PAGE 1 ===
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Sri Lanka Institute of Information Technology 
+  
+Title of the Project 
+ 
+Sprint 0 
+Information Systems Project Management 2026 
+ 
+ 
+Project ID:  
+ 
+Submitted by: 
+ 
+1. IT24103365- Dissanayake D.H.H 
+2. IT24103299- Herath G.H.S.M 
+3. IT24102713 - Ranathunga R.M.C.M.B 
+4. IT24103245 - Hansajith R.H.M 
+ 
+Submitted to: 
+ 
+ 
+(Supervisor’s signature) 
+………………………….. 
+ 
+Name of the supervisor 
+ 
+ 
+Date of submission  
+ 
+ 
+2028.08. 
+ 
+ 
+
+
+=== PAGE 2 ===
+
+Criteria Marks allocated Marks given  
+Problem Specification 5%   
+Business Idea 5%  
+Solution Outline  10%   
+Key Benefits 10%   
+Main Objectives 5%   
+Sub Objectives 5%   
+Project Plan 10%   
+Product Vision statement 05%  
+Epics 05%  
+User Stories 10%  
+Initial product Backlog 05%  
+Definition of Done 05%  
+Hardware & Software 
+requirements 5%   
+Budget 5%   
+References 
+                                                              
+5%   
+Formatting 5%   
+Total Marks (100) 100%   
+ 
+ 
+ 
+
+=== PAGE 3 ===
+
+ 
+ 
+ 
+Team Members: 
+ 
+Student ID Student Name Role (Product Owner / 
+Scrum Master / Team 
+Member) 
+IT24103365 Dissanayake D.H.H Product Owner 
+IT24103299 Herath G.H.S.M Scrum Master 
+IT24102713 Ranathunga R.M.C.M.B Team Member 
+IT24103245 Hansajith R.H.M Team Member 
+ 
+1. Introduction 
+ 
+1.1Problem Specification 
+Sithma Driving School currently operates across three branches Maharagama, Werahara, 
+and Delgoda and manages its entire operation manually. At present, the school does not 
+use any dedicated software system; student registrations, lesson bookings, license 
+progress, and payment records are all maintained using paper-based records and informal, 
+phone-based communication between students, instructors, and office staff. 
+At each branch, a Data Entry Officer/Staff member is responsible for registering students, 
+manually recording dates received from the Department of Motor Traffic (DMT)  such as 
+medical examination, learner's registration, and learner's exam dates verifying payment 
+slips, and managing lesson bookings, all without any centralized system to support these 
+tasks. 
+This manual approach creates several significant problems: 
+• Fragmented, inconsistent records - student information, DMT dates, and 
+payment records are kept separately at each branch, with no consolidated or real-
+time view of a student's overall progress. 
+• High risk of missed regulatory deadlines - because a student must pass the Trial 
+(practical driving test) within 1.5 years of passing the learner's exam, and is 
+limited to a maximum of 3 Trial attempts, any date that is missed, delayed, or 
+incorrectly recorded manually can cause a student to lose an attempt or miss their 
+licensing window entirely. 
+• Manual, error-prone payment verification - payments are made outside the 
+system (e.g., bank transfer), and staff must manually cross-check 
+uploaded/physical payment slips against bookings, which is slow and susceptible 
+to human error. 
+
+=== PAGE 4 ===
+
+• No self-service access for students - students have no way to check their own 
+registration status, DMT dates, remaining lessons, or package details without 
+directly contacting staff, creating unnecessary dependency and communication 
+overhead. 
+• No structured exam preparation tool - students preparing for the DMT written 
+exam have no formal, school-provided practice resource and must rely on external 
+materials. 
+• Administrative overload - a single Data Entry Officer per branch is responsible 
+for registration, date tracking, payment verification, and booking management, 
+creating a bottleneck as student volume grows. 
+Together, these issues limit Sithma Driving School's ability to scale, increase the risk of 
+compliance failures with DMT timelines, and result in a poor, opaque experience for 
+students who have no visibility into their own progress. 
+1.2 Business idea 
+The core idea is to replace Sithma Driving School's fully manual, paper-based operation 
+with a single, centralized Sithma Driving School Management System.A digital platform 
+that brings student registration, DMT milestone and Trial tracking, vehicle package and 
+lesson management, time-slot booking, payment verification, notifications, and exam 
+practice together in one place, accessible to students, staff, and instructors across all three 
+branches. 
+For the business, this creates real, tangible value. It removes the administrative bottleneck 
+currently placed on a single Data Entry Officer per branch by automating record-keeping, 
+date tracking, and payment cross-checking. It significantly reduces the risk of a student 
+missing a critical DMT deadline (such as the 1.5-year Trial window or the 3-attempt 
+limit) by tracking these rules automatically instead of relying on manual memory and 
+paperwork. It gives branch and school management a consolidated, real-time view of 
+operations - registrations, bookings, payments, and student progress - across all three 
+branches for the first time, something that is simply not possible today. And for students, 
+it turns a slow, staff-dependent process into a transparent, self-service experience: they 
+can check their own dates, remaining lessons, and package status anytime, receive 
+automatic notifications the moment something changes, and prepare for their DMT 
+written exam through a built-in multilingual quiz module. In short, this system is the 
+digital backbone that lets Sithma Driving School scale its operations, reduce compliance 
+risk, and deliver a modern, trustworthy experience - something a manual, three-branch 
+paper system cannot support as the business grows. 
+ 
+ 
+
+=== PAGE 5 ===
+
+1.3 Solution Outline 
+The proposed solution is a centralized, web and mobile-accessible Sithma Driving School 
+Management System built around the four core Epics identified for this project: (1) 
+Student Registration, DMT Milestone Tracking, Student/Staff Profile & Vehicle 
+Package Management - capturing Type 1/Type 2 student registrations, tracking DMT 
+medical/registration/exam/trial dates, managing profiles, and handling package selection 
+(Car, Bike, Three-Wheeler, Heavy Vehicle); (2) Lesson & Time-Slot Management - 
+allowing staff to manage branch/instructor availability and students to book lesson slots 
+and free weekly theory/practical classes; (3) Payment Management & Verification - 
+where students upload payment slips for staff to manually verify, paired with an in-app 
+notification service that alerts students and staff whenever a registration, date, or payment 
+status changes; and (4) Exam Management - a multilingual (Sinhala, Tamil, English) 
+quiz module covering both Light and Heavy Vehicle question sets, with answers and 
+marks handled directly through the system. 
+The system will be built using a React front end, a Node.js/Express REST API back 
+end, and a MySQL database, deployed on a cloud-hosted platform accessible to students, 
+staff, and instructors across all three branches. The high-level architecture is shown 
+below. 
+ 
+
+
+=== PAGE 6 ===
+
+ 
+1.4 Key Benefits 
+ 
+• Time saved: -  
+ 
+Registration, DMT date tracking, lesson booking, and payment checks all happen in one 
+centralized system instead of being handled manually across three separate branches, 
+cutting down significantly on administrative time per student.  
+ 
+• Cost reduction: -  
+ 
+Automating record-keeping and payment verification reduces the staffing overhead 
+currently needed to manage paper-based processes, allowing the same office staff to 
+support a larger number of students without additional hires.  
+ 
+• Error reduction: - 
+ 
+Automated enforcement of the 3-Trial-attempt limit and the 1.5-year Trial deadline 
+removes the risk of human error in manually tracking these DMT rules, reducing the 
+chance of a student losing an attempt or missing their licensing window due to a missed 
+or miscalculated date.  
+ 
+• Fewer missed communications: - 
+ 
+Automatic in-app notifications ensure students and staff are informed the moment a 
+registration, DMT date, or payment status changes, removing dependency on staff 
+remembering to call or message students.  
+ 
+• Better decision-making via reports: -  
+ 
+Branch and school management gain a consolidated, real-time view of registrations, 
+bookings, payments, and student progress across all three branches - visibility that does 
+not exist today - supporting more informed decisions on staffing, scheduling, and 
+package pricing. 
+  
+• Scalability: -  
+ 
+A centralized digital system allows Sithma Driving School to handle more students and 
+more course types (Light and Heavy Vehicle, refresher, standalone lessons) without a 
+proportional increase in administrative effort, supporting business growth.  
+ 
+• Improved customer (student) experience: - 
+ 
+Students gain self-service visibility into their own registration status, DMT dates, 
+remaining lessons, and package details at any time, plus access to multilingual 
+
+=== PAGE 7 ===
+
+(Sinhala/Tamil/English) exam practice - replacing a slow, staff-dependent process with a 
+transparent, modern experience.  
+ 
+• Faster, more reliable payment verification: - 
+ 
+A structured slip-upload and staff-verification workflow replaces informal, ad-hoc bank-
+transfer cross-checking, speeding up payment confirmation and reducing disputes.  
+ 
+• Consistency across branches: -  
+All three branches (Maharagama, Werahara, Delgoda) operate on the same system and 
+rules, ensuring students receive a consistent experience and staff apply DMT timeline 
+rules uniformly. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 8 ===
+
+2. Objectives 
+ 
+2.1 Main Objective 
+To design and develop, within the 15-week project timeline, a centralized web-based 
+management system for Sithma Driving School that digitizes student registration, DMT 
+milestone and Trial tracking, lesson and time-slot booking, payment verification, and 
+multilingual exam management across all three branches, replacing the current fully 
+manual, paper-based process 
+(This is written as a SMART objective — Specific (names the exact system and its four 
+core functions), Measurable (a working system covering registration, DMT tracking, 
+booking, payment, and exam management), Achievable (scoped to what the team can 
+realistically build), Relevant (directly addresses the problems identified in 1.1), and 
+Time-bound (within the 15-week project timeline).) 
+ 
+2.2. Sub Objectives 
+ 
+▪ To implement a Student Registration, DMT Milestone Tracking, and Profile 
+& Vehicle Package Management module that supports both Type 1 (new 
+learner) and Type 2 (trial-ready) student categories, tracks 
+medical/registration/exam/Trial dates, and automatically enforces the 3-attempt 
+and 1.5-year Trial rules, by the end of the development phase.  
+ 
+▪ To implement a Lesson & Time-Slot Management module that allows staff to 
+manage branch and instructor availability and allows students to book lesson slots 
+across Light Vehicle (Car, Bike, Three-Wheeler) and Heavy Vehicle (Bus) 
+categories, as well as free weekly theory/practical classes, within the project's 
+development sprints.  
+ 
+▪ To implement a Payment Management & Verification module, including in-app 
+notifications, that allows students to upload payment slips and staff to manually 
+verify them against bookings, reducing payment confirmation time and 
+communication delays.  
+ 
+▪ To implement a multilingual (Sinhala, Tamil, English) Exam Management 
+module offering quiz-style practice questions for both Light and Heavy Vehicle 
+DMT written exams, with marks handled directly through the system, to give 
+students a structured, self-service exam preparation tool. 
+ 
+ 
+
+=== PAGE 9 ===
+
+3. Stakeholder Identification 
+ 
+Stakeholder Type 
+(Primary / 
+Secondary / 
+Tertiary) 
+Interest / Concern 
+Student (Type 1 — New 
+Learner) 
+Primary Wants a simple way to register, track DMT dates, 
+and progress toward the learner's exam and Trial 
+stage. 
+Student (Type 2 — Trial-
+Ready) 
+Primary Wants to register directly for Trial lessons and book 
+Trial dates efficiently. 
+Data Entry / Office Officer Primary Needs an efficient way to register students, update 
+DMT dates, verify payments, and manage bookings 
+— currently the most burdened role in the manual 
+process. 
+Branch / School Management 
+(Owner) 
+Primary Wants consolidated visibility across all three 
+branches, control over pricing and resourcing, and a 
+system that supports business growth. 
+Instructor Secondary Needs an accurate profile and lesson schedule; 
+concerned with session structure, time-slot 
+allocation, and workload feasibility. 
+Development / IT Team Secondary Responsible for designing, building, and delivering 
+the system to meet functional requirements and 
+project deadlines. 
+Department of Motor Traffic 
+(DMT) 
+Tertiary External regulator; does not use the system directly, 
+but all Trial/exam timeline rules built into the system 
+must comply with DMT regulations. 
+
+=== PAGE 10 ===
+
+4. Procedure 
+ 
+ 
+5. Product Vision Statement 
+ 
+For → Sithma Driving School's students, instructors, and office staff across all three 
+branches, 
+Who → currently rely on a fully manual, paper-based process to manage registrations, 
+track licensing progress, book lessons, and confirm payments, 
+The product → Sithma Driving School Management System is a centralized digital 
+platform, 
+Provides → A single, transparent, and reliable way for students and staff to manage the 
+entire driving-license journey - from registration through to licensing — reducing 
+administrative burden, minimizing missed regulatory deadlines, and giving everyone 
+real-time visibility into progress. 
+
+
+=== PAGE 11 ===
+
+6. Epics 
+ 
+Epic ID Epic Description 
+EPIC-01 Student Registration, DMT Milestone Tracking & Profile/Package 
+Management – Register students (Type 1 – new learner, Type 2 – trial-
+ready), track DMT-issued milestone dates (medical, learner registration, 
+exam, trial), and manage student, staff, and vehicle package/pricing profiles. 
+EPIC-02 Lesson and Time Slot Management – Enable students to book lesson time 
+slots across branches, and allow staff/instructors to manage available 
+sessions and schedules. 
+EPIC-03 Payment Management and Verification (Notifications Management) – 
+Allow students to upload payment slips for staff verification, and send in-
+app notifications to students and staff for registrations, dates, and payment 
+updates. 
+7. User Stories 
+ 
+Epic 
+ID 
+User Story 
+ID 
+User Story Stakeholder 
+EPIC-
+01 
+US-01 As a student, I want to register as a Type 1 (new learner) 
+student, so that I can start the DMT learner process 
+through Sithma. 
+Student 
+EPIC-
+01 
+US-02 As a student, I want to register as a Type 2 (trial-ready) 
+student, so that I can directly book Trial lessons. 
+Student 
+EPIC-
+01 
+US-03 As a data entry officer, I want to register a new student's 
+profile, so that their details are stored in the system. 
+Data Entry 
+Officer 
+EPIC-
+01 
+US-04 As a student, I want to update my DMT medical exam 
+date, so that staff and I both know my current schedule. 
+Student 
+EPIC-
+01 
+US-05 As a data entry officer, I want to update a student's DMT 
+learner registration date, so that the student's progress is 
+accurately tracked. 
+Data Entry 
+Officer 
+EPIC-
+01 
+US-06 As a data entry officer, I want to update a student's Trial 
+exam date, so that their license progression is up to date. 
+Data Entry 
+Officer 
+EPIC-
+01 
+US-07 As a student, I want to view my DMT milestone timeline 
+(medical, registration, exam, trial dates), so that I know 
+what stage I'm at. 
+Student 
+EPIC-
+01 
+US-08 As a staff member, I want to view a student's full 
+milestone history, so that I can advise them on next steps. 
+Data Entry 
+Officer 
+EPIC-
+01 
+US-09 As a student, I want to be marked eligible for Trial 
+lessons only after passing my learner's exam, so that I 
+follow the correct DMT process. 
+Student 
+EPIC-
+01 
+US-10 As a student, I want the system to track my remaining 
+Trial attempts (max 3), so that I know how many chances 
+I have left. 
+Student 
+
+=== PAGE 12 ===
+
+EPIC-
+01 
+US-11 As a student, I want the system to check my 1.5-year Trial 
+deadline from my learner exam pass date, so that I don't 
+miss my license window. 
+Student 
+EPIC-
+01 
+US-12 As a student, I want to be verified for Heavy Vehicle 
+eligibility (2+ years on a Light Vehicle license), so that I 
+can register for the Bus package. 
+Student 
+EPIC-
+01 
+US-13 As a data entry officer, I want to manage vehicle 
+categories and course packages (Car, Refresher, Bike, 
+Three-Wheeler, Heavy Vehicle), so that pricing and 
+lesson counts stay accurate. 
+Data Entry 
+Officer 
+EPIC-
+01 
+US-14 As a student, I want to select a course package and 
+vehicle type at registration, so that my lessons and pricing 
+are set up correctly. 
+Student 
+EPIC-
+01 
+US-15 As a staff member, I want to view instructor profiles per 
+branch, so that I can assign them to sessions. 
+Data Entry 
+Officer 
+EPIC-
+02 
+US-16 As a student, I want to view available lesson time slots at 
+my branch, so that I can choose a convenient time. 
+Student 
+EPIC-
+02 
+US-17 As a student, I want to book a lesson slot for my chosen 
+vehicle type, so that I can attend my driving lessons. 
+Student 
+EPIC-
+02 
+US-18 As a student, I want to view my upcoming lesson 
+schedule, so that I know when and where my next lesson 
+is. 
+Student 
+EPIC-
+02 
+US-19 As a data entry officer, I want to adjust available time 
+slots at a branch, so that scheduling reflects real 
+instructor/vehicle availability. 
+Data Entry 
+Officer 
+EPIC-
+02 
+US-20 As a data entry officer, I want to assign an instructor to a 
+lesson session, so that each booked slot has a confirmed 
+instructor. 
+Data Entry 
+Officer 
+EPIC-
+02 
+US-21 As an instructor, I want to view my assigned lesson 
+sessions, so that I know which students I'm teaching and 
+when. 
+Instructor 
+EPIC-
+02 
+US-22 As a student, I want to book a free weekly theory or 
+practical class, so that I can attend at no extra charge. 
+Student 
+EPIC-
+02 
+US-23 As a student, I want to request additional lessons beyond 
+my package, so that I can get more practice if needed. 
+Student 
+EPIC-
+02 
+US-24 As a data entry officer, I want to view all lesson bookings 
+across branches, so that I can manage overall scheduling. 
+Data Entry 
+Officer 
+EPIC-
+03 
+US-25 As a student, I want to upload a photo/scan of my 
+payment slip, so that staff can verify my payment. 
+Student 
+EPIC-
+03 
+US-26 As a data entry officer, I want to review and manually 
+verify uploaded payment slips, so that payments are 
+confirmed accurately. 
+Data Entry 
+Officer 
+EPIC-
+03 
+US-27 As a student, I want to view my payment status 
+(pending/confirmed), so that I know if my registration is 
+finalized. 
+Student 
+
+=== PAGE 13 ===
+
+EPIC-
+03 
+US-28 As a student, I want to view my remaining lessons and 
+package balance, so that I can track what I've used and 
+what's left. 
+Student 
+EPIC-
+03 
+US-29 As a student, I want to receive an in-app notification 
+when a registration, medical, exam, or trial date is set or 
+updated, so that I stay informed without checking 
+manually. 
+Student 
+EPIC-
+03 
+US-30 As a data entry officer, I want to receive an in-app 
+notification when a student uploads a payment slip, so 
+that I can verify it promptly. 
+Data Entry 
+Officer 
+EPIC-
+03 
+US-31 As a student, I want to receive a notification once my 
+payment is verified, so that I know my booking is 
+confirmed. 
+Student 
+EPIC-
+04 
+US-32 As a student, I want to select my preferred language 
+(Sinhala, Tamil, or English) for the practice quiz, so that I 
+can study comfortably. 
+Student 
+EPIC-
+04 
+US-33 As a student, I want to attempt practice quiz questions 
+similar to the DMT written exam, so that I can prepare for 
+my actual exam. 
+Student 
+EPIC-
+04 
+US-34 As a student, I want to choose quiz questions relevant to 
+Light or Heavy Vehicle categories, so that I practice the 
+right content for my license type. 
+Student 
+EPIC-
+04 
+US-35 As a student, I want to view my quiz marks after 
+attempting a paper, so that I can track my preparation 
+progress. 
+Student 
+EPIC-
+04 
+US-36 As a data entry officer, I want to manage/update the exam 
+question bank, so that quiz content stays current and 
+accurate. 
+Data Entry 
+Officer 
+8. Initial Product Backlog 
+ 
+EPIC-01: Student Registration, DMT Milestone Tracking & Profile/Package 
+Management 
+ 
+User 
+Story ID 
+Remarks Estimated 
+Story 
+Points 
+Estimated 
+Hours 
+Priority 
+US-01 Core registration flow for Type 1 
+students 
+5 16 High 
+US-02 Core registration flow for Type 2 
+students 
+5 16 High 
+
+=== PAGE 14 ===
+
+US-03 Foundational — needed before any 
+other feature works 
+5 16 High 
+US-13 Packages/pricing must exist before 
+registration can use them 
+5 16 High 
+US-14 Depends on US-13 being complete 5 12 High 
+US-09 Core business rule gating Trial 
+eligibility 
+5 12 High 
+US-04 Simple date update field 3 8 High 
+US-05 Simple date update field 3 8 High 
+US-06 Simple date update field 3 8 High 
+US-10 Business logic on top of trial date 
+tracking 
+3 8 Medium 
+US-11 Business logic on top of milestone 
+dates 
+3 8 Medium 
+US-12 Eligibility check for Heavy Vehicle 
+upgrade 
+3 8 Medium 
+US-07 Read-only view, depends on US-04–
+06 
+3 8 Medium 
+ 
+ 
+EPIC-02: Lesson and Time Slot Management 
+ 
+User 
+Story ID 
+Remarks Est. Story 
+Points 
+Est. 
+Hours 
+Priority 
+US-17 Core booking transaction, most 
+complex in this epic 
+8 20 High 
+US-16 Needed before booking can happen 5 12 High 
+US-19 Staff-side slot control, needed early 5 12 High 
+US-20 Needed to complete a valid booking 3 8 Medium 
+US-18 Read-only view, depends on US-17 3 8 Medium 
+US-21 Read-only view for instructors 3 8 Medium 
+US-23 Extends existing package, not core to 
+MVP 
+3 8 Medium 
+
+=== PAGE 15 ===
+
+US-22 Nice-to-have, not tied to paid 
+packages 
+3 8 Low 
+US-24 Reporting/oversight view, not core to 
+booking flow 
+3 8 Low 
+ 
+EPIC-03: Payment Management and Verification (Notifications Management) 
+ 
+User 
+Story ID 
+Remarks Est. Story 
+Points 
+Est. 
+Hours 
+Priority 
+US-17 Core booking transaction, most 
+complex in this epic 
+8 20 High 
+US-16 Needed before booking can happen 5 12 High 
+US-19 Staff-side slot control, needed early 5 12 High 
+US-20 Needed to complete a valid booking 3 8 Medium 
+US-18 Read-only view, depends on US-17 3 8 Medium 
+US-21 Read-only view for instructors 3 8 Medium 
+US-23 Extends existing package, not core to 
+MVP 
+3 8 Medium 
+ 
+EPIC-04: Exam Management 
+ 
+User 
+Story ID 
+Remarks Est. Story 
+Points 
+Est. 
+Hours 
+Priority 
+US-33 Core quiz-taking functionality 5 16 High 
+US-36 Content management needed before 
+quiz can be used 
+5 12 Medium 
+US-34 Filtering logic on top of quiz base 3 8 Medium 
+US-32 Simple language selector 2 4 Medium 
+US-35 Depends on marks/scoring being 
+added (flagged earlier as an 
+enhancement beyond the source 
+spec) 
+3 8 Low 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 16 ===
+
+9. Definition of Done (DoD) 
+ 
+A user story is considered "Done" when: 
+• The feature has been fully implemented according to the acceptance criteria of the 
+user story. 
+• The code has been reviewed by at least one other team member (peer code 
+review). 
+• The feature has been tested (unit/functional testing) and works without critical 
+bugs. 
+• The UI (if applicable) is functional, responsive, and consistent with the rest of the 
+system's design. 
+• The feature has been integrated into the main branch/build without breaking 
+existing functionality. 
+• The feature has been tested on the intended platform/device without major issues. 
+• Relevant documentation (e.g., code comments, user guide notes) has been updated 
+if needed. 
+• The feature has been demonstrated to and accepted by the team/supervisor (or 
+Product Owner, if applicable). 
+• No known high-priority bugs remain open for that story. 
+Epic-Specific DoD (optional additions) 
+Epic Additional DoD Criteria 
+EPIC-01 – 
+Registration & DMT 
+Milestone Tracking 
+Student registration data and DMT milestone dates are accurately saved and 
+retrievable; eligibility rules (e.g., Trial access only after passing learner's 
+exam) are enforced and tested. 
+EPIC-02 – Lesson and 
+Time Slot 
+Management 
+Booking a slot correctly updates availability in real time, with no double-
+booking possible for the same instructor/time/branch. 
+EPIC-03 – Payment 
+Management & 
+Notifications 
+Uploaded payment slips are stored securely and only marked "confirmed" 
+after explicit staff verification; notifications are triggered correctly for all 
+relevant events. 
+EPIC-04 – Exam 
+Management 
+Quiz questions display correctly in all three languages (Sinhala, Tamil, 
+English) with no missing translations, and questions are correctly filtered by 
+vehicle category. 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 17 ===
+
+10. Sprint 1 Preview 
+ 
+11. EPIC-01: Student Registration, DMT Milestone Tracking & Profile/Package 
+Management - 9 of 15 stories selected (60%) 
+User Story ID User Story (short) Story Points Priority 
+US-01 Register Type 1 student 5 High 
+US-02 Register Type 2 student 5 High 
+US-03 Staff registers student profile 5 High 
+US-13 Manage vehicle categories & packages 5 High 
+US-14 Select package at registration 5 High 
+US-09 Trial eligibility gated by learner exam pass 5 High 
+US-04 Update medical exam date 3 High 
+US-05 Update learner registration date 3 High 
+US-06 Update Trial exam date 3 High 
+ 
+ 
+EPIC-02: Lesson and Time Slot Management - 5 of 9 stories selected (56%) 
+User Story ID User Story (short) Story Points Priority 
+US-17 Student books a lesson slot 8 High 
+US-16 View available time slots 5 High 
+US-19 Staff adjusts available slots 5 High 
+US-20 Assign instructor to session 3 Medium 
+US-18 View upcoming lesson schedule 3 Medium 
+ 
+EPIC-03: Payment Management and Verification (Notifications Management) - 4 of 
+7 stories selected (57%) 
+User Story ID User Story (short) Story Points Priority 
+US-25 Upload payment slip 5 High 
+US-26 Staff verifies payment slip 5 High 
+US-29 Notify student on date updates 5 High 
+US-30 Notify staff on slip upload 3 Medium 
+EPIC-04: Exam Management - 3 of 5 stories selected (60%) 
+User Story ID User Story (short) Story Points Priority 
+US-33 Attempt practice quiz questions 5 High 
+US-36 Manage exam question bank 5 Medium 
+US-34 Filter quiz by vehicle category 3 Medium 
+
+=== PAGE 18 ===
+
+Sprint 1 Summary 
+Epic Selected / Total Stories % of Epic Covered Total Story Points 
+EPIC-01 9 / 15 60% 39 
+EPIC-02 5 / 9 56% 24 
+EPIC-03 4 / 7 57% 18 
+EPIC-04 3 / 5 60% 13 
+Total 21 / 36 58% 
+ 
+ 
+12. Software and Hardware Requirements 
+Software Requirements 
+Category Tool/Technology 
+Frontend HTML, CSS, JavaScript, React.js (or similar framework) 
+Backend Node.js with Express.js (or PHP/Laravel, depending on your 
+group's preference) 
+Database MySQL / MongoDB 
+IDE / Code Editor Visual Studio Code 
+Version Control Git, GitHub 
+Design & 
+Prototyping 
+Figma (UI/UX mockups), Draw.io (system diagrams, ER 
+diagrams) 
+Project 
+Management 
+Trello / Jira (sprint & backlog tracking) 
+API Testing Postman 
+Documentation Microsoft Word, Google Docs 
+Browser (Testing) Google Chrome, Mozilla Firefox 
+Hardware Requirements 
+Category Specification 
+Development 
+Laptop/PC 
+Minimum Intel i5 (8th Gen) / Ryzen 5, 8GB RAM (16GB 
+recommended), 256GB SSD 
+Testing Device Smartphone with a modern browser (for responsive testing) 
+Internet 
+Connection 
+Stable broadband connection for cloud database/hosting access 
+Server 
+(Deployment) 
+Cloud-hosted virtual server (e.g., shared hosting or a free-tier 
+cloud instance) — no dedicated physical server needed for a 
+student project 
+ 
+ 
+
+=== PAGE 19 ===
+
+13. Budget 
+ 
+Item Description Estimated Cost (LKR) 
+Development Software React, Node.js, MySQL, VS 
+Code, Git — all free/open-
+source 
+0 
+Design Tools Figma (free tier), Draw.io 
+(free) 
+0 
+Domain Name .com or .lk domain (1 year, 
+optional for demo) 
+3,500 
+Web Hosting Basic shared hosting or free-
+tier cloud hosting (e.g., 
+Render, Vercel free tier) for 
+demo purposes 
+0 – 5,000 
+Database Hosting Free-tier cloud database (e.g., 
+MongoDB Atlas free tier) 
+0 
+Third-Party APIs None required for core 
+functionality (no payment 
+gateway API, since payments 
+are verified manually via slip 
+upload) 
+0 
+Hardware Personal laptops already 
+owned by team members 
+0 
+Miscellaneous Printing, binding of report, 
+presentation materials 
+2,000 
+Total Estimated Cost  5,500 – 10,500 
+ 
+ 
+14. References 
+• Atlassian. (n.d.). How to write SMART goals. Retrieved from 
+https://www.atlassian.com/blog/teamwork/how-to-write-smart-goals  
+• Department of Motor Traffic, Sri Lanka. (n.d.). Driving license and learner's permit 
+procedures. Retrieved from https://www.motortraffic.gov.lk  
+• Figma. (n.d.). Figma - Collaborative design tool. Retrieved from 
+https://www.figma.com  
+• draw.io. (n.d.). diagrams.net - Free online diagramming tool. Retrieved from 
+https://www.drawio.com  
+• Sithma Driving School. (2026). Sithma Driving School Management System - System 
+Description Document (Version 1.0). Internal project document, prepared by Hiruni 
+Dissanayake. 
+
+=== PAGE 20 ===
+
+15. Appendix 
+Appendix A: System Description Document 
+Full reference copy of the Sithma Driving School Management System – System 
+Description Document (v1.0), used as the basis for this project's requirements. 
+Appendix B: High-Level Architecture Diagram 
+(Insert the diagram referenced in Section 1.3 – Solution Outline) 
+Appendix C: Gantt Chart 
+(Insert the project timeline/Gantt chart referenced in the Procedure section) 
+Appendix D: Full Product Backlog 
+(If the backlog table in Section 8 was trimmed for space, include the complete, 
+unabridged version here) 
+Appendix E: UI Mockups / Wireframes (if your group has created any in Figma) 
+Screenshots or exported images of early wireframes for registration, booking, or payment 
+screens. 
+Appendix F: Meeting Minutes (if required by your supervisor) 
+Summary of team meetings held during Sprint 0, including attendance and key decisions 
+made. 
+ 
