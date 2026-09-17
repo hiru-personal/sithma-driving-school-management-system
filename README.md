@@ -123,26 +123,54 @@ Sithma Driving School is an accredited multi-branch driving academy operating ac
 ## 💻 Getting Started & Local Setup
 
 ### 1. Prerequisites
-- **Node.js** (v18 or higher)
-- **MongoDB** (Local instance on `mongodb://127.0.0.1:27017` or MongoDB Atlas URI)
+- **Node.js** (v18 or higher recommended - download from [nodejs.org](https://nodejs.org))
+- **MongoDB** (Local MongoDB instance or free MongoDB Atlas Cloud cluster)
 
-### 2. Installation & Running
+### 2. Step-by-Step Installation & Setup
 
+#### Step A: Configure Backend (.env)
 ```bash
-# 1. Install Backend Dependencies
+cd server
+
+# Copy the example environment file
+cp .env.example .env
+
+# Open .env and ensure your MongoDB URI and port are set:
+# PORT=5001
+# MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/sithma-driving-school?retryWrites=true&w=majority
+# (OR for local MongoDB: MONGO_URI=mongodb://127.0.0.1:27017/sithma-driving-school)
+```
+
+#### Step B: Install Dependencies
+```bash
+# In the server directory:
 npm install
 
-# 2. Install Frontend Dependencies
-npm install --prefix client
+# In the client directory:
+cd ../client
+npm install
+```
 
-# 3. Seed Database with Realistic Data
-node server/seed/seedAll.js
+#### Step C: Seed Demo Database
+```bash
+# In the server directory:
+cd ../server
+npm run seed
+```
 
-# 4. Start the Express Backend Server (Port 5001)
-node server.js
+#### Step D: Run the Applications
+Open two terminal windows:
 
-# 5. Start the Vite Frontend Client (Port 5173)
-npm run dev --prefix client
+**Terminal 1 (Backend API - Port 5001):**
+```bash
+cd server
+npm run dev
+```
+
+**Terminal 2 (Frontend Client - Port 5173):**
+```bash
+cd client
+npm run dev
 ```
 
 Open **`http://localhost:5173`** in your browser.
