@@ -79,6 +79,10 @@ const studentSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    profilePicture: {
+      type: String,
+      default: null,
+    },
     studentType: {
       type: String,
       enum: ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'],

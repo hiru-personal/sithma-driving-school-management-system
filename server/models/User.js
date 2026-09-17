@@ -58,6 +58,14 @@ const userSchema = new mongoose.Schema(
       enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled'],
       default: 'Unverified / Pending Payment',
     },
+    profilePicture: {
+      type: String,
+      default: null,
+    },
+    avatar: {
+      type: String,
+      default: null,
+    },
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],

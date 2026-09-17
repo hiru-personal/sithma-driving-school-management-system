@@ -64,19 +64,7 @@ export default function LoginPage() {
 
   const redirectBasedOnRole = (role, userObj, studentObj) => {
     if (role === 'student') {
-      const isType2 = Boolean(
-        userObj?.studentType === 'Type 2' ||
-        userObj?.studentType === 'Type2_TrialReady' ||
-        userObj?.student_type === 'Type 2' ||
-        studentObj?.studentType === 'Type 2' ||
-        studentObj?.studentType === 'Type2_TrialReady' ||
-        studentObj?.student_type === 'Type 2'
-      );
-      if (isType2) {
-        navigate('/student/lessons');
-      } else {
-        navigate('/student/dashboard');
-      }
+      navigate('/student/dashboard');
     } else if (role === 'admin') {
       navigate('/admin/dashboard');
     } else if (role === 'instructor') {

@@ -44,7 +44,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { SITHMA_OFFICIAL_BANKS } from './PaymentGatewayPage';
 
@@ -148,8 +148,9 @@ export default function StudentDashboard() {
   const [selectedCategoryGroup, setSelectedCategoryGroup] = useState('C');
   const [selectedPkgId, setSelectedPkgId] = useState('pkg_car_full');
 
-  // Trial Date Reschedule Request State
+  // Date Reschedule Request State
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleMilestone, setRescheduleMilestone] = useState('trial');
   const [rescheduleReason, setRescheduleReason] = useState('');
   const [preferredRescheduleDate, setPreferredRescheduleDate] = useState('');
   const [submittingReschedule, setSubmittingReschedule] = useState(false);
@@ -173,11 +174,12 @@ export default function StudentDashboard() {
     setSubmittingReschedule(true);
     try {
       const res = await api.post('/students/trial-date/reschedule', {
+        milestoneType: rescheduleMilestone,
         reason: rescheduleReason,
         preferredDate: preferredRescheduleDate,
       });
       if (res.data.success) {
-        toast.success('Trial date reschedule request submitted successfully!');
+        toast.success(res.data.message || 'Date reschedule request submitted successfully!');
         setRescheduleReason('');
         setPreferredRescheduleDate('');
         setShowRescheduleModal(false);
@@ -206,6 +208,19 @@ export default function StudentDashboard() {
   const [cardProcessing, setCardProcessing] = useState(false);
   const [submittingPkgPayment, setSubmittingPkgPayment] = useState(false);
   const [showPaymentFormOverride, setShowPaymentFormOverride] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === '#package-selection-payment' || location.state?.openPaymentForm) {
+      setShowPaymentFormOverride(true);
+      setTimeout(() => {
+        const el = document.getElementById('package-selection-payment');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+    }
+  }, [location.hash, location.state]);
 
   // Edit Profile Details Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -367,27 +382,7 @@ export default function StudentDashboard() {
     }).catch(() => {});
   }, []);
 
-  // Strict First-Login Landing & Section Access for Type 2: Redirect to Book Lessons once verified
-  useEffect(() => {
-    const isType2Student = Boolean(
-      profile?.studentType === 'Type 2' ||
-      profile?.studentType === 'Type2_TrialReady' ||
-      profile?.studentType === 'type2' ||
-      profile?.student_type === 'Type 2' ||
-      user?.studentType === 'Type 2' ||
-      user?.studentType === 'Type2_TrialReady' ||
-      user?.student_type === 'Type 2'
-    );
-    const isVerified =
-      user?.account_status === 'Verified' ||
-      user?.status === 'active' ||
-      profile?.advancePaymentStatus === 'verified' ||
-      profile?.accountStatus === 'active';
-
-    if (isType2Student && isVerified) {
-      navigate('/student/lessons', { replace: true });
-    }
-  }, [profile, user, navigate]);
+  // Type 2 students stay on Dashboard to select course packages and payment plans (Full, Monthly Installments, or Daily Pay-Per-Lesson) once trial date is assigned
 
   const handleSelectBank = (b) => {
     setSelectedBankId(b.id);
@@ -608,7 +603,9 @@ export default function StudentDashboard() {
     profile?.learnerExamStatus === 'passed' ||
     profile?.dmtDates?.learnerExamPassed
   );
-  const isTrialEligible = Boolean(isType2 || isExamPassed);
+  const currentTrialDate = profile?.trial_date || profile?.trial?.trialDate || profile?.dmtDates?.trialExamDate || null;
+  const hasTrialDate = Boolean(currentTrialDate);
+  const isTrialEligible = Boolean((isType2 && hasTrialDate) || (!isType2 && isExamPassed));
 
   const isCancelled = Boolean(
     profile?.registrationStatus === 'cancelled' ||
@@ -655,8 +652,9 @@ export default function StudentDashboard() {
     (profile?.lessonsUnlocked || 0) <= (profile?.lessonsUsed || 0)
   );
   const showPackagePaymentBanner =
-    (!isPackagePaymentConfirmed || hasUnfinishedInstallments || hasCompletedSingleLesson || showPaymentFormOverride) &&
-    (isType2 || (isType1 && isTrialEligible));
+    showPaymentFormOverride ||
+    ((!isPackagePaymentConfirmed || hasUnfinishedInstallments || hasCompletedSingleLesson) &&
+      ((isType2 && hasTrialDate) || (isType1 && isExamPassed)));
 
 
   const renderEditModal = () => {
@@ -1394,7 +1392,7 @@ export default function StudentDashboard() {
             >
               <Lock className="w-4 h-4 text-amber-400" /> Booking Locked (Payment Pending)
             </button>
-          ) : isType1 && !isTrialEligible ? (
+          ) : isType1 && !isExamPassed ? (
             <button
               onClick={() =>
                 toast.error(
@@ -1406,6 +1404,25 @@ export default function StudentDashboard() {
             >
               <Lock className="w-4 h-4 text-amber-400" /> Lessons Locked (Exam Pending)
             </button>
+          ) : isType2 && !hasTrialDate ? (
+            <button
+              onClick={() =>
+                toast.error(
+                  '🔒 Practical Trial Date Pending: Your branch Data Entry Officer must schedule your official trial date before practical lesson sessions can be booked.'
+                )
+              }
+              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-75 border border-purple-400/30 text-purple-300 cursor-not-allowed"
+              title="Lessons locked until practical trial date is scheduled"
+            >
+              <Lock className="w-4 h-4 text-purple-400" /> Lessons Locked (Trial Date Pending)
+            </button>
+          ) : !isPackagePaymentConfirmed && (profile?.lessonsUnlocked || 0) <= 0 ? (
+            <a
+              href="#package-selection-payment"
+              className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+            >
+              <CreditCard className="w-4 h-4 text-slate-950" /> Select Package & Pay
+            </a>
           ) : (
             <Link
               to="/student/lessons/book"
@@ -1417,8 +1434,43 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Shared Practical Trial Date & Reschedule Banner */}
-      {profile?.trial_date && (
+      {/* TYPE 2: AWAITING PRACTICAL TRIAL DATE SCHEDULING NOTICE */}
+      {isType2 && !hasTrialDate && (
+        <div className="card p-6 bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-slate-950/90 border-2 border-purple-400/40 space-y-4 shadow-[0_10px_35px_rgba(168,85,247,0.15)]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-purple-300 flex-shrink-0">
+                <Calendar className="w-6 h-6 text-purple-400 animate-pulse" />
+              </div>
+              <div>
+                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider mb-1">
+                  Type 2: Trial-Ready Student • Step 1: Trial Date Assignment
+                </span>
+                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  Awaiting Official DMT Practical Trial Date
+                </h3>
+                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                  As a <strong>Type 2 (Trial-Ready)</strong> student holding an existing learner permit, you are <strong>exempt from DMT Medical, Registration, and Written Theory Exam</strong>.
+                  Your branch Data Entry Officer will schedule your official Practical Driving Trial Date. Once scheduled, your course package selection, payment plans (Monthly 3 Installments, Full Course, or Daily Pay-Per-Lesson), and lesson booking up to your trial date will unlock automatically.
+                </p>
+              </div>
+            </div>
+            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-right self-start sm:self-auto min-w-[190px]">
+              <span className="text-[10px] text-slate-400 font-semibold block">DMT Milestones:</span>
+              <span className="text-xs font-black text-emerald-400 flex items-center justify-end gap-1 mt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Exempt / Complete
+              </span>
+              <span className="text-[10px] text-slate-400 font-semibold block mt-2">Trial Date Status:</span>
+              <span className="text-xs font-black text-amber-300">
+                Pending Branch Scheduling
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shared Practical Trial Date & Reschedule Banner (Active for both Type 1 & Type 2) */}
+      {hasTrialDate && (
         <div className="card p-6 border border-purple-400/30 bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
@@ -1426,8 +1478,10 @@ export default function StudentDashboard() {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs uppercase tracking-wider font-bold text-purple-300">Official DMT Practical Trial</span>
-                {Boolean(profile.trial_date && new Date(profile.trial_date).getTime() < Date.now() && new Date().toDateString() !== new Date(profile.trial_date).toDateString()) ? (
+                <span className="text-xs uppercase tracking-wider font-bold text-purple-300">
+                  {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
+                </span>
+                {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
                   <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold">
                     Trial Date Passed (Booking Locked)
                   </span>
@@ -1443,17 +1497,20 @@ export default function StudentDashboard() {
                 )}
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white">
-                Scheduled Trial Date: {safeFormatDate(profile.trial_date, 'EEEE, MMMM dd, yyyy')}
+                Scheduled Trial Date: {safeFormatDate(currentTrialDate, 'EEEE, MMMM dd, yyyy')}
               </h2>
               <p className="text-xs text-slate-300 max-w-xl">
-                {Boolean(profile.trial_date && new Date(profile.trial_date).getTime() < Date.now() && new Date().toDateString() !== new Date(profile.trial_date).toDateString())
+                {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
                   ? 'Your scheduled trial date has passed. Practical lesson booking is locked. Submit a reschedule request to have a Data Entry Officer assign a new trial date and reopen lesson booking.'
                   : 'You can book practical driving lessons up until your scheduled trial date. Need to change your trial date? Submit a reschedule request to your Data Entry Officer.'}
               </p>
             </div>
           </div>
           <button
-            onClick={() => setShowRescheduleModal(true)}
+            onClick={() => {
+              setRescheduleMilestone('trial');
+              setShowRescheduleModal(true);
+            }}
             className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-lg shrink-0"
           >
             <Clock className="w-4 h-4" /> Request Trial Reschedule
@@ -1516,13 +1573,13 @@ export default function StudentDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
               <span className="badge badge-warning text-xs font-bold uppercase tracking-wider mb-1">
-                {isType1
-                  ? 'Theory Exam Passed • Step 2: Course Package Selection & Payment'
-                  : hasUnfinishedInstallments
+                {hasUnfinishedInstallments
                   ? `Installment #${(profile?.installmentsPaidCount || 0) + 1} Due • Unlock 5 More Lessons`
                   : hasCompletedSingleLesson
                   ? 'Single Lesson Completed • Book Another or Upgrade to Full Course'
-                  : 'Course Package Selection & Payment'}
+                  : isType2
+                  ? 'Practical Trial Date Scheduled • Step 2: Course Package Selection & Payment'
+                  : 'Theory Exam Passed • Step 2: Course Package Selection & Payment'}
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                 <CreditCard className="w-6 h-6 text-amber-400" />
@@ -1531,18 +1588,29 @@ export default function StudentDashboard() {
                   : 'Select Course Package & Choose Payment Plan'}
               </h2>
               <p className="text-xs text-slate-300 mt-1">
-                {isType1
-                  ? 'Congratulations on passing your DMT Written Examination! Select your package below to unlock practical driving lessons.'
-                  : hasUnfinishedInstallments
+                {hasUnfinishedInstallments
                   ? `You have unlocked ${profile?.lessonsUnlocked || 5} lessons. Pay your next installment to unlock 5 additional lessons.`
-                  : 'Choose between pay-per-lesson or full packages (pay full upfront or pay in 3 monthly installments).'}
+                  : isType2
+                  ? `Your practical trial is scheduled for ${currentTrialDate ? safeFormatDate(currentTrialDate, 'MMMM dd, yyyy') : 'your scheduled trial session'}. Select your vehicle package below and choose your payment plan (3 Monthly Installments, Full Course, or Daily Pay-Per-Lesson) to unlock lessons up until your trial date.`
+                  : 'Congratulations on passing your DMT Written Examination! Select your package below and choose your payment plan (3 Monthly Installments, Full Course, or Daily Pay-Per-Lesson) to unlock practical driving lessons up until your trial date.'}
               </p>
             </div>
-            {isPackagePaymentPending && (
-              <span className="badge badge-warning px-3 py-1 text-xs font-bold self-start sm:self-auto">
-                ⏳ Payment Slip Pending Verification
-              </span>
-            )}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {isPackagePaymentPending && (
+                <span className="badge badge-warning px-3 py-1 text-xs font-bold">
+                  ⏳ Payment Slip Pending Verification
+                </span>
+              )}
+              {showPaymentFormOverride && isPackagePaymentConfirmed && !hasUnfinishedInstallments && !hasCompletedSingleLesson && (
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentFormOverride(false)}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-xs font-bold transition-colors"
+                >
+                  ✕ Close
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Active Installment Progress Tracker (if currently on installments) */}
@@ -1592,7 +1660,7 @@ export default function StudentDashboard() {
           )}
 
           {/* Pending Payment Notice */}
-          {isPackagePaymentPending ? (
+          {isPackagePaymentPending && !showPaymentFormOverride ? (
             <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-xs text-amber-200 space-y-3">
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
@@ -2391,20 +2459,26 @@ export default function StudentDashboard() {
 
               {/* Need More Practice? Buy Additional Lessons Quick Link */}
               <div className="pt-2 border-t border-white/10">
-                <Link
-                  to="/student/profile"
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/20 text-xs text-cyan-300 font-bold transition-all group"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentFormOverride(true);
+                    setTimeout(() => {
+                      document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 50);
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/20 text-xs text-cyan-300 font-bold transition-all group text-left"
                 >
                   <span className="flex items-center gap-1.5">
                     <PlusCircle className="w-4 h-4 text-cyan-400" /> Need more driving practice?
                   </span>
                   <span className="text-[11px] text-white flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    Buy Extra Lessons <ArrowRight className="w-3.5 h-3.5" />
+                    Buy Additional Lessons <ArrowRight className="w-3.5 h-3.5" />
                   </span>
-                </Link>
+                </button>
               </div>
             </div>
-          ) : (!isPackagePaymentConfirmed && (isType2 || (isType1 && isExamPassed))) ? (
+          ) : (!isPackagePaymentConfirmed && ((isType1 && isExamPassed) || (isType2 && hasTrialDate))) ? (
             <div className="card p-5 bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-slate-950/90 border border-amber-400/30 space-y-3">
               <div className="flex items-center gap-2.5 text-amber-300 font-bold text-sm">
                 <CreditCard className="w-5 h-5 text-amber-400" />
@@ -2413,7 +2487,7 @@ export default function StudentDashboard() {
               <p className="text-xs text-slate-300 leading-relaxed">
                 {isType1
                   ? '🎉 Congratulations on passing your Theory Exam! Please select your vehicle package and choose your payment plan below to unlock practical lessons.'
-                  : 'Your advance payment is verified! Please select your vehicle package and payment plan below to unlock practical lessons.'}
+                  : '🎉 Your official practical trial date is scheduled! Please select your vehicle package and payment plan (Monthly Installments, Full Course, or Daily Pay-Per-Lesson) below to unlock practical lessons.'}
               </p>
               <a
                 href="#package-selection-payment"
@@ -2422,6 +2496,20 @@ export default function StudentDashboard() {
                 <span>Choose Package & Pay Now</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
+            </div>
+          ) : isType2 && !hasTrialDate ? (
+            <div className="card p-5 bg-gradient-to-br from-purple-950/30 via-slate-900/80 to-slate-950/80 border border-purple-500/25 space-y-3">
+              <div className="flex items-center gap-2.5 text-purple-300 font-bold text-sm">
+                <Calendar className="w-5 h-5 text-purple-400" />
+                <span>Stage 1: Trial Date Assignment</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                As a Type 2 student with an existing learner permit, DMT Medical, Registration, and Theory Exam are exempt. Your branch Data Entry Officer will schedule your practical trial date shortly.
+              </p>
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+                <span>Current Status:</span>
+                <span className="text-amber-300 font-bold">Awaiting Trial Date</span>
+              </div>
             </div>
           ) : isType1 && !isExamPassed ? (
             <div className="card p-5 bg-gradient-to-br from-purple-950/30 via-slate-900/80 to-slate-950/80 border border-purple-500/25 space-y-3">
@@ -2497,7 +2585,7 @@ export default function StudentDashboard() {
                 </Link>
               )}
 
-              {isType1 && !isTrialEligible ? (
+              {isType1 && !isExamPassed ? (
                 <div
                   onClick={() =>
                     toast.error(
@@ -2514,6 +2602,23 @@ export default function StudentDashboard() {
                   </div>
                   <span className="badge badge-warning text-[10px]">Exam Required</span>
                 </div>
+              ) : isType2 && !hasTrialDate ? (
+                <div
+                  onClick={() =>
+                    toast.error(
+                      '🔒 Practical Trial Date Pending: Your practical trial date must be scheduled by your branch officer before booking driving lessons.'
+                    )
+                  }
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 opacity-60 border border-white/10 cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Lock className="w-4 h-4 text-purple-400" />
+                    <span className="font-semibold text-slate-400">
+                      Book Driving Lessons (Locked)
+                    </span>
+                  </div>
+                  <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px]">Trial Date Required</span>
+                </div>
               ) : (
                 <Link
                   to="/student/lessons"
@@ -2529,9 +2634,15 @@ export default function StudentDashboard() {
                 </Link>
               )}
 
-              <Link
-                to="/student/profile"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentFormOverride(true);
+                  setTimeout(() => {
+                    document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 50);
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group text-left"
               >
                 <div className="flex items-center gap-2.5">
                   <PlusCircle className="w-4 h-4 text-accent" />
@@ -2539,8 +2650,8 @@ export default function StudentDashboard() {
                     Buy Additional Lessons
                   </span>
                 </div>
-                <span className="text-[11px] text-accent font-bold">Profile Shop</span>
-              </Link>
+                <span className="text-[11px] text-accent font-bold">Choose Package</span>
+              </button>
 
               <Link
                 to="/student/payments"
@@ -2569,7 +2680,7 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-purple-400" />
-                <h3 className="font-bold text-white text-base">Request Practical Trial Date Reschedule</h3>
+                <h3 className="font-bold text-white text-base">Request Date Reschedule</h3>
               </div>
               <button
                 type="button"
@@ -2583,10 +2694,33 @@ export default function StudentDashboard() {
             <form onSubmit={handleSubmitReschedule} className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">
-                  Current Scheduled Trial Date:
+                  Select Milestone to Reschedule:
                 </label>
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 text-white font-bold text-sm">
-                  {safeFormatDate(profile?.trial_date || profile?.trial?.trialDate, 'MMMM dd, yyyy')}
+                <select
+                  value={rescheduleMilestone}
+                  onChange={(e) => setRescheduleMilestone(e.target.value)}
+                  disabled={isType2}
+                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-cyan-300 rounded-xl outline-none focus:border-purple-400 text-xs font-bold disabled:opacity-80"
+                >
+                  {isType1 && <option value="medical">🩺 DMT Medical Exam</option>}
+                  {isType1 && <option value="registration">📄 DMT Registration</option>}
+                  {isType1 && <option value="theory_exam">📖 DMT Written Theory Exam</option>}
+                  <option value="trial">🚗 Practical Driving Trial Exam</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Current Scheduled Date:
+                </label>
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 text-white font-bold text-sm font-mono">
+                  {rescheduleMilestone === 'medical'
+                    ? safeFormatDate(profile?.medical_date || profile?.dmtDates?.medicalExamDate, 'MMMM dd, yyyy')
+                    : rescheduleMilestone === 'registration'
+                    ? safeFormatDate(profile?.registration_date || profile?.dmtDates?.learnerRegistrationDate, 'MMMM dd, yyyy')
+                    : rescheduleMilestone === 'theory_exam'
+                    ? safeFormatDate(profile?.written_exam_date || profile?.dmtDates?.learnerExamDate, 'MMMM dd, yyyy')
+                    : safeFormatDate(profile?.trial_date || profile?.trial?.trialDate, 'MMMM dd, yyyy')}
                 </div>
               </div>
 

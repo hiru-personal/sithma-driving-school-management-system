@@ -180,9 +180,9 @@ export default function BookLessonPage() {
     // Gate 3: Quota / Lesson Count Gate
     if (lessonsRemaining <= 0) {
       if (isMonthlyPlan) {
-        toast.error('Monthly Quota Reached: You have completed all unlocked lessons for this billing month (max 4). Please submit next month payment or buy extra lessons in Profile.');
+        toast.error('Monthly Quota Reached: You have completed all unlocked lessons for this billing month (max 4). Please submit next month payment or buy additional lessons on Dashboard.');
       } else {
-        toast.error('All lessons in your course package have been used. Please buy additional lessons in your Profile to continue booking.');
+        toast.error('All lessons in your course package have been used. Please select a package or buy additional lessons on Dashboard to continue booking.');
       }
       return;
     }
@@ -452,7 +452,7 @@ export default function BookLessonPage() {
             </div>
           </div>
           <Link
-            to={isType2 ? "/student/payments" : "/student/dashboard"}
+            to="/student/dashboard#package-selection-payment"
             className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap"
           >
             {isPackagePaymentPending ? 'Check Payment Status' : 'Select Package & Pay'} <ArrowRight className="w-3.5 h-3.5" />
@@ -472,8 +472,12 @@ export default function BookLessonPage() {
               </p>
             </div>
           </div>
-          <Link to="/student/profile" className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap">
-            Buy Extra Lessons in Profile <ArrowRight className="w-3.5 h-3.5" />
+          <Link
+            to={{ pathname: '/student/dashboard', hash: '#package-selection-payment' }}
+            state={{ openPaymentForm: true }}
+            className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5"
+          >
+            Buy Additional Lessons <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       )}
@@ -486,12 +490,16 @@ export default function BookLessonPage() {
             <div>
               <strong className="text-white text-sm">All Course Package Lessons Completed!</strong>
               <p className="mt-0.5">
-                You have used all {unlockedCount} lessons in your package. Need extra on-road practice before your DMT practical trial? You can buy additional lessons anytime in your profile.
+                You have used all {unlockedCount} lessons in your package. Need extra on-road practice before your DMT practical trial? You can select additional lessons or packages anytime on your dashboard.
               </p>
             </div>
           </div>
-          <Link to="/student/profile" className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap">
-            Buy Additional Lessons in Profile <ArrowRight className="w-3.5 h-3.5" />
+          <Link
+            to={{ pathname: '/student/dashboard', hash: '#package-selection-payment' }}
+            state={{ openPaymentForm: true }}
+            className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-md"
+          >
+            Buy Additional Lessons <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       )}

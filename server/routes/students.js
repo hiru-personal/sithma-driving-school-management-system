@@ -19,9 +19,11 @@ const {
   getAllRescheduleRequests,
   reviewRescheduleRequest,
   uploadMilestoneProof,
+  uploadStudentProfilePhoto,
 } = require('../controllers/studentController');
 const { authenticate, authorize, checkStudentOwnership } = require('../middleware/auth');
 const dmtProofUpload = require('../middleware/dmtProofUpload');
+const avatarUpload = require('../middleware/avatarUpload');
 
 // Protected Routes
 router.get('/reports/summary', authenticate, authorize('staff', 'admin'), getReportsSummary);
@@ -37,6 +39,7 @@ router.patch('/reschedule-requests/:id/review', authenticate, authorize('staff',
 // Student profile & DMT updates: Enforce Student ownership (Student can only access/modify their own ID)
 router.get('/:id', authenticate, checkStudentOwnership, getStudentById);
 router.patch('/:id/profile', authenticate, checkStudentOwnership, updateStudentProfile);
+router.post('/:id/profile-photo', authenticate, checkStudentOwnership, avatarUpload.single('profilePhoto'), uploadStudentProfilePhoto);
 router.patch('/:id/dmt-dates', authenticate, checkStudentOwnership, updateDmtDates);
 router.post('/:id/exam-attempt', authenticate, checkStudentOwnership, recordExamAttempt);
 router.post('/:id/re-register', authenticate, checkStudentOwnership, reRegisterStudent);

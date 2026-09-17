@@ -44,7 +44,25 @@ export default function Navbar() {
   );
   const isType1 = !isType2;
 
+  const getAvatarUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:') || path.startsWith('data:')) {
+      return path;
+    }
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (apiUrl && apiUrl.startsWith('http')) {
+      try {
+        const origin = new URL(apiUrl).origin;
+        return `${origin}${path.startsWith('/') ? '' : '/'}${path}`;
+      } catch {
+        return path;
+      }
+    }
+    return path;
+  };
+
   const [dbInfo, setDbInfo] = useState(null);
+  const [pendingRescheduleCount, setPendingRescheduleCount] = useState(0);
 
   // Fetch active database status
   useEffect(() => {
@@ -56,6 +74,19 @@ export default function Navbar() {
       })
       .catch(() => {});
   }, [location.pathname]);
+
+  // Fetch pending reschedule requests for Staff / DEO
+  useEffect(() => {
+    if (isStaff) {
+      api.get('/students/reschedule-requests/all?status=Pending')
+        .then((res) => {
+          if (res.data?.success && Array.isArray(res.data.requests)) {
+            setPendingRescheduleCount(res.data.requests.length);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isStaff, location.pathname]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -79,7 +110,7 @@ export default function Navbar() {
 
         <div className="flex items-center justify-between">
           {/* Logo & School Branding */}
-          <Link to={user && isStudent && isType2 ? "/student/lessons" : "/"} className="flex items-center gap-3.5 group">
+          <Link to={user && isStudent ? "/student/dashboard" : "/"} className="flex items-center gap-3.5 group">
             <div className="relative w-11 h-11 rounded-xl sm:rounded-full bg-slate-950/80 p-1.5 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/30 group-hover:scale-105 group-hover:border-cyan-400 transition-all duration-300">
               <img
                 src="/images/sithma-emblem.png"
@@ -109,85 +140,77 @@ export default function Navbar() {
                     </span>
                   )}
 
-                  {/* Type 2 (Trial-Only) Students: ONLY Book Lessons */}
-                  {isType2 ? (
-                    <Link
-                      to="/student/lessons"
-                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                        isActive('/student/lessons') || isActive('/student/lessons/book')
-                          ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                          : 'text-slate-300 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <Calendar className="w-4 h-4" /> Book Lessons
-                    </Link>
-                  ) : (
-                    /* Type 1 Full Course Learner Navigation */
+                  {/* Dashboard - Accessible to all students */}
+                  <Link
+                    to="/student/dashboard"
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                      isActive('/student/dashboard')
+                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <LayoutDashboard className="w-4 h-4" /> Dashboard
+                  </Link>
+
+                  {/* Type 1 Only: DMT Milestones & Written Exam Practice */}
+                  {!isType2 && isPremium && (
                     <>
                       <Link
-                        to="/student/dashboard"
+                        to="/student/milestones"
                         className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                          isActive('/student/dashboard')
+                          isActive('/student/milestones')
                             ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                             : 'text-slate-300 hover:text-white hover:bg-white/10'
                         }`}
                       >
-                        <LayoutDashboard className="w-4 h-4" /> Dashboard
+                        <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
                       </Link>
-                      {isPremium && (
-                        <>
-                          <Link
-                            to="/student/milestones"
-                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                              isActive('/student/milestones')
-                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                                : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
-                          </Link>
-                          <Link
-                            to="/student/quiz"
-                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                              isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
-                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                                : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <BookOpen className="w-4 h-4" /> Exam Practice
-                          </Link>
-                          <Link
-                            to="/student/lessons"
-                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                              isActive('/student/lessons') || isActive('/student/lessons/book')
-                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                                : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <Calendar className="w-4 h-4" /> Book Lessons
-                          </Link>
-                          <Link
-                            to="/student/payments"
-                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                              isActive('/student/payments')
-                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                                : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <CreditCard className="w-4 h-4" /> Payments
-                          </Link>
-                          <Link
-                            to="/student/profile"
-                            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                              isActive('/student/profile')
-                                ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                                : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            <User className="w-4 h-4" /> Profile ID
-                          </Link>
-                        </>
-                      )}
+                      <Link
+                        to="/student/quiz"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <BookOpen className="w-4 h-4" /> Exam Practice
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Book Lessons, Payments, Profile ID - Shared for both Type 1 & Type 2 */}
+                  {isPremium && (
+                    <>
+                      <Link
+                        to="/student/lessons"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/lessons') || isActive('/student/lessons/book')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <Calendar className="w-4 h-4" /> Book Lessons
+                      </Link>
+                      <Link
+                        to="/student/payments"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/payments')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4" /> Payments
+                      </Link>
+                      <Link
+                        to="/student/profile"
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                          isActive('/student/profile')
+                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <User className="w-4 h-4" /> Profile ID
+                      </Link>
                     </>
                   )}
                 </>
@@ -229,6 +252,11 @@ export default function Navbar() {
                     }`}
                   >
                     <Users className="w-4 h-4" /> Students & DMT
+                    {pendingRescheduleCount > 0 && (
+                      <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
+                        {pendingRescheduleCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to="/staff/slots"
@@ -332,9 +360,17 @@ export default function Navbar() {
 
                 {/* Frosted User Pill */}
                 <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/15 backdrop-blur-md shadow-sm">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.4)]">
-                    {user.name.charAt(0)}
-                  </div>
+                  {user?.profilePicture || student?.profilePicture ? (
+                    <img
+                      src={getAvatarUrl(user?.profilePicture || student?.profilePicture)}
+                      alt={user.name}
+                      className="w-7 h-7 rounded-full object-cover border border-cyan-400/60 shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.4)]">
+                      {user.name.charAt(0)}
+                    </div>
+                  )}
                   <div className="text-left leading-tight">
                     <p className="text-sm font-bold text-white truncate max-w-[150px]">{user.name}</p>
                     <p className="text-xs text-cyan-300 uppercase tracking-wider font-semibold">
@@ -403,55 +439,49 @@ export default function Navbar() {
 
               {isStudent && (
                 <div className="space-y-1 text-xs">
-                  {isType2 ? (
-                    <Link
-                      to="/student/lessons"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium flex items-center gap-2"
-                    >
-                      <Calendar className="w-4 h-4 text-cyan-400" /> Book Lessons
-                    </Link>
-                  ) : (
+                  <Link
+                    to="/student/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                  >
+                    Dashboard
+                  </Link>
+                  {/* Type 1 Exclusive: Milestones & Quiz */}
+                  {!isType2 && isPremium && (
                     <>
                       <Link
-                        to="/student/dashboard"
+                        to="/student/milestones"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium flex items-center gap-2"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
+                      </Link>
+                      <Link
+                        to="/student/quiz"
                         onClick={() => setMobileMenuOpen(false)}
                         className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
                       >
-                        Dashboard
+                        DMT Exam Practice
                       </Link>
-                      {isPremium && (
-                        <>
-                          <Link
-                            to="/student/milestones"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block px-3 py-2 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium flex items-center gap-2"
-                          >
-                            <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
-                          </Link>
-                          <Link
-                            to="/student/quiz"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                          >
-                            DMT Exam Practice
-                          </Link>
-                          <Link
-                            to="/student/lessons"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                          >
-                            Book Lessons
-                          </Link>
-                          <Link
-                            to="/student/payments"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                          >
-                            Payments
-                          </Link>
-                        </>
-                      )}
+                    </>
+                  )}
+                  {/* Shared for all students: Lessons & Payments */}
+                  {isPremium && (
+                    <>
+                      <Link
+                        to="/student/lessons"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                      >
+                        Book Lessons
+                      </Link>
+                      <Link
+                        to="/student/payments"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                      >
+                        Payments
+                      </Link>
                     </>
                   )}
                 </div>
@@ -472,9 +502,14 @@ export default function Navbar() {
                   <Link
                     to="/staff/students"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
                   >
-                    Students & DMT Milestones
+                    <span>Students & DMT Milestones</span>
+                    {pendingRescheduleCount > 0 && (
+                      <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
+                        {pendingRescheduleCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to="/staff/slots"

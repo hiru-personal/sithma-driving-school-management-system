@@ -541,6 +541,54 @@ exports.updateDmtDates = async (req, res) => {
     student.lastActivityDate = new Date();
     await student.save();
 
+    // Auto-resolve any matching pending RescheduleRequest documents for this student
+    try {
+      if (medDateInput !== undefined && effectiveMedDate) {
+        await RescheduleRequest.updateMany(
+          { student_id: student._id, milestone_type: 'medical', status: 'Pending' },
+          {
+            $set: {
+              status: 'Approved',
+              new_date: effectiveMedDate,
+              reviewed_by: req.user._id,
+              reviewed_at: new Date(),
+              review_notes: 'Auto-approved and updated via DMT Milestone Management',
+            },
+          }
+        );
+      }
+      if (regDateInput !== undefined && effectiveRegDate) {
+        await RescheduleRequest.updateMany(
+          { student_id: student._id, milestone_type: 'registration', status: 'Pending' },
+          {
+            $set: {
+              status: 'Approved',
+              new_date: effectiveRegDate,
+              reviewed_by: req.user._id,
+              reviewed_at: new Date(),
+              review_notes: 'Auto-approved and updated via DMT Milestone Management',
+            },
+          }
+        );
+      }
+      if (examDateInput !== undefined && effectiveExamDate) {
+        await RescheduleRequest.updateMany(
+          { student_id: student._id, milestone_type: 'theory_exam', status: 'Pending' },
+          {
+            $set: {
+              status: 'Approved',
+              new_date: effectiveExamDate,
+              reviewed_by: req.user._id,
+              reviewed_at: new Date(),
+              review_notes: 'Auto-approved and updated via DMT Milestone Management',
+            },
+          }
+        );
+      }
+    } catch (autoResolveErr) {
+      console.warn('Could not auto-resolve pending reschedule requests:', autoResolveErr.message);
+    }
+
     const populatedStudent = await Student.findById(student._id)
       .populate('userId', 'name email phone role branch createdAt')
       .populate('package.packageId');
@@ -1607,7 +1655,7 @@ exports.setTrialDate = async (req, res) => {
       title: '📅 Practical Trial Date Scheduled',
       message: `Your practical trial exam has been scheduled for ${dateFormatted} by ${req.user.name || 'Branch Staff'}. You may book practical lessons up until this date.`,
       type: 'trial',
-      link: '/student/lessons',
+      link: '/student/dashboard',
     });
 
     const populatedStudent = await Student.findById(student._id)
@@ -1710,18 +1758,22 @@ exports.submitRescheduleRequest = async (req, res) => {
       status: 'Pending',
     });
 
-    // Notify branch staff
+    // Notify branch staff and Data Entry Officers
     try {
       const staffMembers = await User.find({
         role: { $in: ['staff', 'admin'] },
-        branch: student.branch,
+        $or: [
+          { branch: student.branch },
+          { branch: 'All' },
+          { branch: { $exists: false } },
+        ],
       });
       if (staffMembers.length > 0) {
         const notifDocs = staffMembers.map((sm) => ({
           recipientId: sm._id,
           recipientRole: sm.role,
           title: `📅 New ${milestoneLabel} Date Reschedule Request`,
-          message: `${req.user.name || 'A student'} submitted a date reschedule request for ${milestoneLabel} (${student.branch} branch).`,
+          message: `${req.user.name || 'A student'} (${student.branch} branch) requested another date for ${milestoneLabel}. Reason: "${(reason || 'None provided').substring(0, 60)}"`,
           type: 'trial',
           link: '/staff/students',
         }));
@@ -1782,7 +1834,7 @@ exports.getMyRescheduleRequests = async (req, res) => {
 // @access  Staff, Admin
 exports.getAllRescheduleRequests = async (req, res) => {
   try {
-    const { status, milestoneType } = req.query;
+    const { status, milestoneType, branch } = req.query;
     const filter = {};
     if (status && status !== 'All') {
       filter.status = status;
@@ -1791,11 +1843,26 @@ exports.getAllRescheduleRequests = async (req, res) => {
       filter.milestone_type = milestoneType;
     }
 
+    // Branch filter: if provided or if staff has a specific branch
+    const effectiveBranch =
+      branch && branch !== 'All'
+        ? branch
+        : req.user.role === 'staff' && req.user.branch && req.user.branch !== 'All'
+        ? req.user.branch
+        : null;
+
+    if (effectiveBranch) {
+      const branchStudents = await Student.find({ branch: effectiveBranch }).select('_id');
+      const branchStudentIds = branchStudents.map((s) => s._id);
+      filter.student_id = { $in: branchStudentIds };
+    }
+
     const requests = await RescheduleRequest.find(filter)
       .sort({ createdAt: -1 })
       .populate({
         path: 'student_id',
-        populate: { path: 'userId', select: 'name email phone branch student_type' },
+        select: 'nic studentType student_type branch accountStatus advancePaymentStatus dmtDates medical_date registration_date written_exam_date trial_date',
+        populate: { path: 'userId', select: 'name email phone branch student_type nic' },
       })
       .populate('requested_by', 'name email phone branch')
       .populate('reviewed_by', 'name role');
@@ -1887,13 +1954,20 @@ exports.reviewRescheduleRequest = async (req, res) => {
         if (milestoneType === 'medical') {
           student.medical_date = parsedNewDate;
           student.dmtDates.medicalExamDate = parsedNewDate;
+          if (parsedNewDate > new Date()) {
+            student.dmtDates.medicalExamPassed = null;
+            student.dmtDates.medicalExamStatus = null;
+            student.dmtDates.medicalDone = false;
+          }
         } else if (milestoneType === 'registration') {
           student.registration_date = parsedNewDate;
           student.dmtDates.learnerRegistrationDate = parsedNewDate;
         } else if (milestoneType === 'theory_exam') {
           student.written_exam_date = parsedNewDate;
           student.dmtDates.learnerExamDate = parsedNewDate;
-          if (student.learnerExamStatus === 'failed') {
+          if (parsedNewDate > new Date()) {
+            student.dmtDates.learnerExamPassed = false;
+            student.dmtDates.learnerExamStatus = 'scheduled';
             student.learnerExamStatus = 'scheduled';
           }
         } else {
@@ -2113,3 +2187,54 @@ exports.uploadMilestoneProof = async (req, res) => {
     });
   }
 };
+
+// @desc    Upload / change student profile photo
+// @route   POST /api/students/:id/profile-photo
+// @access  Student
+exports.uploadStudentProfilePhoto = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    // Check ownership
+    if (req.user.role === 'student' && student.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select a photo file to upload' });
+    }
+
+    const photoUrl = `/uploads/avatars/${req.file.filename}`;
+    student.profilePicture = photoUrl;
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    await User.findByIdAndUpdate(student.userId, {
+      profilePicture: photoUrl,
+      avatar: photoUrl,
+    });
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch createdAt profilePicture avatar')
+      .populate('package.packageId')
+      .populate('trial_date_set_by', 'name role');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile photo updated successfully!',
+      photoUrl,
+      student: sanitizeStudentForType(populatedStudent),
+    });
+  } catch (error) {
+    console.error('Error uploading profile photo:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to upload profile photo',
+      error: error.message,
+    });
+  }
+};
+

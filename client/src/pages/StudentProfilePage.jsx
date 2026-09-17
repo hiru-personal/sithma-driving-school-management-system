@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import {
@@ -9,81 +9,172 @@ import {
   Building2,
   Phone,
   Mail,
-  Award,
   Printer,
   Sparkles,
   QrCode,
   CheckCircle2,
   Clock,
   Car,
-  Key,
   PlusCircle,
-  MinusCircle,
   ArrowRight,
-  ShieldAlert,
-  DollarSign,
   AlertCircle,
+  Camera,
+  Upload,
+  Edit3,
+  Check,
+  X,
+  FileText,
+  Stethoscope,
+  BookOpen,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy') => {
+  if (!dateVal) return 'None';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'None';
+    return format(d, formatStr);
+  } catch {
+    return 'None';
+  }
+};
+
 export default function StudentProfilePage() {
   const { user, student, updateStudentData } = useAuth();
+  const fileInputRef = useRef(null);
+
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState(user?.phone || '');
+  const [updatingPhone, setUpdatingPhone] = useState(false);
 
-  // Buy Additional Lessons State
-  const [selectedExtraCount, setSelectedExtraCount] = useState(2);
-  const [extraPaymentMethod, setExtraPaymentMethod] = useState('online'); // 'online' | 'slip'
-  const [extraBankName, setExtraBankName] = useState('Bank of Ceylon');
-  const [extraSlipRef, setExtraSlipRef] = useState('');
-  const [buyingLoading, setBuyingLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [myRescheduleRequests, setMyRescheduleRequests] = useState([]);
+
+  const isType2 = Boolean(
+    student?.studentType === 'Type 2' ||
+    student?.studentType === 'Type2_TrialReady' ||
+    student?.student_type === 'Type 2' ||
+    user?.studentType === 'Type 2' ||
+    user?.student_type === 'Type 2'
+  );
+
+  const fetchRescheduleRequests = async () => {
+    try {
+      const res = await api.get('/students/trial-date/reschedule');
+      if (res.data.success) {
+        setMyRescheduleRequests(res.data.requests || []);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchRescheduleRequests();
+  }, []);
 
   const handlePrintCard = () => {
     window.print();
   };
 
-  const handlePhoneUpdate = (e) => {
+  const handlePhoneUpdate = async (e) => {
     e.preventDefault();
-    toast.success('Contact telephone updated');
-    setIsEditingPhone(false);
+    if (!student?._id) return;
+    setUpdatingPhone(true);
+    try {
+      const res = await api.patch(`/students/${student._id}/profile`, {
+        phone: newPhone.trim(),
+      });
+      if (res.data.success) {
+        toast.success('Contact telephone updated successfully');
+        if (res.data.student) {
+          updateStudentData(res.data.student, res.data.student.userId);
+        }
+        setIsEditingPhone(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update phone number');
+    } finally {
+      setUpdatingPhone(false);
+    }
   };
 
-  const calculateExtraTotal = (count) => {
-    if (count === 5) return 11500; // Special 5-pack discount
-    return count * 2500;
-  };
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleBuyExtraLessons = async (e) => {
-    e.preventDefault();
-    if (extraPaymentMethod === 'slip' && !extraSlipRef.trim()) {
-      toast.error('Please enter the bank deposit slip reference number');
+    // Validate size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Profile photo size must be less than 5MB');
       return;
     }
 
-    setBuyingLoading(true);
+    setPhotoPreview(URL.createObjectURL(file));
+    uploadProfilePhoto(file);
+  };
+
+  const uploadProfilePhoto = async (file) => {
+    if (!student?._id) {
+      toast.error('Student profile not found');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('profilePhoto', file);
+
     try {
-      const res = await api.post('/payments/buy-additional-lessons', {
-        lessonCount: selectedExtraCount,
-        paymentMethod: extraPaymentMethod,
-        bankName: extraBankName,
-        transactionReference: extraSlipRef.trim(),
+      const res = await api.post(`/students/${student._id}/profile-photo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (res.data.success) {
-        toast.success(res.data.message);
+        toast.success('🎉 Profile photo updated successfully!');
         if (res.data.student) {
-          updateStudentData(res.data.student);
+          updateStudentData(res.data.student, res.data.student.userId);
         }
-        setExtraSlipRef('');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to purchase additional lessons');
+      toast.error(err.response?.data?.message || 'Failed to upload profile photo');
+      setPhotoPreview(null);
     } finally {
-      setBuyingLoading(false);
+      setUploadingPhoto(false);
     }
   };
+
+  const getAvatarUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:') || path.startsWith('data:')) {
+      return path;
+    }
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (apiUrl && apiUrl.startsWith('http')) {
+      try {
+        const origin = new URL(apiUrl).origin;
+        return `${origin}${path.startsWith('/') ? '' : '/'}${path}`;
+      } catch {
+        return path;
+      }
+    }
+    return path;
+  };
+
+  const currentPhoto = photoPreview || getAvatarUrl(student?.profilePicture || user?.profilePicture || user?.avatar) || null;
+
+  // Lesson metrics
+  const totalLessons = student?.package?.lessonsTotal || 15;
+  const unlockedCount =
+    student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
+      ? student.lessonsUnlocked
+      : totalLessons;
+  const usedCount = student?.lessonsUsed || student?.package?.lessonsUsed || 0;
+  const lessonsRemaining = Math.max(0, unlockedCount - usedCount);
+
+  // Active trial date
+  const officialTrialDate = student?.trial_date || student?.trial?.trialDate || null;
+  const pendingReschedule = myRescheduleRequests.find((r) => r.status === 'Pending');
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-5xl mx-auto w-full print:p-0 print:bg-white print:text-black">
@@ -91,13 +182,13 @@ export default function StudentProfilePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Learner Identity & Verification
+            <Sparkles className="w-3.5 h-3.5" /> Learner Identity & DMT Milestones
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
             <User className="w-7 h-7 text-cyan-400" /> Student Profile & Digital ID
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Official learner credentials, enrolled branch attribution, and DMT milestones.
+            Official learner credentials, enrolled branch attribution, scheduled milestone dates, and course balance.
           </p>
         </div>
 
@@ -129,11 +220,61 @@ export default function StudentProfilePage() {
             <span className="badge badge-info text-[9px]">{student?.branch || user?.branch}</span>
           </div>
 
-          {/* User Photo Placeholder & Details */}
+          {/* User Photo Upload & Details */}
           <div className="text-center space-y-3">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-2xl mx-auto flex items-center justify-center shadow-lg border-2 border-white/30">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'S'}
+            <div className="relative w-24 h-24 mx-auto group">
+              {currentPhoto ? (
+                <img
+                  src={currentPhoto}
+                  alt={user?.name || 'Student Photo'}
+                  className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400/60 shadow-xl"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-black text-3xl flex items-center justify-center shadow-lg border-2 border-white/30">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'S'}
+                </div>
+              )}
+
+              {/* Upload / Change Photo Overlay */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-[10px] font-bold cursor-pointer print:hidden"
+                title="Click to change profile photo"
+              >
+                {uploadingPhoto ? (
+                  <Clock className="w-5 h-5 text-cyan-400 animate-spin" />
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5 text-cyan-400" />
+                    <span>Change Photo</span>
+                  </>
+                )}
+              </button>
+
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
             </div>
+
+            <div className="print:hidden">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1 mx-auto"
+              >
+                <Upload className="w-3 h-3" />
+                {uploadingPhoto ? 'Uploading...' : currentPhoto ? 'Update Photo' : 'Upload Profile Photo'}
+              </button>
+            </div>
+
             <div>
               <h2 className="text-base font-bold text-white">{user?.name}</h2>
               <p className="text-xs text-slate-400 font-mono">
@@ -141,28 +282,32 @@ export default function StudentProfilePage() {
               </p>
               <div className="inline-block mt-1">
                 <span className="badge badge-warning text-[9px]">
-                  {student?.studentType === 'Type1_NewLearner' ? 'Type 1: New Learner' : 'Type 2: Trial-Ready'}
+                  {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Quick Info Matrix */}
-          <div className="p-3 bg-white/5 rounded-2xl border border-white/10 space-y-1.5 text-xs">
+          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-2 text-xs">
             <div className="flex justify-between text-slate-300">
-              <span className="text-slate-400">Package:</span>
-              <span className="font-bold text-white">{student?.package?.type?.replace('_', ' ') || 'Car Full'}</span>
+              <span className="text-slate-400">NIC Number:</span>
+              <span className="font-mono font-bold text-white">{student?.nic || user?.nic || 'Not Set'}</span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span className="text-slate-400">Enrolled Package:</span>
+              <span className="font-bold text-white">{student?.package?.type?.replace(/_/g, ' ') || 'Car Package'}</span>
             </div>
             <div className="flex justify-between text-slate-300">
               <span className="text-slate-400">Lessons Balance:</span>
               <span className="font-bold text-accent">
-                {(student?.package?.lessonsTotal || 15) - (student?.package?.lessonsUsed || 0)} Remaining
+                {lessonsRemaining} Remaining ({usedCount}/{unlockedCount} Used)
               </span>
             </div>
             <div className="flex justify-between text-slate-300">
-              <span className="text-slate-400">Trial Status:</span>
-              <span className="font-bold text-emerald-400">
-                {student?.trial?.licenseObtained ? 'Licensed' : 'In Training'}
+              <span className="text-slate-400">Practical Trial:</span>
+              <span className="font-bold text-purple-300">
+                {officialTrialDate ? safeFormatDate(officialTrialDate, 'MMM dd, yyyy') : 'Pending Scheduling'}
               </span>
             </div>
           </div>
@@ -176,9 +321,9 @@ export default function StudentProfilePage() {
           </div>
         </div>
 
-        {/* Right 2 Cols: Account & Milestones Summary */}
+        {/* Right 2 Cols: Details, Course Package & Date Matrix */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Account Details Card */}
+          {/* Account & Contact Details Card */}
           <div className="card p-6 space-y-4">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <User className="w-4 h-4 text-cyan-400" /> Personal & Contact Information
@@ -189,14 +334,55 @@ export default function StudentProfilePage() {
                 <span className="text-slate-400 flex items-center gap-1.5 font-semibold">
                   <Mail className="w-3.5 h-3.5 text-cyan-300" /> Email Address:
                 </span>
-                <p className="font-bold text-white">{user?.email}</p>
+                <p className="font-bold text-white truncate">{user?.email}</p>
               </div>
 
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-semibold">
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" /> Contact Phone:
-                </span>
-                <p className="font-bold text-white">{user?.phone}</p>
+              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 flex items-center gap-1.5 font-semibold">
+                    <Phone className="w-3.5 h-3.5 text-emerald-400" /> Contact Phone:
+                  </span>
+                  {!isEditingPhone && (
+                    <button
+                      onClick={() => setIsEditingPhone(true)}
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-bold print:hidden"
+                    >
+                      <Edit3 className="w-3 h-3" /> Edit
+                    </button>
+                  )}
+                </div>
+                {isEditingPhone ? (
+                  <form onSubmit={handlePhoneUpdate} className="flex items-center gap-2 mt-1">
+                    <input
+                      type="text"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      className="px-2 py-1 bg-slate-950 border border-cyan-400 text-white rounded-lg text-xs outline-none w-full font-mono"
+                      placeholder="e.g. 0771234567"
+                    />
+                    <button
+                      type="submit"
+                      disabled={updatingPhone}
+                      className="p-1 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                      title="Save"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingPhone(false);
+                        setNewPhone(user?.phone || '');
+                      }}
+                      className="p-1 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+                ) : (
+                  <p className="font-bold text-white font-mono">{user?.phone || 'Not Provided'}</p>
+                )}
               </div>
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1">
@@ -208,279 +394,296 @@ export default function StudentProfilePage() {
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-1">
                 <span className="text-slate-400 flex items-center gap-1.5 font-semibold">
-                  <Calendar className="w-3.5 h-3.5 text-purple-400" /> Registration Date:
+                  <Calendar className="w-3.5 h-3.5 text-purple-400" /> Enrollment Date:
                 </span>
                 <p className="font-bold text-white">
-                  {user?.createdAt ? format(new Date(user.createdAt), 'MMMM dd, yyyy') : 'Aug 22, 2026'}
+                  {safeFormatDate(student?.createdAt || user?.createdAt, 'MMMM dd, yyyy')}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* BUY ADDITIONAL DRIVING LESSONS MODULE */}
-          <div className="card p-6 space-y-6 border-2 border-cyan-400/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-purple-950/40 shadow-[0_8px_32px_0_rgba(6,182,212,0.15)] relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-
+          {/* CURRENT ENROLLED COURSE PACKAGE & BALANCE CARD (REPLACES OLD PROFILE EXTRA PACKAGES) */}
+          <div className="card p-6 space-y-5 border border-amber-400/30 bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-purple-900/20 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
               <div>
-                <span className="badge badge-accent text-[10px] font-bold uppercase tracking-wider mb-1">
-                  Extra Driving Practice
+                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider mb-1">
+                  Enrolled Training Program
                 </span>
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <PlusCircle className="w-5 h-5 text-accent" /> Buy Additional Practical Lessons
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Car className="w-5 h-5 text-amber-400" />
+                  {student?.package?.type?.replace(/_/g, ' ') || 'Course Training Package'}
                 </h3>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  Package lessons not enough? Purchase additional 1-on-1 practical driving sessions directly through your profile.
+                  Plan: <strong className="text-amber-300 capitalize">{student?.paymentPlan === 'installments' ? '3 Monthly Installments' : student?.paymentPlan === 'single' ? 'Daily Pay-Per-Lesson' : 'Full Upfront Course'}</strong>
+                  {student?.package?.priceTotal ? ` • Total Fee: Rs. ${Number(student.package.priceTotal).toLocaleString()}` : ''}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 block font-semibold">Current Available:</span>
-                <span className="text-lg font-black text-cyan-300">
-                  {Math.max(
-                    0,
-                    (student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
-                      ? student.lessonsUnlocked
-                      : (student?.package?.lessonsTotal || 15) + (student?.package?.additionalLessonsRequested || 0)) -
-                      (student?.lessonsUsed || student?.package?.lessonsUsed || 0)
-                  )}{' '}
-                  Lessons
+                <span className="text-xs text-slate-400 block font-semibold">Ready to Book:</span>
+                <span className="text-xl font-black text-emerald-400">
+                  {lessonsRemaining} Lessons Available
                 </span>
               </div>
             </div>
 
-            {/* Lesson Balance Overview Grid */}
+            {/* Lesson Balance Numbers */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
               <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
-                <span className="text-slate-400 text-[10px] block">Base Package</span>
-                <span className="font-bold text-white text-sm">{student?.package?.lessonsTotal || 15}</span>
+                <span className="text-slate-400 text-[10px] block font-semibold">Course Quota</span>
+                <span className="font-black text-white text-base">{totalLessons}</span>
               </div>
               <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-400/20 text-center">
-                <span className="text-cyan-300 text-[10px] block">Extra Added</span>
-                <span className="font-bold text-cyan-300 text-sm">+{student?.package?.additionalLessonsRequested || 0}</span>
+                <span className="text-cyan-300 text-[10px] block font-semibold">Unlocked</span>
+                <span className="font-black text-cyan-300 text-base">{unlockedCount}</span>
               </div>
               <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
-                <span className="text-slate-400 text-[10px] block">Completed</span>
-                <span className="font-bold text-slate-300 text-sm">{student?.lessonsUsed || student?.package?.lessonsUsed || 0}</span>
+                <span className="text-slate-400 text-[10px] block font-semibold">Completed</span>
+                <span className="font-black text-slate-300 text-base">{usedCount}</span>
               </div>
               <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-400/20 text-center">
-                <span className="text-emerald-300 text-[10px] block">Ready to Book</span>
-                <span className="font-bold text-emerald-300 text-sm">
-                  {Math.max(
-                    0,
-                    (student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
-                      ? student.lessonsUnlocked
-                      : (student?.package?.lessonsTotal || 15) + (student?.package?.additionalLessonsRequested || 0)) -
-                      (student?.lessonsUsed || student?.package?.lessonsUsed || 0)
-                  )}
-                </span>
+                <span className="text-emerald-300 text-[10px] block font-semibold">Remaining</span>
+                <span className="font-black text-emerald-300 text-base">{lessonsRemaining}</span>
               </div>
             </div>
 
-            <form onSubmit={handleBuyExtraLessons} className="space-y-5">
-              {/* Select Lesson Count */}
-              <div>
-                <label className="block text-xs font-bold text-white mb-2">
-                  1. Choose Lesson Pack:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {[
-                    { count: 1, price: 2500, label: '1 Lesson' },
-                    { count: 2, price: 5000, label: '2 Lessons' },
-                    { count: 3, price: 7500, label: '3 Lessons' },
-                    { count: 5, price: 11500, label: '5 Lessons', badge: 'Save Rs. 1,000' },
-                  ].map((pkg) => (
-                    <button
-                      type="button"
-                      key={pkg.count}
-                      onClick={() => setSelectedExtraCount(pkg.count)}
-                      className={`p-3 rounded-2xl border text-center transition-all flex flex-col justify-between ${
-                        selectedExtraCount === pkg.count
-                          ? 'border-cyan-400 bg-cyan-500/15 ring-1 ring-cyan-400 shadow-md'
-                          : 'border-white/10 bg-white/5 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="font-bold text-xs text-white">{pkg.label}</span>
-                        {selectedExtraCount === pkg.count && (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                        )}
-                      </div>
-                      <div className="text-sm font-black text-accent">
-                        Rs. {pkg.price.toLocaleString()}
-                      </div>
-                      {pkg.badge ? (
-                        <span className="text-[9px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-400/20 inline-block">
-                          {pkg.badge}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 mt-1">Rs. 2,500 / hr</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Payment Method Selector */}
-              <div>
-                <label className="block text-xs font-bold text-white mb-2">
-                  2. Choose Payment Method:
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
-                    onClick={() => setExtraPaymentMethod('online')}
-                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                      extraPaymentMethod === 'online'
-                        ? 'border-cyan-400 bg-cyan-500/15 ring-1 ring-cyan-400 text-cyan-200'
-                        : 'border-white/10 bg-white/5 text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                        <CreditCard className="w-4 h-4 text-cyan-400" /> Instant Online Card Payment
-                      </span>
-                      {extraPaymentMethod === 'online' && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      Unlocks additional lessons <strong>immediately</strong> upon submission.
-                    </p>
-                  </div>
-
-                  <div
-                    onClick={() => setExtraPaymentMethod('slip')}
-                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                      extraPaymentMethod === 'slip'
-                        ? 'border-amber-400 bg-amber-500/15 ring-1 ring-amber-400 text-amber-200'
-                        : 'border-white/10 bg-white/5 text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                        <Building2 className="w-4 h-4 text-amber-400" /> Bank Transfer / Deposit Slip
-                      </span>
-                      {extraPaymentMethod === 'slip' && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      Submit deposit reference for branch Data Entry Officer verification.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bank Slip Fields (if slip chosen) */}
-              {extraPaymentMethod === 'slip' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3.5 bg-white/5 rounded-2xl border border-white/10">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Deposited Bank
-                    </label>
-                    <select
-                      value={extraBankName}
-                      onChange={(e) => setExtraBankName(e.target.value)}
-                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
-                    >
-                      <option value="Bank of Ceylon">Bank of Ceylon (BOC)</option>
-                      <option value="Commercial Bank">Commercial Bank</option>
-                      <option value="Sampath Bank">Sampath Bank</option>
-                      <option value="Hatton National Bank">Hatton National Bank (HNB)</option>
-                      <option value="People's Bank">People's Bank</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Deposit Reference Number <span className="text-rose-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. BOC-DEP-99401"
-                      value={extraSlipRef}
-                      onChange={(e) => setExtraSlipRef(e.target.value)}
-                      className="w-full px-3 py-2 border border-white/15 bg-slate-950/90 text-white rounded-xl text-xs outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Checkout Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
-                <div>
-                  <span className="text-xs text-slate-400 block">Total Purchase Cost:</span>
-                  <span className="text-xl font-black text-accent">
-                    Rs. {calculateExtraTotal(selectedExtraCount).toLocaleString()}
-                  </span>
-                  <span className="text-[11px] text-slate-400 ml-2">
-                    ({selectedExtraCount} Practical Lesson{selectedExtraCount > 1 ? 's' : ''})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Link
-                    to="/student/lessons/book"
-                    className="btn-secondary text-xs py-2.5 px-4 font-bold"
-                  >
-                    Go to Booking Calendar
-                  </Link>
-                  <button
-                    type="submit"
-                    disabled={buyingLoading}
-                    className="btn-accent text-xs py-2.5 px-5 font-bold shadow-lg flex items-center gap-2"
-                  >
-                    {buyingLoading ? (
-                      'Processing...'
-                    ) : (
-                      <>
-                        <CreditCard className="w-4 h-4" />
-                        Confirm & Buy {selectedExtraCount} Lesson{selectedExtraCount > 1 ? 's' : ''}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
+            {/* Action Bar: Directs to Dashboard Package & Payment Plan Section */}
+            <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs text-slate-300">
+                Need more driving lessons or want to change your payment plan?
+              </p>
+              <Link
+                to={{ pathname: '/student/dashboard', hash: '#package-selection-payment' }}
+                state={{ openPaymentForm: true }}
+                className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 whitespace-nowrap shadow-md"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Select Course Package & Choose Payment Plan</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
 
-          {/* DMT Milestone Summary */}
-          <div className="card p-6 space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> DMT Regulatory Progress Records
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                <div>
-                  <p className="font-bold text-white">1. National Transport Medical Exam</p>
-                  <p className="text-[11px] text-slate-400">Fitness certificate issued by NTMI</p>
-                </div>
-                <span className={`badge ${student?.dmtDates?.medicalExamDate ? 'badge-success' : 'badge-warning'}`}>
-                  {student?.dmtDates?.medicalExamDate ? 'Completed' : 'Pending Date'}
-                </span>
+          {/* COMPREHENSIVE ALL DATE DETAILS MATRIX */}
+          <div className="card p-6 space-y-4 border border-purple-400/30 bg-gradient-to-r from-slate-900/95 via-purple-950/20 to-slate-900/95">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-purple-400" />
+                  All DMT Milestone & Examination Dates
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Complete record of government DMT regulatory dates, practical trials, and branch scheduling.
+                </p>
               </div>
+              <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/40 text-xs font-bold">
+                {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
+              </span>
+            </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                <div>
-                  <p className="font-bold text-white">2. DMT Written Theory Examination</p>
-                  <p className="text-[11px] text-slate-400">Standard computer-based multiple choice test</p>
-                </div>
-                <span className={`badge ${student?.dmtDates?.learnerExamPassed ? 'badge-success' : 'badge-warning'}`}>
-                  {student?.dmtDates?.learnerExamPassed ? 'Passed (≥80%)' : 'In Preparation'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                <div>
-                  <p className="font-bold text-white">3. Practical Trial Attempts Remaining</p>
-                  <p className="text-[11px] text-slate-400">Maximum 3 trial attempts within 1.5-year limit</p>
-                </div>
-                <div className="text-right">
-                  <span className="font-bold text-accent">
-                    {3 - (student?.trial?.attemptsUsed || 0)} / 3 Attempts Left
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
+              {/* 1. DMT Medical Exam Date */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <Stethoscope className="w-4 h-4 text-cyan-400" /> 1. DMT Medical Exam
+                  </span>
+                  <span
+                    className={`badge text-[10px] font-bold ${
+                      isType2
+                        ? 'badge-success'
+                        : student?.dmtDates?.medicalExamStatus === 'passed' || student?.medical_date
+                        ? 'badge-success'
+                        : 'badge-warning'
+                    }`}
+                  >
+                    {isType2
+                      ? 'Exempt (Pre-Cleared)'
+                      : student?.dmtDates?.medicalExamStatus === 'passed'
+                      ? 'Passed'
+                      : student?.medical_date
+                      ? 'Scheduled'
+                      : 'Pending Date'}
                   </span>
                 </div>
+                <div className="text-slate-300 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Scheduled Date:</span>
+                    <span className="font-mono font-bold text-white">
+                      {isType2
+                        ? 'Exempt (Existing Permit)'
+                        : safeFormatDate(student?.medical_date || student?.dmtDates?.medicalExamDate, 'MMM dd, yyyy')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {isType2
+                      ? 'Pre-existing learner permit holder. Medical certification already cleared.'
+                      : student?.dmtDates?.medicalRemarks || 'National Transport Medical Institute (NTMI) fitness exam.'}
+                  </p>
+                </div>
               </div>
+
+              {/* 2. DMT Learner Registration Date */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-amber-400" /> 2. DMT Registration
+                  </span>
+                  <span
+                    className={`badge text-[10px] font-bold ${
+                      isType2
+                        ? 'badge-success'
+                        : student?.dmtDates?.registrationDone || student?.registration_date
+                        ? 'badge-success'
+                        : 'badge-warning'
+                    }`}
+                  >
+                    {isType2
+                      ? 'Exempt (Registered)'
+                      : student?.dmtDates?.registrationDone
+                      ? 'Completed'
+                      : student?.registration_date
+                      ? 'Scheduled'
+                      : 'Pending'}
+                  </span>
+                </div>
+                <div className="text-slate-300 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Scheduled Date:</span>
+                    <span className="font-mono font-bold text-white">
+                      {isType2
+                        ? 'Exempt (Existing Permit)'
+                        : safeFormatDate(student?.registration_date || student?.dmtDates?.learnerRegistrationDate, 'MMM dd, yyyy')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {isType2
+                      ? 'Official learner application pre-registered directly with Department of Motor Traffic.'
+                      : 'Formal submission of learner driver registration documents to DMT office.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. DMT Written Theory Exam Date */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-emerald-400" /> 3. DMT Written Exam
+                  </span>
+                  <span
+                    className={`badge text-[10px] font-bold ${
+                      isType2
+                        ? 'badge-success'
+                        : student?.learnerExamStatus === 'passed'
+                        ? 'badge-success'
+                        : student?.learnerExamStatus === 'failed'
+                        ? 'badge-error'
+                        : student?.written_exam_date
+                        ? 'badge-warning'
+                        : 'badge-warning'
+                    }`}
+                  >
+                    {isType2
+                      ? 'Exempt (Passed)'
+                      : student?.learnerExamStatus === 'passed'
+                      ? 'Passed (≥80%)'
+                      : student?.learnerExamStatus === 'failed'
+                      ? 'Failed'
+                      : student?.written_exam_date
+                      ? 'Scheduled'
+                      : 'Not Yet Faced'}
+                  </span>
+                </div>
+                <div className="text-slate-300 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Exam Date:</span>
+                    <span className="font-mono font-bold text-white">
+                      {isType2
+                        ? 'Exempt (Existing Permit)'
+                        : safeFormatDate(student?.written_exam_date || student?.dmtDates?.learnerExamDate, 'MMM dd, yyyy')}
+                    </span>
+                  </div>
+                  {!isType2 && (
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Score & Attempts:</span>
+                      <span className="text-cyan-300 font-bold">
+                        {student?.learnerExamMarks !== null && student?.learnerExamMarks !== undefined
+                          ? `${student.learnerExamMarks} Marks • `
+                          : ''}
+                        Attempt {student?.learnerExamAttempts?.length || student?.learnerExamAttemptsCount || 1}/3
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-slate-400">
+                    {isType2
+                      ? 'Theory knowledge verified through existing learner permit. Practical trial enabled.'
+                      : 'Standard 40-question computerized multiple-choice road rules examination.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* 4. Official DMT Practical Driving Trial Date */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border-2 border-purple-400/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <Car className="w-4 h-4 text-purple-400" /> 4. Practical Driving Trial
+                  </span>
+                  <span
+                    className={`badge text-[10px] font-bold ${
+                      !officialTrialDate
+                        ? 'badge-warning'
+                        : Boolean(officialTrialDate && new Date(officialTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(officialTrialDate).toDateString())
+                        ? 'badge-error'
+                        : 'badge-success'
+                    }`}
+                  >
+                    {!officialTrialDate
+                      ? 'Awaiting Branch Date'
+                      : Boolean(officialTrialDate && new Date(officialTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(officialTrialDate).toDateString())
+                      ? 'Trial Date Passed'
+                      : 'Scheduled (Active)'}
+                  </span>
+                </div>
+                <div className="text-slate-300 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Trial Exam Date:</span>
+                    <span className="font-mono font-bold text-purple-300 text-sm">
+                      {officialTrialDate ? safeFormatDate(officialTrialDate, 'MMM dd, yyyy') : 'Pending Assignment'}
+                    </span>
+                  </div>
+                  {student?.trial_date_set_by && (
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Scheduled By:</span>
+                      <span className="text-white font-semibold">
+                        {student.trial_date_set_by?.name || 'Branch DEO'}
+                      </span>
+                    </div>
+                  )}
+                  {pendingReschedule && (
+                    <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-200 text-[10px] font-semibold flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+                      <span>Reschedule Request Pending: Requested {safeFormatDate(pendingReschedule.new_date || pendingReschedule.new_trial_date, 'MMM dd, yyyy')}</span>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-slate-400">
+                    On-road practical driving test conducted by DMT examiners. Practical lessons can be booked up until this date.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trial Reschedule Call to Action */}
+            <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="text-xs text-slate-400">
+                Need to change any of your scheduled dates? Submit a request to your branch Data Entry Officer.
+              </span>
+              <Link
+                to="/student/dashboard"
+                className="btn-secondary text-xs py-2 px-4 font-bold flex items-center justify-center gap-1.5 whitespace-nowrap self-start sm:self-auto"
+              >
+                <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Manage & Reschedule on Dashboard</span>
+              </Link>
             </div>
           </div>
         </div>
