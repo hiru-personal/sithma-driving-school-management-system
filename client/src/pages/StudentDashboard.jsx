@@ -296,8 +296,8 @@ export default function StudentDashboard() {
         editForm.studentType?.includes('Type2') || editForm.studentType === 'Type 2'
       );
       const payload = { ...editForm };
-      if (!isType2Student) {
-        // Type 1 students do not select a vehicle package at the registration stage
+      if (!isType2Student && !editForm.packageId) {
+        // If Type 1 and no package was chosen, remove empty package fields
         delete payload.packageId;
         delete payload.packageType;
       }
@@ -780,12 +780,16 @@ export default function StudentDashboard() {
                   Learner Category
                 </label>
                 <select
-                  value={editForm.studentType}
+                  value={
+                    editForm.studentType === 'Type2_TrialReady' || editForm.studentType === 'Type 2'
+                      ? 'Type 2'
+                      : 'Type 1'
+                  }
                   onChange={(e) => setEditForm({ ...editForm, studentType: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
                 >
-                  <option value="Type1_NewLearner">Category 1: New Learner</option>
-                  <option value="Type2_TrialReady">Category 2: Trial-Ready</option>
+                  <option value="Type 1">Category 1: New Learner</option>
+                  <option value="Type 2">Category 2: Trial-Ready</option>
                 </select>
               </div>
             </div>

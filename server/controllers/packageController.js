@@ -197,13 +197,23 @@ exports.getAllPackages = async (req, res) => {
 // @access  Staff, Admin
 exports.createPackage = async (req, res) => {
   try {
-    const newPackage = await Package.create(req.body);
+    const payload = { ...req.body };
+    if (!payload.categoryGroup) {
+      payload.categoryGroup = payload.isPerLesson ? 'A' : (payload.lessons >= 10 ? 'C' : 'B');
+    }
+    const newPackage = await Package.create(payload);
     return res.status(201).json({
       success: true,
       message: 'Package created successfully',
       package: newPackage,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'A package with this identifier already exists. Please choose a different package name or type.',
+      });
+    }
     return res.status(400).json({
       success: false,
       message: error.message || 'Failed to create package',

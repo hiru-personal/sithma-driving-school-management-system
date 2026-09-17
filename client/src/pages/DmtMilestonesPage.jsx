@@ -543,11 +543,12 @@ export default function DmtMilestonesPage() {
             const isMedDateReached = isMedDateAssigned && new Date().setHours(0, 0, 0, 0) >= new Date(medDate).setHours(0, 0, 0, 0);
 
             const isMedPassed = isMedDateAssigned && Boolean(
-              profile?.dmtDates?.medicalExamPassed ||
+              profile?.dmtDates?.medicalExamPassed === true ||
               profile?.dmtDates?.medicalExamStatus === 'passed' ||
               profile?.dmtDates?.medicalDone
             );
-            const isMedFailed = isMedDateAssigned && (
+            // Failed status only applies if the scheduled date has arrived/passed
+            const isMedFailed = isMedDateAssigned && isMedDateReached && !isMedPassed && (
               profile?.dmtDates?.medicalExamStatus === 'failed' ||
               profile?.dmtDates?.medicalExamPassed === false
             );
@@ -567,23 +568,23 @@ export default function DmtMilestonesPage() {
                     <span className={`badge text-xs font-bold py-1 px-3 ${
                       !isMedDateAssigned
                         ? 'bg-slate-800 text-slate-400'
+                        : !isMedDateReached
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
                         : isMedPassed
                         ? 'badge-success'
                         : isMedFailed
                         ? 'badge-error'
-                        : isMedDateReached
-                        ? 'badge-warning'
-                        : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                        : 'badge-warning'
                     }`}>
                       {!isMedDateAssigned
                         ? 'PENDING DATE'
+                        : !isMedDateReached
+                        ? '⏳ SCHEDULED'
                         : isMedPassed
                         ? '✓ PASSED'
                         : isMedFailed
                         ? '✕ FAILED'
-                        : isMedDateReached
-                        ? '⏳ ACTION REQUIRED'
-                        : '⏳ SCHEDULED'}
+                        : '⏳ ACTION REQUIRED'}
                     </span>
                   </div>
 
@@ -642,6 +643,30 @@ export default function DmtMilestonesPage() {
                       <Clock className="w-3.5 h-3.5 text-slate-500" />
                       <span>Awaiting Staff to Assign Initial Date</span>
                     </div>
+                  ) : !isMedDateReached ? (
+                    <div className="space-y-2">
+                      <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
+                          <span>
+                            Exam scheduled for <strong className="text-white">{new Date(medDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>. Status update (Pass/Fail) unlocks on exam day.
+                          </span>
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRescheduleMilestone('medical');
+                          setRescheduleReason('');
+                          setPreferredDate('');
+                          setShowRescheduleModal(true);
+                        }}
+                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                      >
+                        <Calendar className="w-4 h-4 text-cyan-400" />
+                        <span>📅 Request Date for Another Day</span>
+                      </button>
+                    </div>
                   ) : isMedPassed ? (
                     <div className="space-y-2">
                       <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
@@ -698,28 +723,6 @@ export default function DmtMilestonesPage() {
                           <span>📅 Request Date for Another Day</span>
                         </button>
                       </div>
-                    </div>
-                  ) : !isMedDateReached ? (
-                    <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          <span>Status update & proof unlock on exam day ({new Date(medDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</span>
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRescheduleMilestone('medical');
-                          setRescheduleReason('');
-                          setPreferredDate('');
-                          setShowRescheduleModal(true);
-                        }}
-                        className="w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
-                      >
-                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>📅 Request Date for Another Day</span>
-                      </button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1440,7 +1443,21 @@ export default function DmtMilestonesPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10 flex-wrap">
+                {(profile?.medical_date || profile?.dmtDates?.medicalExamDate) &&
+                  new Date().setHours(0, 0, 0, 0) <
+                    new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).setHours(0, 0, 0, 0) && (
+                    <p className="w-full text-[11px] text-amber-300 bg-amber-500/15 border border-amber-400/30 p-2.5 rounded-xl mb-2">
+                      ⏳ Medical Exam is scheduled for{' '}
+                      {new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                      . Result and proof submission unlocks on the exam date.
+                    </p>
+                  )}
+
                 <button
                   type="button"
                   onClick={() => setShowMedicalModal(false)}
@@ -1450,8 +1467,23 @@ export default function DmtMilestonesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingMedical}
-                  className="btn-primary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-lg rounded-xl bg-emerald-600 hover:bg-emerald-500"
+                  disabled={
+                    submittingMedical ||
+                    Boolean(
+                      (profile?.medical_date || profile?.dmtDates?.medicalExamDate) &&
+                        new Date().setHours(0, 0, 0, 0) <
+                          new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).setHours(0, 0, 0, 0)
+                    )
+                  }
+                  className={`btn-primary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-lg rounded-xl bg-emerald-600 hover:bg-emerald-500 ${
+                    Boolean(
+                      (profile?.medical_date || profile?.dmtDates?.medicalExamDate) &&
+                        new Date().setHours(0, 0, 0, 0) <
+                          new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).setHours(0, 0, 0, 0)
+                    )
+                      ? 'opacity-50 cursor-not-allowed'
+                      : ''
+                  }`}
                 >
                   {submittingMedical ? (
                     <>Saving...</>

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 
 const app = express();
@@ -50,9 +51,17 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health Check / Root Status Route
 app.get('/api/health', (req, res) => {
+  const host = mongoose.connection.host || '';
+  const isAtlas = host.includes('mongodb.net');
   res.status(200).json({
     status: 'ok',
     message: 'Sithma Driving School API running smoothly',
+    database: {
+      connected: mongoose.connection.readyState === 1,
+      target: isAtlas ? 'MongoDB Atlas (Cloud)' : 'Local MongoDB (127.0.0.1)',
+      host,
+      name: mongoose.connection.name,
+    },
     timestamp: new Date().toISOString(),
     branches: ['Maharagama', 'Werahara', 'Delgoda'],
     version: '1.0.0'

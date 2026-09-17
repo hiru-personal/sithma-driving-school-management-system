@@ -19,15 +19,41 @@ exports.getAllStudents = async (req, res) => {
     }
 
     if (studentType) {
-      query.studentType = studentType;
+      if (['Type1_NewLearner', 'Type 1', 'Type1'].includes(studentType)) {
+        query.$or = [
+          { studentType: { $in: ['Type1_NewLearner', 'Type 1', 'Type1'] } },
+          { student_type: { $in: ['Type 1', 'Type1_NewLearner'] } },
+        ];
+      } else if (['Type2_TrialReady', 'Type 2', 'Type2'].includes(studentType)) {
+        query.$or = [
+          { studentType: { $in: ['Type2_TrialReady', 'Type 2', 'Type2'] } },
+          { student_type: { $in: ['Type 2', 'Type2_TrialReady'] } },
+        ];
+      } else {
+        query.studentType = studentType;
+      }
     }
 
     if (status) {
-      query.registrationStatus = status;
+      if (status === 'registered') {
+        query.$or = [
+          { registrationStatus: 'registered' },
+          { accountStatus: 'active' },
+          { account_status: 'Verified' },
+        ];
+      } else if (status === 'pending_payment') {
+        query.$or = [
+          { registrationStatus: 'pending_payment' },
+          { accountStatus: 'pending_verification' },
+          { account_status: 'Unverified / Pending Payment' },
+        ];
+      } else {
+        query.registrationStatus = status;
+      }
     }
 
     let students = await Student.find(query)
-      .populate('userId', 'name email phone role branch createdAt')
+      .populate('userId', 'name email phone role branch status account_status createdAt')
       .populate('package.packageId')
       .sort({ createdAt: -1 });
 
@@ -104,7 +130,7 @@ const sanitizeStudentForType = (student) => {
   // If medical date is not assigned, student cannot have passed/failed or uploaded proof
   const medDate = obj.medical_date || obj.dmtDates?.medicalExamDate;
   if (!medDate) {
-    obj.dmtDates.medicalExamPassed = false;
+    obj.dmtDates.medicalExamPassed = null;
     obj.dmtDates.medicalExamStatus = null;
     obj.dmtDates.medicalDone = false;
     obj.medicalDocumentUrl = null;
@@ -391,6 +417,16 @@ exports.updateDmtDates = async (req, res) => {
       student.medical_date = d;
       student.dmtDates.medicalExamDate = d;
       if (d) updates.push(`Medical Exam Date (${d.toLocaleDateString()})`);
+
+      // If scheduled date is in the future, it is an upcoming exam.
+      // Automatically reset status to pending unless staff explicitly marked it passed
+      const todayTime = new Date().setHours(0, 0, 0, 0);
+      const isFutureDate = d && new Date(d).setHours(0, 0, 0, 0) > todayTime;
+      if (isFutureDate && !medicalExamPassed && !medicalDone) {
+        student.dmtDates.medicalExamPassed = null;
+        student.dmtDates.medicalExamStatus = null;
+        student.dmtDates.medicalDone = false;
+      }
     }
     if (medicalExamStatus !== undefined) {
       student.dmtDates.medicalExamStatus = medicalExamStatus;
@@ -406,9 +442,17 @@ exports.updateDmtDates = async (req, res) => {
       }
     }
     if (medicalExamPassed !== undefined) {
-      student.dmtDates.medicalExamPassed = Boolean(medicalExamPassed);
+      const todayTime = new Date().setHours(0, 0, 0, 0);
+      const targetMedDate = student.medical_date || student.dmtDates?.medicalExamDate;
+      const isFutureDate = targetMedDate && new Date(targetMedDate).setHours(0, 0, 0, 0) > todayTime;
+
       if (medicalExamPassed) {
+        student.dmtDates.medicalExamPassed = true;
         student.dmtDates.medicalExamStatus = 'passed';
+      } else if (!isFutureDate) {
+        student.dmtDates.medicalExamPassed = false;
+      } else {
+        student.dmtDates.medicalExamPassed = null;
       }
     }
     if (medicalDone !== undefined) {
@@ -660,7 +704,13 @@ exports.updateStudentPackage = async (req, res) => {
 
     if (packageType) {
       student.package.type = packageType;
-      if (packageType === 'Car_Full') {
+      const pkgDoc = await Package.findOne({ type: packageType, isActive: true });
+      if (pkgDoc) {
+        student.package.packageId = pkgDoc._id;
+        student.package.lessonsTotal = customLessons || pkgDoc.lessons;
+        student.package.priceTotal = customPrice || pkgDoc.price;
+        student.package.bonusLessons = pkgDoc.bonusLessons || { bike: 0, threeWheeler: 0 };
+      } else if (packageType === 'Car_Full') {
         student.package.lessonsTotal = 15;
         student.package.priceTotal = 45000;
         student.package.bonusLessons = { bike: 2, threeWheeler: 2 };
@@ -1169,6 +1219,9 @@ exports.updateStudentProfile = async (req, res) => {
 
     if (studentType && ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'].includes(studentType)) {
       student.studentType = studentType;
+      const normalized = (studentType === 'Type2_TrialReady' || studentType === 'Type 2') ? 'Type 2' : 'Type 1';
+      student.student_type = normalized;
+      user.student_type = normalized;
     }
 
     // Update package if specified

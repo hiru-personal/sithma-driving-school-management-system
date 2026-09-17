@@ -97,12 +97,22 @@ const studentSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ['pending_verification', 'active', 'Unverified / Pending Payment', 'Verified', 'cancelled'],
+      enum: [
+        'pending_verification',
+        'active',
+        'inactive',
+        'suspended',
+        'deactivated',
+        'Unverified / Pending Payment',
+        'Verified',
+        'cancelled',
+        'Cancelled',
+      ],
       default: 'pending_verification',
     },
     account_status: {
       type: String,
-      enum: ['Unverified / Pending Payment', 'Verified', 'Cancelled'],
+      enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled', 'cancelled'],
       default: 'Unverified / Pending Payment',
     },
     advancePaymentStatus: {
@@ -252,24 +262,8 @@ const studentSchema = new mongoose.Schema(
     package: {
       type: {
         type: String,
-        enum: [
-          'Car_Full',
-          'Car_Refresher',
-          'Bike',
-          'ThreeWheeler',
-          'HeavyVehicle_Bus',
-          'Car_Individual',
-          'Bike_Individual',
-          'ThreeWheeler_Individual',
-          'HeavyVehicle_Individual',
-          'Bike_Standard',
-          'ThreeWheeler_Standard',
-          'Car_Standard',
-          'HeavyVehicle_Standard',
-          'Combo_Full',
-          'HeavyVehicle_Full',
-        ],
         default: null,
+        trim: true,
       },
       packageId: {
         type: mongoose.Schema.Types.ObjectId,

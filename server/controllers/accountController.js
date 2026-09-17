@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Student = require('../models/Student');
 
 // Helper to validate strong password policy
 const validatePasswordPolicy = (password, username, email) => {
@@ -263,18 +264,36 @@ exports.updateAccountStatus = async (req, res) => {
     }
 
     user.status = status;
+    if (status === 'inactive' || status === 'suspended') {
+      user.account_status = 'Deactivated';
+    } else if (status === 'active') {
+      user.account_status = 'Verified';
+    }
     await user.save();
+
+    // Synchronize Student record if this user has one
+    await Student.updateMany(
+      { userId: user._id },
+      {
+        $set: {
+          accountStatus: status === 'active' ? 'active' : 'inactive',
+          account_status: status === 'active' ? 'Verified' : 'Deactivated',
+        },
+      }
+    );
 
     return res.status(200).json({
       success: true,
       message: `Account status updated to '${status}'.`,
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         username: user.username,
         email: user.email,
         role: user.role,
         status: user.status,
+        account_status: user.account_status,
       },
     });
   } catch (error) {

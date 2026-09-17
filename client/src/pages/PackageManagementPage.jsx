@@ -14,19 +14,47 @@ import {
   Gift,
   Sparkles,
   X,
+  Tag,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const STANDARD_PACKAGE_TYPES = [
+  // Group A: Individual / Private (Pay-Per-Lesson)
+  { value: 'Car_Individual', label: 'Car (Auto/Manual) — Individual', group: 'A' },
+  { value: 'Bike_Individual', label: 'Bike — Individual / Private', group: 'A' },
+  { value: 'ThreeWheeler_Individual', label: 'Three Wheel — Individual / Private', group: 'A' },
+  { value: 'HeavyVehicle_Individual', label: 'Heavy Vehicle — Individual', group: 'A' },
+
+  // Group B: Standard Single Lessons (Pay-Per-Lesson)
+  { value: 'Car_Standard', label: 'Car — Standard Single Lesson', group: 'B' },
+  { value: 'Bike_Standard', label: 'Bike — Standard Single Lesson', group: 'B' },
+  { value: 'ThreeWheeler_Standard', label: 'Three Wheel — Standard Single Lesson', group: 'B' },
+  { value: 'HeavyVehicle_Standard', label: 'Heavy Vehicle — Standard Single Lesson', group: 'B' },
+
+  // Group C: Full Courses / Multi-Lesson
+  { value: 'Car_Full', label: 'Car Full Course (15 Lessons)', group: 'C' },
+  { value: 'Combo_Full', label: 'Combo Full Package (Car + Bike + Three-Wheel)', group: 'C' },
+  { value: 'Car_Refresher', label: 'Car Refresher Course (6 Lessons)', group: 'C' },
+  { value: 'HeavyVehicle_Bus', label: 'Heavy Vehicle (Bus) Full Course', group: 'C' },
+  { value: 'HeavyVehicle_Full', label: 'Heavy Vehicle Full Course', group: 'C' },
+  { value: 'Bike', label: 'Motorcycle Standard Package', group: 'C' },
+  { value: 'ThreeWheeler', label: 'Three-Wheeler Package', group: 'C' },
+];
 
 export default function PackageManagementPage() {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingPackage, setEditingPackage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'comprehensive' | 'individual'
+  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'comprehensive' | 'individual' | 'other'
+
+  const [isCustomType, setIsCustomType] = useState(false);
+  const [customTypeInput, setCustomTypeInput] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
     type: 'Car_Full',
+    categoryGroup: 'C',
     vehicleCategory: 'Light',
     lessons: 15,
     price: 45000,
@@ -35,6 +63,14 @@ export default function PackageManagementPage() {
     eligibilityCriteria: 'None',
     notes: '',
   });
+
+  const existingCustomTypes = Array.from(
+    new Set(
+      packages
+        .map((p) => p.type)
+        .filter((t) => t && !STANDARD_PACKAGE_TYPES.some((s) => s.value === t))
+    )
+  );
 
   const fetchPackages = async () => {
     setLoading(true);
@@ -56,9 +92,12 @@ export default function PackageManagementPage() {
 
   const openAddModal = () => {
     setEditingPackage(null);
+    setIsCustomType(false);
+    setCustomTypeInput('');
     setFormData({
       name: '',
       type: 'Car_Individual',
+      categoryGroup: 'A',
       vehicleCategory: 'Light',
       lessons: 1,
       price: 3000,
@@ -72,10 +111,23 @@ export default function PackageManagementPage() {
 
   const openEditModal = (pkg) => {
     setEditingPackage(pkg);
+    const isStandardOrExisting =
+      STANDARD_PACKAGE_TYPES.some((s) => s.value === pkg.type) ||
+      existingCustomTypes.includes(pkg.type);
+
+    if (isStandardOrExisting) {
+      setIsCustomType(false);
+      setCustomTypeInput('');
+    } else {
+      setIsCustomType(true);
+      setCustomTypeInput(pkg.type || '');
+    }
+
     setFormData({
       name: pkg.name,
-      type: pkg.type,
-      vehicleCategory: pkg.vehicleCategory,
+      type: isStandardOrExisting ? pkg.type : '__CUSTOM__',
+      categoryGroup: pkg.categoryGroup || (pkg.isPerLesson ? 'A' : 'C'),
+      vehicleCategory: pkg.vehicleCategory || 'Light',
       lessons: pkg.lessons,
       price: pkg.price,
       isPerLesson: pkg.isPerLesson || false,
@@ -86,22 +138,53 @@ export default function PackageManagementPage() {
     setIsModalOpen(true);
   };
 
+  const handleTypeSelectChange = (e) => {
+    const val = e.target.value;
+    if (val === '__CUSTOM__') {
+      setIsCustomType(true);
+      setFormData((prev) => ({ ...prev, type: '__CUSTOM__' }));
+      if (!customTypeInput) {
+        setCustomTypeInput('Other');
+      }
+    } else {
+      setIsCustomType(false);
+      setFormData((prev) => ({ ...prev, type: val }));
+    }
+  };
+
   const filteredPackages = packages.filter((pkg) => {
-    if (filterTab === 'comprehensive') return !pkg.isPerLesson;
+    if (filterTab === 'comprehensive') return !pkg.isPerLesson && pkg.categoryGroup !== 'Other';
     if (filterTab === 'individual') return pkg.isPerLesson;
+    if (filterTab === 'other') return pkg.categoryGroup === 'Other' || pkg.type.toLowerCase().includes('other');
     return true;
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      let finalType = formData.type;
+      if (isCustomType || formData.type === '__CUSTOM__') {
+        const cleanCustom = customTypeInput.trim();
+        if (!cleanCustom) {
+          toast.error('Please enter a custom package type name');
+          return;
+        }
+        finalType = cleanCustom.replace(/\s+/g, '_');
+      }
+
+      const payload = {
+        ...formData,
+        type: finalType,
+        categoryGroup: formData.categoryGroup || (formData.isPerLesson ? 'A' : 'C'),
+      };
+
       if (editingPackage) {
-        const res = await api.put(`/packages/${editingPackage._id}`, formData);
+        const res = await api.put(`/packages/${editingPackage._id}`, payload);
         if (res.data.success) {
           toast.success('Package updated successfully');
         }
       } else {
-        const res = await api.post('/packages', formData);
+        const res = await api.post('/packages', payload);
         if (res.data.success) {
           toast.success('New package created successfully');
         }
@@ -138,7 +221,7 @@ export default function PackageManagementPage() {
             <Layers className="w-6 h-6 text-cyan-400" /> Training Package Management
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Configure vehicle training bundles, pricing structures, and bonus lesson allocations.
+            Configure vehicle training bundles, pricing structures, and custom package categories.
           </p>
         </div>
 
@@ -183,8 +266,20 @@ export default function PackageManagementPage() {
               : 'text-slate-400 hover:text-white bg-white/5'
           }`}
         >
-          Full Course Packages ({packages.filter((p) => !p.isPerLesson).length})
+          Full Course Packages ({packages.filter((p) => !p.isPerLesson && p.categoryGroup !== 'Other').length})
         </button>
+        {packages.some((p) => p.categoryGroup === 'Other' || p.type?.toLowerCase().includes('other')) && (
+          <button
+            onClick={() => setFilterTab('other')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              filterTab === 'other'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+                : 'text-slate-400 hover:text-white bg-white/5'
+            }`}
+          >
+            Other Packages ({packages.filter((p) => p.categoryGroup === 'Other' || p.type?.toLowerCase().includes('other')).length})
+          </button>
+        )}
       </div>
 
       {/* Packages Grid */}
@@ -198,10 +293,15 @@ export default function PackageManagementPage() {
             <div key={pkg._id} className="card card-hover flex flex-col justify-between space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="badge badge-info text-[10px]">{pkg.vehicleCategory} Vehicle</span>
-                    {pkg.isPerLesson && (
+                    {pkg.isPerLesson ? (
                       <span className="badge badge-warning text-[10px]">Hourly / Per Lesson</span>
+                    ) : (
+                      <span className="badge badge-primary text-[10px]">Full Course</span>
+                    )}
+                    {pkg.categoryGroup === 'Other' && (
+                      <span className="badge badge-success text-[10px]">Other Package</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
@@ -223,7 +323,15 @@ export default function PackageManagementPage() {
                 </div>
 
                 <h3 className="text-base font-bold text-white mb-1">{pkg.name}</h3>
-                <p className="text-xs text-slate-400 mb-3">{pkg.type.replace('_', ' ')}</p>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Tag className="w-3 h-3 text-cyan-400" />
+                  <span className="text-xs text-cyan-300 font-mono font-semibold">{pkg.type?.replace(/_/g, ' ')}</span>
+                  {pkg.categoryGroup && (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-slate-300">
+                      Group {pkg.categoryGroup}
+                    </span>
+                  )}
+                </div>
 
                 <div className="text-2xl font-black text-accent mb-3">
                   Rs. {pkg.price?.toLocaleString()}
@@ -262,8 +370,8 @@ export default function PackageManagementPage() {
 
       {/* Package Edit/Create Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-6 space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Layers className="w-4 h-4 text-cyan-400" />
@@ -285,26 +393,96 @@ export default function PackageManagementPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Car (Auto/Manual) — Individual Package"
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                  placeholder="e.g. Car (Auto/Manual) — Individual Package or Other Special Package"
+                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl focus:border-cyan-400 outline-none"
                 />
               </div>
 
+              {/* Package Type Selection */}
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Package Type:</label>
+                <select
+                  value={isCustomType ? '__CUSTOM__' : formData.type}
+                  onChange={handleTypeSelectChange}
+                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl focus:border-cyan-400 outline-none"
+                >
+                  <optgroup label="✨ Custom / Other Packages">
+                    <option value="__CUSTOM__">➕ Other / New Package Type...</option>
+                  </optgroup>
+
+                  <optgroup label="A. Individual / Private (Pay-Per-Lesson)">
+                    {STANDARD_PACKAGE_TYPES.filter((s) => s.group === 'A').map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  <optgroup label="B. Standard Single Lessons (Pay-Per-Lesson)">
+                    {STANDARD_PACKAGE_TYPES.filter((s) => s.group === 'B').map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  <optgroup label="C. Full Course Packages">
+                    {STANDARD_PACKAGE_TYPES.filter((s) => s.group === 'C').map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  {existingCustomTypes.length > 0 && (
+                    <optgroup label="Previously Created Custom Package Types">
+                      {existingCustomTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t.replace(/_/g, ' ')}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+
+              {/* Custom Package Type Input (Shown when "Other / New Package Type" selected) */}
+              {isCustomType && (
+                <div className="p-3 bg-cyan-500/10 border border-cyan-400/30 rounded-xl space-y-1.5 transition-all">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-cyan-300">
+                      New / Custom Package Type Identifier:
+                    </label>
+                    <span className="text-[10px] text-cyan-400/90 font-mono px-2 py-0.5 bg-cyan-500/20 rounded">
+                      Custom Type
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={customTypeInput}
+                    onChange={(e) => setCustomTypeInput(e.target.value)}
+                    placeholder="e.g. Other, VIP_Package, Electric_Car, Combo_Special..."
+                    className="w-full px-3.5 py-2 border border-cyan-400/40 bg-slate-900 text-white rounded-lg focus:outline-none focus:border-cyan-300 font-medium"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Type a new package type name or "Other". It will be saved as this package's type.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Package Type:</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Curriculum Group:</label>
                   <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    value={formData.categoryGroup || 'A'}
+                    onChange={(e) => setFormData({ ...formData, categoryGroup: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl focus:border-cyan-400 outline-none"
                   >
-                    <option value="Car_Individual">Car (Auto/Manual) — Individual</option>
-                    <option value="Bike">Bike — Individual / Standard</option>
-                    <option value="ThreeWheeler">Three Wheel — Individual / Standard</option>
-                    <option value="HeavyVehicle_Individual">Heavy Vehicle — Individual</option>
-                    <option value="Car_Full">Car Full Course</option>
-                    <option value="Car_Refresher">Car Refresher Course</option>
-                    <option value="HeavyVehicle_Bus">Heavy Vehicle (Bus) Full Course</option>
+                    <option value="A">Group A — Individual / Private</option>
+                    <option value="B">Group B — Standard Single Lesson</option>
+                    <option value="C">Group C — Full Course Package</option>
+                    <option value="Other">Group D / Other Packages</option>
                   </select>
                 </div>
                 <div>
@@ -312,20 +490,30 @@ export default function PackageManagementPage() {
                   <select
                     value={formData.vehicleCategory}
                     onChange={(e) => setFormData({ ...formData, vehicleCategory: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl focus:border-cyan-400 outline-none"
                   >
                     <option value="Light">Light Vehicle</option>
                     <option value="Heavy">Heavy Vehicle</option>
+                    <option value="Bike">Motorcycle / Bike</option>
+                    <option value="ThreeWheeler">Three Wheeler</option>
+                    <option value="All">All / Multi-Vehicle (Combo)</option>
+                    <option value="Other">Other Category</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="flex items-center gap-2 p-2.5 bg-white/5 border border-white/10 rounded-xl cursor-pointer">
+                <label className="flex items-center gap-2 p-2.5 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.isPerLesson}
-                    onChange={(e) => setFormData({ ...formData, isPerLesson: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        isPerLesson: e.target.checked,
+                        categoryGroup: e.target.checked ? 'A' : (formData.categoryGroup === 'A' ? 'C' : formData.categoryGroup),
+                      })
+                    }
                     className="rounded border-white/20 text-cyan-500 focus:ring-0"
                   />
                   <span className="text-xs text-slate-200 font-semibold">
@@ -343,7 +531,7 @@ export default function PackageManagementPage() {
                     min="1"
                     value={formData.lessons}
                     onChange={(e) => setFormData({ ...formData, lessons: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold focus:border-cyan-400 outline-none"
                   />
                 </div>
                 <div>
@@ -354,7 +542,7 @@ export default function PackageManagementPage() {
                     min="0"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-accent font-black rounded-xl"
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-accent font-black rounded-xl focus:border-cyan-400 outline-none"
                   />
                 </div>
               </div>
@@ -372,7 +560,7 @@ export default function PackageManagementPage() {
                         bonusLessons: { ...formData.bonusLessons, bike: Number(e.target.value) },
                       })
                     }
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-lg"
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-lg focus:border-amber-400 outline-none"
                   />
                 </div>
                 <div>
@@ -390,9 +578,20 @@ export default function PackageManagementPage() {
                         },
                       })
                     }
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-lg"
+                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-lg focus:border-amber-400 outline-none"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Description / Notes (Optional):</label>
+                <textarea
+                  rows={2}
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="e.g. Special combo bundle, customized lesson schedule, or specific requirements..."
+                  className="w-full px-3.5 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl resize-none text-xs focus:border-cyan-400 outline-none"
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-white/10">

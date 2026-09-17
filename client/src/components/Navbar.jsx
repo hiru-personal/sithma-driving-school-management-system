@@ -22,7 +22,9 @@ import {
   BarChart3,
   ChevronDown,
   ShieldCheck,
+  Database,
 } from 'lucide-react';
+import api from '../api/axios';
 
 export default function Navbar() {
   const { user, student, isStudent, isStaff, isInstructor, isPremium, logout } = useAuth();
@@ -41,6 +43,19 @@ export default function Navbar() {
     user?.student_type === 'Type 2'
   );
   const isType1 = !isType2;
+
+  const [dbInfo, setDbInfo] = useState(null);
+
+  // Fetch active database status
+  useEffect(() => {
+    api.get('/health')
+      .then((res) => {
+        if (res.data?.database) {
+          setDbInfo(res.data.database);
+        }
+      })
+      .catch(() => {});
+  }, [location.pathname]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -287,6 +302,32 @@ export default function Navbar() {
           <div className="hidden sm:flex items-center gap-3.5">
             {user ? (
               <div className="flex items-center gap-3.5">
+                {/* Database Indicator Pill (Admin Only) */}
+                {user?.role === 'admin' && dbInfo && (
+                  <div
+                    className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all ${
+                      dbInfo.target?.includes('Atlas')
+                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                        : 'bg-amber-500/15 text-amber-300 border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                    }`}
+                    title={
+                      dbInfo.target?.includes('Atlas')
+                        ? 'Connected to MongoDB Atlas Cloud Cluster'
+                        : 'Connected to Local MongoDB (127.0.0.1). To sync changes to MongoDB Atlas Cloud, whitelist your IP in cloud.mongodb.com'
+                    }
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        dbInfo.target?.includes('Atlas') ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                      }`}
+                    />
+                    <Database className="w-3.5 h-3.5" />
+                    <span>
+                      {dbInfo.target?.includes('Atlas') ? 'Atlas Cloud' : 'Local DB (127.0.0.1)'}
+                    </span>
+                  </div>
+                )}
+
                 <NotificationBell />
 
                 {/* Frosted User Pill */}

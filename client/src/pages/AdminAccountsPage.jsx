@@ -133,9 +133,11 @@ export default function AdminAccountsPage() {
     try {
       const res = await api.patch(`/admin/accounts/${user._id}/status`, { status: nextStatus });
       if (res.data.success) {
-        toast.success(`Account marked as ${nextStatus}`);
+        toast.success(res.data.message || `Account marked as ${nextStatus}`);
         setAccounts((prev) =>
-          prev.map((u) => (u._id === user._id ? { ...u, status: nextStatus } : u))
+          prev.map((u) =>
+            u._id === user._id ? { ...u, ...res.data.user, status: nextStatus } : u
+          )
         );
       }
     } catch (err) {

@@ -1234,6 +1234,17 @@ export default function StaffStudentListPage() {
                               </option>
                             ))}
                         </optgroup>
+                        {availablePackages.some((p) => p.categoryGroup === 'Other' || (!['A', 'B', 'C'].includes(p.categoryGroup) && !p.type.includes('Individual') && !p.type.includes('Standard'))) && (
+                          <optgroup label="Other / Custom Packages">
+                            {availablePackages
+                              .filter((p) => p.categoryGroup === 'Other' || (!['A', 'B', 'C'].includes(p.categoryGroup) && !p.type.includes('Individual') && !p.type.includes('Standard')))
+                              .map((pkg) => (
+                                <option key={pkg._id} value={pkg.type}>
+                                  {pkg.name} — Rs. {Number(pkg.price).toLocaleString()}
+                                </option>
+                              ))}
+                          </optgroup>
+                        )}
                       </>
                     ) : (
                       <>
