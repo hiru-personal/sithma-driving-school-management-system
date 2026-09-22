@@ -45,6 +45,8 @@ const learnerExamAttemptSchema = new mongoose.Schema(
     marks: {
       type: Number,
       default: null,
+      min: [0, 'Marks cannot be less than 0'],
+      max: [40, 'Marks cannot exceed 40'],
     },
     notes: {
       type: String,
@@ -218,7 +220,12 @@ const studentSchema = new mongoose.Schema(
       learnerExamDate: { type: Date, default: null },
       learnerExamPassed: { type: Boolean, default: false },
       learnerExamPassedDate: { type: Date, default: null },
-      learnerExamMarks: { type: Number, default: null },
+      learnerExamMarks: {
+        type: Number,
+        default: null,
+        min: [0, 'Marks cannot be less than 0'],
+        max: [40, 'Marks cannot exceed 40'],
+      },
       learnerExamDocumentUrl: { type: String, default: null },
     },
     // Theory / Learner Written Exam Attempts (Max 3 attempts before auto-cancellation)
@@ -232,6 +239,8 @@ const studentSchema = new mongoose.Schema(
     learnerExamMarks: {
       type: Number,
       default: null,
+      min: [0, 'Marks cannot be less than 0'],
+      max: [40, 'Marks cannot exceed 40'],
     },
     // Practical Trial Management
     trial: {
@@ -392,15 +401,43 @@ studentSchema.pre('save', function (next) {
     this.registrationRemarks = this.dmtDates.registrationRemarks;
   }
 
+  // Sync learnerExamMarks between root and dmtDates
+  if (this.learnerExamMarks !== undefined && this.learnerExamMarks !== null) {
+    if (this.dmtDates) this.dmtDates.learnerExamMarks = this.learnerExamMarks;
+  } else if (this.dmtDates?.learnerExamMarks !== undefined && this.dmtDates?.learnerExamMarks !== null) {
+    this.learnerExamMarks = this.dmtDates.learnerExamMarks;
+  }
+
+  // DMT Written Theory Exam Rule: Passing requires marks strictly greater than 30 (out of 40)
+  const isType2Student =
+    this.student_type === 'Type 2' ||
+    this.studentType === 'Type2_TrialReady' ||
+    this.studentType === 'Type 2';
+
+  if (!isType2Student && this.learnerExamMarks !== null && this.learnerExamMarks !== undefined) {
+    if (this.learnerExamMarks <= 30) {
+      // Score of 30 or below is an automatic Fail
+      this.written_exam_status = 'Fail';
+      this.learnerExamStatus = 'failed';
+      if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+    }
+  }
+
   if (this.written_exam_status) {
     if (this.written_exam_status === 'Pass' || this.written_exam_status === 'passed') {
-      this.written_exam_status = 'Pass';
-      this.learnerExamStatus = 'passed';
-      this.dmtDates.learnerExamPassed = true;
+      if (!isType2Student && this.learnerExamMarks !== null && this.learnerExamMarks !== undefined && this.learnerExamMarks <= 30) {
+        this.written_exam_status = 'Fail';
+        this.learnerExamStatus = 'failed';
+        if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+      } else {
+        this.written_exam_status = 'Pass';
+        this.learnerExamStatus = 'passed';
+        if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
+      }
     } else if (this.written_exam_status === 'Fail' || this.written_exam_status === 'failed') {
       this.written_exam_status = 'Fail';
       this.learnerExamStatus = 'failed';
-      this.dmtDates.learnerExamPassed = false;
+      if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
     } else {
       this.written_exam_status = 'Pending';
       if (!this.learnerExamStatus || this.learnerExamStatus === 'not_taken') {
@@ -409,7 +446,13 @@ studentSchema.pre('save', function (next) {
     }
   } else if (this.learnerExamStatus) {
     if (this.learnerExamStatus === 'passed') {
-      this.written_exam_status = 'Pass';
+      if (!isType2Student && this.learnerExamMarks !== null && this.learnerExamMarks !== undefined && this.learnerExamMarks <= 30) {
+        this.written_exam_status = 'Fail';
+        this.learnerExamStatus = 'failed';
+        if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+      } else {
+        this.written_exam_status = 'Pass';
+      }
     } else if (this.learnerExamStatus === 'failed') {
       this.written_exam_status = 'Fail';
     } else {

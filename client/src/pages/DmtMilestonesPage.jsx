@@ -317,12 +317,14 @@ export default function DmtMilestonesPage() {
   }, [student?._id, user?.studentProfileId]);
 
   // Exam and milestone calculations
+  const recordedExamMarks = profile?.learnerExamMarks ?? profile?.dmtDates?.learnerExamMarks;
   const isExamPassed = Boolean(
-    profile?.learnerExamPassed ||
+    (profile?.learnerExamPassed ||
     profile?.learnerExamStatus === 'passed' ||
-    profile?.dmtDates?.learnerExamPassed
+    profile?.dmtDates?.learnerExamPassed) &&
+    (recordedExamMarks === null || recordedExamMarks === undefined || recordedExamMarks > 30)
   );
-  const attemptsCount = profile?.learnerExamAttempts?.length || (profile?.learnerExamStatus === 'failed' ? 1 : 0);
+  const attemptsCount = profile?.learnerExamAttempts?.length || (profile?.learnerExamStatus === 'failed' || (!isExamPassed && recordedExamMarks !== null && recordedExamMarks <= 30) ? 1 : 0);
   const remainingAttempts = Math.max(0, 3 - attemptsCount);
   const isTrialEligible = isExamPassed;
 
@@ -357,6 +359,19 @@ export default function DmtMilestonesPage() {
     e.preventDefault();
     if (examForm.marks === '' || examForm.marks === null) {
       toast.error('Please enter marks scored in the examination');
+      return;
+    }
+    const marksNum = Number(examForm.marks);
+    if (isNaN(marksNum) || marksNum < 0 || marksNum > 40) {
+      toast.error('DMT Theory Exam marks must be between 0 and 40.');
+      return;
+    }
+    if (examForm.result === 'passed' && marksNum <= 30) {
+      toast.error('DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.');
+      return;
+    }
+    if (examForm.result === 'failed' && marksNum > 30) {
+      toast.error('Score is greater than 30 marks, which qualifies for a Pass. Please select PASSED or adjust marks.');
       return;
     }
     setSubmittingExamResult(true);
@@ -987,9 +1002,9 @@ export default function DmtMilestonesPage() {
                       : 'bg-slate-800 text-slate-400'
                   }`}>
                     {isExamPassed
-                      ? `✓ PASSED (${profile?.dmtDates?.learnerExamMarks || profile?.learnerExamMarks || 35}/40 Marks)`
+                      ? `✓ PASSED (${recordedExamMarks || 35}/40 Marks)`
                       : isExamFailedState
-                      ? `✕ Attempt ${attemptsCount || 1}/3 Failed`
+                      ? `✕ Attempt ${attemptsCount || 1}/3 Failed${recordedExamMarks !== null && recordedExamMarks !== undefined ? ` (${recordedExamMarks}/40 Marks)` : ''}`
                       : examDate
                       ? `⏳ Attempt ${attemptsCount + 1} of 3 (Scheduled)`
                       : `Attempt 1 of 3 (Pending Date)`}
@@ -1010,6 +1025,8 @@ export default function DmtMilestonesPage() {
                     <span className="font-bold text-white text-sm mt-0.5 block">
                       {isExamPassed
                         ? '✓ Cleared — Practical Lessons Unlocked'
+                        : recordedExamMarks !== null && recordedExamMarks !== undefined && recordedExamMarks <= 30
+                        ? `✕ Scored ${recordedExamMarks}/40 (Score ≤ 30 Failed — Pass requires > 30)`
                         : `${remainingAttempts} attempt(s) remaining before auto-cancellation`}
                     </span>
                   </div>
@@ -1300,11 +1317,45 @@ export default function DmtMilestonesPage() {
                   min="0"
                   max="40"
                   required
-                  placeholder="e.g. 35"
+                  placeholder="e.g. 35 (Pass: > 30)"
                   value={examForm.marks}
-                  onChange={(e) => setExamForm({ ...examForm, marks: e.target.value })}
-                  className="input w-full bg-slate-950/80 border-white/20 text-white font-mono text-sm"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const num = Number(val);
+                    let newRes = examForm.result;
+                    if (val !== '' && !isNaN(num)) {
+                      if (num > 30 && num <= 40) newRes = 'passed';
+                      else if (num <= 30 && num >= 0) newRes = 'failed';
+                    }
+                    setExamForm({ ...examForm, marks: val, result: newRes });
+                  }}
+                  className={`input w-full bg-slate-950/80 text-white font-mono text-sm ${
+                    examForm.marks !== '' && (Number(examForm.marks) < 0 || Number(examForm.marks) > 40)
+                      ? 'border-rose-500 ring-1 ring-rose-500'
+                      : examForm.marks !== '' && Number(examForm.marks) > 30
+                      ? 'border-emerald-500/60'
+                      : examForm.marks !== '' && Number(examForm.marks) <= 30
+                      ? 'border-amber-500/60'
+                      : 'border-white/20'
+                  }`}
                 />
+                {/* Live Marks Feedback */}
+                {examForm.marks !== '' && examForm.marks !== null && (
+                  <div className="mt-1.5 text-xs">
+                    {Number(examForm.marks) < 0 || Number(examForm.marks) > 40 ? (
+                      <span className="text-rose-400 font-bold">✕ Invalid: Marks must be between 0 and 40.</span>
+                    ) : Number(examForm.marks) > 30 ? (
+                      <span className="text-emerald-400 font-bold">✓ Passing Score ({examForm.marks}/40): Qualifies for Pass (&gt; 30).</span>
+                    ) : (
+                      <span className="text-amber-400 font-bold">⚠️ Failing Score ({examForm.marks}/40): 30 or below is a Fail (Pass requires &gt; 30).</span>
+                    )}
+                  </div>
+                )}
+                {examForm.marks === '' && (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    DMT Rule: Passing requires strictly &gt; 30 marks (31 to 40).
+                  </p>
+                )}
               </div>
 
               <div>

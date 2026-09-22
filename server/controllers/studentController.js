@@ -481,14 +481,54 @@ exports.updateDmtDates = async (req, res) => {
       student.dmtDates.learnerExamDate = d;
       if (d) updates.push(`Learner Exam Date (${d.toLocaleDateString()})`);
     }
+
+    // Resolve target exam status
+    const resolvedStatus = written_exam_status !== undefined ? written_exam_status : learnerExamStatus;
+    const isTargetPassed = resolvedStatus === 'Pass' || resolvedStatus === 'passed' || (resolvedStatus === undefined && learnerExamPassed === true);
+    const isTargetFailed = resolvedStatus === 'Fail' || resolvedStatus === 'failed' || (resolvedStatus === undefined && learnerExamPassed === false);
+
+    let numericMarks = undefined;
     if (learnerExamMarks !== undefined) {
-      student.dmtDates.learnerExamMarks = learnerExamMarks !== null && learnerExamMarks !== '' ? Number(learnerExamMarks) : null;
-      student.learnerExamMarks = student.dmtDates.learnerExamMarks;
-      if (learnerExamMarks !== null && learnerExamMarks !== '') updates.push(`Learner Exam Marks (${learnerExamMarks})`);
+      if (learnerExamMarks !== null && learnerExamMarks !== '') {
+        numericMarks = Number(learnerExamMarks);
+        if (isNaN(numericMarks) || numericMarks < 0 || numericMarks > 40) {
+          return res.status(400).json({
+            success: false,
+            message: 'DMT Theory Exam marks must be between 0 and 40.',
+          });
+        }
+        if (isTargetPassed && numericMarks <= 30) {
+          return res.status(400).json({
+            success: false,
+            message: 'DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.',
+          });
+        }
+        if (isTargetFailed && numericMarks > 30) {
+          return res.status(400).json({
+            success: false,
+            message: 'Score is greater than 30 marks, which is a Pass. Please select PASSED or correct the marks.',
+          });
+        }
+        student.dmtDates.learnerExamMarks = numericMarks;
+        student.learnerExamMarks = numericMarks;
+        updates.push(`Learner Exam Marks (${numericMarks}/40)`);
+      } else {
+        student.dmtDates.learnerExamMarks = null;
+        student.learnerExamMarks = null;
+      }
     }
 
     // Written exam status handling
-    const resolvedStatus = written_exam_status !== undefined ? written_exam_status : learnerExamStatus;
+    if (isTargetPassed) {
+      const marksToCheck = numericMarks !== undefined ? numericMarks : (student.learnerExamMarks ?? student.dmtDates?.learnerExamMarks);
+      if (marksToCheck !== null && marksToCheck !== undefined && marksToCheck <= 30) {
+        return res.status(400).json({
+          success: false,
+          message: 'DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.',
+        });
+      }
+    }
+
     if (resolvedStatus !== undefined) {
       const isPassed = resolvedStatus === 'Pass' || resolvedStatus === 'passed';
       const isFailed = resolvedStatus === 'Fail' || resolvedStatus === 'failed';
@@ -1413,6 +1453,27 @@ exports.recordExamAttempt = async (req, res) => {
     }
 
     const numericMarks = marks !== undefined && marks !== null && marks !== '' ? Number(marks) : null;
+    if (numericMarks === null || isNaN(numericMarks) || numericMarks < 0 || numericMarks > 40) {
+      return res.status(400).json({
+        success: false,
+        message: 'DMT Theory Exam marks must be a valid number between 0 and 40.',
+      });
+    }
+
+    if (result === 'passed' && numericMarks <= 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.',
+      });
+    }
+
+    if (result === 'failed' && numericMarks > 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'Marks greater than 30 is considered a Pass. A failing attempt must have 30 or fewer marks.',
+      });
+    }
+
     const attemptRecord = {
       attemptNumber,
       date: examDate ? new Date(examDate) : new Date(),

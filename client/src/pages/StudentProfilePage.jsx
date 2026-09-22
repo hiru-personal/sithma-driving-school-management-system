@@ -585,10 +585,10 @@ export default function StudentProfilePage() {
                   >
                     {isType2
                       ? 'Exempt (Passed)'
-                      : student?.learnerExamStatus === 'passed'
-                      ? 'Passed (≥80%)'
-                      : student?.learnerExamStatus === 'failed'
-                      ? 'Failed'
+                      : student?.learnerExamStatus === 'passed' && (student?.learnerExamMarks === null || student?.learnerExamMarks === undefined || student?.learnerExamMarks > 30)
+                      ? `Passed (${student?.learnerExamMarks || 35}/40)`
+                      : student?.learnerExamStatus === 'failed' || (student?.learnerExamMarks !== null && student?.learnerExamMarks !== undefined && student?.learnerExamMarks <= 30)
+                      ? `Failed (${student?.learnerExamMarks !== null && student?.learnerExamMarks !== undefined ? `${student.learnerExamMarks}/40` : '≤30'})`
                       : student?.written_exam_date
                       ? 'Scheduled'
                       : 'Not Yet Faced'}

@@ -599,9 +599,10 @@ export default function StudentDashboard() {
     user?.studentType === 'Type 2' ||
     user?.student_type === 'Type 2'
   );
+  const recordedExamMarks = profile?.learnerExamMarks ?? profile?.dmtDates?.learnerExamMarks;
   const isExamPassed = Boolean(
-    profile?.learnerExamStatus === 'passed' ||
-    profile?.dmtDates?.learnerExamPassed
+    (profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed) &&
+    (recordedExamMarks === null || recordedExamMarks === undefined || recordedExamMarks > 30)
   );
   const currentTrialDate = profile?.trial_date || profile?.trial?.trialDate || profile?.dmtDates?.trialExamDate || null;
   const hasTrialDate = Boolean(currentTrialDate);

@@ -327,6 +327,26 @@ export default function StaffStudentListPage() {
       }
     }
 
+    // Client-side validation: DMT Theory Exam Marks (0-40) and Passing Threshold (> 30)
+    if (dmtForm.learnerExamMarks !== '' && dmtForm.learnerExamMarks !== null && dmtForm.learnerExamMarks !== undefined) {
+      const marksNum = Number(dmtForm.learnerExamMarks);
+      if (isNaN(marksNum) || marksNum < 0 || marksNum > 40) {
+        toast.error('Theory Exam marks must be between 0 and 40.');
+        return;
+      }
+      if (dmtForm.learnerExamStatus === 'passed' && marksNum <= 30) {
+        toast.error('DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.');
+        return;
+      }
+      if (dmtForm.learnerExamStatus === 'failed' && marksNum > 30) {
+        toast.error('Score is greater than 30 marks, which qualifies for a Pass. Please update status to PASSED or adjust marks.');
+        return;
+      }
+    } else if (dmtForm.learnerExamStatus === 'passed') {
+      toast.error('Please enter exam marks (must be greater than 30 out of 40) to mark as Passed.');
+      return;
+    }
+
     try {
       const res = await api.patch(`/students/${selectedStudent._id}/dmt-dates`, dmtForm);
       if (res.data.success) {
@@ -1567,13 +1587,72 @@ export default function StaffStudentListPage() {
                       type="number"
                       min="0"
                       max="40"
-                      placeholder="e.g. 35"
+                      placeholder="e.g. 35 (Pass: > 30)"
                       value={dmtForm.learnerExamMarks}
-                      onChange={(e) => setDmtForm({ ...dmtForm, learnerExamMarks: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-mono"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const num = Number(val);
+                        // Auto suggest status if valid input
+                        let newStatus = dmtForm.learnerExamStatus;
+                        if (val !== '' && !isNaN(num)) {
+                          if (num > 30 && num <= 40 && dmtForm.learnerExamStatus === 'failed') {
+                            newStatus = 'passed';
+                          } else if (num <= 30 && num >= 0 && dmtForm.learnerExamStatus === 'passed') {
+                            newStatus = 'failed';
+                          }
+                        }
+                        setDmtForm({
+                          ...dmtForm,
+                          learnerExamMarks: val,
+                          learnerExamStatus: newStatus,
+                          learnerExamPassed: newStatus === 'passed',
+                        });
+                      }}
+                      className={`w-full px-3.5 py-2.5 border bg-slate-900/90 text-white rounded-xl font-mono ${
+                        dmtForm.learnerExamMarks !== '' && (Number(dmtForm.learnerExamMarks) < 0 || Number(dmtForm.learnerExamMarks) > 40)
+                          ? 'border-rose-500 ring-1 ring-rose-500'
+                          : dmtForm.learnerExamMarks !== '' && Number(dmtForm.learnerExamMarks) > 30
+                          ? 'border-emerald-500/60'
+                          : dmtForm.learnerExamMarks !== '' && Number(dmtForm.learnerExamMarks) <= 30
+                          ? 'border-amber-500/60'
+                          : 'border-white/15'
+                      }`}
                     />
+                    {/* Live Marks Feedback */}
+                    {dmtForm.learnerExamMarks !== '' && dmtForm.learnerExamMarks !== null && (
+                      <div className="mt-1.5 text-xs">
+                        {Number(dmtForm.learnerExamMarks) < 0 || Number(dmtForm.learnerExamMarks) > 40 ? (
+                          <span className="text-rose-400 font-bold flex items-center gap-1">
+                            ✕ Invalid marks: Must be between 0 and 40.
+                          </span>
+                        ) : Number(dmtForm.learnerExamMarks) > 30 ? (
+                          <span className="text-emerald-400 font-bold flex items-center gap-1">
+                            ✓ Passing Score ({dmtForm.learnerExamMarks}/40): Eligible for PASS (&gt; 30 marks).
+                          </span>
+                        ) : (
+                          <span className="text-amber-400 font-bold flex items-center gap-1">
+                            ⚠️ Failing Score ({dmtForm.learnerExamMarks}/40): 30 or below is a FAIL. Pass requires &gt; 30 marks.
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {dmtForm.learnerExamMarks === '' && (
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        DMT Rule: Pass requires strictly &gt; 30 marks (31 to 40).
+                      </p>
+                    )}
                   </div>
                 </div>
+
+                {/* Validation Alert if Status is Passed but Marks <= 30 */}
+                {dmtForm.learnerExamStatus === 'passed' && dmtForm.learnerExamMarks !== '' && Number(dmtForm.learnerExamMarks) <= 30 && (
+                  <div className="p-3 bg-rose-500/15 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                    <span>
+                      <strong>Cannot Mark as Passed:</strong> Student scored {dmtForm.learnerExamMarks}/40. Sri Lanka DMT regulations require marks greater than 30 (&gt; 30/40) to pass the theory examination.
+                    </span>
+                  </div>
+                )}
 
                 {/* Exam Attempt History List */}
                 {selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.length > 0 && (
