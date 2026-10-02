@@ -1333,52 +1333,52 @@ export default function StudentDashboard() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Welcome Banner */}
-      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-[#0B2447] via-[#19376D] to-[#112D4E] rounded-3xl p-6 sm:p-8 text-white border border-[#3F72AF]/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-[#0B2447] via-[#19376D] to-[#112D4E] rounded-3xl p-6 sm:p-8 text-white border border-[#3F72AF]/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#A5D7E8]/60 to-transparent pointer-events-none" />
-        <div className="space-y-2 relative z-10">
+        <div className="space-y-3 relative z-10">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="badge badge-warning text-xs font-bold py-1">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/15 text-white border border-white/25 shadow-xs">
               {profile?.branch} Branch
             </span>
-            <span className="badge bg-white/15 text-cyan-300 text-xs border border-white/20">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#3F72AF]/40 text-[#A5D7E8] border border-[#A5D7E8]/40 shadow-xs">
               {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
             </span>
             {profile?.nic && (
-              <span className="badge bg-slate-950/60 text-slate-300 text-xs border border-white/10 font-mono">
+              <span className="px-3 py-1 rounded-full text-xs font-mono bg-white/10 text-slate-200 border border-white/15">
                 NIC: {profile.nic}
               </span>
             )}
             {isAdvancePaymentPending ? (
-              <span className="badge bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
+              <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-amber-400/20 text-amber-300 border border-amber-400/40">
                 <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Status: Pending Verification
               </span>
             ) : (
-              <span className="badge bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Status: Active
+              <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-400/20 text-emerald-300 border border-emerald-400/40">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Status: Active Learner
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-white drop-shadow">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
             Ayubowan, {user?.name}!
           </h1>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">
+          <p className="text-slate-100 text-xs sm:text-sm max-w-xl leading-relaxed font-normal">
             Welcome to your driving portal. Track official DMT milestones, review your course lesson balance, and book your practical driving sessions.
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 sm:self-center relative z-10">
+        <div className="flex flex-wrap gap-2.5 sm:self-center relative z-10">
           <button
             onClick={openEditModal}
-            className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-md"
+            className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
           >
-            <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Details
+            <Edit3 className="w-4 h-4 text-[#A5D7E8]" /> Edit Details
           </button>
           <button
             onClick={fetchProfile}
-            className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4 text-cyan-300" /> Refresh
+            <RefreshCw className="w-4 h-4 text-[#A5D7E8]" /> Refresh
           </button>
 
           {isAdvancePaymentPending ? (
@@ -1388,7 +1388,7 @@ export default function StudentDashboard() {
                   '🔒 Advance Payment Pending: Practical lesson booking is restricted until your advance deposit is approved by your branch officer.'
                 )
               }
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-80 border border-amber-400/40 text-amber-300 cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-amber-300 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-80"
               title="Lesson booking locked until advance payment is verified"
             >
               <Lock className="w-4 h-4 text-amber-400" /> Booking Locked (Payment Pending)
@@ -1400,7 +1400,7 @@ export default function StudentDashboard() {
                   '🔒 DMT Requirement (US-09): Practical & trial lessons can only be booked after passing your Learner Written Exam (marked Passed by your branch officer).'
                 )
               }
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-75 border border-cyan-400/30"
+              className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-85"
               title="Practical lessons locked until Learner Written Exam is passed"
             >
               <Lock className="w-4 h-4 text-amber-400" /> Lessons Locked (Exam Pending)
@@ -1412,7 +1412,7 @@ export default function StudentDashboard() {
                   '🔒 Practical Trial Date Pending: Your branch Data Entry Officer must schedule your official trial date before practical lesson sessions can be booked.'
                 )
               }
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-75 border border-purple-400/30 text-purple-300 cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-85"
               title="Lessons locked until practical trial date is scheduled"
             >
               <Lock className="w-4 h-4 text-purple-400" /> Lessons Locked (Trial Date Pending)
@@ -1420,16 +1420,16 @@ export default function StudentDashboard() {
           ) : !isPackagePaymentConfirmed && (profile?.lessonsUnlocked || 0) <= 0 ? (
             <a
               href="#package-selection-payment"
-              className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+              className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-md"
             >
-              <CreditCard className="w-4 h-4 text-slate-950" /> Select Package & Pay
+              <CreditCard className="w-4 h-4 text-white" /> Select Package & Pay
             </a>
           ) : (
             <Link
               to="/student/lessons/book"
-              className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+              className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-md"
             >
-              <Calendar className="w-4 h-4 text-slate-950" /> Book a Lesson
+              <Calendar className="w-4 h-4 text-white" /> Book a Lesson
             </Link>
           )}
         </div>
@@ -1472,35 +1472,35 @@ export default function StudentDashboard() {
 
       {/* Shared Practical Trial Date & Reschedule Banner (Active for both Type 1 & Type 2) */}
       {hasTrialDate && (
-        <div className="card p-6 border border-purple-400/30 bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="card p-6 border-2 border-[#DBE2EF] bg-white rounded-3xl shadow-sm hover:border-[#3F72AF]/40 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
-              <Calendar className="w-6 h-6 text-purple-400" />
+            <div className="w-12 h-12 rounded-2xl bg-[#DBE2EF]/70 border border-[#3F72AF]/30 flex items-center justify-center text-[#112D4E] shrink-0 shadow-inner">
+              <Calendar className="w-6 h-6 text-[#3F72AF]" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs uppercase tracking-wider font-bold text-purple-300">
+                <span className="text-xs uppercase tracking-wider font-extrabold text-[#3F72AF]">
                   {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
                 </span>
                 {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
-                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold">
+                  <span className="badge badge-danger text-[11px] font-bold">
                     Trial Date Passed (Booking Locked)
                   </span>
                 ) : (
-                  <span className="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                  <span className="badge badge-success text-[11px] font-bold">
                     Booking Window Active
                   </span>
                 )}
                 {myRescheduleRequests.find((r) => r.status === 'Pending') && (
-                  <span className="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
+                  <span className="badge badge-warning text-[11px] font-bold flex items-center gap-1">
                     <Clock className="w-3 h-3 animate-pulse" /> Reschedule Pending DEO Review
                   </span>
                 )}
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white">
+              <h2 className="text-xl sm:text-2xl font-black text-[#0B2447]">
                 Scheduled Trial Date: {safeFormatDate(currentTrialDate, 'EEEE, MMMM dd, yyyy')}
               </h2>
-              <p className="text-xs text-slate-300 max-w-xl">
+              <p className="text-xs sm:text-sm text-[#4B6584] max-w-xl leading-relaxed">
                 {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
                   ? 'Your scheduled trial date has passed. Practical lesson booking is locked. Submit a reschedule request to have a Data Entry Officer assign a new trial date and reopen lesson booking.'
                   : 'You can book practical driving lessons up until your scheduled trial date. Need to change your trial date? Submit a reschedule request to your Data Entry Officer.'}
@@ -1512,9 +1512,9 @@ export default function StudentDashboard() {
               setRescheduleMilestone('trial');
               setShowRescheduleModal(true);
             }}
-            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-lg shrink-0"
+            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-md shrink-0 cursor-pointer"
           >
-            <Clock className="w-4 h-4" /> Request Trial Reschedule
+            <Clock className="w-4 h-4 text-white" /> Request Trial Reschedule
           </button>
         </div>
       )}
@@ -1522,39 +1522,43 @@ export default function StudentDashboard() {
 
       {/* TYPE 1: US-09 DMT LEARNER EXAM GATE NOTICE BANNER */}
       {isType1 && !isTrialEligible && (
-        <div className="card p-6 bg-gradient-to-r from-cyan-950/70 via-slate-900/90 to-blue-950/70 border-2 border-cyan-400/40 space-y-4 shadow-[0_10px_35px_rgba(6,182,212,0.15)]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 flex-shrink-0">
-                <ShieldAlert className="w-6 h-6 text-cyan-400 animate-pulse" />
+        <div className="card p-6 bg-white border-2 border-[#DBE2EF] space-y-4 shadow-sm hover:border-[#3F72AF]/40 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#DBE2EF]/70 border border-[#3F72AF]/30 flex items-center justify-center text-[#112D4E] flex-shrink-0 shadow-inner">
+                <ShieldAlert className="w-6 h-6 text-[#3F72AF] animate-pulse" />
               </div>
-              <div>
-                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider mb-1">
+              <div className="space-y-1.5">
+                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider">
                   US-09 DMT Regulation Active • Theory Exam Gate
                 </span>
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                <h3 className="text-lg sm:text-xl font-black text-[#0B2447] flex items-center gap-2">
                   Practical Trial Lessons Locked Until Learner's Exam Passed
                 </h3>
-                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                  As a <strong>Type 1 New Learner</strong>, you can manage your medical exam, learner registration, and written theory test on your dedicated DMT milestone dashboard. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong>"Passed"</strong> by your branch officer.
+                <p className="text-xs sm:text-sm text-[#4B6584] max-w-2xl leading-relaxed">
+                  As a <strong className="text-[#112D4E]">Type 1 New Learner</strong>, you can manage your medical exam, learner registration, and written theory test on your dedicated DMT milestone dashboard. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong className="text-emerald-700">"Passed"</strong> by your branch officer.
                 </p>
-                <div className="pt-2">
+                <div className="pt-1.5">
                   <Link
                     to="/student/milestones"
-                    className="btn-accent text-xs py-1.5 px-3.5 font-bold inline-flex items-center gap-1.5 shadow"
+                    className="btn-primary text-xs py-2 px-4 font-bold inline-flex items-center gap-2 shadow-sm"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <ShieldCheck className="w-4 h-4 text-white" />
                     <span>Go to DMT Milestones Dashboard</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4 text-white" />
                   </Link>
                 </div>
               </div>
             </div>
-            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[180px]">
-              <span className="text-[10px] text-slate-400 font-semibold block">Your Exam Status:</span>
+            <div className="p-4 bg-[#F8FAFD] rounded-2xl border border-[#DBE2EF] text-left sm:text-right self-stretch sm:self-auto sm:min-w-[190px] shadow-xs">
+              <span className="text-xs text-[#64748B] font-bold block mb-1">Your Exam Status:</span>
               <span
-                className={`text-xs font-black ${
-                  profile?.learnerExamStatus === 'failed' ? 'text-rose-400' : 'text-amber-300'
+                className={`text-xs sm:text-sm font-black px-3 py-1 rounded-full inline-block ${
+                  profile?.learnerExamStatus === 'failed'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : profile?.dmtDates?.learnerExamDate
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                    : 'bg-[#DBE2EF] text-[#112D4E] border border-[#3F72AF]/30'
                 }`}
               >
                 {profile?.learnerExamStatus === 'failed'
@@ -2290,35 +2294,35 @@ export default function StudentDashboard() {
 
       {/* Type 1 Dedicated Milestones Hub Card */}
       {isType1 && (
-        <div className="card p-6 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-cyan-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_10px_35px_rgba(6,182,212,0.15)]">
+        <div className="card p-6 bg-white border border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm hover:border-[#3F72AF]/50 transition-all">
           <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 flex-shrink-0">
-              <ShieldCheck className="w-6 h-6 text-cyan-400" />
+            <div className="w-12 h-12 rounded-2xl bg-[#DBE2EF]/70 border border-[#3F72AF]/30 flex items-center justify-center text-[#112D4E] flex-shrink-0 shadow-inner">
+              <ShieldCheck className="w-6 h-6 text-[#3F72AF]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
                 <span className="badge badge-info text-[10px] font-bold uppercase">
                   Type 1 DMT Tracking
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-[#64748B] font-semibold">
                   {profile?.branch} Branch
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-white">
+              <h3 className="text-base sm:text-lg font-bold text-[#0B2447]">
                 Government DMT Milestone Schedule
               </h3>
-              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#4B6584] max-w-xl leading-relaxed">
                 Medical exam, DMT registration, written theory exam attempts, and practical trial readiness are organized in your dedicated DMT Milestones dashboard.
               </p>
             </div>
           </div>
           <Link
             to="/student/milestones"
-            className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-2 whitespace-nowrap shadow-lg self-start sm:self-auto"
+            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center justify-center gap-2 whitespace-nowrap shadow-md self-start sm:self-auto shrink-0"
           >
-            <ShieldCheck className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4 text-white" />
             <span>Open DMT Milestones</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </Link>
         </div>
       )}
@@ -2513,24 +2517,32 @@ export default function StudentDashboard() {
               </div>
             </div>
           ) : isType1 && !isExamPassed ? (
-            <div className="card p-5 bg-gradient-to-br from-purple-950/30 via-slate-900/80 to-slate-950/80 border border-purple-500/25 space-y-3">
-              <div className="flex items-center gap-2.5 text-purple-300 font-bold text-sm">
-                <BookOpen className="w-5 h-5 text-purple-400" />
-                <span>Stage 1: Theory Exam Stage</span>
+            <div className="card p-6 bg-white border border-[#DBE2EF] space-y-4 shadow-sm hover:border-[#3F72AF]/40 transition-all">
+              <div className="flex items-center justify-between border-b border-[#DBE2EF] pb-3">
+                <div className="flex items-center gap-2.5 text-[#0B2447] font-black text-base">
+                  <div className="w-9 h-9 rounded-xl bg-[#DBE2EF] flex items-center justify-center text-[#3F72AF]">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <span>Stage 1: Theory Exam Stage</span>
+                </div>
+                <span className="badge badge-warning text-[10px] font-bold">In Progress</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#4B6584] leading-relaxed">
                 Practical vehicle packages and driving lesson bookings will unlock after you pass your official DMT Written Theory Examination.
               </p>
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Current Goal:</span>
-                <span className="text-cyan-300 font-bold">Pass DMT Written Exam</span>
+              <div className="p-3 bg-[#F8FAFD] rounded-xl border border-[#DBE2EF] flex items-center justify-between text-xs">
+                <span className="text-[#64748B] font-bold">Current Milestone Goal:</span>
+                <span className="text-[#112D4E] font-black flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" /> Pass DMT Written Exam
+                </span>
               </div>
               <Link
                 to="/student/quiz"
-                className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 w-full shadow-md"
+                className="btn-primary text-xs sm:text-sm py-3 px-4 font-bold flex items-center justify-center gap-2 w-full shadow-md cursor-pointer"
               >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="w-4 h-4 text-white" />
                 <span>Practice DMT Exam Quizzes</span>
+                <ArrowRight className="w-4 h-4 text-white" />
               </Link>
             </div>
           ) : null}
@@ -2539,24 +2551,30 @@ export default function StudentDashboard() {
         {/* Col 2: Student Quick Hub & Actions */}
         <div className="space-y-6">
           {/* Quick Actions Card (With Type 1 Scope Restriction Applied) */}
-          <div className="card space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent" /> Student Quick Hub
-            </h3>
-            <div className="space-y-2 text-xs">
+          <div className="card p-6 bg-white border border-[#DBE2EF] space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-[#DBE2EF] pb-3">
+              <h3 className="text-base font-black text-[#0B2447] flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#3F72AF]" /> Student Quick Hub
+              </h3>
+              <span className="text-xs text-[#64748B] font-semibold">Quick Actions</span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
               {/* Type 1 Exclusive Access: Dedicated DMT Milestones Dashboard */}
               {isType1 && (
                 <Link
                   to="/student/milestones"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 transition-all group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFD] hover:bg-[#F0F4F8] border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-all group shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-cyan-300" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#DBE2EF] flex items-center justify-center text-[#112D4E] group-hover:bg-[#3F72AF] group-hover:text-white transition-colors">
+                      <ShieldCheck className="w-5 h-5 text-[#3F72AF] group-hover:text-white" />
+                    </div>
                     <div>
-                      <span className="font-semibold text-slate-200 group-hover:text-white block">
+                      <span className="font-bold text-[#112D4E] group-hover:text-[#0B2447] block text-sm">
                         DMT Milestone Dashboard
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-xs text-[#4B6584]">
                         Medical, Registration & Theory Exam Tracking
                       </span>
                     </div>
@@ -2569,15 +2587,17 @@ export default function StudentDashboard() {
               {isType1 && (
                 <Link
                   to="/student/quiz"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-purple-500/15 via-cyan-500/10 to-transparent hover:from-purple-500/25 border border-purple-400/30 transition-all group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFD] hover:bg-[#F0F4F8] border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-all group shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <BookOpen className="w-4 h-4 text-cyan-300" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#DBE2EF] flex items-center justify-center text-[#112D4E] group-hover:bg-[#3F72AF] group-hover:text-white transition-colors">
+                      <BookOpen className="w-5 h-5 text-[#3F72AF] group-hover:text-white" />
+                    </div>
                     <div>
-                      <span className="font-semibold text-slate-200 group-hover:text-white block">
+                      <span className="font-bold text-[#112D4E] group-hover:text-[#0B2447] block text-sm">
                         DMT Exam Practice Quiz
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-xs text-[#4B6584]">
                         Sinhala, Tamil & English • Multilingual Quizzes
                       </span>
                     </div>
@@ -2593,15 +2613,22 @@ export default function StudentDashboard() {
                       '🔒 DMT Requirement (US-09): Learner written exam must be marked Passed before booking practical trial lessons.'
                     )
                   }
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 opacity-60 border border-white/10 cursor-not-allowed"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] cursor-not-allowed opacity-85"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Lock className="w-4 h-4 text-amber-400" />
-                    <span className="font-semibold text-slate-400">
-                      Book Driving Lessons (Locked)
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                      <Lock className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#64748B] block text-sm">
+                        Book Driving Lessons (Locked)
+                      </span>
+                      <span className="text-xs text-[#94A3B8]">
+                        Unlocks after passing Written Exam
+                      </span>
+                    </div>
                   </div>
-                  <span className="badge badge-warning text-[10px]">Exam Required</span>
+                  <span className="badge badge-warning text-[10px] font-bold">Exam Required</span>
                 </div>
               ) : isType2 && !hasTrialDate ? (
                 <div
@@ -2610,28 +2637,42 @@ export default function StudentDashboard() {
                       '🔒 Practical Trial Date Pending: Your practical trial date must be scheduled by your branch officer before booking driving lessons.'
                     )
                   }
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 opacity-60 border border-white/10 cursor-not-allowed"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] cursor-not-allowed opacity-85"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Lock className="w-4 h-4 text-purple-400" />
-                    <span className="font-semibold text-slate-400">
-                      Book Driving Lessons (Locked)
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+                      <Lock className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#64748B] block text-sm">
+                        Book Driving Lessons (Locked)
+                      </span>
+                      <span className="text-xs text-[#94A3B8]">
+                        Unlocks when trial date is assigned
+                      </span>
+                    </div>
                   </div>
-                  <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px]">Trial Date Required</span>
+                  <span className="badge badge-warning text-[10px] font-bold">Trial Date Required</span>
                 </div>
               ) : (
                 <Link
                   to="/student/lessons"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFD] hover:bg-[#F0F4F8] border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-all group shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="w-4 h-4 text-emerald-400" />
-                    <span className="font-semibold text-slate-200 group-hover:text-white">
-                      Book Driving Lessons
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                      <Calendar className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#112D4E] group-hover:text-[#0B2447] block text-sm">
+                        Book Driving Lessons
+                      </span>
+                      <span className="text-xs text-[#4B6584]">
+                        Schedule your on-road practical slots
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[11px] text-cyan-300 font-bold">{remainingLessons} Available</span>
+                  <span className="badge badge-success text-[10px] font-bold">{remainingLessons} Available</span>
                 </Link>
               )}
 
@@ -2643,28 +2684,42 @@ export default function StudentDashboard() {
                     document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }, 50);
                 }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group text-left"
+                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFD] hover:bg-[#F0F4F8] border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-all group text-left cursor-pointer shadow-xs"
               >
-                <div className="flex items-center gap-2.5">
-                  <PlusCircle className="w-4 h-4 text-accent" />
-                  <span className="font-semibold text-slate-200 group-hover:text-white">
-                    Buy Additional Lessons
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#DBE2EF] flex items-center justify-center text-[#112D4E] group-hover:bg-[#3F72AF] group-hover:text-white transition-colors">
+                    <PlusCircle className="w-5 h-5 text-[#3F72AF] group-hover:text-white" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#112D4E] group-hover:text-[#0B2447] block text-sm">
+                      Need Additional Practice Lessons?
+                    </span>
+                    <span className="text-xs text-[#4B6584]">
+                      Upgrade package or add single lessons
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[11px] text-accent font-bold">Choose Package</span>
+                <ArrowRight className="w-4 h-4 text-[#3F72AF] group-hover:translate-x-1 transition-transform" />
               </button>
 
               <Link
                 to="/student/payments"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFD] hover:bg-[#F0F4F8] border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-all group shadow-xs"
               >
-                <div className="flex items-center gap-2.5">
-                  <CreditCard className="w-4 h-4 text-amber-300" />
-                  <span className="font-semibold text-slate-200 group-hover:text-white">
-                    Payment History & Slips
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                    <CreditCard className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#112D4E] group-hover:text-[#0B2447] block text-sm">
+                      Payment History & Slips
+                    </span>
+                    <span className="text-xs text-[#4B6584]">
+                      Review verified bank deposit receipts
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[11px] text-slate-400 font-semibold">Bank Slips</span>
+                <span className="badge bg-[#DBE2EF] text-[#112D4E] border border-[#3F72AF]/30 text-[10px] font-bold">Bank Slips</span>
               </Link>
             </div>
           </div>
