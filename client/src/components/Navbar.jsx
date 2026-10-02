@@ -140,29 +140,29 @@ export default function Navbar() {
   };
 
   return (
-    <header ref={navRef} className="sticky top-2 sm:top-3 z-50 px-3 sm:px-5 lg:px-8 py-1.5 sm:py-2 max-w-[1600px] mx-auto w-full transition-all duration-300">
+    <header ref={navRef} className="sticky top-2 sm:top-3 z-50 px-2 sm:px-4 lg:px-6 py-1.5 sm:py-2 max-w-[1600px] mx-auto w-full transition-all duration-300">
       {/* Liquid Glass Capsule Bar */}
-      <div className="relative backdrop-blur-2xl bg-slate-900/80 border border-purple-300/25 shadow-[0_8px_32px_0_rgba(147,51,234,0.25)] rounded-2xl sm:rounded-full px-3.5 sm:px-5 lg:px-6 py-2 sm:py-2.5 transition-all duration-300">
+      <div className="relative backdrop-blur-xl bg-white/95 border border-[#DBE2EF] shadow-[0_4px_24px_rgba(17,45,78,0.06)] rounded-2xl sm:rounded-full pl-3.5 sm:pl-5 lg:pl-6 pr-4 sm:pr-6 lg:pr-7 xl:pr-8 py-2 sm:py-2.5 transition-all duration-300">
         {/* Specular Liquid Light Shimmer (Top Highlight) */}
-        <div className="absolute inset-x-4 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-purple-300/80 to-transparent pointer-events-none" />
-        <div className="absolute inset-x-12 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-fuchsia-400/30 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-4 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#DBE2EF] to-transparent pointer-events-none" />
+        <div className="absolute inset-x-12 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-primary/15 to-transparent pointer-events-none" />
 
-        <div className="flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4 min-w-0">
           {/* Logo & School Branding */}
           <Link to={user && isStudent ? "/student/dashboard" : "/"} className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0">
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-xl sm:rounded-full bg-slate-950/80 p-1 sm:p-1.5 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/30 group-hover:scale-105 group-hover:border-cyan-400 transition-all duration-300 shrink-0">
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-xl sm:rounded-full bg-white p-1 sm:p-1.5 flex items-center justify-center shadow-sm border border-[#DBE2EF] group-hover:scale-105 group-hover:border-[#3F72AF] transition-all duration-300 shrink-0">
               <img
                 src="/images/sithma-emblem.png"
                 alt="Sithma Driving School"
-                className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_1px_3px_rgba(17,45,78,0.15)]"
               />
-              <div className="absolute inset-0 rounded-xl sm:rounded-full bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 rounded-xl sm:rounded-full bg-[#3F72AF]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>
             <div className="flex flex-col">
-              <span className="font-heading text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5 drop-shadow whitespace-nowrap">
-                Sithma <span className="text-accent font-black">Driving</span>
+              <span className="font-heading text-base sm:text-lg font-black tracking-tight text-[#112D4E] flex items-center gap-1.5 drop-shadow-sm whitespace-nowrap">
+                Sithma <span className="text-[#3F72AF] font-black">Driving</span>
               </span>
-              <span className="text-[10px] sm:text-xs text-blue-200/90 font-medium tracking-wide hidden xl:block whitespace-nowrap">
+              <span className="text-[10px] sm:text-xs text-[#4B6584] font-medium tracking-wide hidden 2xl:block whitespace-nowrap">
                 Sri Lanka's Driving Academy
               </span>
             </div>
@@ -170,12 +170,12 @@ export default function Navbar() {
 
           {/* Desktop & Tablet Liquid Glass Navigation Links */}
           {user && (
-            <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2 bg-white/5 p-1 lg:p-1.5 rounded-full border border-white/10 backdrop-blur-md shrink-0 relative">
+            <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2 bg-[#F0F4F8] p-1 lg:p-1.5 rounded-full border border-[#DBE2EF] backdrop-blur-md shrink-0 relative">
               {isStudent && (
                 <>
                   {!isPremium && (
-                    <span className="px-2.5 lg:px-3.5 py-1 lg:py-1.5 rounded-full text-[11px] lg:text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-                      <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+                    <span className="px-2.5 lg:px-3.5 py-1 lg:py-1.5 rounded-full text-[11px] lg:text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-sm flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                      <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse shrink-0" />
                       <span className="hidden xl:inline">Status: </span>Pending
                     </span>
                   )}
@@ -185,8 +185,8 @@ export default function Navbar() {
                     to="/student/dashboard"
                     className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/student/dashboard')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                     }`}
                   >
                     <LayoutDashboard className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" /> Dashboard
@@ -199,19 +199,19 @@ export default function Navbar() {
                         to="/student/milestones"
                         className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                           isActive('/student/milestones')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                         }`}
                       >
-                        <ShieldCheck className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-cyan-400 shrink-0" />
+                        <ShieldCheck className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary shrink-0" />
                         <span><span className="hidden xl:inline">DMT </span>Milestones</span>
                       </Link>
                       <Link
                         to="/student/quiz"
                         className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                           isActive('/student/quiz') || location.pathname.startsWith('/student/quiz')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                         }`}
                       >
                         <BookOpen className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
@@ -227,8 +227,8 @@ export default function Navbar() {
                         to="/student/lessons"
                         className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                           isActive('/student/lessons') || isActive('/student/lessons/book')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                         }`}
                       >
                         <Calendar className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
@@ -238,8 +238,8 @@ export default function Navbar() {
                         to="/student/payments"
                         className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                           isActive('/student/payments')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                         }`}
                       >
                         <CreditCard className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" /> Payments
@@ -248,8 +248,8 @@ export default function Navbar() {
                         to="/student/profile"
                         className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                           isActive('/student/profile')
-                            ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                            ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                         }`}
                       >
                         <User className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" /> Profile ID
@@ -266,8 +266,8 @@ export default function Navbar() {
                     to="/admin/dashboard"
                     className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/admin/dashboard')
-                        ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
-                        : 'text-accent hover:bg-accent/20'
+                        ? 'bg-accent text-slate-950 shadow-sm border border-accent/60'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
                     }`}
                   >
                     <TrendingUp className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
@@ -277,8 +277,8 @@ export default function Navbar() {
                     to="/admin/accounts"
                     className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/admin/accounts')
-                        ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
-                        : 'text-accent hover:bg-accent/20'
+                        ? 'bg-accent text-slate-950 shadow-sm border border-accent/60'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
                     }`}
                   >
                     <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
@@ -289,99 +289,73 @@ export default function Navbar() {
                     to="/staff/students"
                     className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/students')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
                     }`}
                   >
                     <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
                     <span>Students<span className="hidden 2xl:inline"> & DMT</span></span>
                     {pendingRescheduleCount > 0 && (
-                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
+                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-sm">
                         {pendingRescheduleCount}
                       </span>
                     )}
                   </Link>
 
-                  {/* Slot Creator - Direct button on xl: */}
-                  <Link
-                    to="/staff/slots"
-                    className={`hidden xl:flex px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/slots')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Clock className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Slots</span>
-                  </Link>
-
-                  {/* Payment Queue - Direct button on xl: */}
-                  <Link
-                    to="/staff/payments"
-                    className={`hidden xl:flex px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/payments')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <CreditCard className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Payments</span>
-                  </Link>
-
-                  {/* Operations / More Tools Dropdown */}
+                  {/* Operations / Management Dropdown */}
                   <div className="relative" ref={moreMenuRef}>
                     <button
                       type="button"
                       onClick={() => setMoreMenuOpen(!moreMenuOpen)}
                       className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
                         (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
-                          ? 'bg-gradient-to-r from-purple-600/40 to-indigo-600/40 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.35)]'
-                          : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                          ? 'bg-purple-100 text-purple-900 border border-purple-300 shadow-sm font-bold'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-white/80 border border-transparent'
                       }`}
                     >
-                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-400 shrink-0" />
+                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-600 shrink-0" />
                       <span>{getActiveMoreLabel() || 'Operations'}</span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {moreMenuOpen && (
-                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-slate-900/95 border border-purple-400/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-300/80 border-b border-white/10 mb-1 flex items-center justify-between">
+                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-white/98 border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.12)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
                           <span>Operations & Management</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Admin Tools</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">Admin Tools</span>
                         </div>
 
-                        {/* Slots (visible in dropdown on < xl) */}
+                        {/* Slots */}
                         <Link
                           to="/staff/slots"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`xl:hidden flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/slots') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/slots') ? 'bg-purple-50 text-primary border border-purple-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
-                            <Clock className="w-4 h-4 text-purple-400" />
+                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                            <Clock className="w-4 h-4 text-purple-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Slot Creator</p>
-                            <p className="text-[10px] text-slate-400">Lesson slots, scheduling & limits</p>
+                            <p className="text-xs font-bold text-slate-900">Slot Creator</p>
+                            <p className="text-[10px] text-slate-500">Lesson slots, scheduling & limits</p>
                           </div>
                         </Link>
 
-                        {/* Payments (visible in dropdown on < xl) */}
+                        {/* Payments */}
                         <Link
                           to="/staff/payments"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`xl:hidden flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/payments') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/payments') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-                            <CreditCard className="w-4 h-4 text-emerald-400" />
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                            <CreditCard className="w-4 h-4 text-emerald-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Payment Queue</p>
-                            <p className="text-[10px] text-slate-400">Verify slips & advance fees</p>
+                            <p className="text-xs font-bold text-slate-900">Payment Queue</p>
+                            <p className="text-[10px] text-slate-500">Verify slips & advance fees</p>
                           </div>
                         </Link>
 
@@ -390,15 +364,15 @@ export default function Navbar() {
                           to="/staff/packages"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/packages') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                            isActive('/staff/packages') ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                            <Layers className="w-4 h-4 text-amber-400" />
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                            <Layers className="w-4 h-4 text-amber-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Course Packages</p>
-                            <p className="text-[10px] text-slate-400">Classes, curriculum & pricing</p>
+                            <p className="text-xs font-bold text-slate-900">Course Packages</p>
+                            <p className="text-[10px] text-slate-500">Classes, curriculum & pricing</p>
                           </div>
                         </Link>
 
@@ -407,15 +381,15 @@ export default function Navbar() {
                           to="/staff/quiz"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/quiz') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                            isActive('/staff/quiz') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-                            <BookOpen className="w-4 h-4 text-blue-400" />
+                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                            <BookOpen className="w-4 h-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Question Bank</p>
-                            <p className="text-[10px] text-slate-400">DMT theory test questions & practice</p>
+                            <p className="text-xs font-bold text-slate-900">Question Bank</p>
+                            <p className="text-[10px] text-slate-500">DMT theory test questions & practice</p>
                           </div>
                         </Link>
 
@@ -424,15 +398,15 @@ export default function Navbar() {
                           to="/staff/reports"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/reports') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                            isActive('/staff/reports') ? 'bg-cyan-50 text-cyan-800 border border-cyan-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
-                            <BarChart3 className="w-4 h-4 text-cyan-400" />
+                          <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center shrink-0">
+                            <BarChart3 className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Reports & Analytics</p>
-                            <p className="text-[10px] text-slate-400">Branch performance & exam statistics</p>
+                            <p className="text-xs font-bold text-slate-900">Reports & Analytics</p>
+                            <p className="text-[10px] text-slate-500">Branch performance & exam statistics</p>
                           </div>
                         </Link>
                       </div>
@@ -448,14 +422,14 @@ export default function Navbar() {
                     to="/staff/students"
                     className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/students')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
                     }`}
                   >
                     <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
                     <span>Students<span className="hidden 2xl:inline"> & DMT</span></span>
                     {pendingRescheduleCount > 0 && (
-                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
+                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-sm">
                         {pendingRescheduleCount}
                       </span>
                     )}
@@ -465,76 +439,68 @@ export default function Navbar() {
                     to="/staff/slots"
                     className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/slots')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
                     <span>Slots</span>
                   </Link>
 
-                  <Link
-                    to="/staff/payments"
-                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/payments')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <CreditCard className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Payments</span>
-                  </Link>
-
-                  {/* Course Packages (direct on xl:) */}
-                  <Link
-                    to="/staff/packages"
-                    className={`hidden xl:flex px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/packages')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Packages</span>
-                  </Link>
-
-                  {/* More Tools for Staff */}
+                  {/* Operations Dropdown for Staff */}
                   <div className="relative" ref={moreMenuRef}>
                     <button
                       type="button"
                       onClick={() => setMoreMenuOpen(!moreMenuOpen)}
                       className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
-                        (isActive('/staff/quiz') || isActive('/staff/reports'))
-                          ? 'bg-gradient-to-r from-purple-600/40 to-indigo-600/40 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.35)]'
-                          : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                        (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
+                          ? 'bg-purple-100 text-purple-900 border border-purple-300 shadow-sm font-bold'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-white/80 border border-transparent'
                       }`}
                     >
-                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-400 shrink-0" />
-                      <span>{isActive('/staff/quiz') ? 'Quiz Bank' : isActive('/staff/reports') ? 'Reports' : 'More Tools'}</span>
+                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-600 shrink-0" />
+                      <span>{getActiveMoreLabel() || 'More Tools'}</span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {moreMenuOpen && (
-                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-slate-900/95 border border-purple-400/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-300/80 border-b border-white/10 mb-1 flex items-center justify-between">
+                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-white/98 border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.12)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
                           <span>Staff Tools</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Management</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">Management</span>
                         </div>
 
-                        {/* Packages (visible in dropdown on < xl) */}
+                        {/* Payments */}
+                        <Link
+                          to="/staff/payments"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/payments') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                            <CreditCard className="w-4 h-4 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">Payment Queue</p>
+                            <p className="text-[10px] text-slate-500">Verify slips & advance fees</p>
+                          </div>
+                        </Link>
+
+                        {/* Packages */}
                         <Link
                           to="/staff/packages"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`xl:hidden flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/packages') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/packages') ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                            <Layers className="w-4 h-4 text-amber-400" />
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                            <Layers className="w-4 h-4 text-amber-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Course Packages</p>
-                            <p className="text-[10px] text-slate-400">Classes, curriculum & pricing</p>
+                            <p className="text-xs font-bold text-slate-900">Course Packages</p>
+                            <p className="text-[10px] text-slate-500">Classes, curriculum & pricing</p>
                           </div>
                         </Link>
 
@@ -543,15 +509,15 @@ export default function Navbar() {
                           to="/staff/quiz"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/quiz') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                            isActive('/staff/quiz') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-                            <BookOpen className="w-4 h-4 text-blue-400" />
+                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                            <BookOpen className="w-4 h-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Question Bank</p>
-                            <p className="text-[10px] text-slate-400">DMT theory test questions & practice</p>
+                            <p className="text-xs font-bold text-slate-900">Question Bank</p>
+                            <p className="text-[10px] text-slate-500">DMT theory test questions & practice</p>
                           </div>
                         </Link>
 
@@ -560,15 +526,15 @@ export default function Navbar() {
                           to="/staff/reports"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/reports') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                            isActive('/staff/reports') ? 'bg-cyan-50 text-cyan-800 border border-cyan-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
-                            <BarChart3 className="w-4 h-4 text-cyan-400" />
+                          <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center shrink-0">
+                            <BarChart3 className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">Reports & Analytics</p>
-                            <p className="text-[10px] text-slate-400">Branch performance & exam statistics</p>
+                            <p className="text-xs font-bold text-slate-900">Reports & Analytics</p>
+                            <p className="text-[10px] text-slate-500">Branch performance & exam statistics</p>
                           </div>
                         </Link>
                       </div>
@@ -582,8 +548,8 @@ export default function Navbar() {
                   to="/instructor/schedule"
                   className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                     isActive('/instructor/schedule')
-                      ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
                   }`}
                 >
                   <Calendar className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" /> Daily Schedule
@@ -593,16 +559,16 @@ export default function Navbar() {
           )}
 
           {/* Desktop & Tablet Liquid Glass Right Actions & User Profile */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-3.5 shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 xl:gap-3 shrink-0">
             {user ? (
-              <div className="flex items-center gap-2 lg:gap-3 xl:gap-3.5">
+              <>
                 {/* Database Indicator Pill (Admin Only) */}
                 {user?.role === 'admin' && dbInfo && (
                   <div
-                    className={`flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all shrink-0 ${
+                    className={`flex items-center gap-1.5 px-2 lg:px-2.5 py-1 sm:py-1.5 rounded-full text-[11px] font-semibold border transition-all shrink-0 ${
                       dbInfo.target?.includes('Atlas')
-                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-                        : 'bg-amber-500/15 text-amber-300 border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm'
+                        : 'bg-amber-50 text-amber-800 border-amber-200 shadow-sm'
                     }`}
                     title={
                       dbInfo.target?.includes('Atlas')
@@ -612,7 +578,7 @@ export default function Navbar() {
                   >
                     <span
                       className={`w-2 h-2 rounded-full shrink-0 ${
-                        dbInfo.target?.includes('Atlas') ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                        dbInfo.target?.includes('Atlas') ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
                       }`}
                     />
                     <Database className="w-3.5 h-3.5 shrink-0" />
@@ -625,22 +591,25 @@ export default function Navbar() {
                 <NotificationBell />
 
                 {/* Frosted User Pill */}
-                <div className="flex items-center gap-2 lg:gap-2.5 px-2.5 lg:px-3.5 py-1 lg:py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md shadow-sm shrink-0">
+                <div
+                  className="flex items-center gap-2 px-2 sm:px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-full bg-slate-100/90 border border-slate-200/80 backdrop-blur-md shadow-sm shrink-0"
+                  title={`${user.name} (${user.role}${user.branch ? ` • ${user.branch}` : ''})`}
+                >
                   {user?.profilePicture || student?.profilePicture ? (
                     <img
                       src={getAvatarUrl(user?.profilePicture || student?.profilePicture)}
                       alt={user.name}
-                      className="w-7 h-7 rounded-full object-cover border border-cyan-400/60 shadow-[0_0_8px_rgba(6,182,212,0.4)] shrink-0"
+                      className="w-7 h-7 rounded-full object-cover border border-primary/40 shadow-sm shrink-0"
                     />
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.4)] shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-primary text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0">
                       {user.name.charAt(0)}
                     </div>
                   )}
                   <div className="text-left leading-tight hidden sm:block">
-                    <p className="text-xs font-bold text-white truncate max-w-[80px] md:max-w-[95px] xl:max-w-[130px]">{user.name}</p>
-                    <p className="text-[10px] text-cyan-300 uppercase tracking-wider font-semibold whitespace-nowrap">
-                      {user.role} <span className="hidden xl:inline">{user.branch ? `• ${user.branch}` : ''}</span>
+                    <p className="text-xs font-bold text-slate-900 truncate max-w-[75px] md:max-w-[90px] xl:max-w-[115px] 2xl:max-w-[140px]">{user.name}</p>
+                    <p className="text-[10px] text-primary uppercase tracking-wider font-semibold whitespace-nowrap">
+                      {user.role} <span className="hidden 2xl:inline text-slate-500">{user.branch ? `• ${user.branch}` : ''}</span>
                     </p>
                   </div>
                 </div>
@@ -648,17 +617,17 @@ export default function Navbar() {
                 {/* Liquid Glass Logout */}
                 <button
                   onClick={handleLogout}
-                  className="p-2 lg:p-2.5 rounded-full bg-white/10 hover:bg-red-500/20 hover:border-red-400/40 text-slate-300 hover:text-red-300 border border-white/15 transition-all duration-300 flex items-center justify-center shadow-sm cursor-pointer shrink-0"
+                  className="p-1.5 sm:p-2 rounded-full bg-slate-100 hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-rose-600 border border-slate-200 transition-all duration-300 flex items-center justify-center shadow-sm cursor-pointer shrink-0"
                   title="Logout"
                 >
                   <LogOut className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 </button>
-              </div>
+              </>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-200 hover:text-white hover:bg-white/10 rounded-full transition-colors border border-transparent hover:border-white/15 whitespace-nowrap"
+                  className="px-3.5 py-1.5 text-xs font-bold text-[#112D4E] hover:text-[#3F72AF] hover:bg-[#DBE2EF]/60 rounded-full transition-colors border border-transparent hover:border-[#DBE2EF] whitespace-nowrap"
                 >
                   Sign In
                 </Link>
@@ -667,9 +636,9 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setTypeModalOpen(true)}
-                  className="px-4 py-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-accent via-amber-400 to-accent-dark hover:scale-105 rounded-full shadow-[0_0_15px_rgba(242,169,59,0.4)] border border-amber-300/40 transition-all duration-300 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                  className="px-4 py-1.5 text-xs font-black text-white bg-gradient-to-r from-[#112D4E] to-[#19376D] hover:from-[#0B2447] hover:to-[#112D4E] hover:scale-105 rounded-full shadow-sm hover:shadow-[0_4px_16px_rgba(17,45,78,0.25)] border border-[#3F72AF]/40 transition-all duration-300 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#A5D7E8]" />
                   <span>Register</span>
                 </button>
               </div>
@@ -685,10 +654,10 @@ export default function Navbar() {
                   <img
                     src={getAvatarUrl(user?.profilePicture || student?.profilePicture)}
                     alt={user.name}
-                    className="w-8 h-8 rounded-full object-cover border border-cyan-400/60 shadow-[0_0_6px_rgba(6,182,212,0.3)] shrink-0"
+                    className="w-8 h-8 rounded-full object-cover border border-primary/40 shadow-sm shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-[0_0_6px_rgba(6,182,212,0.3)] shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0">
                     {user.name.charAt(0)}
                   </div>
                 )}
@@ -696,7 +665,7 @@ export default function Navbar() {
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 sm:p-2.5 rounded-full text-slate-200 hover:text-white bg-white/10 border border-white/20 backdrop-blur-md cursor-pointer transition-colors"
+              className="p-2 sm:p-2.5 rounded-full text-slate-700 hover:text-slate-900 bg-slate-100 border border-slate-200 backdrop-blur-md cursor-pointer transition-colors"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -707,25 +676,25 @@ export default function Navbar() {
 
       {/* Liquid Glass Mobile Drawer (< md) */}
       {mobileMenuOpen && (
-        <div className="md:hidden mt-2 p-4 rounded-3xl backdrop-blur-3xl bg-slate-950/95 border border-purple-400/25 shadow-[0_16px_48px_0_rgba(0,0,0,0.7)] space-y-3 animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
+        <div className="md:hidden mt-2 p-4 rounded-3xl bg-white/98 border border-slate-200 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto text-slate-800">
           {user ? (
             <>
               {/* Mobile User Profile Header */}
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-xs flex items-center gap-3">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs flex items-center gap-3">
                 {user?.profilePicture || student?.profilePicture ? (
                   <img
                     src={getAvatarUrl(user?.profilePicture || student?.profilePicture)}
                     alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover border border-cyan-400/60 shadow-[0_0_8px_rgba(6,182,212,0.4)] flex-shrink-0"
+                    className="w-10 h-10 rounded-full object-cover border border-primary/40 shadow-sm flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.4)] flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary text-white font-black text-sm flex items-center justify-center shadow-sm flex-shrink-0">
                     {user.name.charAt(0)}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white truncate text-sm">{user.name}</p>
-                  <p className="text-[11px] text-cyan-300 font-semibold truncate">{user.email}</p>
+                  <p className="font-bold text-slate-900 truncate text-sm">{user.name}</p>
+                  <p className="text-[11px] text-slate-500 font-semibold truncate">{user.email}</p>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <span className="badge badge-warning text-[9px] py-0.5">{user.role}</span>
                     <span className="badge badge-info text-[9px] py-0.5">{user.branch} Branch</span>
@@ -738,8 +707,8 @@ export default function Navbar() {
                 <div
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
                     dbInfo.target?.includes('Atlas')
-                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
-                      : 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
                   }`}
                 >
                   <Database className="w-3.5 h-3.5" />
@@ -753,9 +722,9 @@ export default function Navbar() {
                   <Link
                     to="/student/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <LayoutDashboard className="w-4 h-4 text-cyan-400" /> Dashboard
+                    <LayoutDashboard className="w-4 h-4 text-primary" /> Dashboard
                   </Link>
 
                   {/* Type 1 Exclusive: Milestones & Quiz */}
@@ -764,16 +733,16 @@ export default function Navbar() {
                       <Link
                         to="/student/milestones"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 font-medium"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 font-semibold"
                       >
-                        <ShieldCheck className="w-4 h-4 text-cyan-400" /> DMT Milestones
+                        <ShieldCheck className="w-4 h-4 text-primary" /> DMT Milestones
                       </Link>
                       <Link
                         to="/student/quiz"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                       >
-                        <BookOpen className="w-4 h-4 text-purple-400" /> DMT Exam Practice
+                        <BookOpen className="w-4 h-4 text-purple-600" /> DMT Exam Practice
                       </Link>
                     </>
                   )}
@@ -784,23 +753,23 @@ export default function Navbar() {
                       <Link
                         to="/student/lessons"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                       >
-                        <Calendar className="w-4 h-4 text-cyan-400" /> Book Lessons
+                        <Calendar className="w-4 h-4 text-primary" /> Book Lessons
                       </Link>
                       <Link
                         to="/student/payments"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                       >
-                        <CreditCard className="w-4 h-4 text-amber-400" /> Payments
+                        <CreditCard className="w-4 h-4 text-amber-600" /> Payments
                       </Link>
                       <Link
                         to="/student/profile"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                       >
-                        <User className="w-4 h-4 text-emerald-400" /> Student Profile & Digital Pass
+                        <User className="w-4 h-4 text-emerald-600" /> Student Profile & Digital Pass
                       </Link>
                     </>
                   )}
@@ -810,20 +779,20 @@ export default function Navbar() {
               {/* Admin Navigation Links */}
               {user?.role === 'admin' && (
                 <div className="space-y-1 text-xs">
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-accent/80">Executive Administration</div>
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Executive Administration</div>
                   <Link
                     to="/admin/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-accent font-bold bg-accent/10 border border-accent/20"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-950 font-bold bg-accent/20 border border-accent/40"
                   >
-                    <TrendingUp className="w-4 h-4 text-accent" /> Executive Dashboard
+                    <TrendingUp className="w-4 h-4 text-amber-600" /> Executive Dashboard
                   </Link>
                   <Link
                     to="/admin/accounts"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <Users className="w-4 h-4 text-cyan-400" /> Manage Accounts
+                    <Users className="w-4 h-4 text-primary" /> Manage Accounts
                   </Link>
                 </div>
               )}
@@ -831,17 +800,17 @@ export default function Navbar() {
               {/* Staff & Admin Operations Navigation Links */}
               {isStaff && (
                 <div className="space-y-1 text-xs">
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-cyan-400/80">Branch Operations</div>
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Branch Operations</div>
                   <Link
                     to="/staff/students"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
                     <span className="flex items-center gap-2.5">
-                      <Users className="w-4 h-4 text-cyan-400" /> Students & DMT Milestones
+                      <Users className="w-4 h-4 text-primary" /> Students & DMT Milestones
                     </span>
                     {pendingRescheduleCount > 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
+                      <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-sm">
                         {pendingRescheduleCount}
                       </span>
                     )}
@@ -849,37 +818,37 @@ export default function Navbar() {
                   <Link
                     to="/staff/slots"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <Clock className="w-4 h-4 text-purple-400" /> Slot Creator
+                    <Clock className="w-4 h-4 text-purple-600" /> Slot Creator
                   </Link>
                   <Link
                     to="/staff/packages"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <Layers className="w-4 h-4 text-amber-400" /> Course Packages
+                    <Layers className="w-4 h-4 text-amber-600" /> Course Packages
                   </Link>
                   <Link
                     to="/staff/quiz"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <BookOpen className="w-4 h-4 text-blue-400" /> Question Bank
+                    <BookOpen className="w-4 h-4 text-blue-600" /> Question Bank
                   </Link>
                   <Link
                     to="/staff/payments"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <CreditCard className="w-4 h-4 text-emerald-400" /> Payment Queue
+                    <CreditCard className="w-4 h-4 text-emerald-600" /> Payment Queue
                   </Link>
                   <Link
                     to="/staff/reports"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <BarChart3 className="w-4 h-4 text-cyan-300" /> Reports & Analytics
+                    <BarChart3 className="w-4 h-4 text-primary" /> Reports & Analytics
                   </Link>
                 </div>
               )}
@@ -890,16 +859,16 @@ export default function Navbar() {
                   <Link
                     to="/instructor/schedule"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <Calendar className="w-4 h-4 text-cyan-400" /> Daily Assigned Schedule
+                    <Calendar className="w-4 h-4 text-primary" /> Daily Assigned Schedule
                   </Link>
                 </div>
               )}
 
               <button
                 onClick={handleLogout}
-                className="w-full text-center px-4 py-3 mt-3 rounded-xl text-xs font-bold text-red-300 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                className="w-full text-center px-4 py-3 mt-3 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
               >
                 <LogOut className="w-4 h-4" /> Logout
               </button>
@@ -909,7 +878,7 @@ export default function Navbar() {
               <Link
                 to="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block text-center py-2.5 rounded-xl text-white bg-white/10 font-bold border border-white/15"
+                className="block text-center py-2.5 rounded-xl text-slate-800 bg-slate-100 hover:bg-slate-200 font-bold border border-slate-200"
               >
                 Sign In
               </Link>

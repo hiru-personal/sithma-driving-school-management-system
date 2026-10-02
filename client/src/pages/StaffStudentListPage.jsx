@@ -418,13 +418,13 @@ export default function StaffStudentListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 font-bold text-xs sm:text-sm mb-2.5">
-            <Sparkles className="w-4 h-4" /> Learner Registry & Operations
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#DBE2EF] border border-[#3F72AF]/30 text-[#112D4E] font-bold text-xs sm:text-sm mb-2.5">
+            <Sparkles className="w-4 h-4 text-[#3F72AF]" /> Learner Registry & Operations
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white font-heading flex items-center gap-3 drop-shadow">
-            <Users className="w-8 h-8 text-cyan-400" /> Student Records & DMT Milestone Management
+          <h1 className="text-3xl sm:text-4xl font-black text-[#0B2447] font-heading flex items-center gap-3">
+            <Users className="w-8 h-8 text-[#3F72AF]" /> Student Records & DMT Milestone Management
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 mt-1">
+          <p className="text-sm sm:text-base text-[#4B6584] mt-1">
             Manage registrations, track DMT milestone progress, and record practical trial examination attempts.
           </p>
         </div>
@@ -434,9 +434,9 @@ export default function StaffStudentListPage() {
               fetchRescheduleRequests();
               setShowRescheduleModal(true);
             }}
-            className="btn-secondary text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg border border-purple-400/40 text-purple-200 hover:border-purple-300"
+            className="btn-secondary text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-sm"
           >
-            <Clock className="w-4 h-4 text-purple-400" />
+            <Clock className="w-4 h-4 text-[#3F72AF]" />
             📅 Date Reschedule Requests
             {rescheduleRequests.filter((r) => r.status === 'Pending').length > 0 && (
               <span className="badge badge-warning text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
@@ -446,13 +446,13 @@ export default function StaffStudentListPage() {
           </button>
           <button
             onClick={() => setShowWalkInModal(true)}
-            className="btn-accent text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg shadow-purple-950/40"
+            className="btn-accent text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-md"
           >
             <PlusCircle className="w-4 h-4" /> Register Walk-In Student
           </button>
           <button
             onClick={fetchStudents}
-            className="btn-secondary text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-lg"
+            className="btn-secondary text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-sm"
           >
             <RefreshCw className="w-4 h-4" /> Refresh List
           </button>
@@ -461,29 +461,29 @@ export default function StaffStudentListPage() {
 
       {/* Prominent Pending Reschedule Banner for DEO */}
       {rescheduleRequests.filter((r) => r.status === 'Pending').length > 0 && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-purple-500/15 to-amber-500/10 border border-amber-400/40 shadow-[0_0_30px_rgba(245,158,11,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 rounded-3xl bg-amber-50/90 border border-amber-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0 shadow-inner">
-              <Clock className="w-6 h-6 text-amber-300 animate-pulse" />
+            <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 shadow-inner">
+              <Clock className="w-6 h-6 text-amber-700 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-extrabold text-white text-base">
+                <h3 className="font-extrabold text-[#0B2447] text-base">
                   Student Date Reschedule Requests Awaiting Review
                 </h3>
-                <span className="badge bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-0.5 rounded-full shadow">
+                <span className="badge bg-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow">
                   {rescheduleRequests.filter((r) => r.status === 'Pending').length} Pending Action
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1">
+              <p className="text-xs sm:text-sm text-[#4B6584] mt-1">
                 Latest:{' '}
-                <strong className="text-white">
+                <strong className="text-[#112D4E]">
                   {rescheduleRequests.find((r) => r.status === 'Pending')?.student_id?.userId?.name ||
                     rescheduleRequests.find((r) => r.status === 'Pending')?.requested_by?.name ||
                     'A student'}
                 </strong>{' '}
                 requested another date for{' '}
-                <strong className="text-amber-300">
+                <strong className="text-amber-800">
                   {getMilestoneLabel(rescheduleRequests.find((r) => r.status === 'Pending')?.milestone_type || 'trial')}
                 </strong>
                 {rescheduleRequests.find((r) => r.status === 'Pending')?.preferred_date
@@ -524,18 +524,18 @@ export default function StaffStudentListPage() {
       )}
 
       {/* View Switcher Tabs: Student Registry vs Date Reschedule Requests */}
-      <div className="flex items-center gap-3 border-b border-white/10 pb-2">
+      <div className="flex items-center gap-3 border-b border-[#DBE2EF] pb-2">
         <button
           type="button"
           onClick={() => setActiveViewTab('students')}
           className={`px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 ${
             activeViewTab === 'students'
-              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+              ? 'bg-[#3F72AF] text-white shadow-md'
+              : 'text-[#4B6584] hover:text-[#112D4E] hover:bg-[#DBE2EF]/60 border border-transparent'
           }`}
         >
           <Users className="w-4 h-4" /> All Students & DMT Milestones
-          <span className="badge bg-white/10 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span className={`badge ${activeViewTab === 'students' ? 'bg-white/20 text-white' : 'bg-[#DBE2EF] text-[#112D4E]'} text-[10px] font-bold px-2 py-0.5 rounded-full`}>
             {students.length}
           </span>
         </button>
@@ -548,8 +548,8 @@ export default function StaffStudentListPage() {
           }}
           className={`px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 ${
             activeViewTab === 'reschedules'
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-400/40 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+              ? 'bg-[#112D4E] text-white shadow-md'
+              : 'text-[#4B6584] hover:text-[#112D4E] hover:bg-[#DBE2EF]/60 border border-transparent'
           }`}
         >
           <Clock className="w-4 h-4" /> Student Date Reschedule Requests
@@ -846,13 +846,13 @@ export default function StaffStudentListPage() {
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
+            <Search className="w-5 h-5 text-[#94A3B8] absolute left-4 top-3.5" />
             <input
               type="text"
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-950/80 border border-purple-400/20 text-white placeholder-slate-400 rounded-2xl text-sm sm:text-base focus:border-cyan-400 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-[#DBE2EF] text-[#112D4E] placeholder-[#94A3B8] rounded-xl text-sm sm:text-base focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 outline-none"
             />
           </div>
 
@@ -860,7 +860,7 @@ export default function StaffStudentListPage() {
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="px-4 py-3.5 border border-purple-400/20 rounded-2xl text-sm sm:text-base bg-slate-950/80 text-cyan-300 outline-none font-bold"
+            className="px-4 py-3 border border-[#DBE2EF] rounded-xl text-sm sm:text-base bg-white text-[#112D4E] outline-none font-semibold focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20"
           >
             <option value="All">All Branches</option>
             <option value="Maharagama">Maharagama Branch</option>
@@ -872,7 +872,7 @@ export default function StaffStudentListPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-3.5 border border-purple-400/20 rounded-2xl text-sm sm:text-base bg-slate-950/80 text-slate-100 outline-none font-semibold"
+            className="px-4 py-3 border border-[#DBE2EF] rounded-xl text-sm sm:text-base bg-white text-[#112D4E] outline-none font-semibold focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20"
           >
             <option value="">All Categories (Type 1 & 2)</option>
             <option value="Type1_NewLearner">Type 1 — New Learner</option>
@@ -883,7 +883,7 @@ export default function StaffStudentListPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3.5 border border-purple-400/20 rounded-2xl text-sm sm:text-base bg-slate-950/80 text-slate-100 outline-none font-semibold"
+            className="px-4 py-3 border border-[#DBE2EF] rounded-xl text-sm sm:text-base bg-white text-[#112D4E] outline-none font-semibold focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20"
           >
             <option value="">All Progress Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -895,21 +895,21 @@ export default function StaffStudentListPage() {
       </div>
 
       {/* Student List Table */}
-      <div className="card p-0 overflow-hidden shadow-2xl border border-purple-300/20">
+      <div className="card p-0 overflow-hidden shadow-sm border border-[#DBE2EF]">
         {loading ? (
-          <div className="py-16 text-center text-sm sm:text-base text-slate-300 flex items-center justify-center gap-3">
-            <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" /> Loading student database...
+          <div className="py-16 text-center text-sm sm:text-base text-[#4B6584] flex items-center justify-center gap-3">
+            <RefreshCw className="w-5 h-5 animate-spin text-[#3F72AF]" /> Loading student database...
           </div>
         ) : students.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <Users className="w-12 h-12 text-slate-500 mx-auto" />
-            <p className="text-lg font-bold text-white">No students found matching your filters</p>
-            <p className="text-sm text-slate-400">Try adjusting your search query or branch filters.</p>
+            <Users className="w-12 h-12 text-[#94A3B8] mx-auto" />
+            <p className="text-lg font-bold text-[#112D4E]">No students found matching your filters</p>
+            <p className="text-sm text-[#4B6584]">Try adjusting your search query or branch filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-left">
-              <thead className="bg-slate-950/90 border-b border-purple-300/20 text-slate-300 uppercase text-xs sm:text-sm font-extrabold tracking-wider">
+              <thead className="bg-[#F8FAFD] border-b border-[#DBE2EF] text-[#112D4E] uppercase text-xs sm:text-sm font-extrabold tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Student Name</th>
                   <th className="px-6 py-4">Branch & Category</th>
@@ -920,7 +920,7 @@ export default function StaffStudentListPage() {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-purple-300/15">
+              <tbody className="divide-y divide-[#DBE2EF]">
                 {students.map((st) => {
                   const isLicensed = st.trial?.licenseObtained;
                   const attemptsCount = st.trial?.attempts?.length || 0;
@@ -937,11 +937,11 @@ export default function StaffStudentListPage() {
                   );
 
                   return (
-                    <tr key={st._id} className="hover:bg-white/5 transition-colors">
+                    <tr key={st._id} className="hover:bg-[#F0F4F8] transition-colors">
                       {/* Name & Contact */}
-                      <td className="px-6 py-4 font-semibold text-white">
+                      <td className="px-6 py-4 font-semibold text-[#0B2447]">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-base sm:text-lg font-bold text-white">{st.userId?.name || 'Unknown Student'}</div>
+                          <div className="text-base sm:text-lg font-bold text-[#0B2447]">{st.userId?.name || 'Unknown Student'}</div>
                           {studentPendingReq && (
                             <button
                               type="button"
@@ -953,22 +953,22 @@ export default function StaffStudentListPage() {
                                 setReviewNotes('');
                                 setShowRescheduleModal(true);
                               }}
-                              className="badge bg-amber-500/25 text-amber-300 border border-amber-400/50 text-[11px] font-extrabold animate-pulse hover:bg-amber-500/40 flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+                              className="badge bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-extrabold animate-pulse hover:bg-amber-200 flex items-center gap-1 cursor-pointer transition-all shadow-sm"
                               title="Click to review student's reschedule request"
                             >
-                              <Clock className="w-3 h-3 text-amber-400" />
+                              <Clock className="w-3 h-3 text-amber-700" />
                               📅 {getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Requested
                             </button>
                           )}
                         </div>
-                        <div className="text-xs sm:text-sm text-slate-300 font-normal mt-0.5">
+                        <div className="text-xs sm:text-sm text-[#4B6584] font-normal mt-0.5">
                           {st.userId?.phone} • {st.userId?.email}
                         </div>
                       </td>
 
                       {/* Branch & Type */}
                       <td className="px-6 py-4">
-                        <div className="font-bold text-sm sm:text-base text-cyan-300">{st.branch}</div>
+                        <div className="font-bold text-sm sm:text-base text-[#112D4E]">{st.branch}</div>
                         <span
                           className={`badge text-xs py-0.5 px-2.5 mt-1 ${
                             isType2 ? 'badge-accent' : 'badge-info'
@@ -978,7 +978,7 @@ export default function StaffStudentListPage() {
                         </span>
                         {st.trial_date && (
                           <div className="mt-1">
-                            <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-bold">
+                            <span className="badge bg-[#DBE2EF] text-[#112D4E] border border-[#3F72AF]/30 text-[10px] font-bold">
                               📅 Trial: {format(new Date(st.trial_date), 'MMM dd')}
                             </span>
                           </div>
@@ -989,15 +989,15 @@ export default function StaffStudentListPage() {
                       <td className="px-6 py-4">
                         {st.package?.type ? (
                           <>
-                            <div className="font-bold text-sm sm:text-base text-white">{st.package.type.replace(/_/g, ' ')}</div>
-                            <div className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                            <div className="font-bold text-sm sm:text-base text-[#0B2447]">{st.package.type.replace(/_/g, ' ')}</div>
+                            <div className="text-xs sm:text-sm text-[#4B6584] mt-0.5">
                               {st.package.lessonsUsed || 0} / {st.package.lessonsTotal || 0} used
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="font-semibold text-xs text-cyan-300">Pending Theory Exam</div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">Selected at Step 5</div>
+                            <div className="font-semibold text-xs text-[#3F72AF]">Pending Theory Exam</div>
+                            <div className="text-[11px] text-[#64748B] mt-0.5">Selected at Step 5</div>
                           </>
                         )}
                       </td>

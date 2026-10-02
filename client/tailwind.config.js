@@ -8,35 +8,53 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#0B5FA5',
-          dark: '#073B68',
-          light: '#EAF3FB',
-          hover: '#094E87'
+          DEFAULT: '#3F72AF',
+          dark: '#112D4E',
+          deep: '#0B2447',
+          hover: '#19376D',
+          light: '#DBE2EF'
+        },
+        navy: {
+          50: '#FAFBFC',
+          100: '#DBE2EF',
+          200: '#A5D7E8',
+          300: '#A9B5DF',
+          400: '#7886C7',
+          500: '#576CBC',
+          600: '#3F72AF',
+          700: '#205295',
+          800: '#19376D',
+          900: '#112D4E',
+          950: '#0B2447'
         },
         accent: {
-          DEFAULT: '#F2A93B',
-          dark: '#D88E22',
-          light: '#FEF6E9'
+          DEFAULT: '#112D4E',
+          dark: '#0B2447',
+          blue: '#2C74B3',
+          royal: '#3F72AF',
+          indigo: '#576CBC',
+          ice: '#A5D7E8',
+          light: '#DBE2EF'
         },
         success: {
-          DEFAULT: '#2E9E6B',
-          dark: '#248257',
-          light: '#EBF7F1'
+          DEFAULT: '#10B981',
+          dark: '#059669',
+          light: '#ECFDF5'
         },
         warning: {
-          DEFAULT: '#E0A32E',
-          dark: '#B8821F',
-          light: '#FCF6E8'
+          DEFAULT: '#F59E0B',
+          dark: '#D97706',
+          light: '#FFFBEB'
         },
         danger: {
-          DEFAULT: '#D64545',
-          dark: '#B03333',
-          light: '#FAECEC'
+          DEFAULT: '#EF4444',
+          dark: '#DC2626',
+          light: '#FEF2F2'
         },
-        neutralBg: 'transparent',
+        neutralBg: '#FAFBFC',
         cardBg: '#FFFFFF',
-        textMain: '#1A2433',
-        textMuted: '#5A6779',
+        textMain: '#112D4E',
+        textMuted: '#4A5568',
         borderColor: '#E2E8F0'
       },
       fontFamily: {

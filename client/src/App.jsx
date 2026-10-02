@@ -41,9 +41,9 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3 text-cyan-300 font-bold bg-slate-900/80 px-6 py-3 rounded-2xl border border-white/10 backdrop-blur-xl">
-          <Clock className="w-5 h-5 animate-spin text-cyan-400" /> Loading Portal...
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 text-primary font-bold bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-xl">
+          <Clock className="w-5 h-5 animate-spin text-primary" /> Loading Portal...
         </div>
       </div>
     );
@@ -81,15 +81,9 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
 export default function App() {
   return (
     <AuthProvider>
-      <DarkVeil
-        hueShift={280}
-        noiseIntensity={0.25}
-        scanlineIntensity={0.05}
-        scanlineFrequency={2.0}
-        warpAmount={0.5}
-        speed={0.4}
-      />
-      <div className="relative z-10 min-h-screen flex flex-col font-sans text-slate-100 selection:bg-purple-500 selection:text-white w-full max-w-full overflow-x-hidden">
+      {/* Clean Luminous Light Canvas */}
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#FAFBFE]" />
+      <div className="relative z-10 min-h-screen flex flex-col font-sans text-[#1E293B] selection:bg-primary selection:text-white w-full max-w-full overflow-x-hidden bg-transparent">
         <Navbar />
 
         <main className="flex-1 w-full max-w-full overflow-x-hidden">

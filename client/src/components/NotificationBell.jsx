@@ -103,28 +103,28 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Liquid Glass Bell Trigger */}
+      {/* Light Glass Bell Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative w-9 h-9 rounded-full bg-white/15 hover:bg-cyan-500/20 text-white hover:text-cyan-300 border border-white/30 backdrop-blur-xl transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.15)] flex items-center justify-center cursor-pointer group"
+        className="relative w-9 h-9 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-all duration-300 shadow-sm flex items-center justify-center cursor-pointer group"
         title="Notifications Center"
       >
-        <Bell className="w-4 h-4 text-white group-hover:text-cyan-300 transition-colors" strokeWidth={2.2} />
+        <Bell className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" strokeWidth={2.2} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-gradient-to-tr from-accent via-amber-400 to-amber-300 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-[0_0_12px_rgba(242,169,59,0.9)] ring-2 ring-slate-900 animate-pulse">
+          <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-gradient-to-tr from-accent via-amber-400 to-amber-300 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-md ring-2 ring-white animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Liquid Glass Dropdown Menu */}
+      {/* Light Glass Dropdown Menu */}
       {isOpen && (
-        <div className="absolute -right-2 sm:right-0 mt-3 w-[calc(100vw-2rem)] sm:w-96 max-w-sm backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
-          <div className="p-4 bg-white/5 border-b border-white/10 flex items-center justify-between">
+        <div className="absolute -right-2 sm:right-0 mt-3 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-white/98 border border-slate-200 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.15)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
+          <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">In-App Alerts</h4>
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">In-App Alerts</h4>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/20 text-accent border border-accent/30 shadow-[0_0_8px_rgba(242,169,59,0.3)]">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-sm">
                   {unreadCount} New
                 </span>
               )}
@@ -132,19 +132,19 @@ export default function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-[11px] font-semibold text-cyan-300 hover:underline flex items-center gap-1"
+                className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
               >
                 <CheckCheck className="w-3.5 h-3.5" /> Mark all read
               </button>
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-white/10">
+          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
             {notifications.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 space-y-1">
-                <Bell className="w-6 h-6 text-slate-600 mx-auto" />
-                <p className="text-slate-300 font-medium">No notifications yet</p>
-                <p className="text-[11px] text-slate-500">You're completely up to date!</p>
+              <div className="py-8 text-center text-xs text-slate-500 space-y-1">
+                <Bell className="w-6 h-6 text-slate-400 mx-auto" />
+                <p className="text-slate-700 font-medium">No notifications yet</p>
+                <p className="text-[11px] text-slate-400">You're completely up to date!</p>
               </div>
             ) : (
               notifications.slice(0, 10).map((n) => (
@@ -153,37 +153,37 @@ export default function NotificationBell() {
                   onClick={() => !n.read && handleMarkAsRead(n._id)}
                   className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer ${
                     !n.read
-                      ? 'bg-cyan-500/15 hover:bg-cyan-500/20'
-                      : 'hover:bg-white/5'
+                      ? 'bg-blue-50/70 hover:bg-blue-50/90'
+                      : 'hover:bg-slate-50'
                   }`}
                 >
-                  <div className="p-2 rounded-xl bg-white/10 border border-white/15 flex-shrink-0 mt-0.5 shadow-sm">
+                  <div className="p-2 rounded-xl bg-slate-100 border border-slate-200 flex-shrink-0 mt-0.5 shadow-sm">
                     {getIcon(n.type)}
                   </div>
                   <div className="flex-1 min-w-0 text-xs">
                     <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <p className="font-bold text-white truncate">{n.title}</p>
-                      <span className="text-[10px] text-slate-400 flex-shrink-0">
+                      <p className="font-bold text-slate-900 truncate">{n.title}</p>
+                      <span className="text-[10px] text-slate-500 flex-shrink-0">
                         {n.createdAt
                           ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })
                           : 'Just now'}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-[11px] leading-snug line-clamp-2">{n.message}</p>
+                    <p className="text-slate-600 text-[11px] leading-snug line-clamp-2">{n.message}</p>
                   </div>
                   {!n.read && (
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)] flex-shrink-0 mt-2"></span>
+                    <span className="w-2 h-2 rounded-full bg-primary shadow-sm flex-shrink-0 mt-2"></span>
                   )}
                 </div>
               ))
             )}
           </div>
 
-          <div className="p-3 bg-white/5 border-t border-white/10 text-center">
+          <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
             <Link
               to="/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-bold text-cyan-300 hover:text-cyan-200 transition-colors"
+              className="text-xs font-bold text-primary hover:text-primary-dark transition-colors"
             >
               View Full Notifications Center →
             </Link>

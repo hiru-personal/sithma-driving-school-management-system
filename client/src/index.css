@@ -4,83 +4,83 @@
 
 @layer base {
   html, body {
-    @apply bg-[#1e1035] text-slate-100 min-h-screen font-sans antialiased text-base selection:bg-purple-500 selection:text-white;
+    @apply bg-[#FAFBFC] text-[#1E293B] min-h-screen font-sans antialiased text-base selection:bg-primary selection:text-white;
     overflow-x: hidden;
     max-width: 100vw;
     -webkit-tap-highlight-color: transparent;
   }
 
   h1 {
-    @apply text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight;
+    @apply text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0B2447] leading-tight;
   }
 
   h2 {
-    @apply text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight;
+    @apply text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-[#112D4E] leading-tight;
   }
 
   h3 {
-    @apply text-base sm:text-lg md:text-xl font-bold text-white;
+    @apply text-base sm:text-lg md:text-xl font-bold text-[#112D4E];
   }
 
   h4, h5, h6 {
-    @apply font-heading font-semibold text-white tracking-tight;
+    @apply font-heading font-semibold text-[#112D4E] tracking-tight;
   }
 
   p {
-    @apply text-slate-300 text-xs sm:text-sm md:text-base;
+    @apply text-[#4B6584] text-xs sm:text-sm md:text-base;
   }
 
   input, select, textarea {
-    @apply bg-slate-900/80 border border-purple-400/20 text-white placeholder-slate-400 text-[16px] sm:text-sm px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 outline-none transition-all w-full;
+    @apply bg-white border border-[#DBE2EF] text-[#112D4E] placeholder-[#94A3B8] text-[16px] sm:text-sm px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 outline-none transition-all w-full shadow-sm;
   }
 }
 
 @layer components {
-  /* Glowing Status Pills */
+  /* Crisp Light Status Badges */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider backdrop-blur-md max-w-full truncate;
+    @apply inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider max-w-full truncate shadow-sm;
   }
 
   .badge-success {
-    @apply bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)];
+    @apply bg-emerald-50 text-emerald-800 border border-emerald-200/90;
   }
 
   .badge-warning {
-    @apply bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)];
+    @apply bg-amber-50 text-amber-800 border border-amber-200/90;
   }
 
   .badge-danger {
-    @apply bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)];
+    @apply bg-rose-50 text-rose-800 border border-rose-200/90;
   }
 
   .badge-info {
-    @apply bg-purple-500/20 text-purple-200 border border-purple-400/30 shadow-[0_0_10px_rgba(168,85,247,0.25)];
+    @apply bg-[#DBE2EF] text-[#112D4E] border border-[#A5D7E8];
   }
 
   .badge-accent {
-    @apply bg-amber-400/15 text-amber-300 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.2)];
+    @apply bg-[#F9F7F7] text-[#3F72AF] border border-[#DBE2EF];
   }
 
-  /* Liquid Glass Cards */
+  /* Clean Crisp Elevated White Cards with Soft Ice-Blue Borders */
   .card {
-    @apply bg-slate-900/60 backdrop-blur-2xl rounded-2xl sm:rounded-3xl border border-purple-300/15 shadow-[0_8px_32px_0_rgba(15,5,30,0.45)] text-slate-100 p-4 sm:p-6 md:p-8 transition-all duration-300 relative overflow-hidden;
+    @apply bg-white rounded-2xl sm:rounded-3xl border border-[#DBE2EF] shadow-[0_4px_24px_-4px_rgba(17,45,78,0.06)] text-[#1E293B] p-4 sm:p-6 md:p-8 transition-all duration-300 relative;
   }
 
   .card-hover {
-    @apply hover:border-purple-400/50 hover:shadow-[0_12px_40px_0_rgba(168,85,247,0.25)] hover:-translate-y-1;
+    @apply hover:border-[#3F72AF]/60 hover:shadow-[0_12px_32px_-4px_rgba(63,114,175,0.18)] hover:-translate-y-0.5;
   }
 
-  /* Liquid Glass Buttons */
+  /* Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-primary via-blue-600 to-primary-hover text-white text-xs sm:text-sm md:text-base font-bold hover:shadow-[0_0_20px_rgba(11,95,165,0.6)] active:scale-95 transition-all border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#19376D] via-[#205295] to-[#3F72AF] text-white text-xs sm:text-sm md:text-base font-bold shadow-md hover:shadow-[0_4px_20px_rgba(63,114,175,0.35)] active:scale-95 transition-all border border-[#19376D]/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-accent via-amber-400 to-accent-dark text-slate-950 text-xs sm:text-sm md:text-base font-extrabold hover:shadow-[0_0_20px_rgba(242,169,59,0.6)] active:scale-95 transition-all border border-amber-300/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#112D4E] hover:bg-[#0B2447] text-white text-xs sm:text-sm md:text-base font-extrabold shadow-md hover:shadow-[0_4px_20px_rgba(17,45,78,0.35)] active:scale-95 transition-all border border-[#19376D] disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-slate-200 text-xs sm:text-sm md:text-base font-bold hover:bg-white/20 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#DBE2EF]/70 hover:bg-[#DBE2EF] border border-[#DBE2EF] text-[#112D4E] text-xs sm:text-sm md:text-base font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer shadow-sm;
   }
 }
 
@@ -94,3 +94,177 @@
   }
 }
 
+/* ==========================================================================
+   Executive Navy & Royal Blue Design System Overrides
+   Palettes: [#F9F7F7, #DBE2EF, #3F72AF, #112D4E] & [#0B2447, #19376D, #576CBC, #A5D7E8]
+   ========================================================================== */
+
+/* Universal High-Contrast Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: #112D4E;
+}
+
+/* Ensure button texts stay legible */
+.btn-primary, .btn-primary * {
+  color: #ffffff !important;
+}
+
+.btn-accent, .btn-accent * {
+  color: #ffffff !important;
+}
+
+/* Ensure elements with text-white or inside text-white containers are pure white */
+.text-white,
+.text-white * {
+  color: #ffffff;
+}
+
+h1.text-white, h2.text-white, h3.text-white, h4.text-white, h5.text-white, h6.text-white,
+.text-white h1, .text-white h2, .text-white h3, .text-white h4, .text-white h5, .text-white h6 {
+  color: #ffffff !important;
+}
+
+p.text-white, .text-white p,
+span.text-white, .text-white span {
+  color: #ffffff !important;
+}
+
+/* Card Content Contrast */
+.card h1, .card h2, .card h3, .card h4, .card h5, .card h6 {
+  color: #112D4E;
+}
+
+/* Card and Table Borders & Dividers */
+.card .border-white\/10,
+.card .border-white\/15,
+.card .border-white\/20,
+.card .border-white\/30,
+.border-white\/10,
+.border-white\/15,
+.border-white\/20,
+[class*="border-purple-300"],
+[class*="border-purple-400"],
+[class*="border-slate-200"] {
+  border-color: #DBE2EF !important; /* Soft Ice-Blue Border */
+}
+
+.card .divide-white\/10 > :not([hidden]) ~ :not([hidden]),
+.divide-white\/10 > :not([hidden]) ~ :not([hidden]),
+[class*="divide-purple"] > :not([hidden]) ~ :not([hidden]),
+[class*="divide-slate"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #DBE2EF !important;
+}
+
+/* Table Light Styles */
+table thead,
+thead,
+thead.bg-slate-950\/90,
+thead.bg-slate-950\/60,
+thead.bg-slate-900,
+thead[class*="bg-slate"] {
+  background-color: #F0F4F8 !important;
+  color: #112D4E !important;
+  border-bottom: 1px solid #DBE2EF !important;
+}
+
+table thead th {
+  color: #112D4E !important;
+  background-color: #F0F4F8 !important;
+  border-bottom: 1px solid #DBE2EF !important;
+  font-weight: 700 !important;
+}
+
+table tbody tr {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #F0F4F8 !important;
+}
+
+table tbody tr.hover\:bg-white\/5:hover,
+table tbody tr:hover,
+div.hover\:bg-white\/5:hover {
+  background-color: #F9F7F7 !important;
+}
+
+table tbody td {
+  color: #1E293B !important;
+}
+
+table tbody td .text-white,
+table tbody td div.text-white {
+  color: #112D4E !important;
+}
+
+/* Form Controls Everywhere (Inputs, Selects, Textareas) */
+input,
+select,
+textarea,
+.card input,
+.card select,
+.card textarea,
+input[class*="bg-slate"],
+select[class*="bg-slate"],
+textarea[class*="bg-slate"] {
+  background-color: #ffffff !important;
+  border-color: #DBE2EF !important;
+  color: #112D4E !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #3F72AF !important;
+  box-shadow: 0 0 0 3px rgba(63, 114, 175, 0.18) !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+input[class*="placeholder-slate"]::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Sub-containers with dark slate backgrounds converted to soft light cards */
+div[class*="bg-slate-950/60"],
+div[class*="bg-slate-950/70"],
+div[class*="bg-slate-950/80"],
+div[class*="bg-slate-900/60"],
+div[class*="bg-slate-900/70"],
+div[class*="bg-slate-900/80"],
+div[class*="bg-slate-900/90"] {
+  background-color: #F8FAFD !important;
+  border-color: #E2E8F0 !important;
+  color: #112D4E !important;
+}
+
+/* Modals & Dialogs Light Background */
+.fixed .bg-slate-900\/95,
+.fixed .bg-slate-950\/95,
+.fixed [class*="bg-slate-950"],
+.fixed [class*="bg-slate-900"],
+div[role="dialog"] {
+  background-color: #ffffff !important;
+  border-color: #DBE2EF !important;
+  color: #112D4E !important;
+  box-shadow: 0 25px 60px -15px rgba(17, 45, 78, 0.18) !important;
+}
+
+.fixed [class*="bg-slate-9"] .text-white,
+div[role="dialog"] .text-white {
+  color: #112D4E !important;
+}
+
+.fixed [class*="bg-slate-9"] .text-slate-300,
+div[role="dialog"] .text-slate-300 {
+  color: #334E68 !important;
+}
+
+.fixed [class*="bg-slate-9"] .text-slate-400,
+div[role="dialog"] .text-slate-400 {
+  color: #4B6584 !important;
+}
+
+/* Soft Backdrop for Modals */
+.fixed.bg-slate-950\/80,
+div.fixed.inset-0.bg-black\/80,
+div.fixed.inset-0.bg-slate-950\/80 {
+  background-color: rgba(11, 36, 71, 0.45) !important;
+}

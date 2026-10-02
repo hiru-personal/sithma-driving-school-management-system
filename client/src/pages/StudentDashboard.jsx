@@ -1333,8 +1333,8 @@ export default function StudentDashboard() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Welcome Banner */}
-      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/80 to-slate-900/90 rounded-3xl p-6 sm:p-8 text-white border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
+      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-[#0B2447] via-[#19376D] to-[#112D4E] rounded-3xl p-6 sm:p-8 text-white border border-[#3F72AF]/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#A5D7E8]/60 to-transparent pointer-events-none" />
         <div className="space-y-2 relative z-10">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="badge badge-warning text-xs font-bold py-1">
