@@ -508,9 +508,8 @@ exports.updateDmtDates = async (req, res) => {
     }
 
     // Written exam status handling
-    if (isTargetPassed) {
-      const marksToCheck = numericMarks !== undefined ? numericMarks : (student.learnerExamMarks ?? student.dmtDates?.learnerExamMarks);
-      if (marksToCheck !== null && marksToCheck !== undefined && marksToCheck <= 30) {
+    if (isTargetPassed && numericMarks !== undefined) {
+      if (numericMarks !== null && numericMarks <= 30) {
         return res.status(400).json({
           success: false,
           message: 'DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.',
@@ -527,6 +526,10 @@ exports.updateDmtDates = async (req, res) => {
         student.dmtDates.learnerExamPassed = true;
         student.trialEligible = true;
         student.dmtDates.learnerExamPassedDate = learnerExamPassedDate || new Date();
+        if (numericMarks === undefined && ((student.learnerExamMarks && student.learnerExamMarks <= 30) || (student.dmtDates?.learnerExamMarks && student.dmtDates.learnerExamMarks <= 30))) {
+          student.learnerExamMarks = null;
+          student.dmtDates.learnerExamMarks = null;
+        }
         updates.push('Learner Exam Status (Passed — Trial Lessons Unlocked)');
       } else if (isFailed) {
         student.written_exam_status = 'Fail';

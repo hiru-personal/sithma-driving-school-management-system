@@ -96,49 +96,188 @@
 
 /* ==========================================================================
    Executive Navy & Royal Blue Design System Overrides
-   Palettes: [#F9F7F7, #DBE2EF, #3F72AF, #112D4E] & [#0B2447, #19376D, #576CBC, #A5D7E8]
+   Global High-Contrast Palette Enforcement for Light Theme
+   Palettes: [#FAFBFC, #DBE2EF, #3F72AF, #112D4E] & [#0B2447, #19376D, #576CBC, #A5D7E8]
    ========================================================================== */
 
-/* Universal High-Contrast Headings */
-h1, h2, h3, h4, h5, h6 {
-  color: #112D4E;
+/* 1. Universal High-Contrast Headings across all pages & cards */
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  color: #0B2447 !important;
 }
 
-/* Ensure button texts stay legible */
-.btn-primary, .btn-primary * {
-  color: #ffffff !important;
+/* Remove fuzzy drop-shadow on light canvas for razor-sharp typography */
+h1.drop-shadow, h2.drop-shadow, h3.drop-shadow {
+  filter: none !important;
 }
 
-.btn-accent, .btn-accent * {
-  color: #ffffff !important;
+/* Page Headers & Main Titles on light canvas */
+main h1,
+header + div h1,
+header + main h1,
+.space-y-6 > div > h1,
+.space-y-8 > div > h1 {
+  color: #0B2447 !important;
 }
 
-/* Ensure elements with text-white or inside text-white containers are pure white */
-.text-white,
-.text-white * {
-  color: #ffffff;
+/* 2. Global High-Contrast Color Mapping for Faint Tailwind Classes */
+/* Text that was faint slate/grey on white */
+.text-slate-400 {
+  color: #4B6584 !important; /* Deep, readable slate-navy (WCAG AAA compliant) */
 }
 
-h1.text-white, h2.text-white, h3.text-white, h4.text-white, h5.text-white, h6.text-white,
-.text-white h1, .text-white h2, .text-white h3, .text-white h4, .text-white h5, .text-white h6 {
-  color: #ffffff !important;
+.text-slate-300 {
+  color: #334E68 !important; /* High-contrast body text */
 }
 
-p.text-white, .text-white p,
-span.text-white, .text-white span {
-  color: #ffffff !important;
+.text-slate-200 {
+  color: #1E293B !important;
 }
 
-/* Card Content Contrast */
+.text-slate-100 {
+  color: #0F172A !important;
+}
+
+.text-slate-500 {
+  color: #334E68 !important;
+}
+
+/* Text that was washed-out neon cyan on white */
+.text-cyan-300,
+.text-cyan-400 {
+  color: #0284C7 !important; /* Rich sky/cyan blue with strong contrast on white */
+}
+
+.text-cyan-200 {
+  color: #0369A1 !important;
+}
+
+.text-cyan-500 {
+  color: #0369A1 !important;
+}
+
+/* Text that was washed-out yellow on white */
+.text-amber-300,
+.text-amber-400 {
+  color: #B45309 !important; /* Rich warm amber/bronze with strong contrast */
+}
+
+/* Text that was washed-out light green on white */
+.text-emerald-300,
+.text-emerald-400 {
+  color: #059669 !important; /* Emerald 600 - rich dark green */
+}
+
+/* Text that was washed-out pink/rose on white */
+.text-rose-300,
+.text-rose-400 {
+  color: #E11D48 !important; /* Deep rose */
+}
+
+.text-purple-300,
+.text-purple-400 {
+  color: #7E22CE !important; /* Rich purple */
+}
+
+/* 3. Form Labels */
+label,
+label.text-slate-300,
+label.text-slate-400,
+label.text-slate-500 {
+  color: #112D4E !important;
+  font-weight: 600 !important;
+}
+
+/* 4. Top Category & Section Badges (Fleet Operations, Curriculum, etc.) */
+div[class*="bg-cyan-500/10"],
+div[class*="bg-primary/10"],
+span[class*="bg-cyan-500/10"] {
+  background-color: #E8F1FD !important;
+  border-color: #DBE2EF !important;
+  color: #19376D !important;
+}
+
+div[class*="bg-cyan-500/10"] svg,
+div[class*="bg-primary/10"] svg {
+  color: #3F72AF !important;
+}
+
+/* 5. Legacy text-white on light canvas & cards converts to deep navy */
+.card .text-white,
+.card strong.text-white,
+.card div.text-white,
+.card p.text-white,
+.card span.text-white,
+table .text-white,
+div[class*="bg-slate"] .text-white,
+div[class*="bg-slate"] strong.text-white,
+div[class*="bg-white/"] .text-white {
+  color: #0B2447 !important;
+}
+
+/* 6. Legacy dark containers converted to soft elevated cards */
+div[class*="bg-slate-950/60"],
+div[class*="bg-slate-950/70"],
+div[class*="bg-slate-950/80"],
+div[class*="bg-slate-900/60"],
+div[class*="bg-slate-900/70"],
+div[class*="bg-slate-900/80"],
+div[class*="bg-slate-900/90"],
+div[class*="bg-white/5"],
+div[class*="bg-white/10"] {
+  background-color: #F8FAFD !important;
+  border-color: #DBE2EF !important;
+  color: #112D4E !important;
+}
+
+/* 7. Card Content Contrast */
 .card h1, .card h2, .card h3, .card h4, .card h5, .card h6 {
-  color: #112D4E;
+  color: #0B2447 !important;
 }
 
-/* Card and Table Borders & Dividers */
+.card p {
+  color: #4B6584;
+}
+
+/* 8. Strictly protect pure white text where intended */
+button[type="submit"], button[type="submit"] *,
+.btn-primary, .btn-primary *,
+.btn-accent, .btn-accent *,
+a.btn-primary, a.btn-primary *,
+a.btn-accent, a.btn-accent *,
+.card .btn-primary, .card .btn-primary *,
+.card .btn-accent, .card .btn-accent *,
+.card button[type="submit"], .card button[type="submit"] *,
+.card button[class*="from-"], .card button[class*="from-"] *,
+.card button[class*="bg-gradient"], .card button[class*="bg-gradient"] *,
+.card button[class*="bg-primary"], .card button[class*="bg-primary"] *,
+.card button[class*="bg-[#3F72AF]"], .card button[class*="bg-[#3F72AF]"] *,
+.card button[class*="bg-[#19376D]"], .card button[class*="bg-[#19376D]"] *,
+button[class*="from-"], button[class*="from-"] *,
+button[class*="bg-gradient"], button[class*="bg-gradient"] *,
+button[class*="bg-primary"], button[class*="bg-primary"] *,
+button[class*="bg-[#3F72AF]"], button[class*="bg-[#3F72AF]"] *,
+button[class*="bg-[#19376D]"], button[class*="bg-[#19376D]"] *,
+.dark-surface, .dark-surface *,
+.hero-dark, .hero-dark *,
+[class*="bg-[#0B2447]"] .text-white,
+[class*="bg-[#0B2447]"] h1, [class*="bg-[#0B2447]"] h2, [class*="bg-[#0B2447]"] h3,
+[class*="bg-[#0B2447]"] .text-slate-100,
+[class*="bg-gradient-to-r from-[#0B2447]"] .text-white,
+[class*="bg-gradient-to-r from-[#0B2447]"] h1,
+[class*="bg-gradient-to-r from-[#0B2447]"] h2,
+[class*="bg-gradient-to-r from-slate-900"] .text-white,
+span.badge-primary, span.badge-primary * {
+  color: #ffffff !important;
+}
+
+/* 9. Card and Table Borders & Dividers */
+.card .border-white\/5,
 .card .border-white\/10,
 .card .border-white\/15,
 .card .border-white\/20,
 .card .border-white\/30,
+.border-white\/5,
 .border-white\/10,
 .border-white\/15,
 .border-white\/20,
@@ -155,7 +294,7 @@ span.text-white, .text-white span {
   border-color: #DBE2EF !important;
 }
 
-/* Table Light Styles */
+/* 10. Table Light Styles */
 table thead,
 thead,
 thead.bg-slate-950\/90,
@@ -191,10 +330,10 @@ table tbody td {
 
 table tbody td .text-white,
 table tbody td div.text-white {
-  color: #112D4E !important;
+  color: #0B2447 !important;
 }
 
-/* Form Controls Everywhere (Inputs, Selects, Textareas) */
+/* 11. Form Controls Everywhere (Inputs, Selects, Textareas) */
 input,
 select,
 textarea,
@@ -206,7 +345,7 @@ select[class*="bg-slate"],
 textarea[class*="bg-slate"] {
   background-color: #ffffff !important;
   border-color: #DBE2EF !important;
-  color: #112D4E !important;
+  color: #0B2447 !important;
 }
 
 input:focus,
@@ -222,20 +361,7 @@ input[class*="placeholder-slate"]::placeholder {
   color: #94A3B8 !important;
 }
 
-/* Sub-containers with dark slate backgrounds converted to soft light cards */
-div[class*="bg-slate-950/60"],
-div[class*="bg-slate-950/70"],
-div[class*="bg-slate-950/80"],
-div[class*="bg-slate-900/60"],
-div[class*="bg-slate-900/70"],
-div[class*="bg-slate-900/80"],
-div[class*="bg-slate-900/90"] {
-  background-color: #F8FAFD !important;
-  border-color: #E2E8F0 !important;
-  color: #112D4E !important;
-}
-
-/* Modals & Dialogs Light Background */
+/* 12. Modals & Dialogs Light Background */
 .fixed .bg-slate-900\/95,
 .fixed .bg-slate-950\/95,
 .fixed [class*="bg-slate-950"],
@@ -249,7 +375,7 @@ div[role="dialog"] {
 
 .fixed [class*="bg-slate-9"] .text-white,
 div[role="dialog"] .text-white {
-  color: #112D4E !important;
+  color: #0B2447 !important;
 }
 
 .fixed [class*="bg-slate-9"] .text-slate-300,
@@ -267,4 +393,31 @@ div[role="dialog"] .text-slate-400 {
 div.fixed.inset-0.bg-black\/80,
 div.fixed.inset-0.bg-slate-950\/80 {
   background-color: rgba(11, 36, 71, 0.45) !important;
+}
+
+/* 13. Global Date Inputs & Interactive Calendar Picker Styling */
+input[type="date"] {
+  position: relative;
+  cursor: pointer !important;
+  color-scheme: light !important;
+  font-family: inherit !important;
+}
+
+/* Ensure the calendar icon inside all date inputs is vibrant, clickable, and prominent */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer !important;
+  background-color: transparent !important;
+  opacity: 0.9 !important;
+  filter: invert(37%) sepia(55%) saturate(836%) hue-rotate(182deg) brightness(93%) contrast(92%) !important; /* Royal Blue (#3F72AF) */
+  width: 22px !important;
+  height: 22px !important;
+  padding: 3px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+  background-color: #DBE2EF !important;
+  transform: scale(1.15) !important;
 }

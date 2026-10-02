@@ -330,28 +330,15 @@ export default function StaffStudentListPage() {
       }
     }
 
-    // Client-side validation: DMT Theory Exam Marks (0-40) and Passing Threshold (> 30)
-    if (dmtForm.learnerExamMarks !== '' && dmtForm.learnerExamMarks !== null && dmtForm.learnerExamMarks !== undefined) {
-      const marksNum = Number(dmtForm.learnerExamMarks);
-      if (isNaN(marksNum) || marksNum < 0 || marksNum > 40) {
-        toast.error('Theory Exam marks must be between 0 and 40.');
-        return;
-      }
-      if (dmtForm.learnerExamStatus === 'passed' && marksNum <= 30) {
-        toast.error('DMT Theory Exam requires marks greater than 30 (out of 40) to pass. Marks of 30 or below is a Fail.');
-        return;
-      }
-      if (dmtForm.learnerExamStatus === 'failed' && marksNum > 30) {
-        toast.error('Score is greater than 30 marks, which qualifies for a Pass. Please update status to PASSED or adjust marks.');
-        return;
-      }
-    } else if (dmtForm.learnerExamStatus === 'passed') {
-      toast.error('Please enter exam marks (must be greater than 30 out of 40) to mark as Passed.');
-      return;
-    }
-
     try {
-      const res = await api.patch(`/students/${selectedStudent._id}/dmt-dates`, dmtForm);
+      const payload = {
+        medicalExamDate: dmtForm.medicalExamDate,
+        learnerRegistrationDate: dmtForm.learnerRegistrationDate,
+        learnerExamDate: dmtForm.learnerExamDate,
+        learnerExamStatus: dmtForm.learnerExamStatus,
+        learnerExamPassed: dmtForm.learnerExamStatus === 'passed',
+      };
+      const res = await api.patch(`/students/${selectedStudent._id}/dmt-dates`, payload);
       if (res.data.success) {
         toast.success('DMT Dates updated successfully');
         setSelectedStudent(null);
@@ -414,7 +401,7 @@ export default function StaffStudentListPage() {
   };
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
+    <div className="py-6 px-3 sm:px-6 lg:px-8 space-y-6 max-w-[1920px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -763,12 +750,15 @@ export default function StaffStudentListPage() {
                                   <label className="block text-slate-300 font-semibold mb-1 text-xs">
                                     Assign New {mLabel} Date <span className="text-rose-400">*</span>
                                   </label>
-                                  <input
-                                    type="date"
-                                    value={reviewNewTrialDate}
-                                    onChange={(e) => setReviewNewTrialDate(e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs font-bold outline-none focus:border-cyan-400"
-                                  />
+                                  <div className="relative flex items-center">
+                                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3 pointer-events-none" />
+                                    <input
+                                      type="date"
+                                      value={reviewNewTrialDate}
+                                      onChange={(e) => setReviewNewTrialDate(e.target.value)}
+                                      className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs font-bold outline-none focus:border-cyan-400 cursor-pointer"
+                                    />
+                                  </div>
                                   <span className="text-[10px] text-slate-400 block mt-0.5">
                                     Required for Approval. Will update student's {mLabel} date in database.
                                   </span>
@@ -907,17 +897,17 @@ export default function StaffStudentListPage() {
             <p className="text-sm text-[#4B6584]">Try adjusting your search query or branch filters.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] text-left">
-              <thead className="bg-[#F8FAFD] border-b border-[#DBE2EF] text-[#112D4E] uppercase text-xs sm:text-sm font-extrabold tracking-wider">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-[#F8FAFD] border-b border-[#DBE2EF] text-[#112D4E] uppercase text-xs font-black tracking-wider">
                 <tr>
-                  <th className="px-6 py-4">Student Name</th>
-                  <th className="px-6 py-4">Branch & Category</th>
-                  <th className="px-6 py-4">Package / Lessons</th>
-                  <th className="px-6 py-4">DMT Learner Status</th>
-                  <th className="px-6 py-4">Trial Attempts</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">Student Name</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Branch & Category</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Package / Lessons</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[150px]">DMT Learner Status</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[110px] text-center">Trial Attempts</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[130px]">Status</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap text-right min-w-[260px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#DBE2EF]">
@@ -939,9 +929,9 @@ export default function StaffStudentListPage() {
                   return (
                     <tr key={st._id} className="hover:bg-[#F0F4F8] transition-colors">
                       {/* Name & Contact */}
-                      <td className="px-6 py-4 font-semibold text-[#0B2447]">
+                      <td className="px-4 py-3 font-semibold text-[#0B2447]">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-base sm:text-lg font-bold text-[#0B2447]">{st.userId?.name || 'Unknown Student'}</div>
+                          <div className="text-sm sm:text-base font-extrabold text-[#0B2447]">{st.userId?.name || 'Unknown Student'}</div>
                           {studentPendingReq && (
                             <button
                               type="button"
@@ -953,7 +943,7 @@ export default function StaffStudentListPage() {
                                 setReviewNotes('');
                                 setShowRescheduleModal(true);
                               }}
-                              className="badge bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-extrabold animate-pulse hover:bg-amber-200 flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+                              className="badge bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold animate-pulse hover:bg-amber-200 flex items-center gap-1 cursor-pointer transition-all shadow-xs"
                               title="Click to review student's reschedule request"
                             >
                               <Clock className="w-3 h-3 text-amber-700" />
@@ -961,16 +951,16 @@ export default function StaffStudentListPage() {
                             </button>
                           )}
                         </div>
-                        <div className="text-xs sm:text-sm text-[#4B6584] font-normal mt-0.5">
+                        <div className="text-xs text-[#4B6584] font-medium mt-0.5">
                           {st.userId?.phone} • {st.userId?.email}
                         </div>
                       </td>
 
                       {/* Branch & Type */}
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-sm sm:text-base text-[#112D4E]">{st.branch}</div>
+                      <td className="px-4 py-3">
+                        <div className="font-extrabold text-xs sm:text-sm text-[#0B2447]">{st.branch}</div>
                         <span
-                          className={`badge text-xs py-0.5 px-2.5 mt-1 ${
+                          className={`badge text-[11px] py-0.5 px-2 mt-1 font-bold ${
                             isType2 ? 'badge-accent' : 'badge-info'
                           }`}
                         >
@@ -986,26 +976,26 @@ export default function StaffStudentListPage() {
                       </td>
 
                       {/* Package */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         {st.package?.type ? (
                           <>
-                            <div className="font-bold text-sm sm:text-base text-[#0B2447]">{st.package.type.replace(/_/g, ' ')}</div>
-                            <div className="text-xs sm:text-sm text-[#4B6584] mt-0.5">
+                            <div className="font-bold text-xs sm:text-sm text-[#0B2447]">{st.package.type.replace(/_/g, ' ')}</div>
+                            <div className="text-xs text-[#4B6584] font-medium mt-0.5">
                               {st.package.lessonsUsed || 0} / {st.package.lessonsTotal || 0} used
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="font-semibold text-xs text-[#3F72AF]">Pending Theory Exam</div>
-                            <div className="text-[11px] text-[#64748B] mt-0.5">Selected at Step 5</div>
+                            <div className="font-bold text-xs text-[#3F72AF]">Pending Theory Exam</div>
+                            <div className="text-[11px] text-[#64748B] font-medium mt-0.5">Selected at Step 5</div>
                           </>
                         )}
                       </td>
 
                       {/* DMT Learner Exam */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         {isType2 ? (
-                          <span className="badge badge-success text-xs">Pre-Cleared</span>
+                          <span className="badge badge-success text-xs font-bold">Pre-Cleared</span>
                         ) : st.registrationStatus === 'cancelled' ? (
                           <span className="badge badge-danger text-xs font-bold">Failed 3/3 Attempts</span>
                         ) : st.dmtDates?.learnerExamPassed ? (
@@ -1014,39 +1004,39 @@ export default function StaffStudentListPage() {
                           </span>
                         ) : st.learnerExamAttemptsCount > 0 ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="badge badge-danger text-xs">Failed ({st.learnerExamAttemptsCount}/3)</span>
+                            <span className="badge badge-danger text-xs font-bold">Failed ({st.learnerExamAttemptsCount}/3)</span>
                             {st.dmtDates?.learnerExamDate && (
-                              <span className="text-[10px] text-amber-300">
+                              <span className="text-[10px] text-amber-700 font-bold">
                                 Next: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
                               </span>
                             )}
                           </div>
                         ) : st.dmtDates?.learnerExamDate ? (
-                          <span className="badge badge-warning text-xs">
+                          <span className="badge badge-warning text-xs font-bold">
                             Exam: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
                           </span>
                         ) : (
-                          <span className="badge badge-danger text-xs">Exam Pending</span>
+                          <span className="badge badge-danger text-xs font-bold">Exam Pending</span>
                         )}
                       </td>
 
                       {/* Trial Attempts Pills */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
                           {[1, 2, 3].map((num) => {
                             const att = st.trial?.attempts?.find((a) => a.attemptNumber === num);
-                            let bg = 'bg-slate-800 text-slate-400 border border-white/10';
+                            let bg = 'bg-[#F0F4F8] text-[#4B6584] border border-[#DBE2EF]';
                             if (att) {
                               bg =
                                 att.result === 'passed'
-                                  ? 'bg-emerald-500 text-slate-950 font-black border-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
-                                  : 'bg-rose-500 text-white font-black border-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]';
+                                  ? 'bg-emerald-600 text-white font-black border-emerald-500 shadow-sm'
+                                  : 'bg-rose-600 text-white font-black border-rose-500 shadow-sm';
                             }
 
                             return (
                               <span
                                 key={num}
-                                className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${bg}`}
+                                className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-extrabold transition-transform hover:scale-105 ${bg}`}
                                 title={
                                   att
                                     ? `Attempt ${num}: ${att.result.toUpperCase()} on ${format(
@@ -1064,14 +1054,14 @@ export default function StaffStudentListPage() {
                       </td>
 
                       {/* Registration Status */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex flex-col items-start gap-1">
                           <span
                             className={`badge text-xs font-bold ${
                               isLicensed
                                 ? 'badge-success'
                                 : st.registrationStatus === 'cancelled'
-                                ? 'badge-danger bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                ? 'badge-danger bg-rose-50 text-rose-800 border border-rose-300'
                                 : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
                                 ? 'badge-info'
                                 : 'badge-warning'
@@ -1091,16 +1081,16 @@ export default function StaffStudentListPage() {
                           )}
 
                           {st.latestPayment?.slipImageUrl && !st.isAdvancePaid && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-400/20 font-medium">
-                              <FileText className="w-3 h-3 text-cyan-400" /> Slip Uploaded
+                            <span className="inline-flex items-center gap-1 text-[10px] text-[#3F72AF] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 font-bold">
+                              <FileText className="w-3 h-3 text-[#3F72AF]" /> Slip Uploaded
                             </span>
                           )}
                         </div>
                       </td>
 
                       {/* Action Buttons */}
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                           {/* Direct Date Reschedule Review Action Button */}
                           {studentPendingReq && (
                             <button
@@ -1113,27 +1103,29 @@ export default function StaffStudentListPage() {
                                 setReviewNotes('');
                                 setShowRescheduleModal(true);
                               }}
-                              className="p-2 rounded-xl bg-amber-500/25 hover:bg-amber-500/40 text-amber-300 border border-amber-400/50 animate-pulse transition-all shadow-[0_0_12px_rgba(245,158,11,0.35)]"
+                              className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 animate-pulse transition-all shadow-xs cursor-pointer"
                               title={`Action Required: Review ${getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Request`}
                             >
-                              <Clock className="w-4 h-4 text-amber-300" />
+                              <Clock className="w-4 h-4 text-amber-700" />
                             </button>
                           )}
 
+                          {/* Inspect Details Button */}
                           <button
                             onClick={() => openVerifyPaymentModal(st)}
-                            className="p-2 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
+                            className="p-2 rounded-xl bg-[#F0F4F8] hover:bg-blue-50 text-[#3F72AF] hover:text-[#0B2447] border border-[#DBE2EF] transition-all cursor-pointer shadow-xs"
                             title="Inspect Student Registration Details & Payment Slip"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
 
+                          {/* Verify Payment Button */}
                           <button
                             onClick={() => openVerifyPaymentModal(st)}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1 cursor-pointer shadow-xs ${
                               st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30'
-                                : 'bg-amber-500/20 text-amber-300 border border-amber-400/40 hover:bg-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.35)]'
+                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-amber-100 text-amber-950 border border-amber-300 hover:bg-amber-200 shadow-xs animate-pulse'
                             }`}
                             title={
                               st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
@@ -1141,39 +1133,42 @@ export default function StaffStudentListPage() {
                                 : 'Review Payment Slip, Student Details & Verify Payment'
                             }
                           >
-                            <ShieldCheck className="w-4 h-4 text-amber-300" />
-                            {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
-                              ? 'Verified Premium'
-                              : 'Verify Payment & Upgrade User'}
+                            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                            <span>
+                              {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                                ? 'Verified'
+                                : 'Verify Pay'}
+                            </span>
                           </button>
 
                           {/* Schedule Practical Trial Date (Shared for Type 1 & Type 2) */}
                           <button
                             onClick={() => openStudentModal(st, 'set_trial_date')}
-                            className="p-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 transition-all"
+                            className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer shadow-xs"
                             title="Schedule or Reschedule Practical Trial Date"
                           >
-                            <Calendar className="w-4 h-4 text-purple-300" />
+                            <Calendar className="w-4 h-4 text-purple-600" />
                           </button>
 
                           {/* DMT Milestone Dates (Only for Type 1 New Learners) */}
                           {!isType2 && (
                             <button
                               onClick={() => openStudentModal(st, 'edit_dmt')}
-                              className="p-2 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/20 transition-all"
+                              className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#3F72AF] border border-blue-200 transition-all cursor-pointer shadow-xs"
                               title="Update DMT Milestone Dates (Type 1 Only)"
                             >
-                              <Calendar className="w-4 h-4 text-cyan-400" />
+                              <Calendar className="w-4 h-4 text-[#3F72AF]" />
                             </button>
                           )}
 
+                          {/* Record Practical Trial Result */}
                           <button
                             onClick={() => openStudentModal(st, 'record_trial')}
                             disabled={isLicensed || attemptsCount >= 3}
-                            className="p-2 rounded-xl bg-white/10 hover:bg-amber-500/20 text-amber-300 border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs"
                             title="Record Practical Trial Result"
                           >
-                            <Award className="w-4 h-4" />
+                            <Award className="w-4 h-4 text-amber-700" />
                           </button>
                         </div>
                       </td>
@@ -1322,14 +1317,17 @@ export default function StaffStudentListPage() {
                   <label className="block font-semibold text-slate-300 mb-1">
                     Select Practical Trial Date:
                   </label>
-                  <input
-                    type="date"
-                    required
-                    min={new Date().toISOString().split('T')[0]}
-                    value={trialDateInput}
-                    onChange={(e) => setTrialDateInput(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/15 rounded-xl text-cyan-300 font-bold outline-none"
-                  />
+                  <div className="relative flex items-center">
+                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="date"
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      value={trialDateInput}
+                      onChange={(e) => setTrialDateInput(e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900/90 border border-white/15 rounded-xl text-cyan-300 font-bold outline-none cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 {selectedStudent.trial_date && (
@@ -1494,12 +1492,15 @@ export default function StaffStudentListPage() {
                       </span>
                     )}
                   </div>
-                  <input
-                    type="date"
-                    value={dmtForm.learnerRegistrationDate}
-                    onChange={(e) => setDmtForm({ ...dmtForm, learnerRegistrationDate: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
-                  />
+                  <div className="relative flex items-center">
+                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={dmtForm.learnerRegistrationDate}
+                      onChange={(e) => setDmtForm({ ...dmtForm, learnerRegistrationDate: e.target.value })}
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 {/* 2. Medical Examination Date */}
@@ -1514,31 +1515,15 @@ export default function StaffStudentListPage() {
                       </span>
                     )}
                   </div>
-                  <input
-                    type="date"
-                    value={dmtForm.medicalExamDate}
-                    onChange={(e) => setDmtForm({ ...dmtForm, medicalExamDate: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2.5 bg-white/5 p-3 rounded-xl border border-white/10">
-                  <input
-                    type="checkbox"
-                    id="staffMedPassed"
-                    checked={dmtForm.medicalExamPassed}
-                    onChange={(e) =>
-                      setDmtForm({
-                        ...dmtForm,
-                        medicalExamPassed: e.target.checked,
-                        medicalDone: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 text-primary rounded"
-                  />
-                  <label htmlFor="staffMedPassed" className="font-medium text-slate-200 cursor-pointer">
-                    Passed DMT Medical Examination (Cleared)
-                  </label>
+                  <div className="relative flex items-center">
+                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={dmtForm.medicalExamDate}
+                      onChange={(e) => setDmtForm({ ...dmtForm, medicalExamDate: e.target.value })}
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 {/* 3. Learner Written Exam Date */}
@@ -1551,111 +1536,39 @@ export default function StaffStudentListPage() {
                       {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
                     </span>
                   </div>
-                  <input
-                    type="date"
-                    value={dmtForm.learnerExamDate}
-                    onChange={(e) => setDmtForm({ ...dmtForm, learnerExamDate: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-300 mb-1">
-                      4. Learner Exam Status:
-                    </label>
-                    <select
-                      value={dmtForm.learnerExamStatus}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setDmtForm({
-                          ...dmtForm,
-                          learnerExamStatus: val,
-                          learnerExamPassed: val === 'passed',
-                        });
-                      }}
-                      className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold"
-                    >
-                      <option value="not_taken">Not Taken / In Progress</option>
-                      <option value="passed">PASSED (Unlocks Trial Lessons)</option>
-                      <option value="failed">FAILED</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-300 mb-1">
-                      5. Exam Marks Scored (out of 40):
-                    </label>
+                  <div className="relative flex items-center">
+                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
                     <input
-                      type="number"
-                      min="0"
-                      max="40"
-                      placeholder="e.g. 35 (Pass: > 30)"
-                      value={dmtForm.learnerExamMarks}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const num = Number(val);
-                        // Auto suggest status if valid input
-                        let newStatus = dmtForm.learnerExamStatus;
-                        if (val !== '' && !isNaN(num)) {
-                          if (num > 30 && num <= 40 && dmtForm.learnerExamStatus === 'failed') {
-                            newStatus = 'passed';
-                          } else if (num <= 30 && num >= 0 && dmtForm.learnerExamStatus === 'passed') {
-                            newStatus = 'failed';
-                          }
-                        }
-                        setDmtForm({
-                          ...dmtForm,
-                          learnerExamMarks: val,
-                          learnerExamStatus: newStatus,
-                          learnerExamPassed: newStatus === 'passed',
-                        });
-                      }}
-                      className={`w-full px-3.5 py-2.5 border bg-slate-900/90 text-white rounded-xl font-mono ${
-                        dmtForm.learnerExamMarks !== '' && (Number(dmtForm.learnerExamMarks) < 0 || Number(dmtForm.learnerExamMarks) > 40)
-                          ? 'border-rose-500 ring-1 ring-rose-500'
-                          : dmtForm.learnerExamMarks !== '' && Number(dmtForm.learnerExamMarks) > 30
-                          ? 'border-emerald-500/60'
-                          : dmtForm.learnerExamMarks !== '' && Number(dmtForm.learnerExamMarks) <= 30
-                          ? 'border-amber-500/60'
-                          : 'border-white/15'
-                      }`}
+                      type="date"
+                      value={dmtForm.learnerExamDate}
+                      onChange={(e) => setDmtForm({ ...dmtForm, learnerExamDate: e.target.value })}
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
                     />
-                    {/* Live Marks Feedback */}
-                    {dmtForm.learnerExamMarks !== '' && dmtForm.learnerExamMarks !== null && (
-                      <div className="mt-1.5 text-xs">
-                        {Number(dmtForm.learnerExamMarks) < 0 || Number(dmtForm.learnerExamMarks) > 40 ? (
-                          <span className="text-rose-400 font-bold flex items-center gap-1">
-                            ✕ Invalid marks: Must be between 0 and 40.
-                          </span>
-                        ) : Number(dmtForm.learnerExamMarks) > 30 ? (
-                          <span className="text-emerald-400 font-bold flex items-center gap-1">
-                            ✓ Passing Score ({dmtForm.learnerExamMarks}/40): Eligible for PASS (&gt; 30 marks).
-                          </span>
-                        ) : (
-                          <span className="text-amber-400 font-bold flex items-center gap-1">
-                            ⚠️ Failing Score ({dmtForm.learnerExamMarks}/40): 30 or below is a FAIL. Pass requires &gt; 30 marks.
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {dmtForm.learnerExamMarks === '' && (
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        DMT Rule: Pass requires strictly &gt; 30 marks (31 to 40).
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                {/* Validation Alert if Status is Passed but Marks <= 30 */}
-                {dmtForm.learnerExamStatus === 'passed' && dmtForm.learnerExamMarks !== '' && Number(dmtForm.learnerExamMarks) <= 30 && (
-                  <div className="p-3 bg-rose-500/15 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                    <span>
-                      <strong>Cannot Mark as Passed:</strong> Student scored {dmtForm.learnerExamMarks}/40. Sri Lanka DMT regulations require marks greater than 30 (&gt; 30/40) to pass the theory examination.
-                    </span>
-                  </div>
-                )}
+                {/* 4. Learner Exam Status */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    4. Learner Exam Status:
+                  </label>
+                  <select
+                    value={dmtForm.learnerExamStatus}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDmtForm({
+                        ...dmtForm,
+                        learnerExamStatus: val,
+                        learnerExamPassed: val === 'passed',
+                      });
+                    }}
+                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold cursor-pointer"
+                  >
+                    <option value="not_taken">Not Taken / In Progress</option>
+                    <option value="passed">PASSED (Unlocks Trial Lessons)</option>
+                    <option value="failed">FAILED</option>
+                  </select>
+                </div>
 
                 {/* Exam Attempt History List */}
                 {selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.length > 0 && (
@@ -1737,13 +1650,16 @@ export default function StaffStudentListPage() {
                   <label className="block font-semibold text-slate-300 mb-1">
                     Practical Trial Examination Date:
                   </label>
-                  <input
-                    type="date"
-                    required
-                    value={trialForm.attemptDate}
-                    onChange={(e) => setTrialForm({ ...trialForm, attemptDate: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
-                  />
+                  <div className="relative flex items-center">
+                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="date"
+                      required
+                      value={trialForm.attemptDate}
+                      onChange={(e) => setTrialForm({ ...trialForm, attemptDate: e.target.value })}
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -2617,12 +2533,15 @@ export default function StaffStudentListPage() {
                                     <label className="block text-slate-300 font-semibold mb-1 text-xs">
                                       New {mLabel} Date <span className="text-rose-400">*</span>
                                     </label>
-                                    <input
-                                      type="date"
-                                      value={reviewNewTrialDate}
-                                      onChange={(e) => setReviewNewTrialDate(e.target.value)}
-                                      className="w-full px-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs font-bold"
-                                    />
+                                    <div className="relative flex items-center">
+                                      <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3 pointer-events-none" />
+                                      <input
+                                        type="date"
+                                        value={reviewNewTrialDate}
+                                        onChange={(e) => setReviewNewTrialDate(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs font-bold cursor-pointer"
+                                      />
+                                    </div>
                                     <span className="text-[10px] text-slate-400 block mt-0.5">
                                       Required for Approval. Will update student's {mLabel} date in system.
                                     </span>

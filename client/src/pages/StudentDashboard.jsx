@@ -2830,12 +2830,15 @@ export default function StudentDashboard() {
                 <label className="block font-semibold text-slate-300 mb-1">
                   Preferred New Trial Date (Optional):
                 </label>
-                <input
-                  type="date"
-                  value={preferredRescheduleDate}
-                  onChange={(e) => setPreferredRescheduleDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs font-bold"
-                />
+                <div className="relative flex items-center">
+                  <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={preferredRescheduleDate}
+                    onChange={(e) => setPreferredRescheduleDate(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs font-bold cursor-pointer"
+                  />
+                </div>
                 <span className="text-[10px] text-slate-400 block mt-1">
                   Final trial date assignment will be confirmed by DMT and your branch Data Entry Officer.
                 </span>
