@@ -1360,13 +1360,16 @@ export default function DmtMilestonesPage() {
 
               <div>
                 <label className="text-slate-400 font-semibold block mb-1.5">Exam Date Faced:</label>
-                <input
-                  type="date"
-                  required
-                  value={examForm.examDate}
-                  onChange={(e) => setExamForm({ ...examForm, examDate: e.target.value })}
-                  className="input w-full bg-slate-950/80 border-white/20 text-white font-mono"
-                />
+                <div className="relative flex items-center">
+                  <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="date"
+                    required
+                    value={examForm.examDate}
+                    onChange={(e) => setExamForm({ ...examForm, examDate: e.target.value })}
+                    className="input w-full pl-10 pr-3.5 bg-slate-950/80 border-white/20 text-white font-mono cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div>
@@ -1770,14 +1773,17 @@ export default function DmtMilestonesPage() {
                       <label className="text-slate-400 font-semibold block mb-1">
                         Preferred New Date (Optional):
                       </label>
-                      <input
-                        type="date"
-                        min={new Date().toISOString().split('T')[0]}
-                        value={preferredDate}
-                        onChange={(e) => setPreferredDate(e.target.value)}
-                        disabled={!hasAssignedDate}
-                        className="input w-full bg-slate-950/80 border-white/20 text-white font-mono text-xs rounded-xl disabled:opacity-50"
-                      />
+                      <div className="relative flex items-center">
+                        <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                        <input
+                          type="date"
+                          min={new Date().toISOString().split('T')[0]}
+                          value={preferredDate}
+                          onChange={(e) => setPreferredDate(e.target.value)}
+                          disabled={!hasAssignedDate}
+                          className="input w-full pl-10 pr-3.5 bg-slate-950/80 border-white/20 text-white font-mono text-xs rounded-xl disabled:opacity-50 cursor-pointer"
+                        />
+                      </div>
                       <span className="text-[10px] text-slate-400 block mt-1">
                         Leave blank if you want branch staff to assign the earliest available DMT date.
                       </span>

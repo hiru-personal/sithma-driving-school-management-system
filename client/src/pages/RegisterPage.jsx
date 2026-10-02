@@ -515,7 +515,8 @@ export default function RegisterPage() {
               <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
                 Date of Birth <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
+                <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
                 <input
                   type="date"
                   name="dob"
@@ -523,7 +524,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   max={new Date().toISOString().split('T')[0]}
                   required
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl px-4 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all cursor-pointer"
+                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl pl-10 pr-3.5 py-3 text-sm text-[#0B2447] font-semibold placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all cursor-pointer shadow-xs"
                 />
               </div>
             </div>

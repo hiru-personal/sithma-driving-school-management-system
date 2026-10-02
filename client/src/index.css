@@ -394,3 +394,30 @@ div.fixed.inset-0.bg-black\/80,
 div.fixed.inset-0.bg-slate-950\/80 {
   background-color: rgba(11, 36, 71, 0.45) !important;
 }
+
+/* 13. Global Date Inputs & Interactive Calendar Picker Styling */
+input[type="date"] {
+  position: relative;
+  cursor: pointer !important;
+  color-scheme: light !important;
+  font-family: inherit !important;
+}
+
+/* Ensure the calendar icon inside all date inputs is vibrant, clickable, and prominent */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer !important;
+  background-color: transparent !important;
+  opacity: 0.9 !important;
+  filter: invert(37%) sepia(55%) saturate(836%) hue-rotate(182deg) brightness(93%) contrast(92%) !important; /* Royal Blue (#3F72AF) */
+  width: 22px !important;
+  height: 22px !important;
+  padding: 3px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+  background-color: #DBE2EF !important;
+  transform: scale(1.15) !important;
+}

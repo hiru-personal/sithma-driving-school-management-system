@@ -133,12 +133,15 @@ export default function SlotManagementPage() {
 
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Date:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-xs outline-none"
-          />
+          <div className="relative flex items-center">
+            <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-xs outline-none cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 

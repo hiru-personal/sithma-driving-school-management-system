@@ -221,12 +221,15 @@ export default function InstructorSchedulePage() {
         <div className="flex flex-wrap items-center gap-3">
           <div>
             <label className="block text-[10px] font-bold text-[#4B6584] uppercase mb-1">Select Date:</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3.5 py-1.5 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-xs text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors"
-            />
+            <div className="relative flex items-center">
+              <Calendar className="w-3.5 h-3.5 text-[#3F72AF] absolute left-3 pointer-events-none" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="pl-9 pr-3 py-1.5 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-xs text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors cursor-pointer"
+              />
+            </div>
           </div>
 
           <div className="flex items-end gap-1.5 pt-4 md:pt-0">
@@ -634,13 +637,16 @@ export default function InstructorSchedulePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#112D4E] mb-1">Date:</label>
-                  <input
-                    type="date"
-                    required
-                    value={newLessonForm.date}
-                    onChange={(e) => setNewLessonForm({ ...newLessonForm, date: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors"
-                  />
+                  <div className="relative flex items-center">
+                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3 pointer-events-none" />
+                    <input
+                      type="date"
+                      required
+                      value={newLessonForm.date}
+                      onChange={(e) => setNewLessonForm({ ...newLessonForm, date: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <div>
