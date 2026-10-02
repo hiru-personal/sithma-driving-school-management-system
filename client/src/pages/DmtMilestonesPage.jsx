@@ -72,6 +72,72 @@ export default function DmtMilestonesPage() {
     fetchMyRescheduleRequests();
   }, []);
 
+  // Final Driving License Photo State (US Requirements 6 & 7)
+  const [licensePhotoFile, setLicensePhotoFile] = useState(null);
+  const [licensePhotoPreview, setLicensePhotoPreview] = useState(null);
+  const [licenseNumberInput, setLicenseNumberInput] = useState('');
+  const [uploadingLicensePhoto, setUploadingLicensePhoto] = useState(false);
+
+  useEffect(() => {
+    if (profile?.finalLicense?.licenseNumber) {
+      setLicenseNumberInput(profile.finalLicense.licenseNumber);
+    }
+  }, [profile?.finalLicense?.licenseNumber]);
+
+  const handleLicensePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/i)) {
+      toast.error('Only JPG, JPEG, PNG, or WEBP image formats are supported.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be 10MB or less.');
+      return;
+    }
+    setLicensePhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLicensePhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadFinalLicense = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!licensePhotoFile && !profile?.finalLicense?.licensePhotoUrl) {
+      toast.error('Please choose a license photo to upload.');
+      return;
+    }
+    setUploadingLicensePhoto(true);
+    try {
+      const studentId = profile?._id || student?._id;
+      const formData = new FormData();
+      if (licensePhotoFile) {
+        formData.append('licensePhoto', licensePhotoFile);
+      }
+      if (licenseNumberInput) {
+        formData.append('licenseNumber', licenseNumberInput.trim());
+      }
+      const res = await api.post(`/students/${studentId}/final-license`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || 'Final Driving License photo uploaded successfully!');
+        if (res.data.student) {
+          setProfile(res.data.student);
+          updateStudentData(res.data.student);
+        }
+        setLicensePhotoFile(null);
+        setLicensePhotoPreview(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload driving license photo');
+    } finally {
+      setUploadingLicensePhoto(false);
+    }
+  };
+
   const handleSubmitReschedule = async (e) => {
     e.preventDefault();
     if (!rescheduleReason.trim()) {
@@ -328,6 +394,63 @@ export default function DmtMilestonesPage() {
   const remainingAttempts = Math.max(0, 3 - attemptsCount);
   const isTrialEligible = isExamPassed;
 
+  // DMT 1.5-Year Learner License Lifecycle & Multi-Cycle Tracking (US Requirements 1, 2, 3, 5, 6, 8, 9)
+  const licenseStartDate =
+    profile?.learnerLicenseStartDate ||
+    profile?.registration_date ||
+    profile?.dmtDates?.learnerRegistrationDate ||
+    profile?.createdAt ||
+    null;
+
+  const licenseExpiryDate = React.useMemo(() => {
+    if (profile?.learnerLicenseExpiryDate) return new Date(profile.learnerLicenseExpiryDate);
+    if (licenseStartDate) {
+      const d = new Date(licenseStartDate);
+      d.setMonth(d.getMonth() + 18);
+      return d;
+    }
+    return null;
+  }, [profile?.learnerLicenseExpiryDate, licenseStartDate]);
+
+  const remainingDays = React.useMemo(() => {
+    if (!licenseExpiryDate) return null;
+    const diff = licenseExpiryDate.getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }, [licenseExpiryDate]);
+
+  const isExpired = Boolean(
+    profile?.learnerLicenseStatus === 'expired' ||
+    (remainingDays !== null && remainingDays <= 0 && profile?.learnerLicenseStatus !== 'completed' && profile?.learnerLicenseStatus !== 'passed')
+  );
+
+  const is3AttemptsFailed = Boolean(
+    profile?.learnerLicenseStatus === 'attempts_exhausted' ||
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed'))
+  );
+
+  const isCancelled = Boolean(
+    isExpired ||
+    is3AttemptsFailed ||
+    profile?.registrationStatus === 'cancelled' ||
+    profile?.accountStatus === 'cancelled'
+  );
+
+  const isFinalPassed = Boolean(
+    profile?.learnerLicenseStatus === 'passed' ||
+    (isExamPassed && profile?.learnerLicenseStatus !== 'active' && profile?.learnerLicenseStatus !== 'expiring_soon' && profile?.learnerLicenseStatus !== 'pending_payment')
+  );
+
+  const isLicenseCompleted = Boolean(
+    profile?.learnerLicenseStatus === 'completed' ||
+    profile?.finalLicense?.verificationStatus === 'verified' ||
+    profile?.trial?.licenseObtained
+  );
+
+  const isExpiringSoon = Boolean(
+    !isExpired && !is3AttemptsFailed && !isFinalPassed && !isLicenseCompleted &&
+    (profile?.learnerLicenseStatus === 'expiring_soon' || (remainingDays !== null && remainingDays <= 30 && remainingDays > 0))
+  );
+
   // Toggle milestone checkbox status (e.g. Medical Done, Registration Done)
   const handleToggleMilestone = async (field, currentValue) => {
     setTogglingMilestone(true);
@@ -510,15 +633,29 @@ export default function DmtMilestonesPage() {
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* Auto-cancellation Warning Banner (if 3 attempts failed) */}
-      {profile?.isRegistrationCancelled && (
-        <div className="p-5 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3 text-rose-300 text-xs">
-            <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-white text-sm">Registration Auto-Cancelled (3 Failed Attempts)</p>
-              <p className="text-rose-200/80 mt-0.5">
-                In accordance with DMT regulations, you have reached the maximum allowed 3 theory exam attempts. To continue, you must re-register as a new learner.
+      {/* Cancellation / Expiry Banner (US Requirements 2, 3, 8) */}
+      {isCancelled && (
+        <div className="p-6 rounded-3xl bg-gradient-to-br from-rose-950/90 via-slate-900/95 to-slate-950/95 border-2 border-rose-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-xl">
+          <div className="flex items-start gap-4 text-xs">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-400/50 flex items-center justify-center text-rose-400 shrink-0">
+              <AlertTriangle className="w-6 h-6 animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="badge bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px] font-black uppercase">
+                  {isExpired ? 'License Status: Expired' : '3 Attempts Failed'}
+                </span>
+                <span className="text-slate-400 font-mono text-[11px]">
+                  Cycle #{profile?.currentCycleNumber || 1}
+                </span>
+              </div>
+              <h3 className="font-black text-white text-base sm:text-lg">
+                {isExpired ? 'Learner License Expired' : 'All 3 exam attempts have been used.'}
+              </h3>
+              <p className="text-rose-200/90 max-w-2xl leading-relaxed">
+                {isExpired
+                  ? 'Please register again. As per DMT regulations, a candidate has a maximum of 1.5 years (18 months) to complete the process. Your license validity ended on ' + (licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired') + '.'
+                  : 'Please register again. In accordance with DMT regulations, candidates are allowed a maximum of 3 trial attempts for the written theory examination per registration cycle.'}
               </p>
             </div>
           </div>
@@ -526,13 +663,150 @@ export default function DmtMilestonesPage() {
             type="button"
             disabled={reRegistering}
             onClick={handleReRegister}
-            className="btn-primary bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 px-4 whitespace-nowrap shadow-lg flex items-center gap-1.5 self-start sm:self-auto"
+            className="btn-accent text-xs font-bold py-3 px-5 whitespace-nowrap shadow-xl flex items-center gap-2 self-start sm:self-auto hover:scale-105 transition-transform"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>{reRegistering ? 'Processing...' : 'Re-Register Now (Rs. 5,000)'}</span>
+            <RotateCcw className={`w-4 h-4 ${reRegistering ? 'animate-spin' : ''}`} />
+            <span>{reRegistering ? 'Initializing...' : 'Action: Register Again'}</span>
           </button>
         </div>
       )}
+
+      {/* 1.5-Year Validity Period Tracker (US Requirements 1, 8, 9) */}
+      <div className={`p-6 rounded-3xl border-2 transition-all space-y-4 shadow-xl ${
+        isLicenseCompleted
+          ? 'bg-emerald-950/40 border-emerald-500/40'
+          : isFinalPassed
+          ? 'bg-cyan-950/40 border-cyan-500/40'
+          : isExpiringSoon
+          ? 'bg-amber-950/40 border-amber-500/40'
+          : 'bg-slate-900/80 border-[#3F72AF]/30'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+              isLicenseCompleted
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400'
+                : isFinalPassed
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400'
+                : isExpiringSoon
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400'
+                : 'bg-blue-500/20 text-blue-300 border-blue-400'
+            }`}>
+              {isLicenseCompleted
+                ? 'License Completed'
+                : isFinalPassed
+                ? 'Passed'
+                : isExpiringSoon
+                ? 'Expiring Soon'
+                : 'Learner License Active'}
+            </span>
+            <span className="text-xs text-slate-300 font-mono">
+              Cycle #{profile?.currentCycleNumber || 1} • Max 1.5-Year Validity
+            </span>
+          </div>
+
+          <div className="text-xs text-slate-300 flex items-center gap-4">
+            <span>
+              Start: <strong className="text-white font-mono">{licenseStartDate ? format(new Date(licenseStartDate), 'MMM dd, yyyy') : 'Registered'}</strong>
+            </span>
+            <span>
+              Expires: <strong className={`font-mono ${isExpiringSoon ? 'text-amber-300' : 'text-cyan-300'}`}>{licenseExpiryDate ? format(licenseExpiryDate, 'MMM dd, yyyy') : 'In 18 Months'}</strong>
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+            <span className="text-slate-400 block text-[11px]">18-Month Validity Rule</span>
+            <span className="font-semibold text-white">License Start Date + 18 Months</span>
+          </div>
+          <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+            <span className="text-slate-400 block text-[11px]">Days Remaining</span>
+            <span className={`font-bold font-mono ${isExpiringSoon ? 'text-amber-300' : 'text-emerald-300'}`}>
+              {remainingDays !== null ? `${remainingDays} Days Remaining` : '18 Months'}
+            </span>
+          </div>
+          <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+            <span className="text-slate-400 block text-[11px]">Written Theory Attempts</span>
+            <span className="font-bold text-white font-mono">
+              {attemptsCount} of 3 Allowed Used
+            </span>
+          </div>
+        </div>
+
+        {/* Driving License Photo Upload Section when Passed / Completed (US Requirements 6 & 7) */}
+        {(isFinalPassed || isLicenseCompleted || profile?.finalLicense?.licensePhotoUrl) && (
+          <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 pt-4 mt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2 text-xs">
+              <span className="font-bold text-white flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-cyan-400" /> Driving License / Final License
+              </span>
+              <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold border ${
+                profile?.finalLicense?.licensePhotoUrl
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+              }`}>
+                {profile?.finalLicense?.licensePhotoUrl ? 'License Photo: Uploaded ✓' : 'License Photo: Not Uploaded'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs items-start">
+              <form onSubmit={handleUploadFinalLicense} className="space-y-3">
+                <div>
+                  <label className="block text-slate-300 mb-1">Driving License Number:</label>
+                  <input
+                    type="text"
+                    value={licenseNumberInput}
+                    onChange={(e) => setLicenseNumberInput(e.target.value)}
+                    placeholder="e.g. B1234567"
+                    disabled={isLicenseCompleted}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white font-mono"
+                  />
+                </div>
+                {!isLicenseCompleted && (
+                  <div>
+                    <label className="block text-slate-300 mb-1">
+                      {profile?.finalLicense?.licensePhotoUrl ? 'Replace License Photo:' : 'Upload License Photo (JPG, PNG, WEBP):'}
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      onChange={handleLicensePhotoSelect}
+                      className="w-full text-xs text-slate-300 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-cyan-500/20 file:text-cyan-300"
+                    />
+                  </div>
+                )}
+                {!isLicenseCompleted && (
+                  <button
+                    type="submit"
+                    disabled={uploadingLicensePhoto}
+                    className="btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{uploadingLicensePhoto ? 'Uploading...' : 'Save License Info'}</span>
+                  </button>
+                )}
+              </form>
+
+              <div>
+                {licensePhotoPreview || profile?.finalLicense?.licensePhotoUrl ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/15 bg-black/60">
+                    <img
+                      src={licensePhotoPreview || profile.finalLicense.licensePhotoUrl}
+                      alt="Driving License"
+                      className="w-full max-h-40 object-contain mx-auto"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4 border border-dashed border-white/15 rounded-xl text-center text-slate-400">
+                    No license photo uploaded yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Grid: 4 Core DMT Milestones */}
       <div className="card p-6 sm:p-8 space-y-6 border border-cyan-400/30 bg-slate-900/80 backdrop-blur-xl">

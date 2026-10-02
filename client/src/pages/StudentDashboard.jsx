@@ -236,7 +236,72 @@ export default function StudentDashboard() {
     packageId: '',
   });
 
+  // Final Driving License Photo State (US Requirements 6 & 7)
+  const [licensePhotoFile, setLicensePhotoFile] = useState(null);
+  const [licensePhotoPreview, setLicensePhotoPreview] = useState(null);
+  const [licenseNumberInput, setLicenseNumberInput] = useState('');
+  const [uploadingLicensePhoto, setUploadingLicensePhoto] = useState(false);
+  const [showCycleHistoryModal, setShowCycleHistoryModal] = useState(false);
 
+  useEffect(() => {
+    if (profile?.finalLicense?.licenseNumber) {
+      setLicenseNumberInput(profile.finalLicense.licenseNumber);
+    }
+  }, [profile?.finalLicense?.licenseNumber]);
+
+  const handleLicensePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/i)) {
+      toast.error('Only JPG, JPEG, PNG, or WEBP image formats are supported.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be 10MB or less.');
+      return;
+    }
+    setLicensePhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLicensePhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadFinalLicense = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!licensePhotoFile && !profile?.finalLicense?.licensePhotoUrl) {
+      toast.error('Please choose a license photo to upload.');
+      return;
+    }
+    setUploadingLicensePhoto(true);
+    try {
+      const studentId = profile?._id || student?._id;
+      const formData = new FormData();
+      if (licensePhotoFile) {
+        formData.append('licensePhoto', licensePhotoFile);
+      }
+      if (licenseNumberInput) {
+        formData.append('licenseNumber', licenseNumberInput.trim());
+      }
+      const res = await api.post(`/students/${studentId}/final-license`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || 'Final Driving License photo uploaded successfully!');
+        if (res.data.student) {
+          setProfile(res.data.student);
+          updateStudentData(res.data.student);
+        }
+        setLicensePhotoFile(null);
+        setLicensePhotoPreview(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload driving license photo');
+    } finally {
+      setUploadingLicensePhoto(false);
+    }
+  };
 
   const handleReRegister = async () => {
     if (
@@ -609,7 +674,71 @@ export default function StudentDashboard() {
   const hasTrialDate = Boolean(currentTrialDate);
   const isTrialEligible = Boolean((isType2 && hasTrialDate) || (!isType2 && isExamPassed));
 
+  // DMT 1.5-Year Learner License Lifecycle & Multi-Cycle Tracking
+  const licenseStartDate =
+    profile?.learnerLicenseStartDate ||
+    profile?.registration_date ||
+    profile?.dmtDates?.learnerRegistrationDate ||
+    profile?.createdAt ||
+    null;
+
+  const licenseExpiryDate = useMemo(() => {
+    if (profile?.learnerLicenseExpiryDate) return new Date(profile.learnerLicenseExpiryDate);
+    if (licenseStartDate) {
+      const d = new Date(licenseStartDate);
+      d.setMonth(d.getMonth() + 18);
+      return d;
+    }
+    return null;
+  }, [profile?.learnerLicenseExpiryDate, licenseStartDate]);
+
+  const remainingDays = useMemo(() => {
+    if (!licenseExpiryDate) return null;
+    const diff = licenseExpiryDate.getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }, [licenseExpiryDate]);
+
+  const isExpired = Boolean(
+    profile?.learnerLicenseStatus === 'expired' ||
+    (remainingDays !== null && remainingDays <= 0 && profile?.learnerLicenseStatus !== 'completed' && profile?.learnerLicenseStatus !== 'passed')
+  );
+
+  const is3AttemptsFailed = Boolean(
+    profile?.learnerLicenseStatus === 'attempts_exhausted' ||
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed'))
+  );
+
+  const isFinalPassed = Boolean(
+    profile?.learnerLicenseStatus === 'passed' ||
+    (isExamPassed && profile?.learnerLicenseStatus !== 'active' && profile?.learnerLicenseStatus !== 'expiring_soon' && profile?.learnerLicenseStatus !== 'pending_payment')
+  );
+
+  const isLicenseCompleted = Boolean(
+    profile?.learnerLicenseStatus === 'completed' ||
+    profile?.finalLicense?.verificationStatus === 'verified' ||
+    profile?.trial?.licenseObtained
+  );
+
+  const isExpiringSoon = Boolean(
+    !isExpired && !is3AttemptsFailed && !isFinalPassed && !isLicenseCompleted &&
+    (profile?.learnerLicenseStatus === 'expiring_soon' || (remainingDays !== null && remainingDays <= 30 && remainingDays > 0))
+  );
+
+  const isLicenseActive = Boolean(
+    !isExpired && !is3AttemptsFailed && !isFinalPassed && !isLicenseCompleted && !isExpiringSoon
+  );
+
+  const currentRegistrationCycle = useMemo(() => {
+    if (!profile?.registrationCycles || profile.registrationCycles.length === 0) return null;
+    return (
+      profile.registrationCycles.find((c) => c.cycleNumber === profile.currentCycleNumber) ||
+      profile.registrationCycles[profile.registrationCycles.length - 1]
+    );
+  }, [profile?.registrationCycles, profile?.currentCycleNumber]);
+
   const isCancelled = Boolean(
+    isExpired ||
+    is3AttemptsFailed ||
     profile?.registrationStatus === 'cancelled' ||
     profile?.accountStatus === 'cancelled' ||
     profile?.account_status === 'Cancelled'
@@ -946,42 +1075,103 @@ export default function StudentDashboard() {
       <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1280px] mx-auto w-full">
         <div className="relative rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-rose-950/90 via-slate-900/95 to-slate-950/95 border-2 border-rose-500/60 p-6 sm:p-10 shadow-[0_15px_50px_rgba(244,63,94,0.3)] overflow-hidden space-y-6">
           <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-rose-600 via-red-500 to-amber-600" />
+          
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-rose-500/20 border-2 border-rose-400/50 flex items-center justify-center text-rose-400 flex-shrink-0 shadow-[0_0_30px_rgba(244,63,94,0.4)] animate-pulse">
               <AlertTriangle className="w-10 h-10 text-rose-400" />
             </div>
+
             <div className="space-y-3 flex-1">
-              <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-400/40">
-                Registration Cancelled • 3 Attempts Exhausted
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-400/40">
+                  {isExpired ? 'License Status: Expired' : '3 Attempts Failed'}
+                </span>
+                <span className="text-xs text-rose-300/80 font-mono">
+                  Cycle #{profile?.currentCycleNumber || 1} • {currentRegistrationCycle?.cycleId || 'CYCLE-1'}
+                </span>
+              </div>
+
               <h1 className="text-2xl sm:text-3xl font-black text-white">
-                Learner Registration Auto-Cancelled (DMT Regulations)
+                {isExpired ? 'Learner License Expired' : 'All 3 exam attempts have been used.'}
               </h1>
+
               <p className="text-xs sm:text-sm text-rose-200/90 leading-relaxed max-w-3xl">
-                According to Sri Lanka Department of Motor Traffic (DMT) regulations, candidate registrations are automatically cancelled upon exhausting three (3) unsuccessful attempts at the written learner theory examination.
+                {isExpired ? (
+                  <>
+                    <strong>Please register again.</strong> According to Department of Motor Traffic (DMT) regulations, once registered, a learner has a maximum of <strong>1.5 years (18 months)</strong> to complete the required licensing process. Your validity period ended on{' '}
+                    <strong className="text-white underline">{licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired'}</strong>.
+                  </>
+                ) : (
+                  <>
+                    <strong>Please register again.</strong> In accordance with DMT regulations, candidates are allowed a maximum of <strong>3 trial attempts</strong> for the written theory exam per registration cycle. All 3 attempts have been exhausted.
+                  </>
+                )}
               </p>
+            </div>
+          </div>
+
+          {/* Registration Cycle & Dates Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-black/40 border border-rose-400/30 text-xs">
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+              <span className="text-slate-400 block text-[11px]">License Start Date</span>
+              <span className="font-bold text-white font-mono">
+                {licenseStartDate ? safeFormatDate(licenseStartDate, 'MMM dd, yyyy') : 'N/A'}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+              <span className="text-slate-400 block text-[11px]">18-Month Expiry Date</span>
+              <span className="font-bold text-rose-300 font-mono">
+                {licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'MMM dd, yyyy') : 'Expired'}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+              <span className="text-slate-400 block text-[11px]">Exam Attempts Count</span>
+              <span className="font-bold text-amber-300 font-mono">
+                {attemptsCount} of 3 Attempts Recorded
+              </span>
             </div>
           </div>
 
           {/* Attempts History Table */}
           <div className="rounded-2xl bg-black/40 border border-rose-400/30 p-5 space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-rose-400" /> Examination Attempts History (3 of 3 Failed)
-            </h3>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-rose-400" /> Examination Attempts History ({attemptsCount} of 3 Used)
+              </h3>
+              {profile?.registrationCycles && profile.registrationCycles.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setShowCycleHistoryModal(true)}
+                  className="text-xs text-cyan-300 hover:text-cyan-200 underline font-bold flex items-center gap-1"
+                >
+                  <History className="w-3.5 h-3.5" /> View Past Registration Cycles ({profile.registrationCycles.length})
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {(profile?.learnerExamAttempts && profile.learnerExamAttempts.length > 0 ? profile.learnerExamAttempts : [1, 2, 3]).map((att, idx) => {
-                const attemptNum = typeof att === 'object' ? att.attemptNumber : att;
-                const marks = typeof att === 'object' ? att.marks : null;
-                const date = typeof att === 'object' && att.date ? new Date(att.date).toLocaleDateString() : 'Recorded Attempt';
+              {[1, 2, 3].map((num) => {
+                const att = profile?.learnerExamAttempts?.find((a) => a.attemptNumber === num);
+                const hasAtt = Boolean(att);
+                const marks = att?.marks;
+                const date = att?.date ? new Date(att.date).toLocaleDateString() : 'Not Attempted';
                 return (
-                  <div key={idx} className="p-3.5 rounded-xl bg-white/5 border border-rose-400/20 space-y-1">
+                  <div key={num} className="p-3.5 rounded-xl bg-white/5 border border-rose-400/20 space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-300 font-bold">Attempt {attemptNum} of 3</span>
-                      <span className="badge bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px]">FAILED</span>
+                      <span className="text-slate-300 font-bold">Attempt {num} of 3</span>
+                      {hasAtt ? (
+                        <span className="badge bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px]">
+                          FAILED
+                        </span>
+                      ) : (
+                        <span className="badge bg-white/10 text-slate-400 text-[10px]">
+                          UNUSED
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-400">{date}</div>
                     <div className="text-xs font-semibold text-rose-300">
-                      Score: {marks !== null && marks !== undefined ? `${marks} / 40` : 'Failed'}
+                      Score: {hasAtt && marks !== null && marks !== undefined ? `${marks} / 40` : (hasAtt ? 'Failed' : '—')}
                     </div>
                   </div>
                 );
@@ -992,9 +1182,11 @@ export default function StudentDashboard() {
           {/* Action to Re-register */}
           <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h4 className="text-sm font-bold text-white">How to restart your training?</h4>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-cyan-400" /> Action: Register Again
+              </h4>
               <p className="text-xs text-slate-300 max-w-xl">
-                You can re-register like a new user. To proceed, click below to initialize your new registration and complete the advance payment of Rs. 5,000.00.
+                Starting a new registration cycle resets your trial attempt count to <strong>Attempt 1 of 3</strong>, grants a brand new <strong>18-month validity period</strong>, and requires the Rs. 5,000 advance payment. All previous registration records and attempts remain securely stored.
               </p>
             </div>
             <button
@@ -1004,7 +1196,7 @@ export default function StudentDashboard() {
               className="btn-accent text-xs sm:text-sm py-3 px-6 font-bold flex items-center gap-2 shadow-xl whitespace-nowrap hover:scale-105 transition-transform"
             >
               <RefreshCw className={`w-4 h-4 ${reRegistering ? 'animate-spin' : ''}`} />
-              {reRegistering ? 'Initializing...' : 'Re-Register as New Learner (Pay Rs. 5,000)'}
+              {reRegistering ? 'Initializing New Cycle...' : 'Register Again (New 18-Month Cycle)'}
             </button>
           </div>
         </div>
@@ -1435,6 +1627,367 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      {/* ─── DMT LEARNER LICENSE LIFECYCLE & COMPLETION CARD (US REQUIREMENTS 1, 2, 5, 6, 7, 8, 9) ─── */}
+      <div className={`card p-6 sm:p-7 rounded-3xl border-2 transition-all space-y-6 shadow-xl ${
+        isLicenseCompleted
+          ? 'bg-gradient-to-br from-emerald-950/80 via-slate-900/95 to-slate-950/95 border-emerald-500/50 shadow-[0_10px_40px_rgba(16,185,129,0.15)]'
+          : isFinalPassed
+          ? 'bg-gradient-to-br from-cyan-950/80 via-slate-900/95 to-slate-950/95 border-cyan-500/50 shadow-[0_10px_40px_rgba(6,182,212,0.15)]'
+          : isExpiringSoon
+          ? 'bg-gradient-to-br from-amber-950/80 via-slate-900/95 to-slate-950/95 border-amber-500/50 shadow-[0_10px_40px_rgba(245,158,11,0.15)]'
+          : 'bg-gradient-to-br from-blue-950/60 via-slate-900/95 to-slate-950/95 border-[#3F72AF]/40'
+      }`}>
+        {/* Top cycle & validity bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border flex items-center gap-1.5 ${
+              isLicenseCompleted
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50'
+                : isFinalPassed
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50'
+                : isExpiringSoon
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400/50'
+                : 'bg-blue-500/20 text-blue-300 border-blue-400/50'
+            }`}>
+              {isLicenseCompleted
+                ? 'License Completed'
+                : isFinalPassed
+                ? 'Passed'
+                : isExpiringSoon
+                ? 'Expiring Soon'
+                : 'Active'}
+            </span>
+            <span className="text-xs text-slate-300 font-mono">
+              Registration Cycle #{profile?.currentCycleNumber || 1} • {currentRegistrationCycle?.cycleId || 'CYCLE-1'}
+            </span>
+          </div>
+
+          {profile?.registrationCycles && profile.registrationCycles.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setShowCycleHistoryModal(true)}
+              className="text-xs text-cyan-300 hover:text-cyan-200 underline font-bold flex items-center gap-1 self-start sm:self-auto"
+            >
+              <History className="w-3.5 h-3.5" /> View Past Cycles ({profile.registrationCycles.length})
+            </button>
+          )}
+        </div>
+
+        {/* Status Header Content */}
+        <div className="flex flex-col sm:flex-row items-start gap-5">
+          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 border-2 ${
+            isLicenseCompleted
+              ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-400'
+              : isFinalPassed
+              ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-400'
+              : isExpiringSoon
+              ? 'bg-amber-500/20 border-amber-400/50 text-amber-400 animate-pulse'
+              : 'bg-blue-500/20 border-blue-400/50 text-blue-400'
+          }`}>
+            {isLicenseCompleted ? (
+              <Award className="w-8 h-8" />
+            ) : isFinalPassed ? (
+              <CheckCircle2 className="w-8 h-8" />
+            ) : isExpiringSoon ? (
+              <AlertTriangle className="w-8 h-8" />
+            ) : (
+              <ShieldCheck className="w-8 h-8" />
+            )}
+          </div>
+
+          <div className="space-y-2 flex-1">
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              {isLicenseCompleted
+                ? 'License Completed'
+                : isFinalPassed
+                ? 'Passed'
+                : isExpiringSoon
+                ? 'Learner License Expiring Soon'
+                : 'Learner License Active'}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+              {isLicenseCompleted
+                ? 'Your driving license information has been successfully completed.'
+                : isFinalPassed
+                ? 'Congratulations! You have passed the required process.'
+                : isExpiringSoon
+                ? `Remaining: ${remainingDays} Days`
+                : 'Learner License Active'}
+            </p>
+          </div>
+        </div>
+
+        {/* 18-Month Validity Period Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+            <span className="text-slate-400 block text-[11px] font-semibold">License Start Date</span>
+            <span className="font-bold text-white font-mono text-sm">
+              {licenseStartDate ? safeFormatDate(licenseStartDate, 'dd MMMM yyyy') : 'Registered'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+            <span className="text-slate-400 block text-[11px] font-semibold">18-Month Expiry Date</span>
+            <span className={`font-bold font-mono text-sm ${isExpiringSoon ? 'text-amber-300' : 'text-cyan-300'}`}>
+              {licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : 'In 18 Months'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+            <span className="text-slate-400 block text-[11px] font-semibold">Validity Remaining</span>
+            <span className={`font-bold text-sm ${isExpiringSoon ? 'text-amber-300' : 'text-emerald-300'}`}>
+              {remainingDays !== null ? `${remainingDays} Days Remaining` : '18 Months'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+            <span className="text-slate-400 block text-[11px] font-semibold">Written Exam Attempts</span>
+            <span className="font-bold text-white text-sm">
+              {attemptsCount} of 3 Attempts Used
+            </span>
+          </div>
+        </div>
+
+        {/* ─── DRIVING LICENSE / FINAL LICENSE SECTION (US REQUIREMENTS 6 & 7) ─── */}
+        {(isFinalPassed || isLicenseCompleted || profile?.finalLicense?.licensePhotoUrl) && (
+          <div className="rounded-2xl bg-black/40 border border-white/15 p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-cyan-400" /> Driving License / Final License
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Official physical driving license details and document verification.
+                </p>
+              </div>
+              <div>
+                {profile?.finalLicense?.licensePhotoUrl ? (
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                    isLicenseCompleted
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50'
+                  }`}>
+                    <CheckCircle2 className="w-3.5 h-3.5" /> License Photo: Uploaded ✓
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> License Photo: Not Uploaded
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* Photo Preview / Upload Form */}
+              <form onSubmit={handleUploadFinalLicense} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    License Number (if applicable):
+                  </label>
+                  <input
+                    type="text"
+                    value={licenseNumberInput}
+                    onChange={(e) => setLicenseNumberInput(e.target.value)}
+                    placeholder="e.g. B1234567"
+                    disabled={isLicenseCompleted}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-white font-mono focus:border-cyan-400 focus:outline-none disabled:opacity-70"
+                  />
+                </div>
+
+                {!isLicenseCompleted && (
+                  <div className="space-y-2">
+                    <label className="block text-slate-300 font-semibold">
+                      {profile?.finalLicense?.licensePhotoUrl ? 'Replace Driving License Photo:' : 'Upload Driving License Photo (JPG, PNG, WEBP — Max 10MB):'}
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      onChange={handleLicensePhotoSelect}
+                      className="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30 cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {!isLicenseCompleted && (
+                  <button
+                    type="submit"
+                    disabled={uploadingLicensePhoto || (!licensePhotoFile && licenseNumberInput === (profile?.finalLicense?.licenseNumber || ''))}
+                    className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-md disabled:opacity-50"
+                  >
+                    <Upload className={`w-3.5 h-3.5 ${uploadingLicensePhoto ? 'animate-spin' : ''}`} />
+                    {uploadingLicensePhoto
+                      ? 'Uploading...'
+                      : profile?.finalLicense?.licensePhotoUrl
+                      ? 'Update License Information'
+                      : 'Upload License Photo'}
+                  </button>
+                )}
+              </form>
+
+              {/* Photo Display Card */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-semibold">License Photo Preview:</span>
+                  <span className="text-slate-400 font-mono text-[11px]">
+                    {profile?.finalLicense?.verificationStatus === 'verified'
+                      ? 'Verified by Admin ✓'
+                      : profile?.finalLicense?.licensePhotoUrl
+                      ? 'Pending Admin Verification'
+                      : 'Awaiting Upload'}
+                  </span>
+                </div>
+
+                {licensePhotoPreview || profile?.finalLicense?.licensePhotoUrl ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/15 bg-black/60 group">
+                    <img
+                      src={licensePhotoPreview || profile.finalLicense.licensePhotoUrl}
+                      alt="Driving License"
+                      className="w-full max-h-56 object-contain mx-auto"
+                    />
+                    <a
+                      href={licensePhotoPreview || profile.finalLicense.licensePhotoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-black/80 hover:bg-black text-white text-[11px] font-bold flex items-center gap-1.5 transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-cyan-400" /> View Original
+                    </a>
+                  </div>
+                ) : (
+                  <div className="p-8 border-2 border-dashed border-white/15 rounded-xl text-center space-y-2">
+                    <CreditCard className="w-10 h-10 text-slate-500 mx-auto" />
+                    <p className="text-xs text-slate-400">
+                      No driving license photo uploaded yet. Select a photo to preview and submit.
+                    </p>
+                  </div>
+                )}
+
+                {profile?.finalLicense?.uploadedAt && (
+                  <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+                    <span>Uploaded: {safeFormatDate(profile.finalLicense.uploadedAt, 'MMM dd, yyyy')}</span>
+                    {profile.finalLicense.licenseNumber && (
+                      <span className="font-mono text-cyan-300 font-bold">No: {profile.finalLicense.licenseNumber}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ─── PAST REGISTRATION CYCLES HISTORY MODAL (US REQUIREMENTS 2, 4, 10) ─── */}
+      {showCycleHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-slate-950 border border-white/20 rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <History className="w-5 h-5 text-cyan-400" /> Registration Cycles &amp; Attempt History
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Complete historical records of all DMT enrollment cycles for this learner.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCycleHistoryModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {profile?.registrationCycles?.map((cycle, idx) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-2xl border space-y-3 ${
+                    cycle.cycleNumber === profile.currentCycleNumber
+                      ? 'bg-cyan-500/10 border-cyan-400/40'
+                      : 'bg-white/5 border-white/10'
+                  }`}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-white text-sm">
+                        Cycle #{cycle.cycleNumber} ({cycle.cycleId || `CYCLE-${cycle.cycleNumber}`})
+                      </span>
+                      {cycle.cycleNumber === profile.currentCycleNumber && (
+                        <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[10px] font-bold">
+                          Current Cycle
+                        </span>
+                      )}
+                    </div>
+                    <span className="badge bg-white/10 text-slate-300 border border-white/15 text-[10px] uppercase font-bold">
+                      Status: {cycle.status || 'Archived'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Start Date:</span>
+                      <span className="font-mono text-white">{safeFormatDate(cycle.startDate, 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">18-Month Expiry:</span>
+                      <span className="font-mono text-white">{safeFormatDate(cycle.expiryDate, 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Exam Attempts:</span>
+                      <span className="font-mono text-white">{cycle.examAttempts?.length || 0} of 3</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Advance Deposit:</span>
+                      <span className="font-mono text-emerald-300">{cycle.isAdvancePaid ? 'Paid ✓' : 'Pending'}</span>
+                    </div>
+                  </div>
+
+                  {cycle.examAttempts && cycle.examAttempts.length > 0 && (
+                    <div className="space-y-1.5 pt-1 border-t border-white/10">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Cycle Exam Attempts:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {cycle.examAttempts.map((att, aIdx) => (
+                          <div key={aIdx} className="p-2 rounded-lg bg-black/40 border border-white/10 text-[11px] space-y-0.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-300">Attempt {att.attemptNumber}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                att.result === 'passed'
+                                  ? 'bg-emerald-500/20 text-emerald-300'
+                                  : 'bg-rose-500/20 text-rose-300'
+                              }`}>
+                                {att.result?.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="text-slate-400 text-[10px]">
+                              {att.date ? format(new Date(att.date), 'MMM dd, yyyy') : 'No Date'}
+                            </div>
+                            {att.marks !== undefined && att.marks !== null && (
+                              <div className="font-mono text-cyan-300 font-bold text-[10px]">
+                                Score: {att.marks}/40
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowCycleHistoryModal(false)}
+                className="btn-secondary text-xs py-2 px-5 font-bold"
+              >
+                Close History
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TYPE 2: AWAITING PRACTICAL TRIAL DATE SCHEDULING NOTICE */}
       {isType2 && !hasTrialDate && (

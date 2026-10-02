@@ -74,17 +74,26 @@ exports.getAllStudents = async (req, res) => {
     const studentIds = students.map((st) => st._id);
     const payments = await Payment.find({ studentId: { $in: studentIds } }).sort({ uploadedAt: -1, createdAt: -1 });
 
-    const populatedStudents = students.map((st) => {
-      const stObj = st.toObject();
-      const stPayments = payments.filter((p) => p.studentId.toString() === st._id.toString());
-      stObj.payments = stPayments;
-      stObj.latestPayment =
-        stPayments.find((p) => p.paymentType === 'advance' && p.status === 'pending') ||
-        stPayments.find((p) => p.status === 'pending') ||
-        stPayments[0] ||
-        null;
-      return stObj;
-    });
+    const populatedStudents = await Promise.all(
+      students.map(async (st) => {
+        if (typeof st.evaluateLifecycle === 'function' && st.evaluateLifecycle()) {
+          try {
+            await st.save();
+          } catch (e) {
+            console.error('Error saving evaluated lifecycle for student', st._id, e);
+          }
+        }
+        const stObj = st.toObject();
+        const stPayments = payments.filter((p) => p.studentId.toString() === st._id.toString());
+        stObj.payments = stPayments;
+        stObj.latestPayment =
+          stPayments.find((p) => p.paymentType === 'advance' && p.status === 'pending') ||
+          stPayments.find((p) => p.status === 'pending') ||
+          stPayments[0] ||
+          null;
+        return stObj;
+      })
+    );
 
     return res.status(200).json({
       success: true,
@@ -177,6 +186,11 @@ exports.getStudentById = async (req, res) => {
         success: false,
         message: 'Student record not found',
       });
+    }
+
+    // Evaluate DMT 1.5-year learner license lifecycle & auto-expiry
+    if (student.evaluateLifecycle && student.evaluateLifecycle()) {
+      await student.save();
     }
 
     // Role check: Students can only view their own profile
@@ -1442,12 +1456,48 @@ exports.recordExamAttempt = async (req, res) => {
       });
     }
 
+    // Check if 18-month validity has expired
+    const now = new Date();
+    if (
+      student.learnerLicenseStatus === 'expired' ||
+      (student.learnerLicenseExpiryDate && now > new Date(student.learnerLicenseExpiryDate))
+    ) {
+      student.learnerLicenseStatus = 'expired';
+      student.registrationStatus = 'cancelled';
+      student.accountStatus = 'cancelled';
+      student.account_status = 'Cancelled';
+      student.isAdvancePaid = false;
+      student.isPremium = false;
+      await student.save();
+      return res.status(400).json({
+        success: false,
+        message: `Learner license has expired (18-month validity ended on ${
+          student.learnerLicenseExpiryDate ? new Date(student.learnerLicenseExpiryDate).toLocaleDateString() : 'N/A'
+        }). Please re-register to start a new registration cycle.`,
+        isExpired: true,
+        isCancelled: true,
+      });
+    }
+
     // Check if already cancelled
     if (student.registrationStatus === 'cancelled' || student.accountStatus === 'cancelled') {
       return res.status(400).json({
         success: false,
         message: 'Registration is cancelled. Please re-register as a new student.',
         isCancelled: true,
+      });
+    }
+
+    // Check if exam already passed
+    if (
+      student.learnerLicenseStatus === 'passed' ||
+      student.learnerLicenseStatus === 'completed' ||
+      student.learnerExamStatus === 'passed' ||
+      student.dmtDates?.learnerExamPassed
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'DMT Written Theory Exam has already been passed for this registration cycle.',
       });
     }
 
@@ -1481,7 +1531,7 @@ exports.recordExamAttempt = async (req, res) => {
     if (attemptNumber > 3) {
       return res.status(400).json({
         success: false,
-        message: 'Maximum 3 exam attempts have already been reached. Registration has been cancelled.',
+        message: 'Maximum 3 exam attempts have already been reached for this registration cycle. Registration is cancelled.',
         isCancelled: true,
       });
     }
@@ -1523,19 +1573,36 @@ exports.recordExamAttempt = async (req, res) => {
 
     let isAutoCancelled = false;
 
+    // Ensure registration cycles are synchronized
+    if (!student.registrationCycles || student.registrationCycles.length === 0) {
+      student.evaluateLifecycle();
+    }
+    let currentCycle =
+      student.registrationCycles?.find((c) => c.cycleNumber === student.currentCycleNumber) ||
+      student.registrationCycles?.[student.registrationCycles.length - 1];
+
+    if (currentCycle) {
+      currentCycle.examAttempts = student.learnerExamAttempts;
+      currentCycle.examAttemptsCount = student.learnerExamAttempts.length;
+    }
+
     if (result === 'passed') {
       student.learnerExamStatus = 'passed';
       student.dmtDates.learnerExamPassed = true;
       student.dmtDates.learnerExamPassedDate = attemptRecord.date;
       student.trialEligible = true;
       student.trial_eligible = true;
+      if (currentCycle) {
+        currentCycle.dmtDates.learnerExamPassed = true;
+        currentCycle.dmtDates.learnerExamPassedDate = attemptRecord.date;
+      }
 
       // Notification
       await Notification.create({
         recipientId: student.userId._id || student.userId,
         recipientRole: 'student',
         title: '🎉 DMT Written Exam Passed!',
-        message: `Congratulations! You passed your DMT Written Theory Exam with ${numericMarks !== null ? `${numericMarks} marks` : 'flying colors'} on Attempt ${attemptNumber}. On-road practical lessons are now unlocked!`,
+        message: `Congratulations! You passed your DMT Written Theory Exam with ${numericMarks !== null ? `${numericMarks} marks` : 'flying colors'} on Attempt ${attemptNumber} of 3. On-road practical lessons are now unlocked!`,
         type: 'dmt-date',
         link: '/student/dashboard',
       });
@@ -1551,9 +1618,14 @@ exports.recordExamAttempt = async (req, res) => {
         student.registrationStatus = 'cancelled';
         student.accountStatus = 'cancelled';
         student.account_status = 'Cancelled';
+        student.learnerLicenseStatus = 'attempts_exhausted';
         student.isAdvancePaid = false;
         student.isPremium = false;
         isAutoCancelled = true;
+
+        if (currentCycle) {
+          currentCycle.status = 'attempts_exhausted';
+        }
 
         await User.findByIdAndUpdate(student.userId._id || student.userId, {
           status: 'active',
@@ -1564,7 +1636,7 @@ exports.recordExamAttempt = async (req, res) => {
           recipientId: student.userId._id || student.userId,
           recipientRole: 'student',
           title: '⚠️ Registration Cancelled — 3 Exam Attempts Failed',
-          message: 'You have exhausted all 3 attempts for the DMT written theory exam. As per DMT regulations, your learner registration has been automatically cancelled. You must re-register like a new user and pay the advance deposit to restart.',
+          message: 'You have exhausted all 3 attempts for the DMT written theory exam. As per DMT regulations, your current registration cycle has closed. Please register again to begin a new registration cycle.',
           type: 'dmt-date',
           link: '/student/dashboard',
         });
@@ -1574,7 +1646,7 @@ exports.recordExamAttempt = async (req, res) => {
           recipientId: student.userId._id || student.userId,
           recipientRole: 'student',
           title: `DMT Exam Attempt ${attemptNumber} Result: Failed`,
-          message: `Attempt ${attemptNumber} recorded as Failed (${numericMarks !== null ? `${numericMarks} marks` : 'No marks entered'}). You have ${remaining} attempt(s) remaining. Please contact branch staff to get a new exam date.`,
+          message: `Attempt ${attemptNumber} recorded as Failed (${numericMarks !== null ? `${numericMarks} marks` : 'No marks entered'}). You have ${remaining} attempt(s) remaining under this registration cycle. Please contact branch staff to get a new exam date.`,
           type: 'dmt-date',
           link: '/student/dashboard',
         });
@@ -1593,8 +1665,8 @@ exports.recordExamAttempt = async (req, res) => {
       message: result === 'passed'
         ? `Congratulations! Exam passed with ${numericMarks !== null ? numericMarks : ''} marks. Practical lessons are now unlocked!`
         : (isAutoCancelled
-            ? '3 failed attempts reached. Registration has been automatically cancelled.'
-            : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining. Please obtain a new exam date from staff.`),
+            ? 'All 3 attempts failed. Registration cycle closed. Please register again.'
+            : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining.`),
       student: populatedStudent,
       isAutoCancelled,
       attemptsRemaining: Math.max(0, 3 - populatedStudent.learnerExamAttempts.length),
@@ -1609,7 +1681,7 @@ exports.recordExamAttempt = async (req, res) => {
   }
 };
 
-// @desc    Re-register student as a new learner after 3 failed exam attempts
+// @desc    Re-register student after 3 failed attempts OR 18-month license expiry (Creates independent new cycle)
 // @route   POST /api/students/:id/re-register
 // @access  Student (self) OR Staff/Admin
 exports.reRegisterStudent = async (req, res) => {
@@ -1635,7 +1707,71 @@ exports.reRegisterStudent = async (req, res) => {
       });
     }
 
-    // Reset student record to clean initial state
+    // 1. Ensure existing cycles are initialized and archived
+    if (!student.registrationCycles || student.registrationCycles.length === 0) {
+      student.evaluateLifecycle();
+    }
+
+    // Archive current cycle status
+    let currentCycle =
+      student.registrationCycles.find((c) => c.cycleNumber === student.currentCycleNumber) ||
+      student.registrationCycles[student.registrationCycles.length - 1];
+
+    if (currentCycle) {
+      currentCycle.examAttempts = student.learnerExamAttempts || [];
+      currentCycle.examAttemptsCount = (student.learnerExamAttempts || []).length;
+      if (
+        currentCycle.examAttemptsCount >= 3 &&
+        !currentCycle.examAttempts.some((a) => a.result === 'passed')
+      ) {
+        currentCycle.status = 'attempts_exhausted';
+      } else if (new Date() > new Date(currentCycle.expiryDate)) {
+        currentCycle.status = 'expired';
+      } else {
+        currentCycle.status = 'cancelled';
+      }
+    }
+
+    // 2. Create brand-new independent Registration Cycle
+    const nextCycleNumber = (student.registrationCycles?.length || 0) + 1;
+    const newStartDate = new Date();
+    const newExpiryDate = Student.compute18MonthExpiry(newStartDate);
+    const newCycleId = `CYCLE-${nextCycleNumber}-${Date.now()}`;
+
+    const newCycle = {
+      cycleId: newCycleId,
+      cycleNumber: nextCycleNumber,
+      startDate: newStartDate,
+      expiryDate: newExpiryDate,
+      status: 'pending_payment',
+      isAdvancePaid: false,
+      advancePaymentAmount: 5000,
+      advancePaymentReference: '',
+      advancePaymentDate: null,
+      dmtDates: {
+        medicalExamDate: null,
+        medicalExamPassed: null,
+        medicalDone: false,
+        learnerRegistrationDate: null,
+        learnerExamDate: null,
+        learnerExamPassed: false,
+        learnerExamMarks: null,
+      },
+      examAttempts: [],
+      examAttemptsCount: 0,
+      isPassed: false,
+      finalLicense: {
+        licenseNumber: '',
+        licensePhotoUrl: null,
+        verificationStatus: 'not_uploaded',
+      },
+      notes: `Re-registration cycle #${nextCycleNumber}`,
+    };
+
+    student.registrationCycles.push(newCycle);
+    student.currentCycleNumber = nextCycleNumber;
+
+    // 3. Reset active fields for the new cycle (0 of 3 attempts, fresh 18 months, new payment required)
     student.registrationStatus = 'pending_payment';
     student.accountStatus = 'pending_verification';
     student.account_status = 'Unverified / Pending Payment';
@@ -1645,23 +1781,39 @@ exports.reRegisterStudent = async (req, res) => {
     student.trialEligible = false;
     student.trial_eligible = false;
     student.learnerExamStatus = 'not_taken';
+    student.written_exam_status = 'Pending';
+    student.written_exam_date = null;
     student.learnerExamMarks = null;
-    student.learnerExamAttempts = [];
+    student.learnerExamAttempts = []; // Resets attempt count to Attempt 1 of 3
     student.learnerExamAttemptsCount = 0;
     student.advancePaymentReference = '';
+
+    student.learnerLicenseStartDate = newStartDate;
+    student.learnerLicenseExpiryDate = newExpiryDate;
+    student.learnerLicenseStatus = 'pending_payment';
+    student.finalLicense = {
+      licenseNumber: '',
+      licensePhotoUrl: null,
+      verificationStatus: 'not_uploaded',
+    };
 
     student.dmtDates = {
       medicalExamDate: null,
       medicalExamPassed: null,
       medicalDone: false,
       medicalDoneDate: null,
+      medicalDocumentUrl: null,
+      medicalRemarks: null,
       learnerRegistrationDate: null,
       registrationDone: false,
       registrationDoneDate: null,
+      registrationDocumentUrl: null,
+      registrationRemarks: null,
       learnerExamDate: null,
       learnerExamPassed: false,
       learnerExamPassedDate: null,
       learnerExamMarks: null,
+      learnerExamDocumentUrl: null,
     };
 
     student.lastActivityDate = new Date();
@@ -1675,8 +1827,8 @@ exports.reRegisterStudent = async (req, res) => {
     await Notification.create({
       recipientId: student.userId._id || student.userId,
       recipientRole: 'student',
-      title: 'Re-Registration Initialized',
-      message: 'Your new enrolment has been initialized. Please pay the advance fee of Rs. 5,000 to submit for officer verification.',
+      title: `Registration Cycle #${nextCycleNumber} Initialized`,
+      message: `Your new 18-month registration cycle has been created (Valid until ${newExpiryDate.toLocaleDateString()}). Please pay the Rs. 5,000 advance fee to activate your new cycle.`,
       type: 'payment',
       link: '/student/dashboard',
     });
@@ -1687,7 +1839,7 @@ exports.reRegisterStudent = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Re-registration initialized! Please complete your Rs. 5,000 advance payment to proceed.',
+      message: `New registration cycle #${nextCycleNumber} created! New 18-month validity assigned. Please complete your Rs. 5,000 advance payment.`,
       student: populatedStudent,
     });
   } catch (error) {
@@ -1695,6 +1847,323 @@ exports.reRegisterStudent = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to re-register student',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Admin explicitly marks learner as Passed (US Requirement 5 & 11)
+// @route   PATCH /api/students/:id/final-pass
+// @access  Staff, Admin
+exports.markStudentPassed = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    if (student.registrationStatus === 'cancelled' || student.learnerLicenseStatus === 'expired') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot mark an expired or cancelled learner as Passed. The learner must re-register first.',
+      });
+    }
+
+    // Ensure registration cycles are evaluated
+    student.evaluateLifecycle();
+
+    let currentCycle =
+      student.registrationCycles?.find((c) => c.cycleNumber === student.currentCycleNumber) ||
+      student.registrationCycles?.[student.registrationCycles.length - 1];
+
+    if (currentCycle) {
+      currentCycle.isPassed = true;
+      currentCycle.passedAt = new Date();
+      currentCycle.passedBy = req.user._id;
+      currentCycle.status = 'passed';
+    }
+
+    student.learnerLicenseStatus = 'passed';
+    if (!student.learnerExamStatus || student.learnerExamStatus === 'not_taken') {
+      student.learnerExamStatus = 'passed';
+    }
+    if (student.dmtDates) {
+      student.dmtDates.learnerExamPassed = true;
+    }
+    student.trialEligible = true;
+    student.trial_eligible = true;
+    student.lastActivityDate = new Date();
+
+    await student.save();
+
+    await Notification.create({
+      recipientId: student.userId._id || student.userId,
+      recipientRole: 'student',
+      title: '🎉 Marked as PASSED — Upload Final License Photo',
+      message: 'Congratulations! You have been officially marked as PASSED for your DMT driving license process. Please upload your final driving license photo to finalize your record.',
+      type: 'dmt-date',
+      link: '/student/dashboard',
+    });
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Learner successfully marked as PASSED! Final driving license photo is now required.',
+      student: populatedStudent,
+    });
+  } catch (error) {
+    console.error('Error marking student as passed:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to mark student as passed',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Upload Final Driving License Photo and License Number (US Requirement 6 & 7)
+// @route   POST /api/students/:id/final-license
+// @access  Student (self) OR Staff/Admin
+exports.uploadFinalLicense = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    // Ownership check
+    if (req.user.role === 'student' && student.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { licenseNumber, autoVerify } = req.body;
+    const licensePhotoUrl = req.file ? `/uploads/final_licenses/${req.file.filename}` : null;
+
+    if (!licensePhotoUrl && (!student.finalLicense || !student.finalLicense.licensePhotoUrl)) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid driving license photo (JPG, JPEG, PNG, WEBP) is required.',
+      });
+    }
+
+    if (!student.finalLicense) {
+      student.finalLicense = {};
+    }
+
+    if (licensePhotoUrl) {
+      student.finalLicense.licensePhotoUrl = licensePhotoUrl;
+    }
+    if (licenseNumber !== undefined && licenseNumber !== null) {
+      student.finalLicense.licenseNumber = licenseNumber.trim();
+    }
+    student.finalLicense.uploadedAt = new Date();
+    student.finalLicense.uploadedBy = req.user._id;
+    student.finalLicense.uploadedByRole = req.user.role;
+
+    const isStaffOrAdmin = ['staff', 'admin'].includes(req.user.role);
+    if (isStaffOrAdmin && (autoVerify === 'true' || autoVerify === true)) {
+      student.finalLicense.verificationStatus = 'verified';
+      student.finalLicense.verifiedAt = new Date();
+      student.finalLicense.verifiedBy = req.user._id;
+      student.learnerLicenseStatus = 'completed';
+      student.registrationStatus = 'completed';
+      if (!student.trial) student.trial = {};
+      student.trial.licenseObtained = true;
+      if (!student.trial.licenseIssuedDate) {
+        student.trial.licenseIssuedDate = new Date();
+      }
+    } else {
+      student.finalLicense.verificationStatus = 'uploaded';
+    }
+
+    // Sync to current cycle
+    let currentCycle =
+      student.registrationCycles?.find((c) => c.cycleNumber === student.currentCycleNumber) ||
+      student.registrationCycles?.[student.registrationCycles.length - 1];
+
+    if (currentCycle) {
+      currentCycle.finalLicense = student.finalLicense;
+      if (student.finalLicense.verificationStatus === 'verified') {
+        currentCycle.status = 'completed';
+      }
+    }
+
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    if (req.user.role === 'student') {
+      await Notification.create({
+        recipientRole: 'staff',
+        title: '📸 Final Driving License Photo Uploaded',
+        message: `Student ${student.userId.name} (${student.branch}) has uploaded their final driving license photo for verification.`,
+        type: 'general',
+        link: '/staff/students',
+      });
+    } else if (student.finalLicense.verificationStatus === 'verified') {
+      await Notification.create({
+        recipientId: student.userId._id || student.userId,
+        recipientRole: 'student',
+        title: '🏁 LICENSE COMPLETED!',
+        message: 'Your driving license information has been successfully verified and completed!',
+        type: 'dmt-date',
+        link: '/student/dashboard',
+      });
+    }
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message:
+        student.finalLicense.verificationStatus === 'verified'
+          ? 'Driving license photo verified. License process completed!'
+          : 'Driving license photo uploaded successfully. Pending verification.',
+      student: populatedStudent,
+    });
+  } catch (error) {
+    console.error('Error uploading final license photo:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to upload final license photo',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Admin/Staff verifies or rejects Final Driving License photo (US Requirement 6 & 7)
+// @route   PATCH /api/students/:id/final-license/verify
+// @access  Staff, Admin
+exports.verifyFinalLicense = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).populate('userId');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    const { action, notes } = req.body;
+    if (!['verify', 'reject'].includes(action)) {
+      return res.status(400).json({ success: false, message: "Action must be 'verify' or 'reject'" });
+    }
+
+    if (!student.finalLicense || !student.finalLicense.licensePhotoUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot verify driving license without an uploaded license photo.',
+      });
+    }
+
+    let currentCycle =
+      student.registrationCycles?.find((c) => c.cycleNumber === student.currentCycleNumber) ||
+      student.registrationCycles?.[student.registrationCycles.length - 1];
+
+    if (action === 'verify') {
+      student.finalLicense.verificationStatus = 'verified';
+      student.finalLicense.verifiedAt = new Date();
+      student.finalLicense.verifiedBy = req.user._id;
+      student.finalLicense.verificationNotes = notes || '';
+      student.learnerLicenseStatus = 'completed';
+      student.registrationStatus = 'completed';
+      if (!student.trial) student.trial = {};
+      student.trial.licenseObtained = true;
+      if (!student.trial.licenseIssuedDate) {
+        student.trial.licenseIssuedDate = new Date();
+      }
+
+      if (currentCycle) {
+        currentCycle.finalLicense = student.finalLicense;
+        currentCycle.status = 'completed';
+      }
+
+      await Notification.create({
+        recipientId: student.userId._id || student.userId,
+        recipientRole: 'student',
+        title: '🏁 Driving License Verified — COMPLETED',
+        message: 'Your driving license information has been successfully verified and completed.',
+        type: 'dmt-date',
+        link: '/student/dashboard',
+      });
+    } else {
+      student.finalLicense.verificationStatus = 'rejected';
+      student.finalLicense.verificationNotes = notes || 'Uploaded license photo was rejected. Please re-upload a clear copy.';
+      if (currentCycle) {
+        currentCycle.finalLicense = student.finalLicense;
+      }
+
+      await Notification.create({
+        recipientId: student.userId._id || student.userId,
+        recipientRole: 'student',
+        title: '⚠️ Driving License Photo Rejected',
+        message: `Your driving license photo could not be verified. Reason: ${student.finalLicense.verificationNotes}`,
+        type: 'dmt-date',
+        link: '/student/dashboard',
+      });
+    }
+
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    const populatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: action === 'verify' ? 'Driving license verified successfully!' : 'Driving license rejected.',
+      student: populatedStudent,
+    });
+  } catch (error) {
+    console.error('Error verifying final license:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to verify final license',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get all registration cycles & attempt history for a student (US Requirement 10 & 11)
+// @route   GET /api/students/:id/registration-cycles
+// @access  Student (self) OR Staff/Admin
+exports.getRegistrationCycles = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id)
+      .populate('userId', 'name email phone role branch')
+      .populate('registrationCycles.passedBy', 'name role')
+      .populate('finalLicense.verifiedBy', 'name role');
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
+    }
+
+    if (req.user.role === 'student' && student.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const changed = student.evaluateLifecycle();
+    if (changed) {
+      await student.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      studentId: student._id,
+      currentCycleNumber: student.currentCycleNumber || 1,
+      learnerLicenseStatus: student.learnerLicenseStatus || 'active',
+      learnerLicenseStartDate: student.learnerLicenseStartDate,
+      learnerLicenseExpiryDate: student.learnerLicenseExpiryDate,
+      finalLicense: student.finalLicense,
+      registrationCycles: student.registrationCycles || [],
+    });
+  } catch (error) {
+    console.error('Error fetching registration cycles:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve registration cycles',
       error: error.message,
     });
   }

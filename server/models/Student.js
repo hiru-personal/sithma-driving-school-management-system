@@ -60,6 +60,153 @@ const learnerExamAttemptSchema = new mongoose.Schema(
   { _id: true, timestamps: true }
 );
 
+const finalLicenseSchema = new mongoose.Schema(
+  {
+    licenseNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    licensePhotoUrl: {
+      type: String,
+      default: null,
+    },
+    uploadedAt: {
+      type: Date,
+      default: null,
+    },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    uploadedByRole: {
+      type: String,
+      enum: ['student', 'staff', 'admin', null],
+      default: null,
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['not_uploaded', 'uploaded', 'verified', 'rejected'],
+      default: 'not_uploaded',
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verificationNotes: {
+      type: String,
+      default: '',
+    },
+  },
+  { _id: false }
+);
+
+const registrationCycleSchema = new mongoose.Schema(
+  {
+    cycleId: {
+      type: String,
+      required: true,
+      default: () => `CYCLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    },
+    cycleNumber: {
+      type: Number,
+      required: true,
+      default: 1,
+    },
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
+    expiryDate: {
+      type: Date,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: [
+        'active',
+        'expiring_soon',
+        'expired',
+        'attempts_exhausted',
+        'passed',
+        'completed',
+        'pending_payment',
+        'cancelled',
+      ],
+      default: 'active',
+    },
+    isAdvancePaid: {
+      type: Boolean,
+      default: false,
+    },
+    advancePaymentAmount: {
+      type: Number,
+      default: 5000,
+    },
+    advancePaymentReference: {
+      type: String,
+      default: '',
+    },
+    advancePaymentDate: {
+      type: Date,
+      default: null,
+    },
+    dmtDates: {
+      medicalExamDate: { type: Date, default: null },
+      medicalExamPassed: { type: Boolean, default: null },
+      medicalDone: { type: Boolean, default: false },
+      medicalDoneDate: { type: Date, default: null },
+      medicalDocumentUrl: { type: String, default: null },
+      medicalRemarks: { type: String, default: null },
+      learnerRegistrationDate: { type: Date, default: null },
+      registrationDone: { type: Boolean, default: false },
+      registrationDoneDate: { type: Date, default: null },
+      registrationDocumentUrl: { type: String, default: null },
+      registrationRemarks: { type: String, default: null },
+      learnerExamDate: { type: Date, default: null },
+      learnerExamPassed: { type: Boolean, default: false },
+      learnerExamPassedDate: { type: Date, default: null },
+      learnerExamMarks: { type: Number, default: null },
+      learnerExamDocumentUrl: { type: String, default: null },
+    },
+    examAttempts: [learnerExamAttemptSchema],
+    examAttemptsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 3,
+    },
+    isPassed: {
+      type: Boolean,
+      default: false,
+    },
+    passedAt: {
+      type: Date,
+      default: null,
+    },
+    passedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    finalLicense: {
+      type: finalLicenseSchema,
+      default: () => ({}),
+    },
+    notes: {
+      type: String,
+      default: '',
+    },
+  },
+  { _id: true, timestamps: true }
+);
+
 const studentSchema = new mongoose.Schema(
   {
     userId: {
@@ -343,6 +490,38 @@ const studentSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    // DMT 1.5-Year Learner License Lifecycle & Multi-Cycle Tracking
+    learnerLicenseStartDate: {
+      type: Date,
+      default: null,
+    },
+    learnerLicenseExpiryDate: {
+      type: Date,
+      default: null,
+    },
+    learnerLicenseStatus: {
+      type: String,
+      enum: [
+        'active',
+        'expiring_soon',
+        'expired',
+        'attempts_exhausted',
+        'passed',
+        'completed',
+        'pending_payment',
+        'cancelled',
+      ],
+      default: 'active',
+    },
+    currentCycleNumber: {
+      type: Number,
+      default: 1,
+    },
+    registrationCycles: [registrationCycleSchema],
+    finalLicense: {
+      type: finalLicenseSchema,
+      default: () => ({}),
+    },
   },
   {
     timestamps: true,
@@ -562,7 +741,151 @@ studentSchema.pre('save', function (next) {
     this.isPremium = false;
   }
 
+  // 7. Evaluate DMT Learner License Lifecycle & Multi-Cycle Sync
+  this.evaluateLifecycle();
+
   next();
 });
 
-module.exports = mongoose.model('Student', studentSchema);
+// Helper to compute 18 months expiry date (License Start Date + 18 months)
+function compute18MonthExpiry(startDate) {
+  const d = new Date(startDate || Date.now());
+  const expiry = new Date(d);
+  expiry.setMonth(expiry.getMonth() + 18);
+  return expiry;
+}
+
+studentSchema.methods.evaluateLifecycle = function () {
+  let changed = false;
+  if (!this.registrationCycles) {
+    this.registrationCycles = [];
+  }
+
+  if (this.registrationCycles.length === 0) {
+    const start =
+      this.learnerLicenseStartDate ||
+      this.registration_date ||
+      this.dmtDates?.learnerRegistrationDate ||
+      this.createdAt ||
+      new Date();
+    const expiry = this.learnerLicenseExpiryDate || compute18MonthExpiry(start);
+    this.registrationCycles.push({
+      cycleId: `CYCLE-1-${Date.now()}`,
+      cycleNumber: 1,
+      startDate: start,
+      expiryDate: expiry,
+      status: this.learnerLicenseStatus || 'active',
+      isAdvancePaid: Boolean(this.isAdvancePaid),
+      advancePaymentAmount: this.advancePaymentAmount || 5000,
+      advancePaymentReference: this.advancePaymentReference || '',
+      dmtDates: this.dmtDates ? JSON.parse(JSON.stringify(this.dmtDates)) : {},
+      examAttempts: this.learnerExamAttempts || [],
+      examAttemptsCount: (this.learnerExamAttempts || []).length,
+      isPassed: this.learnerExamStatus === 'passed' || Boolean(this.dmtDates?.learnerExamPassed),
+      finalLicense: this.finalLicense || {},
+    });
+    this.currentCycleNumber = 1;
+    this.learnerLicenseStartDate = start;
+    this.learnerLicenseExpiryDate = expiry;
+    changed = true;
+  }
+
+  let currentCycle =
+    this.registrationCycles.find((c) => c.cycleNumber === this.currentCycleNumber) ||
+    this.registrationCycles[this.registrationCycles.length - 1];
+
+  if (currentCycle) {
+    // Sync dates
+    if (!currentCycle.startDate) {
+      currentCycle.startDate =
+        this.learnerLicenseStartDate || this.registration_date || this.createdAt || new Date();
+      changed = true;
+    }
+    if (!currentCycle.expiryDate) {
+      currentCycle.expiryDate = compute18MonthExpiry(currentCycle.startDate);
+      changed = true;
+    }
+    this.learnerLicenseStartDate = currentCycle.startDate;
+    this.learnerLicenseExpiryDate = currentCycle.expiryDate;
+
+    // Sync attempts & marks
+    currentCycle.examAttempts = this.learnerExamAttempts || [];
+    currentCycle.examAttemptsCount = (this.learnerExamAttempts || []).length;
+    currentCycle.isAdvancePaid = Boolean(this.isAdvancePaid);
+    currentCycle.isPassed = Boolean(this.isPassed || currentCycle.isPassed);
+    if (this.finalLicense && (this.finalLicense.photoUrl || this.finalLicense.licensePhotoUrl)) {
+      currentCycle.finalLicense = this.finalLicense;
+    }
+
+    // Evaluate statuses
+    const now = new Date();
+    const isCompleted =
+      this.finalLicense?.verificationStatus === 'verified' ||
+      currentCycle.finalLicense?.verificationStatus === 'verified' ||
+      this.learnerLicenseStatus === 'completed' ||
+      this.trial?.licenseObtained;
+
+    if (isCompleted) {
+      if (currentCycle.status !== 'completed' || this.learnerLicenseStatus !== 'completed') {
+        currentCycle.status = 'completed';
+        this.learnerLicenseStatus = 'completed';
+        this.registrationStatus = 'completed';
+        changed = true;
+      }
+    } else if (this.isPassed === true || currentCycle.isPassed === true || this.learnerLicenseStatus === 'passed') {
+      if (currentCycle.status !== 'passed' || this.learnerLicenseStatus !== 'passed') {
+        currentCycle.status = 'passed';
+        this.learnerLicenseStatus = 'passed';
+        changed = true;
+      }
+    } else if (now > currentCycle.expiryDate) {
+      // 18-month validity expired!
+      if (currentCycle.status !== 'expired' || this.learnerLicenseStatus !== 'expired') {
+        currentCycle.status = 'expired';
+        this.learnerLicenseStatus = 'expired';
+        this.registrationStatus = 'cancelled';
+        this.accountStatus = 'cancelled';
+        this.account_status = 'Cancelled';
+        this.isAdvancePaid = false;
+        this.isPremium = false;
+        changed = true;
+      }
+    } else if (
+      currentCycle.examAttempts &&
+      currentCycle.examAttempts.length >= 3 &&
+      !currentCycle.examAttempts.some((a) => a.result === 'passed')
+    ) {
+      // 3 exam attempts failed!
+      if (currentCycle.status !== 'attempts_exhausted' || this.learnerLicenseStatus !== 'attempts_exhausted') {
+        currentCycle.status = 'attempts_exhausted';
+        this.learnerLicenseStatus = 'attempts_exhausted';
+        this.registrationStatus = 'cancelled';
+        this.accountStatus = 'cancelled';
+        this.account_status = 'Cancelled';
+        this.isAdvancePaid = false;
+        this.isPremium = false;
+        changed = true;
+      }
+    } else {
+      const diffDays = Math.ceil((currentCycle.expiryDate - now) / (1000 * 60 * 60 * 24));
+      const targetStatus =
+        diffDays <= 30
+          ? 'expiring_soon'
+          : this.registrationStatus === 'pending_payment' && !this.isAdvancePaid
+          ? 'pending_payment'
+          : 'active';
+      if (currentCycle.status !== targetStatus || this.learnerLicenseStatus !== targetStatus) {
+        currentCycle.status = targetStatus;
+        this.learnerLicenseStatus = targetStatus;
+        changed = true;
+      }
+    }
+  }
+
+  return changed;
+};
+
+const Student = mongoose.model('Student', studentSchema);
+Student.compute18MonthExpiry = compute18MonthExpiry;
+
+module.exports = Student;
