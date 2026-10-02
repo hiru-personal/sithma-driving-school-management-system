@@ -113,13 +113,13 @@ export default function DmtMilestoneTimeline({ student }) {
   ];
 
   return (
-    <div className="card space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DBE2EF] pb-4">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-cyan-400" /> DMT Regulatory Milestone Stepper
+          <h2 className="text-lg font-black text-[#0B2447] flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[#3F72AF]" /> DMT Regulatory Milestone Stepper
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#4B6584] font-medium">
             {isType2
               ? 'Type 2 (Trial-Ready) Track — Learner Exam pre-cleared, tracking practical trial attempts & 1.5-yr window'
               : 'Type 1 (New Learner) Track — Tracking Medical, Learner Exam, and Practical Trial Progression'}
@@ -136,10 +136,10 @@ export default function DmtMilestoneTimeline({ student }) {
       {/* Deadline Alert Banner */}
       {deadlineWarning && (
         <div
-          className={`p-3.5 rounded-xl flex items-center gap-2.5 text-xs font-semibold backdrop-blur-md ${
+          className={`p-3.5 rounded-xl flex items-center gap-2.5 text-xs font-semibold ${
             deadlineWarning.type === 'danger'
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
-              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+              ? 'bg-rose-50 text-rose-800 border border-rose-200'
+              : 'bg-amber-50 text-amber-800 border border-amber-200'
           }`}
         >
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -148,7 +148,7 @@ export default function DmtMilestoneTimeline({ student }) {
       )}
 
       {/* Timeline Stepper */}
-      <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/20">
+      <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#DBE2EF]">
         {milestones.map((m) => {
           const Icon = m.icon;
           const isCompleted = m.status === 'completed';
@@ -158,26 +158,26 @@ export default function DmtMilestoneTimeline({ student }) {
             <div key={m.id} className="relative group">
               {/* Stepper Dot */}
               <div
-                className={`absolute -left-6 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all border shadow-md ${
+                className={`absolute -left-6 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all border shadow-sm ${
                   isCompleted
-                    ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
+                    ? 'bg-emerald-600 text-white border-emerald-400'
                     : isInProgress
-                    ? 'bg-cyan-400 text-slate-950 border-cyan-200 animate-pulse shadow-[0_0_12px_rgba(6,182,212,0.6)]'
-                    : 'bg-slate-900 text-slate-500 border-white/20'
+                    ? 'bg-[#3F72AF] text-white border-blue-300 animate-pulse'
+                    : 'bg-slate-100 text-[#64748B] border-[#CBD5E1]'
                 }`}
               >
                 {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
               </div>
 
               {/* Step Content */}
-              <div className="bg-white/5 p-4 rounded-xl border border-white/10 hover:border-white/20 transition-colors">
+              <div className="bg-[#FAFBFC] p-4 rounded-xl border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-colors shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                  <h3 className="font-extrabold text-sm text-[#0B2447] flex items-center gap-2">
                     {m.title}
                   </h3>
-                  <span className="text-xs text-slate-400 font-semibold">{m.date}</span>
+                  <span className="text-xs text-[#3F72AF] font-bold font-mono">{m.date}</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">{m.desc}</p>
+                <p className="text-xs text-[#4B6584] leading-relaxed font-medium">{m.desc}</p>
               </div>
             </div>
           );
