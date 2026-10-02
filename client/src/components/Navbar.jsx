@@ -63,8 +63,10 @@ export default function Navbar() {
 
   const [dbInfo, setDbInfo] = useState(null);
   const [pendingRescheduleCount, setPendingRescheduleCount] = useState(0);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const navRef = useRef(null);
+  const moreMenuRef = useRef(null);
 
   // Fetch active database status
   useEffect(() => {
@@ -90,27 +92,29 @@ export default function Navbar() {
     }
   }, [isStaff, location.pathname]);
 
-  // Close mobile menu on route change
+  // Close menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMoreMenuOpen(false);
   }, [location.pathname]);
 
-  // Close mobile menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
         setMobileMenuOpen(false);
       }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setMoreMenuOpen(false);
+      }
     };
-    if (mobileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [mobileMenuOpen]);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -119,8 +123,24 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
+  const isAnyMoreActive =
+    isActive('/staff/packages') ||
+    isActive('/staff/quiz') ||
+    isActive('/staff/reports') ||
+    isActive('/staff/slots') ||
+    isActive('/staff/payments');
+
+  const getActiveMoreLabel = () => {
+    if (isActive('/staff/packages')) return 'Packages';
+    if (isActive('/staff/quiz')) return 'Question Bank';
+    if (isActive('/staff/reports')) return 'Reports';
+    if (isActive('/staff/slots')) return 'Slots';
+    if (isActive('/staff/payments')) return 'Payments';
+    return null;
+  };
+
   return (
-    <header ref={navRef} className="sticky top-2 sm:top-3 z-50 px-3 sm:px-5 lg:px-8 py-1.5 sm:py-2 max-w-[1440px] mx-auto w-full transition-all duration-300">
+    <header ref={navRef} className="sticky top-2 sm:top-3 z-50 px-3 sm:px-5 lg:px-8 py-1.5 sm:py-2 max-w-[1600px] mx-auto w-full transition-all duration-300">
       {/* Liquid Glass Capsule Bar */}
       <div className="relative backdrop-blur-2xl bg-slate-900/80 border border-purple-300/25 shadow-[0_8px_32px_0_rgba(147,51,234,0.25)] rounded-2xl sm:rounded-full px-3.5 sm:px-5 lg:px-6 py-2 sm:py-2.5 transition-all duration-300">
         {/* Specular Liquid Light Shimmer (Top Highlight) */}
@@ -142,7 +162,7 @@ export default function Navbar() {
               <span className="font-heading text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5 drop-shadow whitespace-nowrap">
                 Sithma <span className="text-accent font-black">Driving</span>
               </span>
-              <span className="text-[10px] sm:text-xs text-blue-200/90 font-medium tracking-wide hidden sm:block whitespace-nowrap">
+              <span className="text-[10px] sm:text-xs text-blue-200/90 font-medium tracking-wide hidden xl:block whitespace-nowrap">
                 Sri Lanka's Driving Academy
               </span>
             </div>
@@ -150,7 +170,7 @@ export default function Navbar() {
 
           {/* Desktop & Tablet Liquid Glass Navigation Links */}
           {user && (
-            <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2 bg-white/5 p-1 lg:p-1.5 rounded-full border border-white/10 backdrop-blur-md overflow-x-auto no-scrollbar max-w-full shrink">
+            <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2 bg-white/5 p-1 lg:p-1.5 rounded-full border border-white/10 backdrop-blur-md shrink-0 relative">
               {isStudent && (
                 <>
                   {!isPremium && (
@@ -239,106 +259,321 @@ export default function Navbar() {
                 </>
               )}
 
+              {/* Admin Navigation Links */}
               {user?.role === 'admin' && (
                 <>
                   <Link
                     to="/admin/dashboard"
-                    className={`px-3 lg:px-4 py-1.5 rounded-full text-xs lg:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/admin/dashboard')
                         ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
                         : 'text-accent hover:bg-accent/20'
                     }`}
                   >
-                    <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span><span className="hidden xl:inline">Executive </span>Dashboard</span>
+                    <TrendingUp className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span><span className="hidden 2xl:inline">Executive </span>Dashboard</span>
                   </Link>
                   <Link
                     to="/admin/accounts"
-                    className={`px-3 lg:px-4 py-1.5 rounded-full text-xs lg:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/admin/accounts')
                         ? 'bg-accent text-slate-950 shadow-[0_0_15px_rgba(242,169,59,0.5)] border border-accent/60'
                         : 'text-accent hover:bg-accent/20'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span><span className="hidden xl:inline">Manage </span>Accounts</span>
+                    <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span><span className="hidden 2xl:inline">Manage </span>Accounts</span>
                   </Link>
-                </>
-              )}
 
-              {isStaff && (
-                <>
                   <Link
                     to="/staff/students"
-                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/students')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span>Students<span className="hidden xl:inline"> & DMT</span></span>
+                    <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Students<span className="hidden 2xl:inline"> & DMT</span></span>
                     {pendingRescheduleCount > 0 && (
                       <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
                         {pendingRescheduleCount}
                       </span>
                     )}
                   </Link>
+
+                  {/* Slot Creator - Direct button on xl: */}
                   <Link
                     to="/staff/slots"
-                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    className={`hidden xl:flex px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/slots')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span><span className="xl:hidden">Slots</span><span className="hidden xl:inline">Slot Creator</span></span>
+                    <Clock className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Slots</span>
                   </Link>
-                  <Link
-                    to="/staff/packages"
-                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/packages')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span>Packages</span>
-                  </Link>
-                  <Link
-                    to="/staff/quiz"
-                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/quiz')
-                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <BookOpen className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span><span className="xl:hidden">Quiz Bank</span><span className="hidden xl:inline">Question Bank</span></span>
-                  </Link>
+
+                  {/* Payment Queue - Direct button on xl: */}
                   <Link
                     to="/staff/payments"
-                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    className={`hidden xl:flex px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/payments')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <CreditCard className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span><span className="xl:hidden">Payments</span><span className="hidden xl:inline">Payment Queue</span></span>
+                    <CreditCard className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Payments</span>
                   </Link>
+
+                  {/* Operations / More Tools Dropdown */}
+                  <div className="relative" ref={moreMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                      className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+                        (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
+                          ? 'bg-gradient-to-r from-purple-600/40 to-indigo-600/40 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.35)]'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-400 shrink-0" />
+                      <span>{getActiveMoreLabel() || 'Operations'}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {moreMenuOpen && (
+                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-slate-900/95 border border-purple-400/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-300/80 border-b border-white/10 mb-1 flex items-center justify-between">
+                          <span>Operations & Management</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Admin Tools</span>
+                        </div>
+
+                        {/* Slots (visible in dropdown on < xl) */}
+                        <Link
+                          to="/staff/slots"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`xl:hidden flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/slots') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                            <Clock className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Slot Creator</p>
+                            <p className="text-[10px] text-slate-400">Lesson slots, scheduling & limits</p>
+                          </div>
+                        </Link>
+
+                        {/* Payments (visible in dropdown on < xl) */}
+                        <Link
+                          to="/staff/payments"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`xl:hidden flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/payments') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                            <CreditCard className="w-4 h-4 text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Payment Queue</p>
+                            <p className="text-[10px] text-slate-400">Verify slips & advance fees</p>
+                          </div>
+                        </Link>
+
+                        {/* Packages */}
+                        <Link
+                          to="/staff/packages"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/packages') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                            <Layers className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Course Packages</p>
+                            <p className="text-[10px] text-slate-400">Classes, curriculum & pricing</p>
+                          </div>
+                        </Link>
+
+                        {/* Question Bank */}
+                        <Link
+                          to="/staff/quiz"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/quiz') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+                            <BookOpen className="w-4 h-4 text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Question Bank</p>
+                            <p className="text-[10px] text-slate-400">DMT theory test questions & practice</p>
+                          </div>
+                        </Link>
+
+                        {/* Reports */}
+                        <Link
+                          to="/staff/reports"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/reports') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+                            <BarChart3 className="w-4 h-4 text-cyan-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Reports & Analytics</p>
+                            <p className="text-[10px] text-slate-400">Branch performance & exam statistics</p>
+                          </div>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Staff (non-admin) Navigation Links */}
+              {isStaff && user?.role !== 'admin' && (
+                <>
                   <Link
-                    to="/staff/reports"
-                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                      isActive('/staff/reports')
+                    to="/staff/students"
+                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/staff/students')
                         ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
                         : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <BarChart3 className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span>Reports</span>
+                    <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Students<span className="hidden 2xl:inline"> & DMT</span></span>
+                    {pendingRescheduleCount > 0 && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-md">
+                        {pendingRescheduleCount}
+                      </span>
+                    )}
                   </Link>
+
+                  <Link
+                    to="/staff/slots"
+                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/staff/slots')
+                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Slots</span>
+                  </Link>
+
+                  <Link
+                    to="/staff/payments"
+                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/staff/payments')
+                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Payments</span>
+                  </Link>
+
+                  {/* Course Packages (direct on xl:) */}
+                  <Link
+                    to="/staff/packages"
+                    className={`hidden xl:flex px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/staff/packages')
+                        ? 'bg-white/20 text-cyan-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>Packages</span>
+                  </Link>
+
+                  {/* More Tools for Staff */}
+                  <div className="relative" ref={moreMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                      className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+                        (isActive('/staff/quiz') || isActive('/staff/reports'))
+                          ? 'bg-gradient-to-r from-purple-600/40 to-indigo-600/40 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.35)]'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-400 shrink-0" />
+                      <span>{isActive('/staff/quiz') ? 'Quiz Bank' : isActive('/staff/reports') ? 'Reports' : 'More Tools'}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {moreMenuOpen && (
+                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-slate-900/95 border border-purple-400/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-300/80 border-b border-white/10 mb-1 flex items-center justify-between">
+                          <span>Staff Tools</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Management</span>
+                        </div>
+
+                        {/* Packages (visible in dropdown on < xl) */}
+                        <Link
+                          to="/staff/packages"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`xl:hidden flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/packages') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                            <Layers className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Course Packages</p>
+                            <p className="text-[10px] text-slate-400">Classes, curriculum & pricing</p>
+                          </div>
+                        </Link>
+
+                        {/* Question Bank */}
+                        <Link
+                          to="/staff/quiz"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/quiz') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+                            <BookOpen className="w-4 h-4 text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Question Bank</p>
+                            <p className="text-[10px] text-slate-400">DMT theory test questions & practice</p>
+                          </div>
+                        </Link>
+
+                        {/* Reports */}
+                        <Link
+                          to="/staff/reports"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+                            isActive('/staff/reports') ? 'bg-purple-500/20 text-cyan-300 border border-purple-400/40' : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+                            <BarChart3 className="w-4 h-4 text-cyan-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">Reports & Analytics</p>
+                            <p className="text-[10px] text-slate-400">Branch performance & exam statistics</p>
+                          </div>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
 
@@ -381,7 +616,7 @@ export default function Navbar() {
                       }`}
                     />
                     <Database className="w-3.5 h-3.5 shrink-0" />
-                    <span className="hidden lg:inline whitespace-nowrap">
+                    <span className="hidden 2xl:inline whitespace-nowrap">
                       {dbInfo.target?.includes('Atlas') ? 'Atlas Cloud' : 'Local DB'}
                     </span>
                   </div>
@@ -403,8 +638,8 @@ export default function Navbar() {
                     </div>
                   )}
                   <div className="text-left leading-tight hidden sm:block">
-                    <p className="text-xs lg:text-sm font-bold text-white truncate max-w-[80px] md:max-w-[100px] xl:max-w-[140px]">{user.name}</p>
-                    <p className="text-[10px] lg:text-xs text-cyan-300 uppercase tracking-wider font-semibold whitespace-nowrap">
+                    <p className="text-xs font-bold text-white truncate max-w-[80px] md:max-w-[95px] xl:max-w-[130px]">{user.name}</p>
+                    <p className="text-[10px] text-cyan-300 uppercase tracking-wider font-semibold whitespace-nowrap">
                       {user.role} <span className="hidden xl:inline">{user.branch ? `• ${user.branch}` : ''}</span>
                     </p>
                   </div>
@@ -575,6 +810,7 @@ export default function Navbar() {
               {/* Admin Navigation Links */}
               {user?.role === 'admin' && (
                 <div className="space-y-1 text-xs">
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-accent/80">Executive Administration</div>
                   <Link
                     to="/admin/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
@@ -589,19 +825,13 @@ export default function Navbar() {
                   >
                     <Users className="w-4 h-4 text-cyan-400" /> Manage Accounts
                   </Link>
-                  <Link
-                    to="/staff/students"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-200 hover:bg-white/10 hover:text-white font-medium"
-                  >
-                    <Users className="w-4 h-4 text-purple-400" /> Student Directory
-                  </Link>
                 </div>
               )}
 
-              {/* Staff Navigation Links */}
+              {/* Staff & Admin Operations Navigation Links */}
               {isStaff && (
                 <div className="space-y-1 text-xs">
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-cyan-400/80">Branch Operations</div>
                   <Link
                     to="/staff/students"
                     onClick={() => setMobileMenuOpen(false)}
