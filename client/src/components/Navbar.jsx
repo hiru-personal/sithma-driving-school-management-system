@@ -23,6 +23,8 @@ import {
   ChevronDown,
   ShieldCheck,
   Database,
+  Package,
+  FolderKanban,
 } from 'lucide-react';
 import api from '../api/axios';
 
@@ -265,37 +267,56 @@ export default function Navbar() {
                 <>
                   <Link
                     to="/admin/dashboard"
-                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    style={isActive('/admin/dashboard') ? { backgroundColor: '#0B2447', color: '#ffffff' } : {}}
+                    className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/admin/dashboard')
-                        ? 'bg-accent text-slate-950 shadow-sm border border-accent/60'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
+                        ? 'nav-pill-active bg-[#0B2447] text-white shadow-sm border border-[#0B2447]'
+                        : 'text-slate-700 hover:text-[#0B2447] hover:bg-white/80 border border-transparent'
                     }`}
                   >
-                    <TrendingUp className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span><span className="hidden 2xl:inline">Executive </span>Dashboard</span>
+                    <TrendingUp
+                      className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 ${isActive('/admin/dashboard') ? 'text-white' : 'text-slate-500'}`}
+                      style={isActive('/admin/dashboard') ? { color: '#ffffff', stroke: '#ffffff' } : {}}
+                    />
+                    <span style={isActive('/admin/dashboard') ? { color: '#ffffff' } : {}}>
+                      <span className="hidden 2xl:inline">Executive </span>Dashboard
+                    </span>
                   </Link>
+
                   <Link
                     to="/admin/accounts"
-                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    style={isActive('/admin/accounts') ? { backgroundColor: '#0B2447', color: '#ffffff' } : {}}
+                    className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/admin/accounts')
-                        ? 'bg-accent text-slate-950 shadow-sm border border-accent/60'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
+                        ? 'nav-pill-active bg-[#0B2447] text-white shadow-sm border border-[#0B2447]'
+                        : 'text-slate-700 hover:text-[#0B2447] hover:bg-white/80 border border-transparent'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span><span className="hidden 2xl:inline">Manage </span>Accounts</span>
+                    <Users
+                      className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 ${isActive('/admin/accounts') ? 'text-white' : 'text-slate-500'}`}
+                      style={isActive('/admin/accounts') ? { color: '#ffffff', stroke: '#ffffff' } : {}}
+                    />
+                    <span style={isActive('/admin/accounts') ? { color: '#ffffff' } : {}}>
+                      <span className="hidden 2xl:inline">Manage </span>Accounts
+                    </span>
                   </Link>
 
                   <Link
                     to="/staff/students"
-                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    style={isActive('/staff/students') ? { backgroundColor: '#0B2447', color: '#ffffff' } : {}}
+                    className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/students')
-                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
+                        ? 'nav-pill-active bg-[#0B2447] text-white shadow-sm border border-[#0B2447] font-bold'
+                        : 'text-slate-700 hover:text-[#0B2447] hover:bg-white/80 border border-transparent'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Students<span className="hidden 2xl:inline"> & DMT</span></span>
+                    <Users
+                      className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 ${isActive('/staff/students') ? 'text-white' : 'text-slate-500'}`}
+                      style={isActive('/staff/students') ? { color: '#ffffff', stroke: '#ffffff' } : {}}
+                    />
+                    <span style={isActive('/staff/students') ? { color: '#ffffff' } : {}}>
+                      Students<span className="hidden 2xl:inline"> & DMT</span>
+                    </span>
                     {pendingRescheduleCount > 0 && (
                       <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-sm">
                         {pendingRescheduleCount}
@@ -308,106 +329,183 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                      className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
-                        (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
-                          ? 'bg-purple-100 text-purple-900 border border-purple-300 shadow-sm font-bold'
-                          : 'text-slate-700 hover:text-slate-900 hover:bg-white/80 border border-transparent'
+                      style={
+                        moreMenuOpen
+                          ? { backgroundColor: '#FAF5FF', color: '#581C87', borderColor: '#9333EA' }
+                          : (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
+                            ? { backgroundColor: '#6D28D9', color: '#ffffff', borderColor: '#6D28D9' }
+                            : {}
+                      }
+                      className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+                        moreMenuOpen
+                          ? 'bg-purple-50 text-purple-900 border-2 border-purple-600 shadow-sm'
+                          : (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
+                            ? 'bg-purple-700 text-white border border-purple-700 shadow-sm'
+                            : 'text-slate-700 hover:text-purple-900 hover:bg-white/80 border border-transparent'
                       }`}
                     >
-                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-600 shrink-0" />
-                      <span>{getActiveMoreLabel() || 'Operations'}</span>
+                      <Layers
+                        className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 transition-colors ${
+                          moreMenuOpen
+                            ? 'text-purple-700'
+                            : (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
+                              ? 'text-white'
+                              : 'text-purple-600'
+                        }`}
+                        style={
+                          moreMenuOpen
+                            ? { color: '#7E22CE', stroke: '#7E22CE' }
+                            : (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
+                              ? { color: '#ffffff', stroke: '#ffffff' }
+                              : { color: '#9333EA', stroke: '#9333EA' }
+                        }
+                      />
+                      <span
+                        style={
+                          moreMenuOpen
+                            ? { color: '#581C87' }
+                            : (isAnyMoreActive && !isActive('/admin/dashboard') && !isActive('/admin/accounts') && !isActive('/staff/students'))
+                              ? { color: '#ffffff' }
+                              : undefined
+                        }
+                      >
+                        {getActiveMoreLabel() || 'Operations'}
+                      </span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {moreMenuOpen && (
-                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-white/98 border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.12)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
-                          <span>Operations & Management</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">Admin Tools</span>
+                      <div
+                        style={{ backgroundColor: '#ffffff', opacity: 1 }}
+                        className="operations-dropdown absolute top-full right-0 mt-3 w-84 sm:w-[350px] rounded-2xl bg-white border border-[#DBE2EF] shadow-[0_20px_50px_rgba(15,23,42,0.18),0_4px_12px_rgba(15,23,42,0.06)] p-3 z-[60] space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                      >
+                        <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
+                          <span className="font-extrabold text-slate-600 tracking-wider">Operations & Management</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-extrabold border border-purple-200/60 tracking-wider">Admin Tools</span>
                         </div>
 
-                        {/* Slots */}
+                        {/* 1. Slot Creator */}
                         <Link
                           to="/staff/slots"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/slots') ? 'bg-purple-50 text-primary border border-purple-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/slots')
+                              ? 'bg-purple-50/90 text-purple-900 border border-purple-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                            <Clock className="w-4 h-4 text-purple-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/slots')
+                              ? 'bg-purple-600 text-white shadow-sm'
+                              : 'bg-purple-50 text-purple-600 border border-purple-100/90 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600 group-hover:scale-105'
+                          }`}>
+                            <Clock className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Slot Creator</p>
-                            <p className="text-[10px] text-slate-500">Lesson slots, scheduling & limits</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/slots') ? 'text-purple-900' : 'text-slate-800 group-hover:text-purple-700'
+                            }`}>Slot Creator</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Lesson slots, scheduling & limits</p>
                           </div>
                         </Link>
 
-                        {/* Payments */}
+                        {/* 2. Payment Queue */}
                         <Link
                           to="/staff/payments"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/payments') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/payments')
+                              ? 'bg-emerald-50/90 text-emerald-900 border border-emerald-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                            <CreditCard className="w-4 h-4 text-emerald-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/payments')
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-emerald-50 text-emerald-600 border border-emerald-100/90 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 group-hover:scale-105'
+                          }`}>
+                            <CreditCard className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Payment Queue</p>
-                            <p className="text-[10px] text-slate-500">Verify slips & advance fees</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/payments') ? 'text-emerald-900' : 'text-slate-800 group-hover:text-emerald-700'
+                            }`}>Payment Queue</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Verify slips & advance fees</p>
                           </div>
                         </Link>
 
-                        {/* Packages */}
+                        {/* 3. Course Packages */}
                         <Link
                           to="/staff/packages"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/packages') ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/packages')
+                              ? 'bg-amber-50/90 text-amber-900 border border-amber-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                            <Layers className="w-4 h-4 text-amber-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/packages')
+                              ? 'bg-amber-600 text-white shadow-sm'
+                              : 'bg-amber-50 text-amber-600 border border-amber-100/90 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 group-hover:scale-105'
+                          }`}>
+                            <Package className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Course Packages</p>
-                            <p className="text-[10px] text-slate-500">Classes, curriculum & pricing</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/packages') ? 'text-amber-900' : 'text-slate-800 group-hover:text-amber-700'
+                            }`}>Course Packages</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Classes, curriculum & pricing</p>
                           </div>
                         </Link>
 
-                        {/* Question Lists */}
+                        {/* 4. Question Lists */}
                         <Link
                           to="/admin/question-lists"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/admin/question-lists') || isActive('/staff/quiz') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/admin/question-lists') || isActive('/staff/quiz')
+                              ? 'bg-blue-50/90 text-blue-900 border border-blue-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                            <Layers className="w-4 h-4 text-blue-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/admin/question-lists') || isActive('/staff/quiz')
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'bg-blue-50 text-blue-600 border border-blue-100/90 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 group-hover:scale-105'
+                          }`}>
+                            <FolderKanban className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Question Lists</p>
-                            <p className="text-[10px] text-slate-500">Create & manage multiple question sets</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/admin/question-lists') || isActive('/staff/quiz') ? 'text-blue-900' : 'text-slate-800 group-hover:text-blue-700'
+                            }`}>Question Lists</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Create & manage multiple question sets</p>
                           </div>
                         </Link>
 
-                        {/* Reports */}
+                        {/* 5. Reports & Analytics */}
                         <Link
                           to="/staff/reports"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/reports') ? 'bg-cyan-50 text-cyan-800 border border-cyan-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/reports')
+                              ? 'bg-cyan-50/90 text-cyan-900 border border-cyan-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center shrink-0">
-                            <BarChart3 className="w-4 h-4 text-cyan-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/reports')
+                              ? 'bg-cyan-600 text-white shadow-sm'
+                              : 'bg-cyan-50 text-cyan-600 border border-cyan-100/90 group-hover:bg-cyan-600 group-hover:text-white group-hover:border-cyan-600 group-hover:scale-105'
+                          }`}>
+                            <BarChart3 className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Reports & Analytics</p>
-                            <p className="text-[10px] text-slate-500">Branch performance & exam statistics</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/reports') ? 'text-cyan-900' : 'text-slate-800 group-hover:text-cyan-700'
+                            }`}>Reports & Analytics</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Branch performance & exam statistics</p>
                           </div>
                         </Link>
                       </div>
@@ -421,14 +519,20 @@ export default function Navbar() {
                 <>
                   <Link
                     to="/staff/students"
-                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    style={isActive('/staff/students') ? { backgroundColor: '#0B2447', color: '#ffffff' } : {}}
+                    className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/students')
-                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
+                        ? 'nav-pill-active bg-[#0B2447] text-white shadow-sm border border-[#0B2447] font-bold'
+                        : 'text-slate-700 hover:text-[#0B2447] hover:bg-white/80 border border-transparent'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Students<span className="hidden 2xl:inline"> & DMT</span></span>
+                    <Users
+                      className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 ${isActive('/staff/students') ? 'text-white' : 'text-slate-500'}`}
+                      style={isActive('/staff/students') ? { color: '#ffffff', stroke: '#ffffff' } : {}}
+                    />
+                    <span style={isActive('/staff/students') ? { color: '#ffffff' } : {}}>
+                      Students<span className="hidden 2xl:inline"> & DMT</span>
+                    </span>
                     {pendingRescheduleCount > 0 && (
                       <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-sm">
                         {pendingRescheduleCount}
@@ -438,14 +542,18 @@ export default function Navbar() {
 
                   <Link
                     to="/staff/slots"
-                    className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                    style={isActive('/staff/slots') ? { backgroundColor: '#0B2447', color: '#ffffff' } : {}}
+                    className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/slots')
-                        ? 'bg-white text-primary shadow-sm border border-slate-200/80 font-bold'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
+                        ? 'nav-pill-active bg-[#0B2447] text-white shadow-sm border border-[#0B2447] font-bold'
+                        : 'text-slate-700 hover:text-[#0B2447] hover:bg-white/80 border border-transparent'
                     }`}
                   >
-                    <Clock className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                    <span>Slots</span>
+                    <Clock
+                      className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 ${isActive('/staff/slots') ? 'text-white' : 'text-slate-500'}`}
+                      style={isActive('/staff/slots') ? { color: '#ffffff', stroke: '#ffffff' } : {}}
+                    />
+                    <span style={isActive('/staff/slots') ? { color: '#ffffff' } : {}}>Slots</span>
                   </Link>
 
                   {/* Operations Dropdown for Staff */}
@@ -453,38 +561,83 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                      className={`px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
-                        (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
-                          ? 'bg-purple-100 text-purple-900 border border-purple-300 shadow-sm font-bold'
-                          : 'text-slate-700 hover:text-slate-900 hover:bg-white/80 border border-transparent'
+                      style={
+                        moreMenuOpen
+                          ? { backgroundColor: '#FAF5FF', color: '#581C87', borderColor: '#9333EA' }
+                          : (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
+                            ? { backgroundColor: '#6D28D9', color: '#ffffff', borderColor: '#6D28D9' }
+                            : {}
+                      }
+                      className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+                        moreMenuOpen
+                          ? 'bg-purple-50 text-purple-900 border-2 border-purple-600 shadow-sm'
+                          : (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
+                            ? 'bg-purple-700 text-white border border-purple-700 shadow-sm'
+                            : 'text-slate-700 hover:text-purple-900 hover:bg-white/80 border border-transparent'
                       }`}
                     >
-                      <Layers className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-600 shrink-0" />
-                      <span>{getActiveMoreLabel() || 'More Tools'}</span>
+                      <Layers
+                        className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 transition-colors ${
+                          moreMenuOpen
+                            ? 'text-purple-700'
+                            : (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
+                              ? 'text-white'
+                              : 'text-purple-600'
+                        }`}
+                        style={
+                          moreMenuOpen
+                            ? { color: '#7E22CE', stroke: '#7E22CE' }
+                            : (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
+                              ? { color: '#ffffff', stroke: '#ffffff' }
+                              : { color: '#9333EA', stroke: '#9333EA' }
+                        }
+                      />
+                      <span
+                        style={
+                          moreMenuOpen
+                            ? { color: '#581C87' }
+                            : (isActive('/staff/payments') || isActive('/staff/packages') || isActive('/staff/quiz') || isActive('/staff/reports'))
+                              ? { color: '#ffffff' }
+                              : undefined
+                        }
+                      >
+                        {getActiveMoreLabel() || 'More Tools'}
+                      </span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {moreMenuOpen && (
-                      <div className="absolute top-full right-0 mt-2.5 w-72 rounded-2xl bg-white/98 border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.12)] p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
-                          <span>Staff Tools</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">Management</span>
+                      <div
+                        style={{ backgroundColor: '#ffffff', opacity: 1 }}
+                        className="operations-dropdown absolute top-full right-0 mt-3 w-84 sm:w-[350px] rounded-2xl bg-white border border-[#DBE2EF] shadow-[0_20px_50px_rgba(15,23,42,0.18),0_4px_12px_rgba(15,23,42,0.06)] p-3 z-[60] space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                      >
+                        <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
+                          <span className="font-extrabold text-slate-600 tracking-wider">Staff Tools</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-extrabold border border-purple-200/60 tracking-wider">Management</span>
                         </div>
 
                         {/* Payments */}
                         <Link
                           to="/staff/payments"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/payments') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/payments')
+                              ? 'bg-emerald-50/90 text-emerald-900 border border-emerald-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                            <CreditCard className="w-4 h-4 text-emerald-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/payments')
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-emerald-50 text-emerald-600 border border-emerald-100/90 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 group-hover:scale-105'
+                          }`}>
+                            <CreditCard className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Payment Queue</p>
-                            <p className="text-[10px] text-slate-500">Verify slips & advance fees</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/payments') ? 'text-emerald-900' : 'text-slate-800 group-hover:text-emerald-700'
+                            }`}>Payment Queue</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Verify slips & advance fees</p>
                           </div>
                         </Link>
 
@@ -492,16 +645,24 @@ export default function Navbar() {
                         <Link
                           to="/staff/packages"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/packages') ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/packages')
+                              ? 'bg-amber-50/90 text-amber-900 border border-amber-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                            <Layers className="w-4 h-4 text-amber-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/packages')
+                              ? 'bg-amber-600 text-white shadow-sm'
+                              : 'bg-amber-50 text-amber-600 border border-amber-100/90 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 group-hover:scale-105'
+                          }`}>
+                            <Package className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Course Packages</p>
-                            <p className="text-[10px] text-slate-500">Classes, curriculum & pricing</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/packages') ? 'text-amber-900' : 'text-slate-800 group-hover:text-amber-700'
+                            }`}>Course Packages</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Classes, curriculum & pricing</p>
                           </div>
                         </Link>
 
@@ -509,16 +670,24 @@ export default function Navbar() {
                         <Link
                           to="/staff/quiz"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/quiz') || isActive('/admin/question-lists') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/quiz') || isActive('/admin/question-lists')
+                              ? 'bg-blue-50/90 text-blue-900 border border-blue-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                            <Layers className="w-4 h-4 text-blue-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/quiz') || isActive('/admin/question-lists')
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'bg-blue-50 text-blue-600 border border-blue-100/90 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 group-hover:scale-105'
+                          }`}>
+                            <FolderKanban className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Question Lists</p>
-                            <p className="text-[10px] text-slate-500">DMT exam question lists & practice sets</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/quiz') || isActive('/admin/question-lists') ? 'text-blue-900' : 'text-slate-800 group-hover:text-blue-700'
+                            }`}>Question Lists</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">DMT exam question lists & practice sets</p>
                           </div>
                         </Link>
 
@@ -526,16 +695,24 @@ export default function Navbar() {
                         <Link
                           to="/staff/reports"
                           onClick={() => setMoreMenuOpen(false)}
-                          className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/reports') ? 'bg-cyan-50 text-cyan-800 border border-cyan-200' : 'text-slate-700 hover:bg-slate-50'
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/staff/reports')
+                              ? 'bg-cyan-50/90 text-cyan-900 border border-cyan-200 shadow-sm'
+                              : 'hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center shrink-0">
-                            <BarChart3 className="w-4 h-4 text-cyan-600" />
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/staff/reports')
+                              ? 'bg-cyan-600 text-white shadow-sm'
+                              : 'bg-cyan-50 text-cyan-600 border border-cyan-100/90 group-hover:bg-cyan-600 group-hover:text-white group-hover:border-cyan-600 group-hover:scale-105'
+                          }`}>
+                            <BarChart3 className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900">Reports & Analytics</p>
-                            <p className="text-[10px] text-slate-500">Branch performance & exam statistics</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/staff/reports') ? 'text-cyan-900' : 'text-slate-800 group-hover:text-cyan-700'
+                            }`}>Reports & Analytics</p>
+                            <p className="text-[11px] text-slate-500 truncate leading-snug">Branch performance & exam statistics</p>
                           </div>
                         </Link>
                       </div>
@@ -780,20 +957,28 @@ export default function Navbar() {
               {/* Admin Navigation Links */}
               {user?.role === 'admin' && (
                 <div className="space-y-1 text-xs">
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Executive Administration</div>
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Executive Administration</div>
                   <Link
                     to="/admin/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-950 font-bold bg-accent/20 border border-accent/40"
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold transition-all ${
+                      isActive('/admin/dashboard')
+                        ? 'bg-[#0B2447] text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-[#0B2447]'
+                    }`}
                   >
-                    <TrendingUp className="w-4 h-4 text-amber-600" /> Executive Dashboard
+                    <TrendingUp className={`w-4 h-4 ${isActive('/admin/dashboard') ? 'text-white' : 'text-slate-500'}`} /> Executive Dashboard
                   </Link>
                   <Link
                     to="/admin/accounts"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold transition-all ${
+                      isActive('/admin/accounts')
+                        ? 'bg-[#0B2447] text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-[#0B2447]'
+                    }`}
                   >
-                    <Users className="w-4 h-4 text-primary" /> Manage Accounts
+                    <Users className={`w-4 h-4 ${isActive('/admin/accounts') ? 'text-white' : 'text-slate-500'}`} /> Manage Accounts
                   </Link>
                 </div>
               )}
@@ -801,14 +986,18 @@ export default function Navbar() {
               {/* Staff & Admin Operations Navigation Links */}
               {isStaff && (
                 <div className="space-y-1 text-xs">
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Branch Operations</div>
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Branch Operations</div>
                   <Link
                     to="/staff/students"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition-all ${
+                      isActive('/staff/students')
+                        ? 'bg-[#0B2447] text-white shadow-sm font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-[#0B2447]'
+                    }`}
                   >
                     <span className="flex items-center gap-2.5">
-                      <Users className="w-4 h-4 text-primary" /> Students & DMT Milestones
+                      <Users className={`w-4 h-4 ${isActive('/staff/students') ? 'text-white' : 'text-slate-500'}`} /> Students & DMT Milestones
                     </span>
                     {pendingRescheduleCount > 0 && (
                       <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-500 text-white animate-pulse shadow-sm">
@@ -819,37 +1008,57 @@ export default function Navbar() {
                   <Link
                     to="/staff/slots"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold transition-all ${
+                      isActive('/staff/slots')
+                        ? 'bg-purple-100 text-purple-900 border border-purple-200 font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-purple-700'
+                    }`}
                   >
                     <Clock className="w-4 h-4 text-purple-600" /> Slot Creator
                   </Link>
                   <Link
-                    to="/staff/packages"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
-                  >
-                    <Layers className="w-4 h-4 text-amber-600" /> Course Packages
-                  </Link>
-                  <Link
-                    to="/admin/question-lists"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
-                  >
-                    <Layers className="w-4 h-4 text-blue-600" /> Question Lists
-                  </Link>
-                  <Link
                     to="/staff/payments"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold transition-all ${
+                      isActive('/staff/payments')
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-700'
+                    }`}
                   >
                     <CreditCard className="w-4 h-4 text-emerald-600" /> Payment Queue
                   </Link>
                   <Link
+                    to="/staff/packages"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold transition-all ${
+                      isActive('/staff/packages')
+                        ? 'bg-amber-100 text-amber-900 border border-amber-200 font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-amber-700'
+                    }`}
+                  >
+                    <Package className="w-4 h-4 text-amber-600" /> Course Packages
+                  </Link>
+                  <Link
+                    to={user?.role === 'admin' ? '/admin/question-lists' : '/staff/quiz'}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold transition-all ${
+                      isActive('/admin/question-lists') || isActive('/staff/quiz')
+                        ? 'bg-blue-100 text-blue-900 border border-blue-200 font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-blue-700'
+                    }`}
+                  >
+                    <FolderKanban className="w-4 h-4 text-blue-600" /> Question Lists
+                  </Link>
+                  <Link
                     to="/staff/reports"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold transition-all ${
+                      isActive('/staff/reports')
+                        ? 'bg-cyan-100 text-cyan-900 border border-cyan-200 font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-cyan-700'
+                    }`}
                   >
-                    <BarChart3 className="w-4 h-4 text-primary" /> Reports & Analytics
+                    <BarChart3 className="w-4 h-4 text-cyan-600" /> Reports & Analytics
                   </Link>
                 </div>
               )}

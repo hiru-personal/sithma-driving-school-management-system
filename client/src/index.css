@@ -202,16 +202,14 @@ div[class*="bg-primary/10"] svg {
   color: #3F72AF !important;
 }
 
-/* 5. Legacy text-white on light canvas & cards converts to deep navy */
-.card .text-white,
+/* 5. Legacy text-white on light canvas & cards converts to deep navy (excluding dark buttons, pills & header) */
+.card .text-white:not([class*="bg-"]):not(.btn-primary):not(.btn-accent):not(.badge),
 .card strong.text-white,
-.card div.text-white,
+.card div.text-white:not([class*="bg-"]),
 .card p.text-white,
-.card span.text-white,
-table .text-white,
-div[class*="bg-slate"] .text-white,
-div[class*="bg-slate"] strong.text-white,
-div[class*="bg-white/"] .text-white {
+.card span.text-white:not([class*="bg-"]):not(.badge),
+table .text-white:not([class*="bg-"]):not(button):not(a),
+div[class*="bg-slate"]:not(header *):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]) .text-white:not([class*="bg-"]) {
   color: #0B2447 !important;
 }
 
@@ -240,6 +238,22 @@ div[class*="bg-white/10"] {
 }
 
 /* 8. Strictly protect pure white text where intended */
+.nav-pill-active,
+.nav-pill-active *,
+.nav-pill-active span,
+.nav-pill-active svg,
+header nav a.nav-pill-active,
+header nav a.nav-pill-active *,
+header nav a[class*="bg-[#0B2447]"],
+header nav a[class*="bg-[#0B2447]"] *,
+header nav a[class*="bg-[#112D4E]"],
+header nav a[class*="bg-[#112D4E]"] *,
+header nav button[class*="bg-purple-700"],
+header nav button[class*="bg-purple-700"] *,
+header nav a.text-white,
+header nav a.text-white *,
+header .nav-pill-active,
+header .nav-pill-active *,
 button[type="submit"], button[type="submit"] *,
 .btn-primary, .btn-primary *,
 .btn-accent, .btn-accent *,
@@ -269,6 +283,14 @@ button[class*="bg-[#19376D]"], button[class*="bg-[#19376D]"] *,
 [class*="bg-gradient-to-r from-slate-900"] .text-white,
 span.badge-primary, span.badge-primary * {
   color: #ffffff !important;
+}
+
+header nav a.nav-pill-active svg,
+header nav a[class*="bg-[#0B2447]"] svg,
+header nav a[class*="bg-[#112D4E]"] svg,
+.nav-pill-active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* 9. Card and Table Borders & Dividers */
@@ -421,3 +443,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   background-color: #DBE2EF !important;
   transform: scale(1.15) !important;
 }
+
+/* 14. Solid, Non-Transparent Operations Dropdown Menu */
+.operations-dropdown {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  isolation: isolate !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 20px 45px -10px rgba(11, 36, 71, 0.18), 0 0 0 1px rgba(11, 36, 71, 0.08) !important;
+}
+
