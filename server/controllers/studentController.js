@@ -530,6 +530,16 @@ exports.updateDmtDates = async (req, res) => {
           student.learnerExamMarks = null;
           student.dmtDates.learnerExamMarks = null;
         }
+        if (!student.learnerExamAttempts || student.learnerExamAttempts.length === 0 || student.learnerExamAttempts[student.learnerExamAttempts.length - 1]?.result !== 'passed') {
+          student.learnerExamAttempts = student.learnerExamAttempts || [];
+          student.learnerExamAttempts.push({
+            attemptNumber: student.learnerExamAttempts.length + 1,
+            date: new Date(),
+            result: 'passed',
+            marks: numericMarks || 35,
+          });
+          student.learnerExamAttemptsCount = student.learnerExamAttempts.length;
+        }
         updates.push('Learner Exam Status (Passed — Trial Lessons Unlocked)');
       } else if (isFailed) {
         student.written_exam_status = 'Fail';
@@ -537,6 +547,16 @@ exports.updateDmtDates = async (req, res) => {
         student.dmtDates.learnerExamPassed = false;
         if (student.studentType === 'Type1_NewLearner' || student.studentType === 'Type 1') {
           student.trialEligible = false;
+        }
+        if (!student.learnerExamAttempts || student.learnerExamAttempts.length === 0 || student.learnerExamAttempts[student.learnerExamAttempts.length - 1]?.result !== 'failed') {
+          student.learnerExamAttempts = student.learnerExamAttempts || [];
+          student.learnerExamAttempts.push({
+            attemptNumber: student.learnerExamAttempts.length + 1,
+            date: new Date(),
+            result: 'failed',
+            marks: numericMarks || 25,
+          });
+          student.learnerExamAttemptsCount = student.learnerExamAttempts.length;
         }
         updates.push('Learner Exam Status (Failed)');
       } else {

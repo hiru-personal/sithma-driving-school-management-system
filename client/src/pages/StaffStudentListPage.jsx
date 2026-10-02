@@ -1547,28 +1547,99 @@ export default function StaffStudentListPage() {
                   </div>
                 </div>
 
-                {/* 4. Learner Exam Status */}
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    4. Learner Exam Status:
-                  </label>
-                  <select
-                    value={dmtForm.learnerExamStatus}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setDmtForm({
-                        ...dmtForm,
-                        learnerExamStatus: val,
-                        learnerExamPassed: val === 'passed',
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold cursor-pointer"
-                  >
-                    <option value="not_taken">Not Taken / In Progress</option>
-                    <option value="passed">PASSED (Unlocks Trial Lessons)</option>
-                    <option value="failed">FAILED</option>
-                  </select>
-                </div>
+                {/* 4. Learner Exam Status (Auto-reflected from Student Dashboard) */}
+                {(() => {
+                  const isStudentPassed = Boolean(
+                    selectedStudent.learnerExamStatus === 'passed' || selectedStudent.dmtDates?.learnerExamPassed
+                  );
+                  const isStudentFailed = Boolean(
+                    selectedStudent.learnerExamStatus === 'failed' ||
+                    (selectedStudent.learnerExamAttempts &&
+                      selectedStudent.learnerExamAttempts.length > 0 &&
+                      selectedStudent.learnerExamAttempts[selectedStudent.learnerExamAttempts.length - 1]?.result === 'failed')
+                  );
+
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block font-semibold text-slate-800 text-xs">
+                          4. Learner Exam Status:
+                        </label>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          (Auto-updated from Student Dashboard)
+                        </span>
+                      </div>
+
+                      {isStudentPassed ? (
+                        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-xs space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-300">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              </div>
+                              <div className="truncate">
+                                <span className="font-bold text-emerald-950 text-sm block truncate">
+                                  Passed Written Theory Exam
+                                </span>
+                              </div>
+                            </div>
+                            <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold px-3 py-1 rounded-full shrink-0 flex items-center gap-1 shadow-2xs whitespace-nowrap">
+                              ✓ Passed
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-800/90 pl-10.5 leading-relaxed">
+                            Student marked their exam as passed on the dashboard. Practical driving lessons and trials are unlocked.
+                          </p>
+                        </div>
+                      ) : isStudentFailed ? (
+                        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl shadow-xs space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 border border-rose-300">
+                                <XCircle className="w-4 h-4 text-rose-600" />
+                              </div>
+                              <div className="truncate">
+                                <span className="font-bold text-rose-950 text-sm block truncate">
+                                  Failed Exam Attempt
+                                </span>
+                              </div>
+                            </div>
+                            <span className="bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold px-3 py-1 rounded-full shrink-0 flex items-center gap-1 shadow-2xs whitespace-nowrap">
+                              ✕ Failed
+                            </span>
+                          </div>
+                          <p className="text-xs text-rose-800/90 pl-10.5 leading-relaxed">
+                            Student recorded a failed attempt on their dashboard. Date reschedule is required for the next attempt.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl shadow-xs space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-300">
+                                <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                              </div>
+                              <div className="flex items-center gap-2 truncate">
+                                <span className="font-bold text-amber-950 text-sm whitespace-nowrap">
+                                  In Progress
+                                </span>
+                                <span className="text-[11px] text-amber-800/80 font-medium truncate hidden sm:inline">
+                                  • Awaiting Student Result
+                                </span>
+                              </div>
+                            </div>
+                            <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1 rounded-full shrink-0 flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
+                              ⏳ In Progress
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-900/90 pl-10.5 leading-relaxed">
+                            Dates are scheduled. Once the student faces their exam and selects Passed or Failed on their dashboard, this status will automatically update here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Exam Attempt History List */}
                 {selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.length > 0 && (
@@ -1605,17 +1676,6 @@ export default function StaffStudentListPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {dmtForm.learnerExamStatus === 'passed' && (
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-400/30 rounded-xl text-emerald-300 space-y-1">
-                    <div className="font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Trial Lesson Access Unlocked
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      Marking as Passed satisfies US-09. If this is a Type 1 learner, they will now be able to book practical Trial lessons.
-                    </p>
                   </div>
                 )}
 

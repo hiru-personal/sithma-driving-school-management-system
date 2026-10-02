@@ -42,6 +42,7 @@ import {
   Eye,
   Wifi,
   ChevronRight,
+  XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -236,6 +237,32 @@ export default function StudentDashboard() {
   });
 
 
+
+  const [updatingExamStatus, setUpdatingExamStatus] = useState(false);
+
+  const handleUpdateExamStatus = async (status) => {
+    const studentId = profile?._id || student?._id;
+    if (!studentId) return;
+
+    setUpdatingExamStatus(true);
+    try {
+      const res = await api.patch(`/students/${studentId}/dmt-dates`, {
+        learnerExamStatus: status,
+      });
+      if (res.data.success) {
+        if (status === 'passed') {
+          toast.success('🎉 Exam marked as PASSED! Practical trial lessons are now unlocked.');
+        } else {
+          toast('Exam marked as FAILED. You can request a date reschedule from your milestones dashboard.', { icon: 'ℹ️' });
+        }
+        await fetchProfile();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update exam status');
+    } finally {
+      setUpdatingExamStatus(false);
+    }
+  };
 
   const handleReRegister = async () => {
     if (
@@ -599,10 +626,8 @@ export default function StudentDashboard() {
     user?.studentType === 'Type 2' ||
     user?.student_type === 'Type 2'
   );
-  const recordedExamMarks = profile?.learnerExamMarks ?? profile?.dmtDates?.learnerExamMarks;
   const isExamPassed = Boolean(
-    (profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed) &&
-    (recordedExamMarks === null || recordedExamMarks === undefined || recordedExamMarks > 30)
+    profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed
   );
   const currentTrialDate = profile?.trial_date || profile?.trial?.trialDate || profile?.dmtDates?.trialExamDate || null;
   const hasTrialDate = Boolean(currentTrialDate);
@@ -1520,23 +1545,37 @@ export default function StudentDashboard() {
       )}
 
 
-      {/* TYPE 1: US-09 DMT LEARNER EXAM GATE NOTICE BANNER */}
-      {isType1 && !isTrialEligible && (
+      {/* TYPE 1: US-09 DMT LEARNER EXAM GATE & STATUS SELECTOR BANNER */}
+      {isType1 && (
         <div className="card p-6 bg-white border-2 border-[#DBE2EF] space-y-4 shadow-sm hover:border-[#3F72AF]/40 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#DBE2EF]/70 border border-[#3F72AF]/30 flex items-center justify-center text-[#112D4E] flex-shrink-0 shadow-inner">
-                <ShieldAlert className="w-6 h-6 text-[#3F72AF] animate-pulse" />
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner ${
+                isExamPassed
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                  : 'bg-[#DBE2EF]/70 border border-[#3F72AF]/30 text-[#112D4E]'
+              }`}>
+                {isExamPassed ? (
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                ) : (
+                  <ShieldAlert className="w-6 h-6 text-[#3F72AF] animate-pulse" />
+                )}
               </div>
               <div className="space-y-1.5">
-                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider">
-                  US-09 DMT Regulation Active • Theory Exam Gate
+                <span className={`badge text-[10px] font-bold uppercase tracking-wider ${
+                  isExamPassed ? 'badge-success' : 'badge-warning'
+                }`}>
+                  {isExamPassed ? '✓ DMT Theory Exam Cleared' : 'US-09 DMT Regulation Active • Theory Exam Gate'}
                 </span>
                 <h3 className="text-lg sm:text-xl font-black text-[#0B2447] flex items-center gap-2">
-                  Practical Trial Lessons Locked Until Learner's Exam Passed
+                  {isExamPassed
+                    ? 'DMT Theory Exam Passed — Practical Trial Lessons Unlocked!'
+                    : 'Practical Trial Lessons Locked Until Learner\'s Exam Passed'}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#4B6584] max-w-2xl leading-relaxed">
-                  As a <strong className="text-[#112D4E]">Type 1 New Learner</strong>, you can manage your medical exam, learner registration, and written theory test on your dedicated DMT milestone dashboard. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong className="text-emerald-700">"Passed"</strong> by your branch officer.
+                  {isExamPassed
+                    ? 'Congratulations! You have successfully passed the DMT Written Theory Exam. You are eligible to book and schedule your practical trial training sessions.'
+                    : 'As a Type 1 New Learner, in accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is completed and passed.'}
                 </p>
                 <div className="pt-1.5">
                   <Link
@@ -1554,19 +1593,63 @@ export default function StudentDashboard() {
               <span className="text-xs text-[#64748B] font-bold block mb-1">Your Exam Status:</span>
               <span
                 className={`text-xs sm:text-sm font-black px-3 py-1 rounded-full inline-block ${
-                  profile?.learnerExamStatus === 'failed'
+                  isExamPassed
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : profile?.learnerExamStatus === 'failed'
                     ? 'bg-rose-50 text-rose-700 border border-rose-200'
                     : profile?.dmtDates?.learnerExamDate
                     ? 'bg-amber-50 text-amber-800 border border-amber-200'
                     : 'bg-[#DBE2EF] text-[#112D4E] border border-[#3F72AF]/30'
                 }`}
               >
-                {profile?.learnerExamStatus === 'failed'
-                  ? 'Failed (Retake Required)'
+                {isExamPassed
+                  ? '✓ PASSED'
+                  : profile?.learnerExamStatus === 'failed'
+                  ? '✕ FAILED (Retake Required)'
                   : profile?.dmtDates?.learnerExamDate
-                  ? 'Scheduled / Awaiting Result'
+                  ? '⏳ Scheduled / In Progress'
                   : 'Not Yet Faced'}
               </span>
+            </div>
+          </div>
+
+          {/* Interactive Exam Outcome Selector for Student */}
+          <div className="pt-3.5 border-t border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8FAFD]/70 -mx-6 -mb-6 p-4 rounded-b-2xl">
+            <div>
+              <span className="text-xs font-bold text-[#0B2447] block flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[#3F72AF]" /> Faced your DMT Written Theory Exam?
+              </span>
+              <span className="text-[11px] text-[#4B6584]">
+                Select your official exam outcome below to update your status across the school system:
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleUpdateExamStatus('passed')}
+                disabled={updatingExamStatus}
+                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  isExamPassed
+                    ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-500'
+                    : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Passed</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateExamStatus('failed')}
+                disabled={updatingExamStatus}
+                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  profile?.learnerExamStatus === 'failed'
+                    ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-500'
+                    : 'bg-white hover:bg-rose-50 text-rose-800 border border-rose-300'
+                }`}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Failed</span>
+              </button>
             </div>
           </div>
         </div>
