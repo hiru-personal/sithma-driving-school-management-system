@@ -126,13 +126,14 @@ export default function Navbar() {
   const isAnyMoreActive =
     isActive('/staff/packages') ||
     isActive('/staff/quiz') ||
+    isActive('/admin/question-lists') ||
     isActive('/staff/reports') ||
     isActive('/staff/slots') ||
     isActive('/staff/payments');
 
   const getActiveMoreLabel = () => {
     if (isActive('/staff/packages')) return 'Packages';
-    if (isActive('/staff/quiz')) return 'Question Bank';
+    if (isActive('/staff/quiz') || isActive('/admin/question-lists')) return 'Question Lists';
     if (isActive('/staff/reports')) return 'Reports';
     if (isActive('/staff/slots')) return 'Slots';
     if (isActive('/staff/payments')) return 'Payments';
@@ -376,20 +377,20 @@ export default function Navbar() {
                           </div>
                         </Link>
 
-                        {/* Question Bank */}
+                        {/* Question Lists */}
                         <Link
-                          to="/staff/quiz"
+                          to="/admin/question-lists"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/quiz') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
+                            isActive('/admin/question-lists') || isActive('/staff/quiz') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
                           <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                            <BookOpen className="w-4 h-4 text-blue-600" />
+                            <Layers className="w-4 h-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-900">Question Bank</p>
-                            <p className="text-[10px] text-slate-500">DMT theory test questions & practice</p>
+                            <p className="text-xs font-bold text-slate-900">Question Lists</p>
+                            <p className="text-[10px] text-slate-500">Create & manage multiple question sets</p>
                           </div>
                         </Link>
 
@@ -504,20 +505,20 @@ export default function Navbar() {
                           </div>
                         </Link>
 
-                        {/* Question Bank */}
+                        {/* Question Lists */}
                         <Link
                           to="/staff/quiz"
                           onClick={() => setMoreMenuOpen(false)}
                           className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
-                            isActive('/staff/quiz') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
+                            isActive('/staff/quiz') || isActive('/admin/question-lists') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
                           <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                            <BookOpen className="w-4 h-4 text-blue-600" />
+                            <Layers className="w-4 h-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-900">Question Bank</p>
-                            <p className="text-[10px] text-slate-500">DMT theory test questions & practice</p>
+                            <p className="text-xs font-bold text-slate-900">Question Lists</p>
+                            <p className="text-[10px] text-slate-500">DMT exam question lists & practice sets</p>
                           </div>
                         </Link>
 
@@ -830,11 +831,11 @@ export default function Navbar() {
                     <Layers className="w-4 h-4 text-amber-600" /> Course Packages
                   </Link>
                   <Link
-                    to="/staff/quiz"
+                    to="/admin/question-lists"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
                   >
-                    <BookOpen className="w-4 h-4 text-blue-600" /> Question Bank
+                    <Layers className="w-4 h-4 text-blue-600" /> Question Lists
                   </Link>
                   <Link
                     to="/staff/payments"

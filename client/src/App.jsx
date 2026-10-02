@@ -231,6 +231,14 @@ export default function App() {
               }
             />
             <Route
+              path="/admin/question-lists"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'staff']}>
+                  <QuestionBankManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/staff/reports"
               element={
                 <ProtectedRoute allowedRoles={['staff', 'admin']}>

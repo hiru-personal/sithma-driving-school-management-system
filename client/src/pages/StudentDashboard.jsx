@@ -42,6 +42,7 @@ import {
   Eye,
   Wifi,
   ChevronRight,
+  History,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -2536,14 +2537,22 @@ export default function StudentDashboard() {
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" /> Pass DMT Written Exam
                 </span>
               </div>
-              <Link
-                to="/student/quiz"
-                className="btn-primary text-xs sm:text-sm py-3 px-4 font-bold flex items-center justify-center gap-2 w-full shadow-md cursor-pointer"
-              >
-                <BookOpen className="w-4 h-4 text-white" />
-                <span>Practice DMT Exam Quizzes</span>
-                <ArrowRight className="w-4 h-4 text-white" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                <Link
+                  to="/student/quiz"
+                  className="btn-primary text-xs sm:text-sm py-2.5 px-4 font-bold flex-1 flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4 text-white" />
+                  <span>Take Practice Exam</span>
+                </Link>
+                <Link
+                  to="/student/quiz/history"
+                  className="btn-secondary text-xs sm:text-sm py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <History className="w-4 h-4 text-primary" />
+                  <span>My Exams History</span>
+                </Link>
+              </div>
             </div>
           ) : null}
         </div>
@@ -2598,11 +2607,34 @@ export default function StudentDashboard() {
                         DMT Exam Practice Quiz
                       </span>
                       <span className="text-xs text-[#4B6584]">
-                        Sinhala, Tamil & English • Multilingual Quizzes
+                        Sinhala, Tamil & English • Multiple Question Lists
                       </span>
                     </div>
                   </div>
                   <span className="badge badge-accent text-[10px] font-bold">Practice Now</span>
+                </Link>
+              )}
+
+              {/* Type 1 Exclusive Access: My Completed Practice Exams History */}
+              {isType1 && (
+                <Link
+                  to="/student/quiz/history"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFD] hover:bg-[#F0F4F8] border border-[#DBE2EF] hover:border-[#3F72AF]/40 transition-all group shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#DBE2EF] flex items-center justify-center text-[#112D4E] group-hover:bg-[#3F72AF] group-hover:text-white transition-colors">
+                      <History className="w-5 h-5 text-[#3F72AF] group-hover:text-white" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#112D4E] group-hover:text-[#0B2447] block text-sm">
+                        My Practice Exams / History
+                      </span>
+                      <span className="text-xs text-[#4B6584]">
+                        Review completed exams, answers & scores
+                      </span>
+                    </div>
+                  </div>
+                  <span className="badge badge-info text-[10px] font-bold">Review</span>
                 </Link>
               )}
 

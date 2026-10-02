@@ -165,7 +165,24 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Visual Charts Grid: Branch Comparison + Trial Pass Rates */}
+      {/* Executive Quick Links Bar: Question Lists */}
+      <div className="card p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-primary to-slate-900 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-cyan-300 shrink-0">
+            <Layers className="w-5 h-5 text-cyan-300" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white">DMT Exam Question Lists Management</h3>
+            <p className="text-xs text-slate-300">Create multiple question lists, manage trilingual questions, and configure exam pass benchmarks.</p>
+          </div>
+        </div>
+        <Link
+          to="/admin/question-lists"
+          className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-md hover:scale-105 shrink-0 self-start sm:self-center"
+        >
+          Manage Question Lists <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Branch Registrations Comparison */}
         <div className="card space-y-4 shadow-card">

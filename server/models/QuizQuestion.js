@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const quizQuestionSchema = new mongoose.Schema(
   {
+    questionListId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'QuestionList',
+      index: true,
+      default: null,
+    },
     questionText: {
       type: String,
       required: true,
