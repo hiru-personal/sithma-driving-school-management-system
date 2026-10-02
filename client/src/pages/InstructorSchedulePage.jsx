@@ -153,16 +153,16 @@ export default function InstructorSchedulePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Certified Instructor Operations
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8F1FD] border border-[#DBE2EF] text-[#19376D] font-bold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#3F72AF]" /> Certified Instructor Operations
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <Calendar className="w-6 h-6 text-cyan-400" /> Instructor Daily Session Schedule & Roster
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B2447] font-heading flex items-center gap-2.5">
+            <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-[#3F72AF]" /> Instructor Daily Session Schedule & Roster
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Instructor: <strong className="text-white">{user?.name}</strong> • Assigned Branch:{' '}
-            <strong className="text-cyan-300">{user?.branch || selectedBranch}</strong> • Max Capacity:{' '}
-            <strong className="text-amber-300">10 Students / Lesson</strong>
+          <p className="text-xs sm:text-sm text-[#4B6584] mt-1">
+            Instructor: <strong className="text-[#0B2447]">{user?.name}</strong> • Assigned Branch:{' '}
+            <strong className="text-[#3F72AF]">{user?.branch || selectedBranch}</strong> • Max Capacity:{' '}
+            <strong className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">10 Students / Lesson</strong>
           </p>
         </div>
 
@@ -182,7 +182,7 @@ export default function InstructorSchedulePage() {
               }));
               setIsAddModalOpen(true);
             }}
-            className="btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:scale-105 transition-all"
+            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-sm hover:scale-[1.02] transition-all"
           >
             <Plus className="w-4 h-4" /> Add Lesson Session
           </button>
@@ -191,71 +191,71 @@ export default function InstructorSchedulePage() {
 
       {/* Top Stats Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card p-4 bg-slate-900/80 border border-white/10">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Sessions Today</span>
-          <div className="text-2xl font-black text-white mt-1">{totalSessions}</div>
-          <span className="text-[10px] text-cyan-400">Scheduled on {selectedDate}</span>
+        <div className="card p-4.5 bg-white border border-[#DBE2EF] rounded-2xl shadow-xs">
+          <span className="text-[11px] font-bold text-[#4B6584] uppercase tracking-wider block">Sessions Today</span>
+          <div className="text-2xl sm:text-3xl font-black text-[#0B2447] mt-1">{totalSessions}</div>
+          <span className="text-[11px] font-semibold text-[#3F72AF]">Scheduled on {selectedDate}</span>
         </div>
 
-        <div className="card p-4 bg-slate-900/80 border border-white/10">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Students Booked</span>
-          <div className="text-2xl font-black text-cyan-300 mt-1">{totalBookedStudents}</div>
-          <span className="text-[10px] text-slate-400">Attending lessons</span>
+        <div className="card p-4.5 bg-white border border-[#DBE2EF] rounded-2xl shadow-xs">
+          <span className="text-[11px] font-bold text-[#4B6584] uppercase tracking-wider block">Students Booked</span>
+          <div className="text-2xl sm:text-3xl font-black text-[#3F72AF] mt-1">{totalBookedStudents}</div>
+          <span className="text-[11px] font-medium text-[#4B6584]">Attending lessons</span>
         </div>
 
-        <div className="card p-4 bg-slate-900/80 border border-white/10">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Seats Remaining</span>
-          <div className="text-2xl font-black text-emerald-400 mt-1">{totalRemainingSpots}</div>
-          <span className="text-[10px] text-slate-400">Available to book</span>
+        <div className="card p-4.5 bg-white border border-[#DBE2EF] rounded-2xl shadow-xs">
+          <span className="text-[11px] font-bold text-[#4B6584] uppercase tracking-wider block">Seats Remaining</span>
+          <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{totalRemainingSpots}</div>
+          <span className="text-[11px] font-medium text-[#4B6584]">Available to book</span>
         </div>
 
-        <div className="card p-4 bg-slate-900/80 border border-white/10">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Class Limit</span>
-          <div className="text-2xl font-black text-amber-300 mt-1">10 Max</div>
-          <span className="text-[10px] text-slate-400">Strict cap per lesson</span>
+        <div className="card p-4.5 bg-white border border-[#DBE2EF] rounded-2xl shadow-xs">
+          <span className="text-[11px] font-bold text-[#4B6584] uppercase tracking-wider block">Class Limit</span>
+          <div className="text-2xl sm:text-3xl font-black text-amber-600 mt-1">10 Max</div>
+          <span className="text-[11px] font-medium text-[#4B6584]">Strict cap per lesson</span>
         </div>
       </div>
 
       {/* Filter & Date Bar */}
-      <div className="card p-4 bg-slate-950/70 border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="card p-4.5 bg-white border border-[#DBE2EF] rounded-2xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Date:</label>
+            <label className="block text-[10px] font-bold text-[#4B6584] uppercase mb-1">Select Date:</label>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-bold outline-none focus:border-cyan-400"
+              className="px-3.5 py-1.5 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-xs text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors"
             />
           </div>
 
           <div className="flex items-end gap-1.5 pt-4 md:pt-0">
             <button
               onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedDate === new Date().toISOString().split('T')[0]
-                  ? 'bg-cyan-500 text-slate-950 shadow-md'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                  ? 'bg-[#3F72AF] text-white shadow-xs'
+                  : 'bg-[#F0F4F8] text-[#112D4E] hover:bg-[#DBE2EF]'
               }`}
             >
               Today
             </button>
             <button
               onClick={() => setSelectedDate(addDays(new Date(), 1).toISOString().split('T')[0])}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedDate === addDays(new Date(), 1).toISOString().split('T')[0]
-                  ? 'bg-cyan-500 text-slate-950 shadow-md'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                  ? 'bg-[#3F72AF] text-white shadow-xs'
+                  : 'bg-[#F0F4F8] text-[#112D4E] hover:bg-[#DBE2EF]'
               }`}
             >
               Tomorrow
             </button>
             <button
               onClick={() => setSelectedDate(addDays(new Date(), 2).toISOString().split('T')[0])}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedDate === addDays(new Date(), 2).toISOString().split('T')[0]
-                  ? 'bg-cyan-500 text-slate-950 shadow-md'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                  ? 'bg-[#3F72AF] text-white shadow-xs'
+                  : 'bg-[#F0F4F8] text-[#112D4E] hover:bg-[#DBE2EF]'
               }`}
             >
               Day After
@@ -265,11 +265,11 @@ export default function InstructorSchedulePage() {
 
         <div className="flex items-center gap-3">
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Branch:</label>
+            <label className="block text-[10px] font-bold text-[#4B6584] uppercase mb-1">Branch:</label>
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-cyan-300 font-bold outline-none"
+              className="px-3.5 py-1.5 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-xs text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors cursor-pointer"
             >
               <option value="Maharagama">Maharagama Branch</option>
               <option value="Werahara">Werahara Branch</option>
@@ -281,15 +281,15 @@ export default function InstructorSchedulePage() {
 
       {/* Schedule Grid */}
       {loading ? (
-        <div className="py-16 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-          <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" /> Loading daily sessions & student rosters...
+        <div className="py-16 text-center text-xs text-[#4B6584] flex items-center justify-center gap-2">
+          <RefreshCw className="w-5 h-5 animate-spin text-[#3F72AF]" /> Loading daily sessions & student rosters...
         </div>
       ) : schedule.length === 0 ? (
-        <div className="card text-center py-16 space-y-4 border border-dashed border-white/15">
-          <Calendar className="w-12 h-12 text-slate-600 mx-auto" />
+        <div className="card text-center py-16 space-y-4 border-2 border-dashed border-[#DBE2EF] bg-white rounded-2xl">
+          <Calendar className="w-12 h-12 text-[#94A3B8] mx-auto" />
           <div>
-            <p className="text-base font-bold text-white">No training sessions scheduled for {selectedDate}</p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-base font-bold text-[#0B2447]">No training sessions scheduled for {selectedDate}</p>
+            <p className="text-xs text-[#4B6584] mt-1">
               You can add custom sessions for today or choose another date above.
             </p>
           </div>
@@ -302,7 +302,7 @@ export default function InstructorSchedulePage() {
               }));
               setIsAddModalOpen(true);
             }}
-            className="btn-accent text-xs py-2.5 px-5 font-bold inline-flex items-center gap-2"
+            className="btn-primary text-xs py-2.5 px-5 font-bold inline-flex items-center gap-2"
           >
             <Plus className="w-4 h-4" /> Add First Lesson for {selectedDate}
           </button>
@@ -319,21 +319,21 @@ export default function InstructorSchedulePage() {
             return (
               <div
                 key={slot._id}
-                className="card p-5 space-y-4 border border-white/10 hover:border-cyan-400/40 bg-slate-900/80 transition-all flex flex-col justify-between"
+                className="card p-5 space-y-4 border border-[#DBE2EF] hover:border-[#3F72AF] bg-white rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   {/* Top Bar */}
                   <div className="flex items-center justify-between">
-                    <span className="badge badge-info text-[10px] font-black uppercase">
+                    <span className="px-2.5 py-1 rounded-full bg-[#E8F1FD] text-[#19376D] border border-[#DBE2EF] text-[10px] font-black uppercase">
                       {slot.vehicleType || slot.vehicleCategory} Vehicle
                     </span>
                     <span
                       className={`badge text-[10px] font-bold ${
                         isFull
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
                           : bookedCount > 0
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       }`}
                     >
                       {isFull ? 'FULL (10/10)' : `${remainingSpots} spots left`}
@@ -342,51 +342,51 @@ export default function InstructorSchedulePage() {
 
                   {/* Title & Topic */}
                   <div>
-                    <h3 className="text-base font-extrabold text-white leading-snug">
+                    <h3 className="text-base font-extrabold text-[#0B2447] leading-snug">
                       {slot.lessonTitle || `${slot.vehicleType || 'Practical'} Driving Session`}
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-[#4B6584] mt-1 line-clamp-2 leading-relaxed font-normal">
                       {slot.lessonTopic || 'Dual-control practical road training and maneuvers.'}
                     </p>
                   </div>
 
                   {/* Time & Branch Info */}
-                  <div className="p-3 bg-slate-950/70 rounded-xl border border-white/5 space-y-1.5 text-xs">
+                  <div className="p-3 bg-[#F8FAFD] rounded-xl border border-[#DBE2EF] space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-cyan-400" /> Session Time:
+                      <span className="text-[#4B6584] flex items-center gap-1.5 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-[#3F72AF]" /> Session Time:
                       </span>
-                      <strong className="text-cyan-300 font-extrabold text-sm">
+                      <strong className="text-[#112D4E] font-extrabold text-sm">
                         {slot.startTime} – {slot.endTime}
                       </strong>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-amber-400" /> Branch:
+                      <span className="text-[#4B6584] flex items-center gap-1.5 font-medium">
+                        <MapPin className="w-3.5 h-3.5 text-amber-600" /> Branch:
                       </span>
-                      <span className="text-white font-medium">{slot.branch}</span>
+                      <span className="text-[#0B2447] font-bold">{slot.branch}</span>
                     </div>
                   </div>
 
                   {/* Booking Progress Meter (Max 10 students) */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-300 font-bold flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-cyan-400" /> Booked Students:
+                      <span className="text-[#4B6584] font-bold flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#3F72AF]" /> Booked Students:
                       </span>
-                      <strong className="text-white font-extrabold">
+                      <strong className="text-[#0B2447] font-extrabold">
                         {bookedCount} / {capacity}
                       </strong>
                     </div>
 
-                    <div className="w-full h-2.5 rounded-full bg-slate-950 border border-white/10 overflow-hidden">
+                    <div className="w-full h-2.5 rounded-full bg-[#E2E8F0] border border-[#DBE2EF] overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           isFull
                             ? 'bg-rose-500'
                             : fillPercentage >= 70
-                            ? 'bg-amber-400'
-                            : 'bg-cyan-400'
+                            ? 'bg-amber-500'
+                            : 'bg-[#3F72AF]'
                         }`}
                         style={{ width: `${fillPercentage}%` }}
                       />
@@ -397,9 +397,9 @@ export default function InstructorSchedulePage() {
                 {/* Actions */}
                 <button
                   onClick={() => setActiveRosterSlot(slot)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-cyan-500/20 text-cyan-300 border border-white/15 hover:border-cyan-400/40 text-xs font-bold flex items-center justify-center gap-2 transition-all group"
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#F0F4F8] hover:bg-[#DBE2EF] text-[#112D4E] hover:text-[#0B2447] border border-[#DBE2EF] text-xs font-bold flex items-center justify-center gap-2 transition-all group mt-2"
                 >
-                  <Eye className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <Eye className="w-4 h-4 text-[#3F72AF] group-hover:scale-110 transition-transform" />
                   View Booked Students ({bookedCount})
                 </button>
               </div>
@@ -410,46 +410,46 @@ export default function InstructorSchedulePage() {
 
       {/* ROSTER MODAL: VIEW BOOKED STUDENTS */}
       {activeRosterSlot && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] max-w-2xl w-full p-5 sm:p-6 space-y-5 max-h-[90vh] flex flex-col my-auto">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#DBE2EF] rounded-3xl shadow-[0_25px_70px_rgba(17,45,78,0.22)] max-w-2xl w-full p-5 sm:p-6 space-y-5 max-h-[90vh] flex flex-col my-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between border-b border-[#DBE2EF] pb-4">
               <div>
-                <span className="badge badge-info text-[10px] font-bold uppercase mb-1">
+                <span className="px-2 py-0.5 rounded-md bg-[#E8F1FD] text-[#19376D] border border-[#DBE2EF] text-[10px] font-bold uppercase mb-1 inline-block">
                   Lesson Roster • Max 10 Students
                 </span>
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-black text-[#0B2447] flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#3F72AF]" />
                   {activeRosterSlot.lessonTitle || 'Lesson Roster'}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[#4B6584] mt-0.5">
                   {format(new Date(activeRosterSlot.date), 'EEEE, MMMM dd, yyyy')} •{' '}
-                  <strong className="text-cyan-300">{activeRosterSlot.startTime} – {activeRosterSlot.endTime}</strong> •{' '}
+                  <strong className="text-[#3F72AF]">{activeRosterSlot.startTime} – {activeRosterSlot.endTime}</strong> •{' '}
                   {activeRosterSlot.branch} Branch
                 </p>
               </div>
 
               <button
                 onClick={() => setActiveRosterSlot(null)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full bg-[#F0F4F8] hover:bg-[#DBE2EF] text-[#112D4E] hover:text-[#0B2447] flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Attendance Summary */}
-            <div className="p-3 bg-slate-900/80 rounded-2xl border border-white/10 flex items-center justify-between text-xs">
+            <div className="p-3.5 bg-[#F8FAFD] rounded-2xl border border-[#DBE2EF] flex items-center justify-between text-xs">
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Enrolled Headcount</span>
-                <span className="text-base font-black text-white">
+                <span className="text-[#4B6584] block text-[10px] uppercase font-bold">Enrolled Headcount</span>
+                <span className="text-base font-black text-[#0B2447]">
                   {activeRosterSlot.bookedStudents?.length || 0} of {activeRosterSlot.capacity || 10} Students Booked
                 </span>
               </div>
               <span
                 className={`badge text-xs font-bold ${
                   (activeRosterSlot.bookedStudents?.length || 0) >= (activeRosterSlot.capacity || 10)
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                 }`}
               >
                 {(activeRosterSlot.bookedStudents?.length || 0) >= (activeRosterSlot.capacity || 10)
@@ -462,9 +462,9 @@ export default function InstructorSchedulePage() {
             <div className="overflow-y-auto space-y-3 flex-1 pr-1">
               {(!activeRosterSlot.bookedStudents || activeRosterSlot.bookedStudents.length === 0) ? (
                 <div className="py-12 text-center space-y-2">
-                  <Users className="w-10 h-10 text-slate-600 mx-auto" />
-                  <p className="text-sm font-bold text-white">No students booked in this session yet</p>
-                  <p className="text-xs text-slate-400">
+                  <Users className="w-10 h-10 text-[#94A3B8] mx-auto" />
+                  <p className="text-sm font-bold text-[#0B2447]">No students booked in this session yet</p>
+                  <p className="text-xs text-[#4B6584]">
                     Eligible Type 1 & Type 2 students can book this lesson on their dashboard.
                   </p>
                 </div>
@@ -475,34 +475,34 @@ export default function InstructorSchedulePage() {
                   return (
                     <div
                       key={st.bookingId || idx}
-                      className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/30 space-y-3 transition-colors"
+                      className="p-4 rounded-2xl bg-[#F8FAFD] border border-[#DBE2EF] hover:border-[#3F72AF] space-y-3 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-400/30 flex items-center justify-center font-black text-cyan-300 text-sm">
+                          <div className="w-10 h-10 rounded-xl bg-[#DBE2EF] border border-[#DBE2EF] flex items-center justify-center font-black text-[#112D4E] text-sm">
                             {st.name?.charAt(0) || 'S'}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-extrabold text-white">{st.name}</h4>
+                              <h4 className="text-sm font-extrabold text-[#0B2447]">{st.name}</h4>
                               <span
                                 className={`badge text-[9px] font-black uppercase ${
                                   isType1
-                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                 }`}
                               >
                                 {isType1 ? 'Type 1: New Learner' : 'Type 2: Trial Ready'}
                               </span>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
-                              <span className="flex items-center gap-1 text-slate-300 font-medium">
-                                <Phone className="w-3 h-3 text-cyan-400" /> {st.phone}
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-[#4B6584] mt-1">
+                              <span className="flex items-center gap-1 text-[#112D4E] font-medium">
+                                <Phone className="w-3 h-3 text-[#3F72AF]" /> {st.phone}
                               </span>
                               {st.email && st.email !== 'N/A' && (
-                                <span className="flex items-center gap-1 text-slate-400">
-                                  <Mail className="w-3 h-3 text-slate-500" /> {st.email}
+                                <span className="flex items-center gap-1 text-[#4B6584]">
+                                  <Mail className="w-3 h-3 text-[#64748B]" /> {st.email}
                                 </span>
                               )}
                             </div>
@@ -515,14 +515,14 @@ export default function InstructorSchedulePage() {
                       </div>
 
                       {/* Package & Quota Details */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-white/5 text-[11px]">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-[#DBE2EF] text-[11px]">
                         <div>
-                          <span className="text-slate-400 block text-[10px]">Package:</span>
-                          <strong className="text-white font-bold">{st.packageType || 'Standard Package'}</strong>
+                          <span className="text-[#64748B] block text-[10px] font-medium">Package:</span>
+                          <strong className="text-[#0B2447] font-bold">{st.packageType || 'Standard Package'}</strong>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[10px]">Payment Plan:</span>
-                          <strong className="text-cyan-300 capitalize font-bold">
+                          <span className="text-[#64748B] block text-[10px] font-medium">Payment Plan:</span>
+                          <strong className="text-[#3F72AF] capitalize font-bold">
                             {st.paymentPlan === 'installments'
                               ? '3 Installments'
                               : st.paymentPlan === 'single'
@@ -531,8 +531,8 @@ export default function InstructorSchedulePage() {
                           </strong>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[10px]">Booking Time:</span>
-                          <span className="text-slate-300">
+                          <span className="text-[#64748B] block text-[10px] font-medium">Booking Time:</span>
+                          <span className="text-[#4B6584]">
                             {st.bookedAt ? format(new Date(st.bookedAt), 'MMM dd, hh:mm a') : 'Confirmed'}
                           </span>
                         </div>
@@ -543,7 +543,7 @@ export default function InstructorSchedulePage() {
               )}
             </div>
 
-            <div className="pt-3 border-t border-white/10 flex justify-end">
+            <div className="pt-3 border-t border-[#DBE2EF] flex justify-end">
               <button
                 onClick={() => setActiveRosterSlot(null)}
                 className="btn-secondary text-xs py-2 px-4 font-bold"
@@ -557,21 +557,21 @@ export default function InstructorSchedulePage() {
 
       {/* MODAL: ADD DAILY LESSON FOR INSTRUCTORS */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#DBE2EF] rounded-3xl shadow-[0_25px_70px_rgba(17,45,78,0.22)] max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
+            <div className="flex items-center justify-between border-b border-[#DBE2EF] pb-3">
               <div>
-                <span className="badge badge-info text-[10px] font-bold uppercase mb-1">
+                <span className="px-2 py-0.5 rounded-md bg-[#E8F1FD] text-[#19376D] border border-[#DBE2EF] text-[10px] font-bold uppercase mb-1 inline-block">
                   Instructor Session Creator
                 </span>
-                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-cyan-400" /> Schedule Daily Lesson Session
+                <h3 className="text-base font-extrabold text-[#0B2447] flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-[#3F72AF]" /> Schedule Daily Lesson Session
                 </h3>
               </div>
 
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full bg-[#F0F4F8] hover:bg-[#DBE2EF] text-[#112D4E] hover:text-[#0B2447] flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -580,7 +580,7 @@ export default function InstructorSchedulePage() {
             <form onSubmit={handleCreateLesson} className="space-y-4 text-xs">
               {/* Quick Topic Preset Selector */}
               <div>
-                <label className="block font-bold text-slate-300 mb-1.5">Quick Curriculum Preset:</label>
+                <label className="block font-bold text-[#112D4E] mb-1.5">Quick Curriculum Preset:</label>
                 <select
                   onChange={(e) => {
                     const preset = PRESET_TOPICS[e.target.value];
@@ -594,7 +594,7 @@ export default function InstructorSchedulePage() {
                       }));
                     }
                   }}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-cyan-300 font-bold outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors cursor-pointer"
                 >
                   <option value="">-- Choose a standard syllabus topic --</option>
                   {PRESET_TOPICS.map((p, i) => (
@@ -607,48 +607,48 @@ export default function InstructorSchedulePage() {
 
               {/* Lesson Title */}
               <div>
-                <label className="block font-bold text-slate-300 mb-1">Lesson Title:</label>
+                <label className="block font-bold text-[#112D4E] mb-1">Lesson Title:</label>
                 <input
                   type="text"
                   required
                   value={newLessonForm.lessonTitle}
                   onChange={(e) => setNewLessonForm({ ...newLessonForm, lessonTitle: e.target.value })}
                   placeholder="e.g., Morning Highway Driving & Overtaking"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors"
                 />
               </div>
 
               {/* Lesson Topic */}
               <div>
-                <label className="block font-bold text-slate-300 mb-1">Key Maneuvers / Topic Description:</label>
+                <label className="block font-bold text-[#112D4E] mb-1">Key Maneuvers / Topic Description:</label>
                 <textarea
                   rows={2}
                   value={newLessonForm.lessonTopic}
                   onChange={(e) => setNewLessonForm({ ...newLessonForm, lessonTopic: e.target.value })}
                   placeholder="Describe skills practiced (e.g. parallel parking, hill starts, clutch control)..."
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors"
                 />
               </div>
 
               {/* Date & Branch */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">Date:</label>
+                  <label className="block font-bold text-[#112D4E] mb-1">Date:</label>
                   <input
                     type="date"
                     required
                     value={newLessonForm.date}
                     onChange={(e) => setNewLessonForm({ ...newLessonForm, date: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">Branch:</label>
+                  <label className="block font-bold text-[#112D4E] mb-1">Branch:</label>
                   <select
                     value={newLessonForm.branch}
                     onChange={(e) => setNewLessonForm({ ...newLessonForm, branch: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-cyan-300 font-bold outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors cursor-pointer"
                   >
                     <option value="Maharagama">Maharagama Branch</option>
                     <option value="Werahara">Werahara Branch</option>
@@ -660,24 +660,24 @@ export default function InstructorSchedulePage() {
               {/* Start & End Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">Start Time:</label>
+                  <label className="block font-bold text-[#112D4E] mb-1">Start Time:</label>
                   <input
                     type="time"
                     required
                     value={newLessonForm.startTime}
                     onChange={(e) => setNewLessonForm({ ...newLessonForm, startTime: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">End Time:</label>
+                  <label className="block font-bold text-[#112D4E] mb-1">End Time:</label>
                   <input
                     type="time"
                     required
                     value={newLessonForm.endTime}
                     onChange={(e) => setNewLessonForm({ ...newLessonForm, endTime: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] outline-none focus:border-[#3F72AF] transition-colors"
                   />
                 </div>
               </div>
@@ -685,7 +685,7 @@ export default function InstructorSchedulePage() {
               {/* Vehicle Type & Category */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">Vehicle Type:</label>
+                  <label className="block font-bold text-[#112D4E] mb-1">Vehicle Type:</label>
                   <select
                     value={newLessonForm.vehicleType}
                     onChange={(e) => {
@@ -696,7 +696,7 @@ export default function InstructorSchedulePage() {
                         vehicleCategory: vType === 'HeavyVehicle_Bus' ? 'Heavy' : 'Light',
                       });
                     }}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white font-bold outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F8FAFD] border border-[#DBE2EF] text-[#0B2447] font-bold outline-none focus:border-[#3F72AF] transition-colors cursor-pointer"
                   >
                     <option value="Car">Car (Auto / Manual)</option>
                     <option value="Bike">Motorcycle / Bike</option>
@@ -706,14 +706,14 @@ export default function InstructorSchedulePage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">Capacity Limit:</label>
-                  <div className="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-white/15 text-amber-300 font-bold">
+                  <label className="block font-bold text-[#112D4E] mb-1">Capacity Limit:</label>
+                  <div className="w-full px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold">
                     10 Students (System Limit)
                   </div>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-3">
+              <div className="pt-3 border-t border-[#DBE2EF] flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
@@ -724,7 +724,7 @@ export default function InstructorSchedulePage() {
                 <button
                   type="submit"
                   disabled={submittingSlot}
-                  className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5"
+                  className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5"
                 >
                   {submittingSlot ? (
                     <>
