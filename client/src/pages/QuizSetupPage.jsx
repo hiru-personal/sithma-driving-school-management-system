@@ -118,44 +118,44 @@ export default function QuizSetupPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-5xl mx-auto w-full">
       {/* Header Banner */}
-      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900 via-primary to-slate-900 rounded-3xl text-white p-7 sm:p-8 border border-white/20 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 overflow-hidden">
+      <div className="relative rounded-3xl text-white p-7 sm:p-8 bg-gradient-to-r from-[#152026] via-[#1B3D59] to-[#152026] border border-[#6A97C0]/30 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-cyan-300 font-semibold text-xs">
-            <Sparkles className="w-3.5 h-3.5" /> DMT Written Exam Preparation Hub
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B3D5F1]/20 border border-[#B3D5F1]/30 text-[#D4EEF8] font-bold text-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#B3D5F1]" /> DMT Written Exam Preparation Hub
           </div>
           <h1 className="text-2xl sm:text-3xl font-black font-heading text-white drop-shadow">
             DMT Theory Practice Examination
           </h1>
-          <p className="text-slate-200 text-xs sm:text-sm max-w-xl leading-relaxed">
+          <p className="text-[#D4EEF8] text-xs sm:text-sm max-w-xl leading-relaxed">
             Choose an exam paper or question list, select your preferred language, and simulate the official Department of Motor Traffic written test format.
           </p>
         </div>
 
         <Link
           to="/student/quiz/history"
-          className="btn-secondary text-xs py-2.5 px-4 flex items-center gap-1.5 self-start sm:self-center font-bold relative z-10 shrink-0"
+          className="bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] text-xs py-2.5 px-4 rounded-xl font-bold flex items-center gap-1.5 self-start sm:self-center shrink-0 shadow-sm transition-all"
         >
-          <History className="w-4 h-4 text-primary" /> View My Completed Exams
+          <History className="w-4 h-4 text-[#1B3D59]" /> View My Completed Exams
         </Link>
       </div>
 
       {/* Informal Practice Note */}
-      <div className="p-4 bg-cyan-50 border border-cyan-200 rounded-2xl flex items-start gap-3 text-xs text-cyan-950">
-        <Info className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
+      <div className="p-4 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl flex items-start gap-3 text-xs text-[#152026]">
+        <Info className="w-5 h-5 text-[#1B3D59] shrink-0 mt-0.5" />
         <div>
-          <p className="font-bold text-cyan-900">Informal Self-Study Preparation Aid</p>
-          <p className="mt-0.5 text-cyan-800 leading-relaxed">
+          <p className="font-bold text-[#1B3D59]">Informal Self-Study Preparation Aid</p>
+          <p className="mt-0.5 text-[#152026]/80 leading-relaxed font-medium">
             This module provides authentic practice questions on Sri Lankan traffic rules, priority crossings, road signs, and safe driving principles. You can review your completed exams and past submitted answers at any time.
           </p>
         </div>
       </div>
 
       {/* Setup Card */}
-      <div className="card p-6 sm:p-8 space-y-8 shadow-sm">
+      <div className="bg-white border border-[#D4EEF8] rounded-3xl p-6 sm:p-8 space-y-8 shadow-sm">
         {/* Step 1: Language Selection */}
         <div className="space-y-3">
-          <label className="text-sm font-bold text-[#112D4E] flex items-center gap-2">
-            <Globe2 className="w-4 h-4 text-primary" /> 1. Select Examination Language:
+          <label className="text-sm font-bold text-[#152026] flex items-center gap-2">
+            <Globe2 className="w-4 h-4 text-[#1B3D59]" /> 1. Select Examination Language:
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
@@ -168,15 +168,15 @@ export default function QuizSetupPage() {
                 onClick={() => setLanguage(l.id)}
                 className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                   language === l.id
-                    ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary'
-                    : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                    ? 'border-[#1B3D59] bg-[#D4EEF8]/40 text-[#152026] shadow-sm ring-1 ring-[#1B3D59]'
+                    : 'border-[#D4EEF8] hover:border-[#6A97C0] bg-white text-[#152026]'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-sm text-[#112D4E]">{l.label}</p>
-                  {language === l.id && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                  <p className="font-bold text-sm text-[#152026]">{l.label}</p>
+                  {language === l.id && <CheckCircle2 className="w-4 h-4 text-[#1B3D59]" />}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">{l.sub}</p>
+                <p className="text-[11px] text-[#6A97C0] mt-0.5 font-medium">{l.sub}</p>
               </div>
             ))}
           </div>
@@ -184,30 +184,32 @@ export default function QuizSetupPage() {
 
         {/* Step 2: Vehicle Category */}
         <div className="space-y-3">
-          <label className="text-sm font-bold text-[#112D4E] flex items-center gap-2">
-            <Car className="w-4 h-4 text-amber-600" /> 2. Select Vehicle Category:
+          <label className="text-sm font-bold text-[#152026] flex items-center gap-2">
+            <Car className="w-4 h-4 text-[#1B3D59]" /> 2. Select Vehicle Category:
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div
               onClick={() => setVehicleCategory('Light')}
               className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all flex items-start gap-4 ${
                 vehicleCategory === 'Light'
-                  ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary'
-                  : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                  ? 'border-[#1B3D59] bg-[#D4EEF8]/40 text-[#152026] shadow-sm ring-1 ring-[#1B3D59]'
+                  : 'border-[#D4EEF8] hover:border-[#6A97C0] bg-white text-[#152026]'
               }`}
             >
-              <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 shrink-0">
-                <Car className="w-6 h-6 text-primary" />
+              <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] shrink-0">
+                <Car className="w-6 h-6 text-[#1B3D59]" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-sm text-[#112D4E]">Light Vehicle Category</p>
-                  {vehicleCategory === 'Light' && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                  <p className="font-bold text-sm text-[#152026]">Light Vehicle Category</p>
+                  {vehicleCategory === 'Light' && <CheckCircle2 className="w-4 h-4 text-[#1B3D59]" />}
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-[#6A97C0] mt-1 font-medium leading-relaxed">
                   Dual Purpose Cars, Light Vans, Motorcycles, and Auto Rickshaws (3-Wheelers).
                 </p>
-                <span className="badge badge-info text-[10px] mt-2">Class B / A1</span>
+                <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[10px]">
+                  Class B / A1
+                </span>
               </div>
             </div>
 
@@ -215,22 +217,24 @@ export default function QuizSetupPage() {
               onClick={() => setVehicleCategory('Heavy')}
               className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all flex items-start gap-4 ${
                 vehicleCategory === 'Heavy'
-                  ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary'
-                  : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                  ? 'border-[#1B3D59] bg-[#D4EEF8]/40 text-[#152026] shadow-sm ring-1 ring-[#1B3D59]'
+                  : 'border-[#D4EEF8] hover:border-[#6A97C0] bg-white text-[#152026]'
               }`}
             >
-              <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 shrink-0">
-                <Bus className="w-6 h-6 text-amber-600" />
+              <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] shrink-0">
+                <Bus className="w-6 h-6 text-[#1B3D59]" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-sm text-[#112D4E]">Heavy Vehicle Category</p>
-                  {vehicleCategory === 'Heavy' && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                  <p className="font-bold text-sm text-[#152026]">Heavy Vehicle Category</p>
+                  {vehicleCategory === 'Heavy' && <CheckCircle2 className="w-4 h-4 text-[#1B3D59]" />}
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-[#6A97C0] mt-1 font-medium leading-relaxed">
                   Passenger Buses, Heavy Goods Vehicles (Lorries), and Prime Movers.
                 </p>
-                <span className="badge badge-warning text-[10px] mt-2">Class D / C</span>
+                <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#F3EED8] border border-[#6A97C0]/30 text-[#152026] font-bold text-[10px]">
+                  Class D / C
+                </span>
               </div>
             </div>
           </div>
@@ -239,18 +243,18 @@ export default function QuizSetupPage() {
         {/* Step 3: Question List Selection */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-[#112D4E] flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-600" /> 3. Select Question List / Exam Paper:
+            <label className="text-sm font-bold text-[#152026] flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#1B3D59]" /> 3. Select Question List / Exam Paper:
             </label>
-            <span className="text-xs text-slate-500 font-semibold">
+            <span className="text-xs text-[#6A97C0] font-semibold">
               {listsToShow.length} Question Lists Available
             </span>
           </div>
 
           {loadingLists ? (
-            <div className="py-6 text-center text-xs text-slate-500">Loading Question Lists...</div>
+            <div className="py-8 text-center text-xs text-[#6A97C0] font-medium">Loading Question Lists...</div>
           ) : listsToShow.length === 0 ? (
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600">
+            <div className="p-4 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl text-xs text-[#6A97C0]">
               No question lists found for this category. Standard practice exam will be loaded.
             </div>
           ) : (
@@ -263,34 +267,36 @@ export default function QuizSetupPage() {
                     onClick={() => setSelectedListId(list._id)}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
                       isSelected
-                        ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary'
-                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                        ? 'border-[#1B3D59] bg-[#D4EEF8]/40 shadow-sm ring-1 ring-[#1B3D59]'
+                        : 'border-[#D4EEF8] hover:border-[#6A97C0] bg-white text-[#152026]'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="badge badge-info text-[9px]">{list.language}</span>
-                          <span className="badge bg-slate-100 text-slate-600 border border-slate-200 text-[9px]">
+                          <span className="inline-block px-2 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[9px]">
+                            {list.language}
+                          </span>
+                          <span className="inline-block px-2 py-0.5 rounded-full bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-semibold text-[9px]">
                             {list.vehicleCategory}
                           </span>
                         </div>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-[#1B3D59] shrink-0" />}
                       </div>
 
-                      <h4 className="font-bold text-sm text-[#112D4E] mt-2 line-clamp-1">
+                      <h4 className="font-bold text-sm text-[#152026] mt-2 line-clamp-1">
                         {list.name}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[#6A97C0] mt-1 line-clamp-2 leading-relaxed font-medium">
                         {list.description || 'Practice exam paper covering DMT theory questions.'}
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#112D4E]">
+                    <div className="mt-3 pt-3 border-t border-[#D4EEF8] flex items-center justify-between text-xs">
+                      <span className="font-bold text-[#152026]">
                         {list.totalQuestions || list.questionCount || 0} Questions
                       </span>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-[#6A97C0] font-semibold">
                         Pass Mark: {list.passingScore || 80}%
                       </span>
                     </div>
@@ -302,13 +308,13 @@ export default function QuizSetupPage() {
         </div>
 
         {/* Start Button */}
-        <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="text-xs text-slate-500">
-            DMT Passing Benchmark: <strong className="text-emerald-600 font-bold">80% (Pass standard)</strong> • Practice exam results are saved to your exam history
+        <div className="pt-5 border-t border-[#D4EEF8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-xs text-[#6A97C0] font-medium">
+            DMT Passing Benchmark: <strong className="text-emerald-700 font-bold">80% (Pass standard)</strong> • Practice exam results are saved to your exam history
           </div>
           <button
             onClick={handleStartQuiz}
-            className="btn-primary px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105"
+            className="btn-primary px-8 py-3.5 font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
           >
             Start Practice Exam <ArrowRight className="w-4 h-4" />
           </button>
@@ -317,17 +323,17 @@ export default function QuizSetupPage() {
 
       {/* Recent Completed Exams Quick Section */}
       {recentAttempts.length > 0 && (
-        <div className="card p-6 space-y-4 shadow-sm border border-[#DBE2EF]">
-          <div className="flex items-center justify-between border-b border-[#DBE2EF] pb-3">
+        <div className="bg-white border border-[#D4EEF8] rounded-3xl p-6 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
             <div>
-              <h3 className="text-sm font-bold text-[#112D4E] flex items-center gap-2">
-                <History className="w-4 h-4 text-primary" /> My Recent Completed Practice Exams
+              <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+                <History className="w-4 h-4 text-[#1B3D59]" /> My Recent Completed Practice Exams
               </h3>
-              <p className="text-xs text-slate-500">Review your recent exam answers and performance.</p>
+              <p className="text-xs text-[#6A97C0] font-medium">Review your recent exam answers and performance.</p>
             </div>
             <Link
               to="/student/quiz/history"
-              className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1"
+              className="text-xs font-bold text-[#1B3D59] hover:text-[#152026] flex items-center gap-1 transition-colors"
             >
               View All Past Exams <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -338,26 +344,28 @@ export default function QuizSetupPage() {
               <Link
                 key={att._id}
                 to={`/student/quiz/history?review=${att._id}`}
-                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-primary/50 transition-all group block"
+                className="p-3.5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] hover:border-[#1B3D59] transition-all group block"
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span
-                    className={`badge text-[9px] py-0 px-2 font-bold ${
-                      att.passed ? 'badge-success' : 'badge-danger'
+                    className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                      att.passed
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
                     }`}
                   >
                     {att.passed ? 'Passed' : 'Needs Practice'}
                   </span>
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-[10px] text-[#6A97C0]">
                     {att.takenAt ? new Date(att.takenAt).toLocaleDateString() : ''}
                   </span>
                 </div>
-                <h4 className="font-bold text-xs text-[#112D4E] group-hover:text-primary truncate">
+                <h4 className="font-bold text-xs text-[#152026] group-hover:text-[#1B3D59] truncate transition-colors">
                   {att.questionListName || att.questionListId?.name || 'DMT Practice Exam'}
                 </h4>
                 <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Score:</span>
-                  <span className="font-black text-slate-900">
+                  <span className="text-[#6A97C0] font-medium">Score:</span>
+                  <span className="font-bold text-[#152026]">
                     {att.score} / {att.totalQuestions} ({att.percentage}%)
                   </span>
                 </div>

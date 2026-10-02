@@ -120,13 +120,13 @@ export default function QuizHistoryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Learner Performance Hub
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Learner Performance Hub
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#112D4E] font-heading flex items-center gap-2.5">
-            <History className="w-7 h-7 text-primary" /> Practice Exam History / My Exams
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] font-heading flex items-center gap-2.5">
+            <History className="w-7 h-7 text-[#1B3D59]" /> Practice Exam History / My Exams
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
             Review all completed DMT theory practice exams, inspect your submitted answers, and track your pass benchmarks.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function QuizHistoryPage() {
           </button>
           <Link
             to="/student/quiz"
-            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-md"
+            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-sm"
           >
             <BookOpen className="w-4 h-4 text-white" /> Take Practice Exam
           </Link>
@@ -149,52 +149,52 @@ export default function QuizHistoryPage() {
 
       {/* Analytics KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card p-4 space-y-1 border-l-4 border-l-primary">
-          <span className="text-[11px] font-semibold text-slate-500">Completed Exams</span>
-          <p className="text-2xl font-black text-[#112D4E]">{totalCompleted}</p>
+        <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-[#1B3D59] shadow-sm">
+          <span className="text-[11px] font-semibold text-[#6A97C0]">Completed Exams</span>
+          <p className="text-2xl font-black text-[#152026]">{totalCompleted}</p>
         </div>
-        <div className="card p-4 space-y-1 border-l-4 border-l-emerald-500">
-          <span className="text-[11px] font-semibold text-slate-500">Exams Passed (≥80%)</span>
-          <p className="text-2xl font-black text-emerald-600">{passedCount}</p>
+        <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-emerald-600 shadow-sm">
+          <span className="text-[11px] font-semibold text-[#6A97C0]">Exams Passed (≥80%)</span>
+          <p className="text-2xl font-black text-emerald-700">{passedCount}</p>
         </div>
-        <div className="card p-4 space-y-1 border-l-4 border-l-cyan-500">
-          <span className="text-[11px] font-semibold text-slate-500">Pass Rate</span>
-          <p className="text-2xl font-black text-cyan-700">{passRate}%</p>
+        <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-[#6A97C0] shadow-sm">
+          <span className="text-[11px] font-semibold text-[#6A97C0]">Pass Rate</span>
+          <p className="text-2xl font-black text-[#1B3D59]">{passRate}%</p>
         </div>
-        <div className="card p-4 space-y-1 border-l-4 border-l-amber-500">
-          <span className="text-[11px] font-semibold text-slate-500">Highest Score</span>
-          <p className="text-2xl font-black text-amber-600">{highestScore}%</p>
+        <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-[#B3D5F1] shadow-sm">
+          <span className="text-[11px] font-semibold text-[#6A97C0]">Highest Score</span>
+          <p className="text-2xl font-black text-[#152026]">{highestScore}%</p>
         </div>
       </div>
 
       {/* Progress Chart (if attempts > 0) */}
       {attempts.length > 1 && (
-        <div className="card space-y-3">
-          <h2 className="text-sm font-bold text-[#112D4E] flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-primary" /> Score Progression (% Over Time)
+        <div className="bg-white border border-[#D4EEF8] rounded-3xl p-6 space-y-3 shadow-sm">
+          <h2 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-[#1B3D59]" /> Score Progression (% Over Time)
           </h2>
           <div className="h-60 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="attempt" tick={{ fill: '#64748b', fontSize: 11 }} />
-                <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#D4EEF8" />
+                <XAxis dataKey="attempt" tick={{ fill: '#6A97C0', fontSize: 11 }} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#6A97C0', fontSize: 11 }} />
                 <Tooltip
                   formatter={(val) => [`${val}%`, 'Score']}
                   contentStyle={{
                     backgroundColor: '#ffffff',
-                    borderColor: '#cbd5e1',
+                    borderColor: '#D4EEF8',
                     borderRadius: '12px',
-                    color: '#0f172a',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    color: '#152026',
+                    boxShadow: '0 4px 12px rgba(27,61,89,0.1)',
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="percentage"
-                  stroke="#0B5FA5"
+                  stroke="#1B3D59"
                   strokeWidth={3}
-                  dot={{ fill: '#0B5FA5', r: 5 }}
+                  dot={{ fill: '#1B3D59', r: 5 }}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
@@ -204,31 +204,31 @@ export default function QuizHistoryPage() {
       )}
 
       {/* Completed Exams History List */}
-      <div className="card p-0 overflow-hidden shadow-sm border border-[#DBE2EF]">
-        <div className="p-4 sm:p-5 border-b border-[#DBE2EF] bg-slate-50/70 flex items-center justify-between">
+      <div className="bg-white border border-[#D4EEF8] rounded-3xl overflow-hidden shadow-sm">
+        <div className="p-4 sm:p-5 border-b border-[#D4EEF8] bg-[#FAFCFE] flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-[#112D4E]">Completed Practice Exams</h2>
-            <p className="text-xs text-slate-500">Select any completed exam attempt to review questions & answers.</p>
+            <h2 className="text-sm font-bold text-[#152026]">Completed Practice Exams</h2>
+            <p className="text-xs text-[#6A97C0] font-medium">Select any completed exam attempt to review questions & answers.</p>
           </div>
-          <span className="badge badge-info text-xs font-bold">
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] text-xs font-bold">
             {attempts.length} Recorded Attempts
           </span>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-primary" /> Loading exam history...
+          <div className="py-16 text-center text-xs text-[#6A97C0] font-medium flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading exam history...
           </div>
         ) : attempts.length === 0 ? (
           <div className="py-14 text-center space-y-3 px-4">
-            <Award className="w-12 h-12 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-[#112D4E]">No Practice Exams Completed Yet</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <Award className="w-12 h-12 text-[#6A97C0] mx-auto" />
+            <h3 className="text-base font-bold text-[#152026]">No Practice Exams Completed Yet</h3>
+            <p className="text-xs text-[#6A97C0] max-w-sm mx-auto font-medium">
               You haven't completed any DMT theory practice exams yet. Start a practice exam now to prepare for your official test.
             </p>
             <Link
               to="/student/quiz"
-              className="btn-primary text-xs py-2.5 px-5 inline-flex items-center gap-1.5 font-bold shadow-md"
+              className="btn-primary text-xs py-2.5 px-5 inline-flex items-center gap-1.5 font-bold shadow-sm"
             >
               Start Your First Practice Exam <ArrowRight className="w-4 h-4" />
             </Link>
@@ -236,7 +236,7 @@ export default function QuizHistoryPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F0F4F8] border-b border-[#DBE2EF] text-slate-600 uppercase text-[10px] font-bold tracking-wider">
+              <thead className="bg-[#1B3D59] text-white uppercase text-[10px] font-bold tracking-wider">
                 <tr>
                   <th className="px-4 py-3.5">Exam / Question List</th>
                   <th className="px-4 py-3.5">Language & Category</th>
@@ -246,7 +246,7 @@ export default function QuizHistoryPage() {
                   <th className="px-4 py-3.5 text-right">Review</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#DBE2EF]">
+              <tbody className="divide-y divide-[#D4EEF8] text-[#152026]">
                 {attempts.map((att, idx) => {
                   const examName =
                     att.questionListName ||
@@ -256,30 +256,32 @@ export default function QuizHistoryPage() {
                   return (
                     <tr
                       key={att._id}
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                      className="hover:bg-[#D4EEF8]/40 transition-colors cursor-pointer group"
                       onClick={() => openReviewModal(att._id)}
                     >
                       {/* Exam / Question List Name */}
                       <td className="px-4 py-4">
-                        <div className="font-bold text-slate-900 group-hover:text-primary transition-colors flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <div className="font-bold text-[#152026] group-hover:text-[#1B3D59] transition-colors flex items-center gap-2">
+                          <Layers className="w-3.5 h-3.5 text-[#1B3D59] shrink-0" />
                           <span>{examName}</span>
                         </div>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-[#6A97C0] font-medium">
                           Attempt #{attempts.length - idx} • {att.totalQuestions} Questions
                         </span>
                       </td>
 
                       {/* Language & Category */}
                       <td className="px-4 py-4">
-                        <span className="badge badge-info text-[10px]">{att.language}</span>
-                        <span className="text-[11px] text-slate-600 ml-2 font-medium">
+                        <span className="inline-block px-2 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[10px]">
+                          {att.language}
+                        </span>
+                        <span className="text-[11px] text-[#152026] ml-2 font-medium">
                           {att.vehicleCategory} Vehicle
                         </span>
                       </td>
 
                       {/* Date Completed */}
-                      <td className="px-4 py-4 text-slate-600 text-xs whitespace-nowrap">
+                      <td className="px-4 py-4 text-[#6A97C0] text-xs whitespace-nowrap font-medium">
                         {att.takenAt
                           ? format(new Date(att.takenAt), 'MMM dd, yyyy • hh:mm a')
                           : 'Completed'}
@@ -287,13 +289,13 @@ export default function QuizHistoryPage() {
 
                       {/* Score / Result */}
                       <td className="px-4 py-4">
-                        <div className="font-black text-slate-900 text-sm">
+                        <div className="font-bold text-[#152026] text-sm">
                           {att.score} / {att.totalQuestions}
-                          <span className="text-xs font-bold text-primary ml-1.5">
+                          <span className="text-xs font-bold text-[#1B3D59] ml-1.5">
                             ({att.percentage}%)
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-500">
+                        <span className="text-[10px] text-[#6A97C0] font-medium">
                           Passing Standard: 80%
                         </span>
                       </td>
@@ -301,8 +303,10 @@ export default function QuizHistoryPage() {
                       {/* Completion Status */}
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span
-                          className={`badge text-[10px] font-bold ${
-                            att.passed ? 'badge-success' : 'badge-danger'
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            att.passed
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
                           }`}
                         >
                           {att.passed ? 'Completed • Passed' : 'Completed • Needs Practice'}
@@ -316,7 +320,7 @@ export default function QuizHistoryPage() {
                             e.stopPropagation();
                             openReviewModal(att._id);
                           }}
-                          className="btn-secondary text-[11px] py-1.5 px-3 font-bold inline-flex items-center gap-1.5 hover:border-primary text-primary"
+                          className="bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] text-[11px] py-1.5 px-3 rounded-xl font-bold inline-flex items-center gap-1.5 transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" /> Review Exam
                         </button>
@@ -334,24 +338,24 @@ export default function QuizHistoryPage() {
       {/* READ-ONLY COMPLETED EXAM REVIEW MODAL                    */}
       {/* ======================================================== */}
       {selectedAttemptId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-          <div className="bg-white border border-[#DBE2EF] rounded-3xl shadow-2xl max-w-4xl w-full p-6 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-4xl w-full p-6 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150 text-[#152026]">
             {loadingReview || !reviewAttempt ? (
-              <div className="py-20 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                <RefreshCw className="w-5 h-5 animate-spin text-primary" /> Loading completed exam review...
+              <div className="py-20 text-center text-xs text-[#6A97C0] font-medium flex items-center justify-center gap-2">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#1B3D59]" /> Loading completed exam review...
               </div>
             ) : (
               <>
                 {/* Modal Header */}
-                <div className="flex items-start justify-between border-b border-[#DBE2EF] pb-4 gap-4">
+                <div className="flex items-start justify-between border-b border-[#D4EEF8] pb-4 gap-4">
                   <div>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-300 text-slate-700 font-bold text-[10px] mb-1.5">
-                      <Lock className="w-3 h-3 text-slate-600" /> Read-Only Exam Review
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[10px] mb-1.5">
+                      <Lock className="w-3 h-3 text-[#1B3D59]" /> Read-Only Exam Review
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black text-[#112D4E] font-heading">
+                    <h2 className="text-xl sm:text-2xl font-black text-[#152026] font-heading">
                       {reviewAttempt.questionListName || reviewAttempt.questionListId?.name || 'DMT Practice Exam'}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
                       Completed on{' '}
                       {reviewAttempt.takenAt
                         ? format(new Date(reviewAttempt.takenAt), 'MMMM dd, yyyy • hh:mm a')
@@ -361,7 +365,7 @@ export default function QuizHistoryPage() {
 
                   <button
                     onClick={closeReviewModal}
-                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition-colors shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs transition-colors shrink-0"
                     title="Close Review"
                   >
                     <X className="w-4 h-4" />
@@ -369,20 +373,20 @@ export default function QuizHistoryPage() {
                 </div>
 
                 {/* Read-Only Notice Banner */}
-                <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-xs text-blue-900">
-                  <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0" />
+                <div className="p-3.5 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl flex items-center gap-3 text-xs text-[#152026]">
+                  <ShieldCheck className="w-5 h-5 text-[#1B3D59] shrink-0" />
                   <div>
-                    <strong className="font-bold">Archived Submission:</strong>{' '}
-                    <span>
+                    <strong className="font-bold text-[#1B3D59]">Archived Submission:</strong>{' '}
+                    <span className="font-medium">
                       This completed practice exam is read-only. Your submitted choices and the official DMT correct answers are preserved below.
                     </span>
                   </div>
                 </div>
 
                 {/* Score & Outcome Card */}
-                <div className="card p-5 bg-gradient-to-r from-slate-900 via-primary to-slate-900 text-white rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-md">
+                <div className="p-5 bg-gradient-to-r from-[#152026] via-[#1B3D59] to-[#152026] text-white rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-md">
                   <div className="space-y-1">
-                    <span className="badge badge-info text-[10px]">
+                    <span className="inline-block px-2 py-0.5 rounded-full bg-[#B3D5F1]/20 border border-[#B3D5F1]/30 text-[#D4EEF8] font-bold text-[10px]">
                       {reviewAttempt.language} • {reviewAttempt.vehicleCategory} Vehicle
                     </span>
                     <h3 className="text-lg font-bold text-white">
@@ -390,23 +394,25 @@ export default function QuizHistoryPage() {
                         ? '🎉 Passed Practice Exam'
                         : 'Practice Exam Completed'}
                     </h3>
-                    <p className="text-xs text-slate-300">
+                    <p className="text-xs text-[#D4EEF8]">
                       Passing standard: 80% (DMT requirement)
                     </p>
                   </div>
 
                   <div className="flex items-center gap-4">
                     <div className="text-center px-4 py-2 bg-white/10 rounded-xl border border-white/20">
-                      <div className="text-2xl font-black text-cyan-300">{reviewAttempt.percentage}%</div>
-                      <div className="text-[10px] text-slate-300 font-bold">
+                      <div className="text-2xl font-black text-[#D4EEF8]">{reviewAttempt.percentage}%</div>
+                      <div className="text-[10px] text-[#B3D5F1] font-bold">
                         {reviewAttempt.score} / {reviewAttempt.totalQuestions} Correct
                       </div>
                     </div>
 
                     <div className="text-right">
                       <span
-                        className={`badge text-xs font-black ${
-                          reviewAttempt.passed ? 'badge-success' : 'badge-danger'
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-black ${
+                          reviewAttempt.passed
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
                         }`}
                       >
                         {reviewAttempt.passed ? 'PASSED' : 'NEEDS PRACTICE'}
@@ -418,10 +424,10 @@ export default function QuizHistoryPage() {
                 {/* Questions & Answers Review List */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-[#112D4E] flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-primary" /> Questions & Submitted Answers
+                    <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-[#1B3D59]" /> Questions & Submitted Answers
                     </h3>
-                    <span className="text-xs text-slate-500 font-semibold">
+                    <span className="text-xs text-[#6A97C0] font-semibold">
                       {reviewAttempt.answers?.length || 0} Questions Total
                     </span>
                   </div>
@@ -437,20 +443,22 @@ export default function QuizHistoryPage() {
                       return (
                         <div
                           key={ans.questionId || idx}
-                          className={`card p-5 space-y-3.5 border-l-4 transition-all ${
+                          className={`bg-white border border-[#D4EEF8] rounded-2xl p-5 space-y-3.5 border-l-4 shadow-sm transition-all ${
                             isCorrect
-                              ? 'border-l-emerald-500 bg-white'
-                              : 'border-l-rose-500 bg-white'
+                              ? 'border-l-emerald-600'
+                              : 'border-l-rose-500'
                           }`}
                         >
                           {/* Question header */}
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-bold text-slate-500">
+                            <span className="text-xs font-bold text-[#6A97C0]">
                               Question #{idx + 1}
                             </span>
                             <span
-                              className={`badge text-[10px] font-bold ${
-                                isCorrect ? 'badge-success' : 'badge-danger'
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                isCorrect
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
                               }`}
                             >
                               {isCorrect ? 'Correct Answer (+1)' : 'Incorrect (0)'}
@@ -458,7 +466,7 @@ export default function QuizHistoryPage() {
                           </div>
 
                           {/* Question text */}
-                          <h4 className="text-sm font-bold text-[#112D4E] leading-snug">
+                          <h4 className="text-sm font-bold text-[#152026] leading-snug">
                             {qText}
                           </h4>
 
@@ -469,14 +477,14 @@ export default function QuizHistoryPage() {
                               const isCorrectOpt = correctChoice === optIdx;
 
                               let containerClass =
-                                'border-slate-200 bg-slate-50/60 text-slate-700';
+                                'border-[#D4EEF8] bg-[#FAFCFE] text-[#152026]';
 
                               if (isCorrectOpt) {
                                 containerClass =
-                                  'border-emerald-400 bg-emerald-50/90 text-emerald-900 font-bold ring-1 ring-emerald-400/50';
+                                  'border-emerald-300 bg-emerald-50/90 text-emerald-950 font-bold ring-1 ring-emerald-300';
                               } else if (isStudentPick && !isCorrect) {
                                 containerClass =
-                                  'border-rose-400 bg-rose-50/90 text-rose-900 font-bold ring-1 ring-rose-400/50';
+                                  'border-rose-300 bg-rose-50/90 text-rose-950 font-bold ring-1 ring-rose-300';
                               }
 
                               return (
@@ -488,27 +496,29 @@ export default function QuizHistoryPage() {
                                     <span
                                       className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
                                         isCorrectOpt
-                                          ? 'bg-emerald-600 text-white'
+                                          ? 'bg-emerald-700 text-white'
                                           : isStudentPick
                                           ? 'bg-rose-600 text-white'
-                                          : 'bg-slate-200 text-slate-700'
+                                          : 'bg-[#D4EEF8] text-[#1B3D59]'
                                       }`}
                                     >
                                       {String.fromCharCode(65 + optIdx)}
                                     </span>
-                                    <span>{opt}</span>
+                                    <span className="font-medium">{opt}</span>
                                   </div>
 
                                   <div className="flex items-center gap-1.5 shrink-0">
                                     {isCorrectOpt && (
-                                      <span className="badge badge-success text-[9px] py-0 px-2 flex items-center gap-1">
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-bold">
                                         <Check className="w-3 h-3 text-emerald-700" /> Correct Answer
                                       </span>
                                     )}
                                     {isStudentPick && (
                                       <span
-                                        className={`badge text-[9px] py-0 px-2 font-bold ${
-                                          isCorrect ? 'badge-info' : 'badge-danger'
+                                        className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                          isCorrect
+                                            ? 'bg-[#B3D5F1] text-[#1B3D59] border border-[#6A97C0]/40'
+                                            : 'bg-rose-100 text-rose-800 border border-rose-300'
                                         }`}
                                       >
                                         {isCorrect ? 'Your Pick (Correct)' : 'Your Pick (Wrong)'}
@@ -522,11 +532,11 @@ export default function QuizHistoryPage() {
 
                           {/* Driver Explanation */}
                           {ans.explanation && (
-                            <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 flex items-start gap-2">
-                              <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="p-3 bg-[#F3EED8] border border-[#6A97C0]/30 rounded-xl text-xs text-[#152026] flex items-start gap-2">
+                              <HelpCircle className="w-4 h-4 text-[#1B3D59] shrink-0 mt-0.5" />
                               <div>
-                                <strong className="font-bold">Explanation / Driver Tip:</strong>{' '}
-                                <span>{ans.explanation}</span>
+                                <strong className="font-bold text-[#1B3D59]">Explanation / Driver Tip:</strong>{' '}
+                                <span className="font-medium">{ans.explanation}</span>
                               </div>
                             </div>
                           )}
@@ -537,7 +547,7 @@ export default function QuizHistoryPage() {
                 </div>
 
                 {/* Modal Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-[#DBE2EF]">
+                <div className="flex items-center justify-between pt-4 border-t border-[#D4EEF8]">
                   <button
                     onClick={closeReviewModal}
                     className="btn-secondary text-xs py-2 px-4 font-bold"

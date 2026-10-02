@@ -32,50 +32,50 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 max-w-md mx-auto w-full">
-      <div className="w-full rounded-3xl p-6 sm:p-8 bg-slate-900/90 border border-white/15 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] space-y-6">
+      <div className="w-full rounded-3xl p-6 sm:p-8 bg-white border border-[#D4EEF8] shadow-xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 mx-auto flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] mx-auto flex items-center justify-center shadow-xs">
             <KeyRound className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-white font-heading">
+          <h2 className="text-2xl font-black text-[#152026]">
             Forgot Your Password?
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#6A97C0]">
             Self-service secure password recovery for Sithma learners.
           </p>
         </div>
 
         {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {submitted ? (
           <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-emerald-200">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-emerald-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>Reset Token Generated</span>
               </div>
-              <p className="text-slate-300 leading-relaxed">
-                If an account matches <strong className="text-white">{email}</strong>, a secure one-time password reset token has been issued with a 1-hour validity window.
+              <p className="text-emerald-950/80 leading-relaxed">
+                If an account matches <strong className="text-[#152026]">{email}</strong>, a secure one-time password reset token has been issued with a 1-hour validity window.
               </p>
             </div>
 
             {tokenReceived && (
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-cyan-400/30 text-xs space-y-2">
-                <span className="text-slate-400 font-medium block">
+              <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] text-xs space-y-2">
+                <span className="text-[#6A97C0] font-bold block">
                   Your Security Reset Token:
                 </span>
-                <code className="block p-2 rounded-xl bg-slate-900 font-mono text-cyan-300 text-xs break-all select-all border border-white/10">
+                <code className="block p-2.5 rounded-xl bg-white font-mono text-[#1B3D59] font-bold text-xs break-all select-all border border-[#D4EEF8]">
                   {tokenReceived}
                 </code>
                 <div className="pt-2">
                   <Link
                     to={`/reset-password?token=${tokenReceived}`}
-                    className="btn-accent w-full py-2.5 text-xs font-bold text-center block"
+                    className="btn-primary w-full py-2.5 text-xs font-bold text-center block shadow-sm"
                   >
                     Proceed to Reset Password →
                   </Link>
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <div className="text-center pt-2">
-              <Link to="/login" className="text-xs text-slate-400 hover:text-white inline-flex items-center gap-1.5">
+              <Link to="/login" className="text-xs text-[#6A97C0] hover:text-[#152026] inline-flex items-center gap-1.5 font-bold">
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
               </Link>
             </div>
@@ -92,18 +92,18 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div className="space-y-1.5">
-              <label className="block font-semibold text-slate-300">
-                Registered Email Address <span className="text-rose-400">*</span>
+              <label className="block font-bold text-[#152026]">
+                Registered Email Address <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Mail className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. student@gmail.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 outline-none placeholder:text-slate-500"
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl text-sm focus:border-[#1B3D59] outline-none placeholder:text-[#6A97C0]"
                 />
               </div>
             </div>
@@ -111,16 +111,16 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-accent w-full py-3 font-bold text-sm shadow-lg flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform"
+              className="btn-primary w-full py-3 font-bold text-sm shadow-sm flex items-center justify-center gap-2"
             >
               {loading ? 'Generating Token...' : 'Send Reset Instructions'}{' '}
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            <div className="text-center pt-3 border-t border-white/10">
+            <div className="text-center pt-3 border-t border-[#D4EEF8]">
               <Link
                 to="/login"
-                className="text-xs text-slate-400 hover:text-white inline-flex items-center gap-1.5 transition-colors"
+                className="text-xs text-[#6A97C0] hover:text-[#152026] inline-flex items-center gap-1.5 font-bold transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Return to Sign In
               </Link>

@@ -35,12 +35,11 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 
-const COLORS = ['#38bdf8', '#818cf8', '#f59e0b', '#10b981', '#f43f5e', '#a855f7'];
+const PALETTE_COLORS = ['#1B3D59', '#6A97C0', '#B3D5F1', '#152026', '#E2B842', '#3B82F6'];
 
 export default function ReportsAnalyticsPage() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState('All');
 
   const fetchReports = async () => {
     setLoading(true);
@@ -117,90 +116,90 @@ export default function ReportsAnalyticsPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full print:p-0 print:bg-white print:text-black">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Executive Intelligence & Regulatory Reporting
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Executive Intelligence & Regulatory Reporting
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <BarChart3 className="w-7 h-7 text-cyan-400" /> Sithma Performance Reports & Analytics
+          <h1 className="text-2xl sm:text-3xl font-black text-[#152026] flex items-center gap-2">
+            <BarChart3 className="w-7 h-7 text-[#1B3D59]" /> Sithma Performance Reports & Analytics
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5">
             Operational summaries across Maharagama, Werahara, and Delgoda branches.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto print:hidden">
           <button onClick={fetchReports} className="btn-secondary text-xs py-2 px-3 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            <RefreshCw className="w-3.5 h-3.5 text-[#1B3D59]" /> Refresh
           </button>
-          <button onClick={handleExportCSV} className="btn-secondary text-xs py-2 px-3 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold">
-            <Download className="w-3.5 h-3.5 text-cyan-300" /> Export CSV
+          <button onClick={handleExportCSV} className="btn-light text-xs py-2 px-3 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold">
+            <Download className="w-3.5 h-3.5 text-[#1B3D59]" /> Export CSV
           </button>
-          <button onClick={handlePrint} className="btn-primary text-xs py-2 px-4 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold shadow-md">
+          <button onClick={handlePrint} className="btn-primary text-xs py-2 px-4 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold shadow-sm">
             <Printer className="w-3.5 h-3.5" /> Print Report
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="py-24 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-          <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" /> Generating executive analytics...
+        <div className="py-24 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+          <RefreshCw className="w-6 h-6 animate-spin text-[#1B3D59]" /> Generating executive analytics...
         </div>
       ) : (
         <>
           {/* Top 4 KPI Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Total Revenue */}
-            <div className="card p-5 space-y-2 border-t-2 border-t-amber-400">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#1B3D59]">
+              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
                 <span>Verified Revenue</span>
-                <CreditCard className="w-4 h-4 text-amber-400" />
+                <CreditCard className="w-4 h-4 text-[#1B3D59]" />
               </div>
-              <div className="text-2xl font-black text-white">
+              <div className="text-2xl font-black text-[#152026]">
                 Rs. {(reportData?.financials?.totalRevenue || 0).toLocaleString()}
               </div>
-              <p className="text-[11px] text-amber-300">
+              <p className="text-[11px] text-[#152026]/70 font-medium">
                 +Rs. {(reportData?.financials?.pendingVerificationAmount || 0).toLocaleString()} pending in queue
               </p>
             </div>
 
             {/* Total Students */}
-            <div className="card p-5 space-y-2 border-t-2 border-t-cyan-400">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#6A97C0]">
+              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
                 <span>Total Active Learners</span>
-                <Users className="w-4 h-4 text-cyan-400" />
+                <Users className="w-4 h-4 text-[#6A97C0]" />
               </div>
-              <div className="text-2xl font-black text-white">{reportData?.totalStudents || 0}</div>
-              <p className="text-[11px] text-slate-400">
+              <div className="text-2xl font-black text-[#152026]">{reportData?.totalStudents || 0}</div>
+              <p className="text-[11px] text-[#6A97C0] font-medium">
                 {reportData?.type1Count} Type 1 (New) • {reportData?.type2Count} Type 2 (Trial-Ready)
               </p>
             </div>
 
             {/* Trial Pass Rate */}
-            <div className="card p-5 space-y-2 border-t-2 border-t-emerald-400">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-emerald-600">
+              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
                 <span>Trial Success Rate</span>
-                <Award className="w-4 h-4 text-emerald-400" />
+                <Award className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="text-2xl font-black text-emerald-400">
+              <div className="text-2xl font-black text-emerald-700">
                 {reportData?.trialStats?.passRate || 92}%
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[#6A97C0] font-medium">
                 {reportData?.trialStats?.passed || 0} passed of {reportData?.trialStats?.totalAttempts || 0} exam attempts
               </p>
             </div>
 
             {/* Slot Utilization */}
-            <div className="card p-5 space-y-2 border-t-2 border-t-purple-400">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#152026]">
+              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
                 <span>Session Utilization</span>
-                <Calendar className="w-4 h-4 text-purple-400" />
+                <Calendar className="w-4 h-4 text-[#152026]" />
               </div>
-              <div className="text-2xl font-black text-white">
+              <div className="text-2xl font-black text-[#152026]">
                 {reportData?.slotsUtilization?.utilizationRate || 80}%
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[#6A97C0] font-medium">
                 {reportData?.slotsUtilization?.bookedSlots || 0} of {reportData?.slotsUtilization?.totalSlots || 0} slots booked
               </p>
             </div>
@@ -209,40 +208,41 @@ export default function ReportsAnalyticsPage() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Branch Enrollment Distribution */}
-            <div className="card p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-cyan-400" /> Student Enrollments by Branch
+            <div className="bg-white rounded-3xl p-6 space-y-4 border border-[#D4EEF8] shadow-sm">
+              <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+                <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#1B3D59]" /> Student Enrollments by Branch
                 </h3>
-                <span className="text-[11px] text-slate-400 font-medium">3 Active Locations</span>
+                <span className="text-[11px] text-[#6A97C0] font-medium">3 Active Locations</span>
               </div>
               <div className="h-64 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={branchChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis dataKey="branch" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#D4EEF8" />
+                    <XAxis dataKey="branch" tick={{ fill: '#152026', fontSize: 11 }} />
+                    <YAxis tick={{ fill: '#152026', fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: 'rgba(255,255,255,0.15)',
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#D4EEF8',
                         borderRadius: '12px',
-                        color: '#ffffff',
+                        color: '#152026',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                       }}
                     />
-                    <Bar dataKey="students" fill="#38bdf8" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="students" fill="#1B3D59" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Course Package Breakdown */}
-            <div className="card p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <PieChartIcon className="w-4 h-4 text-amber-400" /> Popular Course Packages
+            <div className="bg-white rounded-3xl p-6 space-y-4 border border-[#D4EEF8] shadow-sm">
+              <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+                <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+                  <PieChartIcon className="w-4 h-4 text-[#1B3D59]" /> Popular Course Packages
                 </h3>
-                <span className="text-[11px] text-slate-400 font-medium">By Enrollment Volume</span>
+                <span className="text-[11px] text-[#6A97C0] font-medium">By Enrollment Volume</span>
               </div>
               <div className="h-64 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
@@ -256,15 +256,16 @@ export default function ReportsAnalyticsPage() {
                       label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                     >
                       {packageChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={PALETTE_COLORS[index % PALETTE_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: 'rgba(255,255,255,0.15)',
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#D4EEF8',
                         borderRadius: '12px',
-                        color: '#ffffff',
+                        color: '#152026',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                       }}
                     />
                   </PieChart>
@@ -274,23 +275,23 @@ export default function ReportsAnalyticsPage() {
           </div>
 
           {/* DMT Milestone Progression Funnel */}
-          <div className="card p-6 space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> DMT Regulatory Milestone Conversion Funnel
+          <div className="bg-white rounded-3xl p-6 space-y-4 border border-[#D4EEF8] shadow-sm">
+            <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#1B3D59]" /> DMT Regulatory Milestone Conversion Funnel
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#6A97C0]">
               Progression of Sithma students through official Ministry & Department of Motor Traffic milestones.
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
-              {funnelData.map((f, i) => (
+              {funnelData.map((f) => (
                 <div
                   key={f.stage}
-                  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center space-y-1 relative overflow-hidden"
+                  className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] text-center space-y-1 relative overflow-hidden"
                 >
-                  <div className="text-xs font-semibold text-slate-400">{f.stage}</div>
-                  <div className="text-2xl font-black text-cyan-300">{f.count}</div>
-                  <span className="text-[10px] text-slate-500 font-medium">Students Completed</span>
+                  <div className="text-xs font-bold text-[#6A97C0]">{f.stage}</div>
+                  <div className="text-2xl font-black text-[#1B3D59]">{f.count}</div>
+                  <span className="text-[10px] text-[#152026]/60 font-medium">Students Completed</span>
                 </div>
               ))}
             </div>

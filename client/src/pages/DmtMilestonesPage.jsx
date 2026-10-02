@@ -28,6 +28,7 @@ import {
   Lock,
   Upload,
   Paperclip,
+  CreditCard,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import DmtMilestoneTimeline from '../components/DmtMilestoneTimeline';
@@ -394,7 +395,7 @@ export default function DmtMilestonesPage() {
   const remainingAttempts = Math.max(0, 3 - attemptsCount);
   const isTrialEligible = isExamPassed;
 
-  // DMT 1.5-Year Learner License Lifecycle & Multi-Cycle Tracking (US Requirements 1, 2, 3, 5, 6, 8, 9)
+  // DMT 1.5-Year Learner License Lifecycle & Multi-Cycle Tracking
   const licenseStartDate =
     profile?.learnerLicenseStartDate ||
     profile?.registration_date ||
@@ -567,53 +568,53 @@ export default function DmtMilestonesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[#FAFCFE]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 text-sm animate-pulse">Loading DMT Milestone Dashboard...</p>
+          <div className="w-10 h-10 border-4 border-[#1B3D59] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[#6A97C0] text-sm font-medium animate-pulse">Loading DMT Milestone Dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl animate-fade-in">
+    <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl animate-fade-in text-[#152026]">
       {/* Top Breadcrumb & Return to Dashboard */}
-      <div className="flex items-center justify-between flex-wrap gap-4 border-b border-white/10 pb-4">
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <Link to="/student/dashboard" className="hover:text-cyan-300 flex items-center gap-1 transition-colors">
+      <div className="flex items-center justify-between flex-wrap gap-4 border-b border-[#D4EEF8] pb-4">
+        <div className="flex items-center gap-2 text-xs text-[#6A97C0]">
+          <Link to="/student/dashboard" className="hover:text-[#1B3D59] flex items-center gap-1 transition-colors">
             Student Dashboard
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-cyan-300 font-semibold">DMT Milestone Schedule</span>
+          <span className="text-[#152026] font-semibold">DMT Milestone Schedule</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="badge badge-info text-xs font-mono">
+          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1]">
             Type 1: New Learner
           </span>
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-[#6A97C0] font-mono">
             {profile?.branch} Branch
           </span>
         </div>
       </div>
 
       {/* Hero Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-cyan-400/30 p-6 sm:p-8 shadow-[0_10px_40px_rgba(6,182,212,0.15)]">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#152026] via-[#1B3D59] to-[#152026] border border-[#1B3D59]/30 p-6 sm:p-8 shadow-lg text-white">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
-              <span className="badge badge-accent text-[10px] font-black uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/20 text-[#D4EEF8] border border-[#B3D5F1]/30 text-[10px] font-black uppercase tracking-wider">
                 Official DMT Tracking
               </span>
-              <span className="text-xs text-cyan-300 font-mono">
+              <span className="text-xs text-[#B3D5F1] font-mono">
                 Student ID: {profile?.studentIdNumber || profile?._id?.slice(-6)?.toUpperCase()}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
-              <ShieldCheck className="w-8 h-8 text-cyan-400" />
+              <ShieldCheck className="w-8 h-8 text-[#B3D5F1]" />
               Government DMT Milestone Schedule
             </h1>
-            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-sm text-[#D4EEF8]/90 max-w-2xl leading-relaxed">
               Track your official Department of Motor Traffic (DMT) milestones from medical examination and learner registration to the written theory test and final practical trial.
             </p>
           </div>
@@ -621,38 +622,38 @@ export default function DmtMilestonesPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Link
               to="/student/quiz"
-              className="btn-primary py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 shadow-lg"
+              className="py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 rounded-xl bg-white text-[#1B3D59] hover:bg-[#D4EEF8] shadow-md transition-all"
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-4 h-4 text-[#1B3D59]" />
               <span>Practice Exam Quizzes</span>
             </Link>
           </div>
         </div>
 
         {/* Decorative Background Glow */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-[#6A97C0]/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       {/* Cancellation / Expiry Banner (US Requirements 2, 3, 8) */}
       {isCancelled && (
-        <div className="p-6 rounded-3xl bg-gradient-to-br from-rose-950/90 via-slate-900/95 to-slate-950/95 border-2 border-rose-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-xl">
+        <div className="p-6 rounded-3xl bg-[#F3EED8] border-2 border-[#6A97C0]/40 text-[#152026] flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm">
           <div className="flex items-start gap-4 text-xs">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-400/50 flex items-center justify-center text-rose-400 shrink-0">
-              <AlertTriangle className="w-6 h-6 animate-pulse" />
+            <div className="w-12 h-12 rounded-2xl bg-white border border-[#6A97C0]/30 flex items-center justify-center text-[#152026] shrink-0 shadow-xs">
+              <AlertTriangle className="w-6 h-6 animate-pulse text-[#152026]" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="badge bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px] font-black uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-white text-[#152026] border border-[#6A97C0]/40 text-[10px] font-black uppercase">
                   {isExpired ? 'License Status: Expired' : '3 Attempts Failed'}
                 </span>
-                <span className="text-slate-400 font-mono text-[11px]">
+                <span className="text-[#6A97C0] font-mono text-[11px]">
                   Cycle #{profile?.currentCycleNumber || 1}
                 </span>
               </div>
-              <h3 className="font-black text-white text-base sm:text-lg">
+              <h3 className="font-black text-[#152026] text-base sm:text-lg">
                 {isExpired ? 'Learner License Expired' : 'All 3 exam attempts have been used.'}
               </h3>
-              <p className="text-rose-200/90 max-w-2xl leading-relaxed">
+              <p className="text-[#152026]/90 max-w-2xl leading-relaxed text-xs">
                 {isExpired
                   ? 'Please register again. As per DMT regulations, a candidate has a maximum of 1.5 years (18 months) to complete the process. Your license validity ended on ' + (licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired') + '.'
                   : 'Please register again. In accordance with DMT regulations, candidates are allowed a maximum of 3 trial attempts for the written theory examination per registration cycle.'}
@@ -663,7 +664,7 @@ export default function DmtMilestonesPage() {
             type="button"
             disabled={reRegistering}
             onClick={handleReRegister}
-            className="btn-accent text-xs font-bold py-3 px-5 whitespace-nowrap shadow-xl flex items-center gap-2 self-start sm:self-auto hover:scale-105 transition-transform"
+            className="bg-[#1B3D59] text-white hover:bg-[#152026] text-xs font-bold py-3 px-5 whitespace-nowrap shadow-md flex items-center gap-2 self-start sm:self-auto rounded-xl transition-all"
           >
             <RotateCcw className={`w-4 h-4 ${reRegistering ? 'animate-spin' : ''}`} />
             <span>{reRegistering ? 'Initializing...' : 'Action: Register Again'}</span>
@@ -671,26 +672,26 @@ export default function DmtMilestonesPage() {
         </div>
       )}
 
-      {/* 1.5-Year Validity Period Tracker (US Requirements 1, 8, 9) */}
-      <div className={`p-6 rounded-3xl border-2 transition-all space-y-4 shadow-xl ${
+      {/* 1.5-Year Validity Period Tracker */}
+      <div className={`p-6 rounded-3xl border transition-all space-y-4 shadow-sm bg-white ${
         isLicenseCompleted
-          ? 'bg-emerald-950/40 border-emerald-500/40'
+          ? 'border-emerald-300'
           : isFinalPassed
-          ? 'bg-cyan-950/40 border-cyan-500/40'
+          ? 'border-[#B3D5F1]'
           : isExpiringSoon
-          ? 'bg-amber-950/40 border-amber-500/40'
-          : 'bg-slate-900/80 border-[#3F72AF]/30'
+          ? 'border-[#F3EED8] bg-[#F3EED8]/30'
+          : 'border-[#D4EEF8]'
       }`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4EEF8] pb-3">
           <div className="flex items-center gap-2">
             <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
               isLicenseCompleted
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                 : isFinalPassed
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400'
+                ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#B3D5F1]'
                 : isExpiringSoon
-                ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                : 'bg-blue-500/20 text-blue-300 border-blue-400'
+                ? 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
+                : 'bg-[#D4EEF8] text-[#1B3D59] border-[#B3D5F1]'
             }`}>
               {isLicenseCompleted
                 ? 'License Completed'
@@ -700,51 +701,51 @@ export default function DmtMilestonesPage() {
                 ? 'Expiring Soon'
                 : 'Learner License Active'}
             </span>
-            <span className="text-xs text-slate-300 font-mono">
+            <span className="text-xs text-[#6A97C0] font-mono">
               Cycle #{profile?.currentCycleNumber || 1} • Max 1.5-Year Validity
             </span>
           </div>
 
-          <div className="text-xs text-slate-300 flex items-center gap-4">
+          <div className="text-xs text-[#6A97C0] flex items-center gap-4">
             <span>
-              Start: <strong className="text-white font-mono">{licenseStartDate ? format(new Date(licenseStartDate), 'MMM dd, yyyy') : 'Registered'}</strong>
+              Start: <strong className="text-[#152026] font-mono">{licenseStartDate ? format(new Date(licenseStartDate), 'MMM dd, yyyy') : 'Registered'}</strong>
             </span>
             <span>
-              Expires: <strong className={`font-mono ${isExpiringSoon ? 'text-amber-300' : 'text-cyan-300'}`}>{licenseExpiryDate ? format(licenseExpiryDate, 'MMM dd, yyyy') : 'In 18 Months'}</strong>
+              Expires: <strong className={`font-mono ${isExpiringSoon ? 'text-amber-600 font-bold' : 'text-[#1B3D59]'}`}>{licenseExpiryDate ? format(licenseExpiryDate, 'MMM dd, yyyy') : 'In 18 Months'}</strong>
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
-            <span className="text-slate-400 block text-[11px]">18-Month Validity Rule</span>
-            <span className="font-semibold text-white">License Start Date + 18 Months</span>
+          <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px]">18-Month Validity Rule</span>
+            <span className="font-semibold text-[#152026]">License Start Date + 18 Months</span>
           </div>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
-            <span className="text-slate-400 block text-[11px]">Days Remaining</span>
-            <span className={`font-bold font-mono ${isExpiringSoon ? 'text-amber-300' : 'text-emerald-300'}`}>
+          <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px]">Days Remaining</span>
+            <span className={`font-bold font-mono ${isExpiringSoon ? 'text-amber-600' : 'text-emerald-700'}`}>
               {remainingDays !== null ? `${remainingDays} Days Remaining` : '18 Months'}
             </span>
           </div>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
-            <span className="text-slate-400 block text-[11px]">Written Theory Attempts</span>
-            <span className="font-bold text-white font-mono">
+          <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px]">Written Theory Attempts</span>
+            <span className="font-bold text-[#152026] font-mono">
               {attemptsCount} of 3 Allowed Used
             </span>
           </div>
         </div>
 
-        {/* Driving License Photo Upload Section when Passed / Completed (US Requirements 6 & 7) */}
+        {/* Driving License Photo Upload Section when Passed / Completed */}
         {(isFinalPassed || isLicenseCompleted || profile?.finalLicense?.licensePhotoUrl) && (
-          <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 pt-4 mt-2">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2 text-xs">
-              <span className="font-bold text-white flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4 text-cyan-400" /> Driving License / Final License
+          <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3 pt-4 mt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D4EEF8] pb-2 text-xs">
+              <span className="font-bold text-[#152026] flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Driving License / Final License
               </span>
               <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold border ${
                 profile?.finalLicense?.licensePhotoUrl
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  : 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
               }`}>
                 {profile?.finalLicense?.licensePhotoUrl ? 'License Photo: Uploaded ✓' : 'License Photo: Not Uploaded'}
               </span>
@@ -753,26 +754,26 @@ export default function DmtMilestonesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs items-start">
               <form onSubmit={handleUploadFinalLicense} className="space-y-3">
                 <div>
-                  <label className="block text-slate-300 mb-1">Driving License Number:</label>
+                  <label className="block text-[#152026] font-medium mb-1">Driving License Number:</label>
                   <input
                     type="text"
                     value={licenseNumberInput}
                     onChange={(e) => setLicenseNumberInput(e.target.value)}
                     placeholder="e.g. B1234567"
                     disabled={isLicenseCompleted}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white font-mono"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#D4EEF8] text-[#152026] font-mono focus:outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   />
                 </div>
                 {!isLicenseCompleted && (
                   <div>
-                    <label className="block text-slate-300 mb-1">
+                    <label className="block text-[#152026] font-medium mb-1">
                       {profile?.finalLicense?.licensePhotoUrl ? 'Replace License Photo:' : 'Upload License Photo (JPG, PNG, WEBP):'}
                     </label>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/jpg"
                       onChange={handleLicensePhotoSelect}
-                      className="w-full text-xs text-slate-300 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-cyan-500/20 file:text-cyan-300"
+                      className="w-full text-xs text-[#6A97C0] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#D4EEF8] file:text-[#1B3D59] file:font-bold hover:file:bg-[#B3D5F1]"
                     />
                   </div>
                 )}
@@ -780,7 +781,7 @@ export default function DmtMilestonesPage() {
                   <button
                     type="submit"
                     disabled={uploadingLicensePhoto}
-                    className="btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5"
+                    className="bg-[#1B3D59] text-white hover:bg-[#152026] text-xs py-2 px-4 font-bold flex items-center gap-1.5 rounded-xl shadow-xs transition-all"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>{uploadingLicensePhoto ? 'Uploading...' : 'Save License Info'}</span>
@@ -790,15 +791,15 @@ export default function DmtMilestonesPage() {
 
               <div>
                 {licensePhotoPreview || profile?.finalLicense?.licensePhotoUrl ? (
-                  <div className="relative rounded-xl overflow-hidden border border-white/15 bg-black/60">
+                  <div className="relative rounded-xl overflow-hidden border border-[#D4EEF8] bg-white p-2">
                     <img
                       src={licensePhotoPreview || profile.finalLicense.licensePhotoUrl}
                       alt="Driving License"
-                      className="w-full max-h-40 object-contain mx-auto"
+                      className="w-full max-h-40 object-contain mx-auto rounded-lg"
                     />
                   </div>
                 ) : (
-                  <div className="p-4 border border-dashed border-white/15 rounded-xl text-center text-slate-400">
+                  <div className="p-4 border border-dashed border-[#D4EEF8] rounded-xl text-center text-[#6A97C0]">
                     No license photo uploaded yet.
                   </div>
                 )}
@@ -809,16 +810,16 @@ export default function DmtMilestonesPage() {
       </div>
 
       {/* Grid: 4 Core DMT Milestones */}
-      <div className="card p-6 sm:p-8 space-y-6 border border-cyan-400/30 bg-slate-900/80 backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-4 gap-3">
+      <div className="card p-6 sm:p-8 space-y-6 border border-[#D4EEF8] bg-white shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#D4EEF8] pb-4 gap-3">
           <div>
-            <span className="badge badge-info text-[10px] font-bold uppercase mb-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold uppercase mb-1 inline-block">
               Step-by-Step Progress
             </span>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-cyan-400" /> Milestone Tracking Cards
+            <h2 className="text-lg font-bold text-[#152026] flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#1B3D59]" /> Milestone Tracking Cards
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#6A97C0]">
               Track your scheduled dates assigned by branch staff and record milestone progress.
             </p>
           </div>
@@ -836,7 +837,6 @@ export default function DmtMilestonesPage() {
               profile?.dmtDates?.medicalExamStatus === 'passed' ||
               profile?.dmtDates?.medicalDone
             );
-            // Failed status only applies if the scheduled date has arrived/passed
             const isMedFailed = isMedDateAssigned && isMedDateReached && !isMedPassed && (
               profile?.dmtDates?.medicalExamStatus === 'failed' ||
               profile?.dmtDates?.medicalExamPassed === false
@@ -848,22 +848,22 @@ export default function DmtMilestonesPage() {
             );
 
             return (
-              <div className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3 hover:border-cyan-400/30 transition-all flex flex-col justify-between">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all flex flex-col justify-between space-y-3 shadow-xs">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-xs gap-2">
-                    <span className="text-white flex items-center gap-2 font-bold text-sm">
-                      <Stethoscope className="w-5 h-5 text-emerald-400" /> 1. DMT Medical Exam
+                    <span className="text-[#152026] flex items-center gap-2 font-bold text-sm">
+                      <Stethoscope className="w-5 h-5 text-[#1B3D59]" /> 1. DMT Medical Exam
                     </span>
-                    <span className={`badge text-xs font-bold py-1 px-3 ${
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
                       !isMedDateAssigned
-                        ? 'bg-slate-800 text-slate-400'
+                        ? 'bg-slate-100 text-slate-600 border-slate-200'
                         : !isMedDateReached
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                        ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#B3D5F1]'
                         : isMedPassed
-                        ? 'badge-success'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                         : isMedFailed
-                        ? 'badge-error'
-                        : 'badge-warning'
+                        ? 'bg-rose-50 text-rose-700 border-rose-300'
+                        : 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
                     }`}>
                       {!isMedDateAssigned
                         ? 'PENDING DATE'
@@ -877,16 +877,16 @@ export default function DmtMilestonesPage() {
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-300 space-y-1.5">
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/40 border border-white/5">
-                      <span className="text-slate-400">Scheduled Medical Date:</span>
-                      <span className="text-white font-bold font-mono">
+                  <div className="text-xs text-[#152026] space-y-1.5">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#D4EEF8]">
+                      <span className="text-[#6A97C0]">Scheduled Medical Date:</span>
+                      <span className="text-[#152026] font-bold font-mono">
                         {medDate
                           ? new Date(medDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                           : 'Not Yet Assigned by Staff'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-[#6A97C0]">
                       National Transport Medical Institute (NTMI) official medical fitness test.
                     </p>
                   </div>
@@ -898,7 +898,7 @@ export default function DmtMilestonesPage() {
                         href={`http://localhost:5001${medProofUrl}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold transition-all"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-all"
                       >
                         <Paperclip className="w-3.5 h-3.5" />
                         <span>📄 View Medical Certificate / Proof</span>
@@ -909,15 +909,15 @@ export default function DmtMilestonesPage() {
 
                   {/* Medical Remarks */}
                   {medRemarks && (
-                    <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-xs text-slate-300">
-                      <span className="text-slate-400 font-semibold block text-[10px]">Medical Remarks:</span>
-                      <p className="mt-0.5 text-slate-200">{medRemarks}</p>
+                    <div className="p-2.5 rounded-xl bg-white border border-[#D4EEF8] text-xs text-[#152026]">
+                      <span className="text-[#6A97C0] font-semibold block text-[10px]">Medical Remarks:</span>
+                      <p className="mt-0.5 text-[#152026]">{medRemarks}</p>
                     </div>
                   )}
 
                   {medPendingReq && (
-                    <div className="p-2.5 rounded-xl bg-purple-500/15 border border-purple-400/30 text-purple-200 text-xs flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 animate-pulse text-purple-400" />
+                    <div className="p-2.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-[#152026] text-xs flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                       <span>
                         Reschedule Pending Review{' '}
                         {medPendingReq.preferred_date && `(Preferred: ${new Date(medPendingReq.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`}
@@ -928,17 +928,17 @@ export default function DmtMilestonesPage() {
 
                 <div className="pt-2">
                   {!isMedDateAssigned ? (
-                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center justify-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <div className="p-2.5 rounded-xl bg-white border border-dashed border-[#D4EEF8] text-[#6A97C0] text-xs flex items-center justify-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-[#6A97C0]" />
                       <span>Awaiting Staff to Assign Initial Date</span>
                     </div>
                   ) : !isMedDateReached ? (
                     <div className="space-y-2">
-                      <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs flex items-center justify-between gap-2">
+                      <div className="p-3 rounded-xl bg-[#D4EEF8]/60 border border-[#B3D5F1] text-[#1B3D59] text-xs flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
+                          <Clock className="w-4 h-4 text-[#1B3D59] shrink-0" />
                           <span>
-                            Exam scheduled for <strong className="text-white">{new Date(medDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>. Status update (Pass/Fail) unlocks on exam day.
+                            Exam scheduled for <strong className="text-[#152026]">{new Date(medDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>. Status update (Pass/Fail) unlocks on exam day.
                           </span>
                         </span>
                       </div>
@@ -950,16 +950,16 @@ export default function DmtMilestonesPage() {
                           setPreferredDate('');
                           setShowRescheduleModal(true);
                         }}
-                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white hover:bg-[#D4EEF8]/40 text-[#1B3D59] transition-all shadow-xs"
                       >
-                        <Calendar className="w-4 h-4 text-cyan-400" />
+                        <Calendar className="w-4 h-4 text-[#1B3D59]" />
                         <span>📅 Request Date for Another Day</span>
                       </button>
                     </div>
                   ) : isMedPassed ? (
                     <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         <span>✓ PASSED (Medical Examination Cleared)</span>
                       </div>
                       <button
@@ -971,7 +971,7 @@ export default function DmtMilestonesPage() {
                           });
                           setShowMedicalModal(true);
                         }}
-                        className="w-full py-1.5 px-3 rounded-xl text-[11px] font-bold text-slate-400 hover:text-white border border-white/10 hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
+                        className="w-full py-1.5 px-3 rounded-xl text-[11px] font-bold text-[#6A97C0] hover:text-[#152026] border border-[#D4EEF8] bg-white hover:bg-[#FAFCFE] transition-all flex items-center justify-center gap-1.5"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Update Certificate / Proof Document</span>
@@ -979,8 +979,8 @@ export default function DmtMilestonesPage() {
                     </div>
                   ) : isMedFailed ? (
                     <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-400/30 text-rose-300 text-xs font-bold flex items-center justify-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-rose-400" />
+                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs font-bold flex items-center justify-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-600" />
                         <span>✕ FAILED (Medical Examination Unfit)</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -993,9 +993,9 @@ export default function DmtMilestonesPage() {
                             });
                             setShowMedicalModal(true);
                           }}
-                          className="py-2 px-3 rounded-xl text-xs font-bold text-slate-300 border border-white/15 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1.5"
+                          className="py-2 px-3 rounded-xl text-xs font-bold text-[#152026] border border-[#D4EEF8] bg-white hover:bg-[#FAFCFE] transition-all flex items-center justify-center gap-1.5"
                         >
-                          <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                          <Upload className="w-3.5 h-3.5 text-[#1B3D59]" />
                           <span>Update Proof</span>
                         </button>
                         <button
@@ -1006,9 +1006,9 @@ export default function DmtMilestonesPage() {
                             setPreferredDate('');
                             setShowRescheduleModal(true);
                           }}
-                          className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-rose-500/20 hover:bg-rose-500/30 border-rose-400/50 text-rose-200 transition-all shadow"
+                          className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 transition-all shadow-xs"
                         >
-                          <Calendar className="w-3.5 h-3.5 text-rose-400" />
+                          <Calendar className="w-3.5 h-3.5 text-rose-600" />
                           <span>📅 Request Date for Another Day</span>
                         </button>
                       </div>
@@ -1024,7 +1024,7 @@ export default function DmtMilestonesPage() {
                           });
                           setShowMedicalModal(true);
                         }}
-                        className="btn-accent py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow"
+                        className="bg-[#1B3D59] hover:bg-[#152026] text-white py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Record Result & Proof</span>
@@ -1037,9 +1037,9 @@ export default function DmtMilestonesPage() {
                           setPreferredDate('');
                           setShowRescheduleModal(true);
                         }}
-                        className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                        className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white hover:bg-[#D4EEF8]/40 text-[#1B3D59] transition-all shadow-xs"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        <Calendar className="w-3.5 h-3.5 text-[#1B3D59]" />
                         <span>📅 Request Date for Another Day</span>
                       </button>
                     </div>
@@ -1063,20 +1063,20 @@ export default function DmtMilestonesPage() {
             );
 
             return (
-              <div className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3 hover:border-cyan-400/30 transition-all flex flex-col justify-between">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all flex flex-col justify-between space-y-3 shadow-xs">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-xs gap-2">
-                    <span className="text-white flex items-center gap-2 font-bold text-sm">
-                      <FileText className="w-5 h-5 text-blue-400" /> 2. DMT Registration
+                    <span className="text-[#152026] flex items-center gap-2 font-bold text-sm">
+                      <FileText className="w-5 h-5 text-[#1B3D59]" /> 2. DMT Registration
                     </span>
-                    <span className={`badge text-xs font-bold py-1 px-3 ${
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
                       !isRegDateAssigned
-                        ? 'bg-slate-800 text-slate-400'
+                        ? 'bg-slate-100 text-slate-600 border-slate-200'
                         : isRegDone
-                        ? 'badge-success'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                         : isRegDateReached
-                        ? 'badge-warning'
-                        : 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+                        ? 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
+                        : 'bg-[#D4EEF8] text-[#1B3D59] border-[#B3D5F1]'
                     }`}>
                       {!isRegDateAssigned
                         ? 'PENDING DATE'
@@ -1088,16 +1088,16 @@ export default function DmtMilestonesPage() {
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-300 space-y-1.5">
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/40 border border-white/5">
-                      <span className="text-slate-400">DMT Submission Date:</span>
-                      <span className="text-white font-bold font-mono">
+                  <div className="text-xs text-[#152026] space-y-1.5">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#D4EEF8]">
+                      <span className="text-[#6A97C0]">DMT Submission Date:</span>
+                      <span className="text-[#152026] font-bold font-mono">
                         {regDate
                           ? new Date(regDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                           : 'Not Yet Assigned by Staff'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-[#6A97C0]">
                       Official registration documents submitted to DMT Werahara or local branch.
                     </p>
                   </div>
@@ -1109,7 +1109,7 @@ export default function DmtMilestonesPage() {
                         href={`http://localhost:5001${regProofUrl}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold transition-all"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-all"
                       >
                         <Paperclip className="w-3.5 h-3.5" />
                         <span>📄 View DMT Registration Proof</span>
@@ -1119,8 +1119,8 @@ export default function DmtMilestonesPage() {
                   )}
 
                   {regPendingReq && (
-                    <div className="p-2.5 rounded-xl bg-purple-500/15 border border-purple-400/30 text-purple-200 text-xs flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 animate-pulse text-purple-400" />
+                    <div className="p-2.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-[#152026] text-xs flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                       <span>
                         Reschedule Pending Review{' '}
                         {regPendingReq.preferred_date && `(Preferred: ${new Date(regPendingReq.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`}
@@ -1131,14 +1131,14 @@ export default function DmtMilestonesPage() {
 
                 <div className="pt-2">
                   {!isRegDateAssigned ? (
-                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center justify-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <div className="p-2.5 rounded-xl bg-white border border-dashed border-[#D4EEF8] text-[#6A97C0] text-xs flex items-center justify-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-[#6A97C0]" />
                       <span>Awaiting Staff to Assign Initial Date</span>
                     </div>
                   ) : isRegDone ? (
                     <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold flex items-center justify-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         <span>✓ Done (DMT Registration Completed)</span>
                       </div>
                       <button
@@ -1150,7 +1150,7 @@ export default function DmtMilestonesPage() {
                           });
                           setShowRegistrationModal(true);
                         }}
-                        className="w-full py-1.5 px-3 rounded-xl text-[11px] font-bold text-slate-400 hover:text-white border border-white/10 hover:bg-white/5 transition-all flex items-center justify-center gap-1.5"
+                        className="w-full py-1.5 px-3 rounded-xl text-[11px] font-bold text-[#6A97C0] hover:text-[#152026] border border-[#D4EEF8] bg-white hover:bg-[#FAFCFE] transition-all flex items-center justify-center gap-1.5"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Update Registration Slip / Proof Document</span>
@@ -1158,9 +1158,9 @@ export default function DmtMilestonesPage() {
                     </div>
                   ) : !isRegDateReached ? (
                     <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-200 text-xs flex items-center justify-between gap-2">
+                      <div className="p-2.5 rounded-xl bg-[#D4EEF8]/60 border border-[#B3D5F1] text-[#1B3D59] text-xs flex items-center justify-between gap-2">
                         <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <Clock className="w-3.5 h-3.5 text-[#1B3D59] shrink-0" />
                           <span>Completion & proof unlock on scheduled date ({new Date(regDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</span>
                         </span>
                       </div>
@@ -1172,19 +1172,19 @@ export default function DmtMilestonesPage() {
                           setPreferredDate('');
                           setShowRescheduleModal(true);
                         }}
-                        className="w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                        className="w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white hover:bg-[#D4EEF8]/40 text-[#1B3D59] transition-all shadow-xs"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        <Calendar className="w-3.5 h-3.5 text-[#1B3D59]" />
                         <span>⏳ Request Date for Another Day</span>
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {/* Box for entering remarks */}
-                      <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-1.5">
+                      <div className="p-2.5 rounded-xl bg-white border border-[#D4EEF8] space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-400 font-semibold">Enter Remarks / Notes:</span>
-                          {savingRegRemarks && <span className="text-cyan-400 text-[10px] animate-pulse">Saving...</span>}
+                          <span className="text-[#6A97C0] font-semibold">Enter Remarks / Notes:</span>
+                          {savingRegRemarks && <span className="text-[#1B3D59] text-[10px] animate-pulse">Saving...</span>}
                         </div>
                         <div className="flex gap-2">
                           <input
@@ -1192,13 +1192,13 @@ export default function DmtMilestonesPage() {
                             placeholder="e.g. Waiting for photo / NIC, submission postponed..."
                             value={registrationRemarksInput}
                             onChange={(e) => setRegistrationRemarksInput(e.target.value)}
-                            className="input input-sm flex-1 bg-white/5 border-white/15 text-white text-xs rounded-xl"
+                            className="input-sm flex-1 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] text-xs rounded-xl focus:border-[#1B3D59] focus:outline-none"
                           />
                           <button
                             type="button"
                             onClick={handleSaveRegistrationRemarks}
                             disabled={savingRegRemarks}
-                            className="btn-secondary text-xs px-3 py-1 rounded-xl font-bold shrink-0"
+                            className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs px-3 py-1 rounded-xl font-bold shrink-0 transition-all"
                           >
                             Save
                           </button>
@@ -1216,7 +1216,7 @@ export default function DmtMilestonesPage() {
                             });
                             setShowRegistrationModal(true);
                           }}
-                          className="btn-accent py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow"
+                          className="bg-[#1B3D59] hover:bg-[#152026] text-white py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Mark Done & Upload Proof</span>
@@ -1229,9 +1229,9 @@ export default function DmtMilestonesPage() {
                             setPreferredDate('');
                             setShowRescheduleModal(true);
                           }}
-                          className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                          className="py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white hover:bg-[#D4EEF8]/40 text-[#1B3D59] transition-all shadow-xs"
                         >
-                          <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                          <Calendar className="w-3.5 h-3.5 text-[#1B3D59]" />
                           <span>⏳ Request Date for Another Day</span>
                         </button>
                       </div>
@@ -1253,27 +1253,27 @@ export default function DmtMilestonesPage() {
             );
 
             return (
-              <div className="md:col-span-2 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900/90 to-cyan-950/40 border border-purple-400/30 space-y-4 shadow-md">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="md:col-span-2 p-5 sm:p-6 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] hover:border-[#6A97C0] space-y-4 shadow-xs transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4EEF8] pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300">
-                      <BookOpen className="w-5 h-5 text-purple-400" />
+                    <div className="w-10 h-10 rounded-xl bg-[#D4EEF8] border border-[#B3D5F1] flex items-center justify-center text-[#1B3D59]">
+                      <BookOpen className="w-5 h-5 text-[#1B3D59]" />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-white">3. DMT Written Theory Exam</h4>
-                      <p className="text-xs text-slate-400">
+                      <h4 className="text-base font-bold text-[#152026]">3. DMT Written Theory Exam</h4>
+                      <p className="text-xs text-[#6A97C0]">
                         Official computer-based theory examination at DMT. Maximum of 3 attempts allowed.
                       </p>
                     </div>
                   </div>
-                  <span className={`badge text-xs font-bold py-1.5 px-3.5 ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
                     isExamPassed
-                      ? 'badge-success'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                       : isExamFailedState
-                      ? 'badge-error'
+                      ? 'bg-rose-50 text-rose-700 border-rose-300'
                       : examDate
-                      ? 'badge-warning'
-                      : 'bg-slate-800 text-slate-400'
+                      ? 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
+                      : 'bg-slate-100 text-slate-600 border-slate-200'
                   }`}>
                     {isExamPassed
                       ? `✓ PASSED (${recordedExamMarks || 35}/40 Marks)`
@@ -1286,17 +1286,17 @@ export default function DmtMilestonesPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-slate-400 block text-[11px]">Scheduled Exam Date:</span>
-                    <span className="font-bold text-white text-sm font-mono mt-0.5 block">
+                  <div className="p-3 bg-white rounded-xl border border-[#D4EEF8]">
+                    <span className="text-[#6A97C0] block text-[11px]">Scheduled Exam Date:</span>
+                    <span className="font-bold text-[#152026] text-sm font-mono mt-0.5 block">
                       {examDate
                         ? new Date(examDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                         : 'Date Not Yet Assigned by Staff'}
                     </span>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-slate-400 block text-[11px]">Attempts Status:</span>
-                    <span className="font-bold text-white text-sm mt-0.5 block">
+                  <div className="p-3 bg-white rounded-xl border border-[#D4EEF8]">
+                    <span className="text-[#6A97C0] block text-[11px]">Attempts Status:</span>
+                    <span className="font-bold text-[#152026] text-sm mt-0.5 block">
                       {isExamPassed
                         ? '✓ Cleared — Practical Lessons Unlocked'
                         : recordedExamMarks !== null && recordedExamMarks !== undefined && recordedExamMarks <= 30
@@ -1307,9 +1307,9 @@ export default function DmtMilestonesPage() {
                 </div>
 
                 {/* 3 Attempts Indicator Badges & Action Buttons */}
-                <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between flex-wrap gap-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] flex items-center justify-between flex-wrap gap-3 text-xs">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-slate-400 text-xs font-bold">Attempts Track:</span>
+                    <span className="text-[#6A97C0] text-xs font-bold">Attempts Track:</span>
                     {[1, 2, 3].map((num) => {
                       const att = profile?.learnerExamAttempts?.find((a) => a.attemptNumber === num);
                       const isPassedAttempt = att?.result === 'passed';
@@ -1321,12 +1321,12 @@ export default function DmtMilestonesPage() {
                           key={num}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 ${
                             isPassedAttempt
-                              ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-xs'
                               : isFailedAttempt
-                              ? 'bg-rose-500/20 border-rose-400 text-rose-300 line-through'
+                              ? 'bg-rose-50 border-rose-300 text-rose-700 line-through'
                               : isCurrentPending
-                              ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 animate-pulse'
-                              : 'bg-white/5 border-white/10 text-slate-500'
+                              ? 'bg-[#D4EEF8] border-[#1B3D59] text-[#1B3D59] animate-pulse'
+                              : 'bg-[#FAFCFE] border-[#D4EEF8] text-[#6A97C0]'
                           }`}
                         >
                           Attempt {num}
@@ -1338,8 +1338,8 @@ export default function DmtMilestonesPage() {
                   </div>
 
                   {examPendingReq && (
-                    <div className="px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-400/30 text-purple-200 text-xs font-bold flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 animate-pulse text-purple-400" />
+                    <div className="px-3 py-1.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-[#152026] text-xs font-bold flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                       <span>
                         Reschedule Pending{' '}
                         {examPendingReq.preferred_date && `(${new Date(examPendingReq.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`}
@@ -1361,7 +1361,7 @@ export default function DmtMilestonesPage() {
                           });
                           setIsExamModalOpen(true);
                         }}
-                        className="btn-accent text-xs py-2 px-3.5 font-bold shadow-md flex items-center gap-1.5"
+                        className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2 px-3.5 rounded-xl font-bold shadow-xs flex items-center gap-1.5 transition-all"
                       >
                         <BookOpen className="w-3.5 h-3.5" />
                         <span>Record Exam Result</span>
@@ -1377,9 +1377,9 @@ export default function DmtMilestonesPage() {
                           setPreferredDate('');
                           setShowRescheduleModal(true);
                         }}
-                        className="py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border bg-rose-500/20 hover:bg-rose-500/30 border-rose-400/50 text-rose-200 transition-all shadow"
+                        className="py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 transition-all shadow-xs"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-rose-400" />
+                        <Calendar className="w-3.5 h-3.5 text-rose-600" />
                         <span>📅 Request Date for Another Day (Attempt {attemptsCount + 1})</span>
                       </button>
                     )}
@@ -1393,23 +1393,23 @@ export default function DmtMilestonesPage() {
                           setPreferredDate('');
                           setShowRescheduleModal(true);
                         }}
-                        className="py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                        className="py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white hover:bg-[#D4EEF8]/40 text-[#1B3D59] transition-all shadow-xs"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        <Calendar className="w-3.5 h-3.5 text-[#1B3D59]" />
                         <span>📅 Request Date for Another Day</span>
                       </button>
                     )}
 
                     {!isExamPassed && !isExamDateAssigned && (
-                      <div className="py-2 px-3.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <div className="py-2 px-3.5 rounded-xl bg-white border border-dashed border-[#D4EEF8] text-[#6A97C0] text-xs flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-[#6A97C0]" />
                         <span>Awaiting Staff to Assign Initial Date</span>
                       </div>
                     )}
 
                     {isExamPassed && (
-                      <span className="badge badge-success text-xs font-bold py-1.5 px-3 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4" />
+                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-bold py-1.5 px-3 rounded-full flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         <span>✓ PASSED ({profile?.dmtDates?.learnerExamMarks || profile?.learnerExamMarks || 35}/40 Marks) — Practical Lessons Unlocked</span>
                       </span>
                     )}
@@ -1426,19 +1426,19 @@ export default function DmtMilestonesPage() {
             );
 
             return (
-              <div className="md:col-span-2 p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+              <div className="md:col-span-2 p-5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3 shadow-xs">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-white flex items-center gap-2 font-bold text-sm">
-                    <Car className="w-5 h-5 text-accent" /> 4. DMT Practical Driving Trial
+                  <span className="text-[#152026] flex items-center gap-2 font-bold text-sm">
+                    <Car className="w-5 h-5 text-[#1B3D59]" /> 4. DMT Practical Driving Trial
                   </span>
-                  <span className={`badge text-xs font-bold py-1 px-3 ${profile?.trial?.licenseObtained ? 'badge-success' : 'badge-warning'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${profile?.trial?.licenseObtained ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'}`}>
                     {profile?.trial?.licenseObtained ? '✓ Licensed / Passed' : `${profile?.trial?.attempts?.length || 0}/3 Attempts Used`}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <span className="text-slate-400 font-semibold">
+                  <span className="text-[#6A97C0] font-semibold">
                     Scheduled Trial Date:{' '}
-                    <span className="text-white font-bold font-mono">
+                    <span className="text-[#152026] font-bold font-mono">
                       {profile?.trial_date
                         ? new Date(profile.trial_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                         : (isExamPassed ? 'Eligible to Schedule Trial with Instructor' : 'Locked — Pending Learner Theory Exam Pass')}
@@ -1447,8 +1447,8 @@ export default function DmtMilestonesPage() {
 
                   <div className="flex items-center gap-2 flex-wrap">
                     {trialPendingReq && (
-                      <span className="badge bg-purple-500/15 border border-purple-400/30 text-purple-200 text-xs font-bold py-1.5 px-3 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 animate-pulse text-purple-400" />
+                      <span className="bg-[#F3EED8] border border-[#6A97C0]/40 text-[#152026] text-xs font-bold py-1.5 px-3 rounded-full flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                         <span>Reschedule Pending Review</span>
                       </span>
                     )}
@@ -1462,16 +1462,16 @@ export default function DmtMilestonesPage() {
                           setPreferredDate('');
                           setShowRescheduleModal(true);
                         }}
-                        className="py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border bg-white/5 hover:bg-cyan-500/10 border-white/15 hover:border-cyan-400/40 text-cyan-300 transition-all shadow"
+                        className="py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white hover:bg-[#D4EEF8]/40 text-[#1B3D59] transition-all shadow-xs"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                        <Calendar className="w-3.5 h-3.5 text-[#1B3D59]" />
                         <span>📅 Request Date for Another Day</span>
                       </button>
                     )}
 
                     {!profile?.trial_date && !profile?.trial?.licenseObtained && isExamPassed && (
-                      <div className="py-2 px-3.5 rounded-xl bg-white/[0.03] border border-dashed border-white/10 text-slate-400 text-xs flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <div className="py-2 px-3.5 rounded-xl bg-white border border-dashed border-[#D4EEF8] text-[#6A97C0] text-xs flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-[#6A97C0]" />
                         <span>Awaiting Staff to Assign Initial Date</span>
                       </div>
                     )}
@@ -1484,12 +1484,12 @@ export default function DmtMilestonesPage() {
       </div>
 
       {/* Stepper Timeline */}
-      <div className="card p-6 sm:p-8 space-y-4 border border-white/10 bg-slate-900/60 backdrop-blur-xl">
-        <div className="border-b border-white/10 pb-3">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-cyan-400" /> Complete DMT Progression Timeline
+      <div className="card p-6 sm:p-8 space-y-4 border border-[#D4EEF8] bg-white shadow-sm">
+        <div className="border-b border-[#D4EEF8] pb-3">
+          <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[#1B3D59]" /> Complete DMT Progression Timeline
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#6A97C0]">
             A linear progression of each stage required by the Department of Motor Traffic.
           </p>
         </div>
@@ -1498,73 +1498,73 @@ export default function DmtMilestonesPage() {
 
       {/* DMT Guidance Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card p-5 bg-gradient-to-br from-emerald-950/40 to-slate-900/80 border border-emerald-400/20 space-y-2.5">
-          <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
-            <Stethoscope className="w-4 h-4" />
+        <div className="card p-5 bg-white border border-[#D4EEF8] shadow-xs space-y-2.5">
+          <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-sm">
+            <Stethoscope className="w-4 h-4 text-[#1B3D59]" />
             <span>1. Medical Clearance</span>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-[#6A97C0] leading-relaxed">
             Obtain your NTMI medical certificate at Nugegoda or Werahara before submission to the DMT.
           </p>
         </div>
 
-        <div className="card p-5 bg-gradient-to-br from-blue-950/40 to-slate-900/80 border border-blue-400/20 space-y-2.5">
-          <div className="flex items-center gap-2 text-blue-300 font-bold text-sm">
-            <FileText className="w-4 h-4" />
+        <div className="card p-5 bg-white border border-[#D4EEF8] shadow-xs space-y-2.5">
+          <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-sm">
+            <FileText className="w-4 h-4 text-[#1B3D59]" />
             <span>2. DMT Registration</span>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-[#6A97C0] leading-relaxed">
             Documents submitted to DMT Werahara or branch. Official written exam date assigned upon submission.
           </p>
         </div>
 
-        <div className="card p-5 bg-gradient-to-br from-amber-950/40 to-slate-900/80 border border-amber-400/20 space-y-2.5">
-          <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
-            <Car className="w-4 h-4" />
+        <div className="card p-5 bg-white border border-[#D4EEF8] shadow-xs space-y-2.5">
+          <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-sm">
+            <Car className="w-4 h-4 text-[#1B3D59]" />
             <span>Practical Trial Lessons</span>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-[#6A97C0] leading-relaxed">
             Once you record a passing score, you will choose your vehicle package, pay your course balance, and begin hands-on road training.
           </p>
         </div>
       </div>
 
-      {/* MODAL 2: Record Exam Result Modal */}
+      {/* MODAL 1: Record Exam Result Modal */}
       {isExamModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(168,85,247,0.3)] max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-2 text-purple-300 font-bold text-base">
-                <BookOpen className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
+              <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-base">
+                <BookOpen className="w-5 h-5 text-[#1B3D59]" />
                 <span>Record DMT Theory Exam Result</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsExamModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10"
+                className="text-[#6A97C0] hover:text-[#152026] p-1.5 rounded-xl hover:bg-[#D4EEF8]/40 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveExamResult} className="space-y-4 text-xs">
-              <p className="text-slate-300 leading-relaxed">
-                Submit the marks and outcome of your official DMT Theory Exam. Passing (score ≥ 30/40) will immediately unlock practical training and vehicle packages.
+              <p className="text-[#6A97C0] leading-relaxed">
+                Submit the marks and outcome of your official DMT Theory Exam. Passing (score &gt; 30/40) will immediately unlock practical training and vehicle packages.
               </p>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">Examination Result:</label>
+                <label className="text-[#152026] font-semibold block mb-1.5">Examination Result:</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setExamForm({ ...examForm, result: 'passed' })}
                     className={`py-2.5 px-4 rounded-xl font-bold text-xs border flex items-center justify-center gap-2 transition-all ${
                       examForm.result === 'passed'
-                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                        : 'bg-white border-[#D4EEF8] text-[#6A97C0] hover:bg-[#FAFCFE]'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>PASSED</span>
                   </button>
                   <button
@@ -1572,18 +1572,18 @@ export default function DmtMilestonesPage() {
                     onClick={() => setExamForm({ ...examForm, result: 'failed' })}
                     className={`py-2.5 px-4 rounded-xl font-bold text-xs border flex items-center justify-center gap-2 transition-all ${
                       examForm.result === 'failed'
-                        ? 'bg-rose-500/20 border-rose-400 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        ? 'bg-rose-50 border-rose-500 text-rose-800 shadow-xs'
+                        : 'bg-white border-[#D4EEF8] text-[#6A97C0] hover:bg-[#FAFCFE]'
                     }`}
                   >
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
                     <span>FAILED</span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">
+                <label className="text-[#152026] font-semibold block mb-1.5">
                   Marks Scored (Out of 40):
                 </label>
                 <input
@@ -1603,72 +1603,72 @@ export default function DmtMilestonesPage() {
                     }
                     setExamForm({ ...examForm, marks: val, result: newRes });
                   }}
-                  className={`input w-full bg-slate-950/80 text-white font-mono text-sm ${
+                  className={`w-full px-3 py-2 rounded-xl bg-white text-[#152026] font-mono text-sm border focus:outline-none ${
                     examForm.marks !== '' && (Number(examForm.marks) < 0 || Number(examForm.marks) > 40)
                       ? 'border-rose-500 ring-1 ring-rose-500'
                       : examForm.marks !== '' && Number(examForm.marks) > 30
-                      ? 'border-emerald-500/60'
+                      ? 'border-emerald-500 ring-1 ring-emerald-500'
                       : examForm.marks !== '' && Number(examForm.marks) <= 30
-                      ? 'border-amber-500/60'
-                      : 'border-white/20'
+                      ? 'border-amber-500 ring-1 ring-amber-500'
+                      : 'border-[#D4EEF8] focus:border-[#1B3D59]'
                   }`}
                 />
                 {/* Live Marks Feedback */}
                 {examForm.marks !== '' && examForm.marks !== null && (
                   <div className="mt-1.5 text-xs">
                     {Number(examForm.marks) < 0 || Number(examForm.marks) > 40 ? (
-                      <span className="text-rose-400 font-bold">✕ Invalid: Marks must be between 0 and 40.</span>
+                      <span className="text-rose-600 font-bold">✕ Invalid: Marks must be between 0 and 40.</span>
                     ) : Number(examForm.marks) > 30 ? (
-                      <span className="text-emerald-400 font-bold">✓ Passing Score ({examForm.marks}/40): Qualifies for Pass (&gt; 30).</span>
+                      <span className="text-emerald-700 font-bold">✓ Passing Score ({examForm.marks}/40): Qualifies for Pass (&gt; 30).</span>
                     ) : (
-                      <span className="text-amber-400 font-bold">⚠️ Failing Score ({examForm.marks}/40): 30 or below is a Fail (Pass requires &gt; 30).</span>
+                      <span className="text-amber-700 font-bold">⚠️ Failing Score ({examForm.marks}/40): 30 or below is a Fail (Pass requires &gt; 30).</span>
                     )}
                   </div>
                 )}
                 {examForm.marks === '' && (
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-[#6A97C0] mt-1">
                     DMT Rule: Passing requires strictly &gt; 30 marks (31 to 40).
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">Exam Date Faced:</label>
+                <label className="text-[#152026] font-semibold block mb-1.5">Exam Date Faced:</label>
                 <div className="relative flex items-center">
-                  <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                  <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                   <input
                     type="date"
                     required
                     value={examForm.examDate}
                     onChange={(e) => setExamForm({ ...examForm, examDate: e.target.value })}
-                    className="input w-full pl-10 pr-3.5 bg-slate-950/80 border-white/20 text-white font-mono cursor-pointer"
+                    className="w-full pl-10 pr-3.5 py-2 rounded-xl bg-white border border-[#D4EEF8] text-[#152026] font-mono cursor-pointer focus:border-[#1B3D59] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">Optional Notes:</label>
+                <label className="text-[#152026] font-semibold block mb-1.5">Optional Notes:</label>
                 <input
                   type="text"
                   placeholder="e.g. Taken at DMT Werahara Hall 2"
                   value={examForm.notes}
                   onChange={(e) => setExamForm({ ...examForm, notes: e.target.value })}
-                  className="input w-full bg-slate-950/80 border-white/20 text-white"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#D4EEF8] text-[#152026] focus:border-[#1B3D59] focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setIsExamModalOpen(false)}
-                  className="btn-secondary py-2 px-4 text-xs font-bold"
+                  className="px-4 py-2 text-xs font-bold rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingExamResult}
-                  className="btn-primary bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-2 px-5 text-xs font-bold flex items-center gap-1.5 shadow-lg"
+                  className="bg-[#1B3D59] hover:bg-[#152026] text-white py-2 px-5 text-xs font-bold flex items-center gap-1.5 rounded-xl shadow-md transition-all"
                 >
                   {submittingExamResult ? 'Submitting...' : 'Save Exam Result'}
                 </button>
@@ -1680,30 +1680,30 @@ export default function DmtMilestonesPage() {
 
       {/* MODAL 2A: Update DMT Medical Exam Status & Proof Modal */}
       {showMedicalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(16,185,129,0.25)] max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-2 text-emerald-300 font-bold text-base">
-                <Stethoscope className="w-5 h-5 text-emerald-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
+              <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-base">
+                <Stethoscope className="w-5 h-5 text-[#1B3D59]" />
                 <span>1. DMT Medical Exam — Proof & Status</span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowMedicalModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10"
+                className="text-[#6A97C0] hover:text-[#152026] p-1.5 rounded-xl hover:bg-[#D4EEF8]/40 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleUploadMedicalProof} className="space-y-4 text-xs">
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-[#6A97C0] leading-relaxed">
                 Record your medical examination outcome and attach your official National Transport Medical Institute (NTMI) certificate or fitness report.
               </p>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">
-                  Medical Exam Result: <span className="text-rose-400">*</span>
+                <label className="text-[#152026] font-semibold block mb-1.5">
+                  Medical Exam Result: <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -1711,11 +1711,11 @@ export default function DmtMilestonesPage() {
                     onClick={() => setMedicalForm({ ...medicalForm, status: 'passed' })}
                     className={`py-2.5 px-4 rounded-xl font-bold text-xs border flex items-center justify-center gap-2 transition-all ${
                       medicalForm.status === 'passed'
-                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                        : 'bg-white border-[#D4EEF8] text-[#6A97C0] hover:bg-[#FAFCFE]'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>✓ PASSED</span>
                   </button>
                   <button
@@ -1723,29 +1723,29 @@ export default function DmtMilestonesPage() {
                     onClick={() => setMedicalForm({ ...medicalForm, status: 'failed' })}
                     className={`py-2.5 px-4 rounded-xl font-bold text-xs border flex items-center justify-center gap-2 transition-all ${
                       medicalForm.status === 'failed'
-                        ? 'bg-rose-500/20 border-rose-400 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        ? 'bg-rose-50 border-rose-500 text-rose-800 shadow-xs'
+                        : 'bg-white border-[#D4EEF8] text-[#6A97C0] hover:bg-[#FAFCFE]'
                     }`}
                   >
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
                     <span>✕ FAILED</span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">
+                <label className="text-[#152026] font-semibold block mb-1.5">
                   Attach Medical Certificate / Proof Document (PDF, JPG, PNG):
                 </label>
-                <div className="border-2 border-dashed border-white/15 hover:border-emerald-400/40 rounded-2xl p-4 text-center cursor-pointer transition-all bg-white/[0.02]">
+                <div className="border-2 border-dashed border-[#D4EEF8] hover:border-[#1B3D59] rounded-2xl p-4 text-center cursor-pointer transition-all bg-[#FAFCFE]">
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png,.webp"
                     onChange={(e) => setMedicalFile(e.target.files[0] || null)}
-                    className="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30 cursor-pointer"
+                    className="block w-full text-xs text-[#6A97C0] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4EEF8] file:text-[#1B3D59] hover:file:bg-[#B3D5F1] cursor-pointer"
                   />
                   {profile?.medicalDocumentUrl && !medicalFile && (
-                    <p className="text-[11px] text-emerald-400 mt-2">
+                    <p className="text-[11px] text-emerald-700 mt-2">
                       Current proof on file:{' '}
                       <a
                         href={`http://localhost:5001${profile.medicalDocumentUrl}`}
@@ -1761,21 +1761,21 @@ export default function DmtMilestonesPage() {
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">Remarks / Doctor Notes:</label>
+                <label className="text-[#152026] font-semibold block mb-1.5">Remarks / Doctor Notes:</label>
                 <textarea
                   rows={2}
                   placeholder="e.g. Vision cleared with corrective lenses, blood pressure normal, NTMI certificate #10492"
                   value={medicalForm.remarks}
                   onChange={(e) => setMedicalForm({ ...medicalForm, remarks: e.target.value })}
-                  className="textarea w-full bg-slate-950/80 border-white/20 text-white text-xs rounded-xl"
+                  className="w-full p-2.5 bg-white border border-[#D4EEF8] text-[#152026] text-xs rounded-xl focus:border-[#1B3D59] focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10 flex-wrap">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4EEF8] flex-wrap">
                 {(profile?.medical_date || profile?.dmtDates?.medicalExamDate) &&
                   new Date().setHours(0, 0, 0, 0) <
                     new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).setHours(0, 0, 0, 0) && (
-                    <p className="w-full text-[11px] text-amber-300 bg-amber-500/15 border border-amber-400/30 p-2.5 rounded-xl mb-2">
+                    <p className="w-full text-[11px] text-[#152026] bg-[#F3EED8] border border-[#6A97C0]/40 p-2.5 rounded-xl mb-2 font-medium">
                       ⏳ Medical Exam is scheduled for{' '}
                       {new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).toLocaleDateString('en-US', {
                         month: 'short',
@@ -1789,7 +1789,7 @@ export default function DmtMilestonesPage() {
                 <button
                   type="button"
                   onClick={() => setShowMedicalModal(false)}
-                  className="btn-secondary py-2.5 px-4 text-xs font-bold rounded-xl"
+                  className="py-2.5 px-4 text-xs font-bold rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1803,7 +1803,7 @@ export default function DmtMilestonesPage() {
                           new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).setHours(0, 0, 0, 0)
                     )
                   }
-                  className={`btn-primary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-lg rounded-xl bg-emerald-600 hover:bg-emerald-500 ${
+                  className={`bg-[#1B3D59] hover:bg-[#152026] text-white py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-md rounded-xl transition-all ${
                     Boolean(
                       (profile?.medical_date || profile?.dmtDates?.medicalExamDate) &&
                         new Date().setHours(0, 0, 0, 0) <
@@ -1830,30 +1830,30 @@ export default function DmtMilestonesPage() {
 
       {/* MODAL 2B: Update DMT Registration Status & Proof Modal */}
       {showRegistrationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-blue-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(59,130,246,0.25)] max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-2 text-blue-300 font-bold text-base">
-                <FileText className="w-5 h-5 text-blue-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
+              <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-base">
+                <FileText className="w-5 h-5 text-[#1B3D59]" />
                 <span>2. DMT Registration — Proof & Status</span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowRegistrationModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10"
+                className="text-[#6A97C0] hover:text-[#152026] p-1.5 rounded-xl hover:bg-[#D4EEF8]/40 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleUploadRegistrationProof} className="space-y-4 text-xs">
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-[#6A97C0] leading-relaxed">
                 Confirm your DMT Werahara / branch registration submission and attach your official registration receipt or acknowledged application form.
               </p>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">
-                  Registration Status: <span className="text-rose-400">*</span>
+                <label className="text-[#152026] font-semibold block mb-1.5">
+                  Registration Status: <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -1861,11 +1861,11 @@ export default function DmtMilestonesPage() {
                     onClick={() => setRegistrationForm({ ...registrationForm, status: 'done' })}
                     className={`py-2.5 px-4 rounded-xl font-bold text-xs border flex items-center justify-center gap-2 transition-all ${
                       registrationForm.status === 'done'
-                        ? 'bg-blue-500/20 border-blue-400 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                        : 'bg-white border-[#D4EEF8] text-[#6A97C0] hover:bg-[#FAFCFE]'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>✓ Done</span>
                   </button>
                   <button
@@ -1873,29 +1873,29 @@ export default function DmtMilestonesPage() {
                     onClick={() => setRegistrationForm({ ...registrationForm, status: 'pending' })}
                     className={`py-2.5 px-4 rounded-xl font-bold text-xs border flex items-center justify-center gap-2 transition-all ${
                       registrationForm.status === 'pending'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        ? 'bg-[#F3EED8] border-[#6A97C0]/40 text-[#152026] shadow-xs'
+                        : 'bg-white border-[#D4EEF8] text-[#6A97C0] hover:bg-[#FAFCFE]'
                     }`}
                   >
-                    <Clock className="w-4 h-4 text-amber-400" />
+                    <Clock className="w-4 h-4 text-[#152026]" />
                     <span>⏳ Incomplete / Pending</span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">
+                <label className="text-[#152026] font-semibold block mb-1.5">
                   Attach Registration Slip / Proof Document (PDF, JPG, PNG):
                 </label>
-                <div className="border-2 border-dashed border-white/15 hover:border-blue-400/40 rounded-2xl p-4 text-center cursor-pointer transition-all bg-white/[0.02]">
+                <div className="border-2 border-dashed border-[#D4EEF8] hover:border-[#1B3D59] rounded-2xl p-4 text-center cursor-pointer transition-all bg-[#FAFCFE]">
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png,.webp"
                     onChange={(e) => setRegistrationFile(e.target.files[0] || null)}
-                    className="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-500/20 file:text-blue-300 hover:file:bg-blue-500/30 cursor-pointer"
+                    className="block w-full text-xs text-[#6A97C0] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4EEF8] file:text-[#1B3D59] hover:file:bg-[#B3D5F1] cursor-pointer"
                   />
                   {profile?.registrationDocumentUrl && !registrationFile && (
-                    <p className="text-[11px] text-blue-400 mt-2">
+                    <p className="text-[11px] text-[#1B3D59] mt-2 font-medium">
                       Current proof on file:{' '}
                       <a
                         href={`http://localhost:5001${profile.registrationDocumentUrl}`}
@@ -1911,7 +1911,7 @@ export default function DmtMilestonesPage() {
               </div>
 
               <div>
-                <label className="text-slate-400 font-semibold block mb-1.5">
+                <label className="text-[#152026] font-semibold block mb-1.5">
                   Registration Remarks / Reference Number:
                 </label>
                 <textarea
@@ -1919,22 +1919,22 @@ export default function DmtMilestonesPage() {
                   placeholder="e.g. Acknowledged by Werahara counter 4, DMT Ref #WER-89421, biometrics scheduled"
                   value={registrationForm.remarks}
                   onChange={(e) => setRegistrationForm({ ...registrationForm, remarks: e.target.value })}
-                  className="textarea w-full bg-slate-950/80 border-white/20 text-white text-xs rounded-xl"
+                  className="w-full p-2.5 bg-white border border-[#D4EEF8] text-[#152026] text-xs rounded-xl focus:border-[#1B3D59] focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowRegistrationModal(false)}
-                  className="btn-secondary py-2.5 px-4 text-xs font-bold rounded-xl"
+                  className="py-2.5 px-4 text-xs font-bold rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingRegistration}
-                  className="btn-primary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-lg rounded-xl bg-blue-600 hover:bg-blue-500"
+                  className="bg-[#1B3D59] hover:bg-[#152026] text-white py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-md rounded-xl transition-all"
                 >
                   {submittingRegistration ? (
                     <>Saving...</>
@@ -1953,11 +1953,11 @@ export default function DmtMilestonesPage() {
 
       {/* MODAL 3: Request Date for Another Day (Reschedule Request Modal) */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-cyan-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.25)] max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-2 text-cyan-300 font-bold text-base">
-                <Calendar className="w-5 h-5 text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
+              <div className="flex items-center gap-2 text-[#1B3D59] font-bold text-base">
+                <Calendar className="w-5 h-5 text-[#1B3D59]" />
                 <span>
                   Request Date for Another Day —{' '}
                   {rescheduleMilestone === 'medical'
@@ -1972,7 +1972,7 @@ export default function DmtMilestonesPage() {
               <button
                 type="button"
                 onClick={() => setShowRescheduleModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10"
+                className="text-[#6A97C0] hover:text-[#152026] p-1.5 rounded-xl hover:bg-[#D4EEF8]/40 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1992,13 +1992,13 @@ export default function DmtMilestonesPage() {
 
               return (
                 <>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-[#6A97C0] leading-relaxed">
                     If you cannot attend your scheduled appointment, submit your request below. A branch officer / Data Entry Officer will review your request and assign a new date.
                   </p>
 
                   {!hasAssignedDate && (
-                    <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-200 text-xs flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div className="p-3 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-[#152026] text-xs flex items-center gap-2 font-medium">
+                      <Clock className="w-4 h-4 text-[#152026] shrink-0" />
                       <span>
                         An initial date has not yet been assigned by branch staff for this milestone. A date must be assigned before you can request another date.
                       </span>
@@ -2007,13 +2007,13 @@ export default function DmtMilestonesPage() {
 
                   <form onSubmit={handleSubmitReschedule} className="space-y-4 text-xs">
                     <div>
-                      <label className="text-slate-400 font-semibold block mb-1">
+                      <label className="text-[#152026] font-semibold block mb-1">
                         Milestone Category:
                       </label>
                       <select
                         value={rescheduleMilestone}
                         onChange={(e) => setRescheduleMilestone(e.target.value)}
-                        className="select w-full bg-slate-950/80 border-white/20 text-white font-bold text-xs rounded-xl"
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] font-bold text-xs rounded-xl focus:border-[#1B3D59] focus:outline-none"
                       >
                         <option value="medical">
                           1. DMT Medical Exam {profile?.medical_date || profile?.dmtDates?.medicalExamDate ? '' : '(No Date Assigned Yet)'}
@@ -2031,9 +2031,9 @@ export default function DmtMilestonesPage() {
                     </div>
 
                     {hasAssignedDate && (
-                      <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Current Assigned Date:</span>
-                        <span className="text-white font-mono font-bold">
+                      <div className="p-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] flex items-center justify-between text-xs">
+                        <span className="text-[#6A97C0]">Current Assigned Date:</span>
+                        <span className="text-[#152026] font-mono font-bold">
                           {new Date(currentScheduledDate).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -2044,28 +2044,28 @@ export default function DmtMilestonesPage() {
                     )}
 
                     <div>
-                      <label className="text-slate-400 font-semibold block mb-1">
+                      <label className="text-[#152026] font-semibold block mb-1">
                         Preferred New Date (Optional):
                       </label>
                       <div className="relative flex items-center">
-                        <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                        <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                         <input
                           type="date"
                           min={new Date().toISOString().split('T')[0]}
                           value={preferredDate}
                           onChange={(e) => setPreferredDate(e.target.value)}
                           disabled={!hasAssignedDate}
-                          className="input w-full pl-10 pr-3.5 bg-slate-950/80 border-white/20 text-white font-mono text-xs rounded-xl disabled:opacity-50 cursor-pointer"
+                          className="w-full pl-10 pr-3.5 py-2 bg-white border border-[#D4EEF8] text-[#152026] font-mono text-xs rounded-xl disabled:opacity-50 cursor-pointer focus:border-[#1B3D59] focus:outline-none"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-400 block mt-1">
+                      <span className="text-[10px] text-[#6A97C0] block mt-1">
                         Leave blank if you want branch staff to assign the earliest available DMT date.
                       </span>
                     </div>
 
                     <div>
-                      <label className="text-slate-400 font-semibold block mb-1">
-                        Reason for Date Change / Reschedule Request: <span className="text-rose-400">*</span>
+                      <label className="text-[#152026] font-semibold block mb-1">
+                        Reason for Date Change / Reschedule Request: <span className="text-rose-500">*</span>
                       </label>
                       <textarea
                         rows={3}
@@ -2074,22 +2074,22 @@ export default function DmtMilestonesPage() {
                         placeholder="e.g. Unable to attend on current scheduled date due to exam/work commitment, retake after failed attempt, medical postponement..."
                         value={rescheduleReason}
                         onChange={(e) => setRescheduleReason(e.target.value)}
-                        className="textarea w-full bg-slate-950/80 border-white/20 text-white text-xs rounded-xl disabled:opacity-50"
+                        className="w-full p-2.5 bg-white border border-[#D4EEF8] text-[#152026] text-xs rounded-xl disabled:opacity-50 focus:border-[#1B3D59] focus:outline-none"
                       />
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                       <button
                         type="button"
                         onClick={() => setShowRescheduleModal(false)}
-                        className="btn-secondary py-2.5 px-4 text-xs font-bold rounded-xl"
+                        className="py-2.5 px-4 text-xs font-bold rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={submittingReschedule || !rescheduleReason.trim() || !hasAssignedDate}
-                        className="btn-primary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-lg rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-[#1B3D59] hover:bg-[#152026] text-white py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-md rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                       >
                         {submittingReschedule ? (
                           <>Submitting Request...</>

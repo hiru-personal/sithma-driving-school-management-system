@@ -88,58 +88,55 @@ export default function PremiumLockOverlay() {
     <div className="min-h-[85vh] py-10 px-4 sm:px-6 lg:px-10 max-w-[1440px] mx-auto w-full flex flex-col items-center justify-center space-y-8">
       {/* Required Lock Banner */}
       <div className="w-full max-w-4xl text-center space-y-4">
-        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-extrabold text-sm shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse">
-          <Lock className="w-4 h-4 text-amber-300" /> Premium Account Required
+        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-extrabold text-sm shadow-xs">
+          <Lock className="w-4 h-4 text-[#1B3D59]" /> Premium Account Required
         </div>
 
-        <h1 className="text-3xl sm:text-5xl font-black text-white font-heading tracking-tight leading-tight">
+        <h1 className="text-3xl sm:text-5xl font-black text-[#152026] tracking-tight leading-tight">
           You must pay advanced payment to become a premium user.
         </h1>
 
-        <p className="text-base sm:text-lg text-purple-200 font-semibold max-w-2xl mx-auto leading-relaxed bg-purple-950/40 p-4 rounded-2xl border border-purple-400/30">
+        <p className="text-base sm:text-lg text-[#152026]/85 font-semibold max-w-2xl mx-auto leading-relaxed bg-[#F3EED8] p-4 rounded-3xl border border-[#6A97C0]/30">
           Please pay advance payment to become a premium user and to access the system.
         </p>
       </div>
 
       {/* Lock Card Container */}
-      <div className="w-full max-w-4xl card p-8 sm:p-10 border-2 border-purple-400/40 shadow-[0_16px_50px_0_rgba(147,51,234,0.35)] space-y-8 relative overflow-hidden">
-        {/* Top Glow Bar */}
-        <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-purple-500 via-amber-400 to-purple-500" />
-
+      <div className="w-full max-w-4xl bg-white rounded-3xl p-8 sm:p-10 border-2 border-[#D4EEF8] shadow-xl space-y-8 relative overflow-hidden">
         {/* Student & Package Summary Header */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 rounded-2xl bg-white/5 border border-white/15 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] text-sm">
           <div>
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Registered Student</span>
-            <p className="font-bold text-white text-base mt-1">{user?.name}</p>
-            <p className="text-xs text-cyan-300 font-medium">{user?.email}</p>
+            <span className="text-xs text-[#6A97C0] uppercase tracking-wider font-bold">Registered Student</span>
+            <p className="font-black text-[#152026] text-base mt-1">{user?.name}</p>
+            <p className="text-xs text-[#1B3D59] font-bold">{user?.email}</p>
           </div>
 
           <div>
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Enrolled Branch</span>
-            <p className="font-bold text-white text-base mt-1 flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-amber-400" /> {student?.branch || user?.branch} Branch
+            <span className="text-xs text-[#6A97C0] uppercase tracking-wider font-bold">Enrolled Branch</span>
+            <p className="font-black text-[#152026] text-base mt-1 flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-[#1B3D59]" /> {student?.branch || user?.branch} Branch
             </p>
-            <p className="text-xs text-purple-200 font-semibold">{student?.studentType?.replace('_', ' ')}</p>
+            <p className="text-xs text-[#6A97C0] font-bold">{student?.studentType?.replace('_', ' ')}</p>
           </div>
 
           <div>
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Course Package</span>
-            <p className="font-bold text-white text-base mt-1">{student?.package?.type?.replace('_', ' ') || 'Car Full Package'}</p>
-            <p className="text-xs text-amber-300 font-extrabold">Required Advance: Rs. {amount.toLocaleString()}.00</p>
+            <span className="text-xs text-[#6A97C0] uppercase tracking-wider font-bold">Course Package</span>
+            <p className="font-black text-[#152026] text-base mt-1">{student?.package?.type?.replace('_', ' ') || 'Car Full Package'}</p>
+            <p className="text-xs text-[#1B3D59] font-extrabold">Required Advance: Rs. {amount.toLocaleString()}.00</p>
           </div>
         </div>
 
         {/* Status Alert if Pending Review */}
         {submittedPendingSlip ? (
-          <div className="p-6 rounded-2xl bg-amber-500/15 border-2 border-amber-400/40 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center mx-auto border border-amber-400/40">
+          <div className="p-6 rounded-2xl bg-[#F3EED8] border-2 border-[#6A97C0]/30 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-white text-[#1B3D59] flex items-center justify-center mx-auto border border-[#D4EEF8]">
               <Clock className="w-6 h-6 animate-spin" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-amber-300">
+              <h3 className="text-xl font-black text-[#152026]">
                 Payment Slip Submitted — Awaiting Staff Verification
               </h3>
-              <p className="text-sm text-purple-200 max-w-xl mx-auto">
+              <p className="text-sm text-[#152026]/80 max-w-xl mx-auto">
                 Your bank deposit slip for <strong>Rs. {amount.toLocaleString()}.00</strong> has been received! Our staff at <strong>{student?.branch || user?.branch} Branch</strong> will review your bank slip and activate your Premium User status.
               </p>
             </div>
@@ -148,7 +145,7 @@ export default function PremiumLockOverlay() {
               <button
                 onClick={handleSimulateStaffApprove}
                 disabled={isProcessing}
-                className="btn-accent py-3 px-6 text-sm font-black flex items-center gap-2 shadow-lg"
+                className="btn-primary py-3 px-6 text-sm font-bold flex items-center gap-2 shadow-sm"
               >
                 <ShieldCheck className="w-4 h-4" /> [Demo]: Simulate Staff Bank Slip Approval
               </button>
@@ -156,100 +153,100 @@ export default function PremiumLockOverlay() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex border-b border-white/15">
+            <div className="flex border-b border-[#D4EEF8]">
               <button
                 onClick={() => setActiveTab('upload')}
                 className={`pb-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
                   activeTab === 'upload'
-                    ? 'border-amber-400 text-amber-300 font-black'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-[#1B3D59] text-[#1B3D59] font-black'
+                    : 'border-transparent text-[#6A97C0] hover:text-[#152026]'
                 }`}
               >
-                <Upload className="w-4 h-4 text-cyan-400" /> Submit Bank Deposit Slip (Staff Review)
+                <Upload className="w-4 h-4 text-[#1B3D59]" /> Submit Bank Deposit Slip (Staff Review)
               </button>
               <button
                 onClick={() => setActiveTab('dummy_card')}
                 className={`pb-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
                   activeTab === 'dummy_card'
-                    ? 'border-amber-400 text-amber-300 font-black'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-[#1B3D59] text-[#1B3D59] font-black'
+                    : 'border-transparent text-[#6A97C0] hover:text-[#152026]'
                 }`}
               >
-                <CreditCard className="w-4 h-4 text-amber-400" /> Dummy Online Payment Gateway
+                <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Dummy Online Payment Gateway
               </button>
             </div>
 
             {/* TAB 1: Upload Bank Slip */}
             {activeTab === 'upload' && (
-              <div className="space-y-6 bg-purple-950/30 p-6 rounded-2xl border border-purple-400/20">
+              <div className="space-y-6 bg-[#FAFCFE] p-6 rounded-3xl border border-[#D4EEF8]">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                    <Upload className="w-5 h-5 text-cyan-400" /> Bank Slip Review & Verification Submission
+                  <h3 className="text-xl font-black text-[#152026] flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-[#1B3D59]" /> Bank Slip Review & Verification Submission
                   </h3>
-                  <p className="text-sm text-slate-300">
+                  <p className="text-sm text-[#152026]/75">
                     Deposit the advance payment of <strong>Rs. {amount.toLocaleString()}.00</strong> to any of our bank accounts below and submit your receipt for staff review.
                   </p>
                 </div>
 
                 {/* Bank Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-1">
-                    <p className="font-bold text-cyan-300 text-sm">Bank of Ceylon (BOC)</p>
-                    <p className="text-white font-mono">Acc: 00892014782</p>
-                    <p className="text-slate-400">Branch: Maharagama</p>
+                  <div className="p-3.5 bg-white rounded-2xl border border-[#D4EEF8] space-y-1 shadow-xs">
+                    <p className="font-bold text-[#1B3D59] text-sm">Bank of Ceylon (BOC)</p>
+                    <p className="text-[#152026] font-mono font-bold">Acc: 00892014782</p>
+                    <p className="text-[#6A97C0]">Branch: Maharagama</p>
                   </div>
-                  <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-1">
-                    <p className="font-bold text-amber-300 text-sm">Commercial Bank</p>
-                    <p className="text-white font-mono">Acc: 11094820194</p>
-                    <p className="text-slate-400">Branch: Werahara</p>
+                  <div className="p-3.5 bg-white rounded-2xl border border-[#D4EEF8] space-y-1 shadow-xs">
+                    <p className="font-bold text-[#1B3D59] text-sm">Commercial Bank</p>
+                    <p className="text-[#152026] font-mono font-bold">Acc: 11094820194</p>
+                    <p className="text-[#6A97C0]">Branch: Werahara</p>
                   </div>
-                  <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-1">
-                    <p className="font-bold text-purple-300 text-sm">Sampath Bank</p>
-                    <p className="text-white font-mono">Acc: 01847290123</p>
-                    <p className="text-slate-400">Branch: Delgoda</p>
+                  <div className="p-3.5 bg-white rounded-2xl border border-[#D4EEF8] space-y-1 shadow-xs">
+                    <p className="font-bold text-[#1B3D59] text-sm">Sampath Bank</p>
+                    <p className="text-[#152026] font-mono font-bold">Acc: 01847290123</p>
+                    <p className="text-[#6A97C0]">Branch: Delgoda</p>
                   </div>
                 </div>
 
-                {/* Upload / Dummy Slip Form */}
+                {/* Upload Form */}
                 <form onSubmit={handleUploadSlip} className="space-y-4 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">Advance Amount (Rs.)</label>
+                      <label className="block text-xs font-bold text-[#152026] mb-1.5">Advance Amount (Rs.)</label>
                       <input
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                        className="w-full px-4 py-3 bg-slate-950/80 border border-white/15 text-white font-bold rounded-xl text-sm"
+                        className="w-full px-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] font-bold rounded-xl text-sm outline-none focus:border-[#1B3D59]"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">Deposit Bank Name</label>
+                      <label className="block text-xs font-bold text-[#152026] mb-1.5">Deposit Bank Name</label>
                       <input
                         type="text"
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-950/80 border border-white/15 text-white font-bold rounded-xl text-sm"
+                        className="w-full px-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] font-bold rounded-xl text-sm outline-none focus:border-[#1B3D59]"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    <label className="block text-xs font-bold text-[#152026] mb-1.5">
                       Bank Deposit Slip File (Optional for testing — dummy receipt generated automatically)
                     </label>
                     <input
                       type="file"
                       accept="image/*,.pdf"
                       onChange={handleFileChange}
-                      className="w-full px-4 py-3 bg-slate-950/80 border border-white/15 text-white rounded-xl text-xs"
+                      className="w-full px-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-xs"
                     />
                   </div>
 
                   {filePreview && (
                     <div className="mt-2 text-center">
-                      <img src={filePreview} alt="Slip Preview" className="max-h-40 mx-auto rounded-xl border border-white/20 shadow-md" />
+                      <img src={filePreview} alt="Slip Preview" className="max-h-40 mx-auto rounded-xl border border-[#D4EEF8] shadow-sm" />
                     </div>
                   )}
 
@@ -257,7 +254,7 @@ export default function PremiumLockOverlay() {
                     <button
                       type="submit"
                       disabled={uploading}
-                      className="flex-1 btn-primary py-3.5 text-sm sm:text-base font-bold flex items-center justify-center gap-2"
+                      className="flex-1 btn-primary py-3.5 text-sm sm:text-base font-bold flex items-center justify-center gap-2 shadow-sm"
                     >
                       <FileCheck className="w-4 h-4" /> {uploading ? 'Submitting...' : 'Submit Bank Deposit Slip for Staff Review'}
                     </button>
@@ -265,9 +262,9 @@ export default function PremiumLockOverlay() {
                       type="button"
                       onClick={handleSimulateStaffApprove}
                       disabled={isProcessing}
-                      className="btn-accent py-3.5 px-5 text-sm font-black flex items-center justify-center gap-2 shadow-lg"
+                      className="btn-secondary py-3.5 px-5 text-sm font-bold flex items-center justify-center gap-2 shadow-sm"
                     >
-                      <Sparkles className="w-4 h-4 text-slate-950" /> Fast-Track Direct Activation
+                      <Sparkles className="w-4 h-4 text-[#1B3D59]" /> Fast-Track Direct Activation
                     </button>
                   </div>
                 </form>
@@ -276,32 +273,32 @@ export default function PremiumLockOverlay() {
 
             {/* TAB 2: Dummy Card Gateway */}
             {activeTab === 'dummy_card' && (
-              <div className="space-y-6 bg-purple-950/30 p-6 rounded-2xl border border-purple-400/20">
+              <div className="space-y-6 bg-[#FAFCFE] p-6 rounded-3xl border border-[#D4EEF8]">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-amber-400" /> Dummy Online Payment Gateway Simulation
+                  <h3 className="text-xl font-black text-[#152026] flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-[#1B3D59]" /> Dummy Online Payment Gateway Simulation
                   </h3>
-                  <p className="text-sm text-slate-300">
+                  <p className="text-sm text-[#152026]/75">
                     Use dummy credit/debit card numbers to simulate an instant advance deposit payment.
                   </p>
                 </div>
 
-                <div className="space-y-3 p-4 rounded-xl bg-white/5 border border-white/10 text-xs">
+                <div className="space-y-3 p-4 rounded-2xl bg-white border border-[#D4EEF8] text-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 mb-1">Dummy Card Number</label>
+                      <label className="block text-[#6A97C0] font-bold mb-1">Dummy Card Number</label>
                       <input
                         type="text"
                         defaultValue="4532 •••• •••• 8892"
-                        className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-lg text-white font-mono text-xs"
+                        className="w-full px-3 py-2 bg-[#FAFCFE] border border-[#D4EEF8] rounded-lg text-[#152026] font-mono text-xs font-bold"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-400 mb-1">Card Holder Name</label>
+                      <label className="block text-[#6A97C0] font-bold mb-1">Card Holder Name</label>
                       <input
                         type="text"
                         defaultValue={user?.name || 'Kasun Perera'}
-                        className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-lg text-white font-bold text-xs"
+                        className="w-full px-3 py-2 bg-[#FAFCFE] border border-[#D4EEF8] rounded-lg text-[#152026] font-bold text-xs"
                       />
                     </div>
                   </div>
@@ -310,7 +307,7 @@ export default function PremiumLockOverlay() {
                 <button
                   onClick={handleSimulateStaffApprove}
                   disabled={isProcessing}
-                  className="w-full btn-accent py-4 text-base font-black shadow-[0_0_25px_rgba(242,169,59,0.5)] flex items-center justify-center gap-3 hover:scale-[1.02] transition-all"
+                  className="w-full btn-primary py-4 text-base font-bold shadow-sm flex items-center justify-center gap-3"
                 >
                   {isProcessing ? (
                     <>
@@ -318,7 +315,7 @@ export default function PremiumLockOverlay() {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5 text-slate-950" /> Complete Dummy Payment (Rs. {amount.toLocaleString()}) & Unlock System <ArrowRight className="w-5 h-5" />
+                      <Sparkles className="w-5 h-5" /> Complete Dummy Payment (Rs. {amount.toLocaleString()}) & Unlock System <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </button>
@@ -328,15 +325,15 @@ export default function PremiumLockOverlay() {
         )}
 
         {/* Benefits Pill */}
-        <div className="pt-4 border-t border-white/15 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Full Interactive Portal Access
+        <div className="pt-4 border-t border-[#D4EEF8] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#152026]/80 text-center">
+          <div className="flex items-center justify-center gap-2 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Full Interactive Portal Access
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 1-on-1 Practical Lesson Booking
+          <div className="flex items-center justify-center gap-2 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 1-on-1 Practical Lesson Booking
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Trilingual DMT Exam Simulator
+          <div className="flex items-center justify-center gap-2 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Trilingual DMT Exam Simulator
           </div>
         </div>
       </div>

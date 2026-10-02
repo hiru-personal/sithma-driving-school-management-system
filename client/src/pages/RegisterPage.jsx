@@ -161,7 +161,6 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Normalize student type parameter: "Type 1" (Full Course) or "Type 2" (Trial Only)
   const rawType = searchParams.get('type') || '';
   const initialStudentType = rawType.toLowerCase().includes('2') ? 'Type 2' : 'Type 1';
 
@@ -171,7 +170,6 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Sync category type when searchParams change or ensure modal opens if no type in URL
   useEffect(() => {
     const currentType = searchParams.get('type');
     if (currentType) {
@@ -182,13 +180,11 @@ export default function RegisterPage() {
     }
   }, [searchParams]);
 
-  // Type 2 Vehicle Package State (Only for Type 2 students)
   const [availablePackages, setAvailablePackages] = useState([]);
-  const [selectedTier, setSelectedTier] = useState('C'); // 'C' (Full Course), 'A' (Individual), 'B' (Standard)
+  const [selectedTier, setSelectedTier] = useState('C');
   const [selectedPackageType, setSelectedPackageType] = useState('Car_Full');
   const [lessonQty, setLessonQty] = useState(1);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
@@ -200,7 +196,6 @@ export default function RegisterPage() {
     confirmPassword: '',
   });
 
-  // Calculate live age from DOB string
   const calculatedAge = useMemo(() => {
     if (!formData.dob) return null;
     const dob = new Date(formData.dob);
@@ -215,7 +210,6 @@ export default function RegisterPage() {
     return age;
   }, [formData.dob]);
 
-  // Password validation rules
   const passwordErrors = useMemo(() => {
     const p = formData.password;
     if (!p) return [];
@@ -230,7 +224,6 @@ export default function RegisterPage() {
     ? formData.password === formData.confirmPassword
     : true;
 
-  // Fetch packages from backend to get live DB IDs
   useEffect(() => {
     api.get('/packages').then((res) => {
       if (res.data?.success && res.data?.packages) {
@@ -241,7 +234,6 @@ export default function RegisterPage() {
     });
   }, []);
 
-  // Merge live packages with fallback catalog
   const displayedPackages = useMemo(() => {
     return FALLBACK_PACKAGES.map((fallback) => {
       const live = availablePackages.find((p) => p.type === fallback.type);
@@ -289,7 +281,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Validation
     if (!formData.name.trim()) {
       toast.error('Please enter your full name');
       return;
@@ -360,7 +351,6 @@ export default function RegisterPage() {
       if (res.data?.success) {
         const pendingUserId = res.data.pendingUserId || res.data.user?._id || res.data.student?.userId;
 
-        // Persist pending registration context locally so Step 3 gateway knows who is paying
         const pendingPayload = {
           pendingUserId,
           studentId: res.data.student?._id || null,
@@ -390,8 +380,6 @@ export default function RegisterPage() {
         }
 
         toast.success('Registration details saved! Proceed to advance payment of LKR 5,000.');
-
-        // Navigate directly to Step 3 (Advance Payment Screen) without logging into active dashboard
         navigate('/payment-gateway', { state: pendingPayload });
       } else {
         toast.error(res.data?.message || 'Registration failed');
@@ -413,35 +401,35 @@ export default function RegisterPage() {
     <div className="py-6 sm:py-10 px-3.5 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
       {/* Step Header Stepper */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F1FD] border border-[#DBE2EF] text-xs font-bold text-[#19376D] mb-3 shadow-xs">
-          <Sparkles className="w-3.5 h-3.5 text-[#3F72AF]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-xs font-bold text-[#1B3D59] mb-3 shadow-xs">
+          <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" />
           <span>Step 2 of 3: Student Registration Form</span>
         </div>
 
-        <h1 className="text-2xl sm:text-4xl font-black text-[#0B2447] tracking-tight font-heading">
+        <h1 className="text-2xl sm:text-4xl font-black text-[#152026] tracking-tight">
           Create Your Student Profile
         </h1>
-        <p className="text-xs sm:text-sm text-[#4B6584] mt-2 max-w-xl mx-auto font-normal">
+        <p className="text-xs sm:text-sm text-[#6A97C0] mt-2 max-w-xl mx-auto">
           Please fill in your legal details. Once registered, you will proceed directly to Step 3 to complete the mandatory advance payment.
         </p>
       </div>
 
       {/* Prominent Read-Only Student Type Badge */}
-      <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-white border border-[#DBE2EF] shadow-xs relative overflow-hidden transition-all duration-300">
+      <div className="mb-8 p-4 sm:p-5 rounded-3xl bg-white border border-[#D4EEF8] shadow-sm relative overflow-hidden transition-all duration-300">
         {isType1 ? (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-[#3F72AF] pl-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-[#1B3D59] pl-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#E8F1FD] border border-[#DBE2EF] text-[#3F72AF] flex items-center justify-center font-black flex-shrink-0 shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] flex items-center justify-center font-black flex-shrink-0 shadow-xs">
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm sm:text-base font-extrabold text-[#0B2447]">Category: Type 1 Student</span>
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-[#E8F1FD] text-[#19376D] border border-[#DBE2EF]">
+                  <span className="text-sm sm:text-base font-black text-[#152026]">Category: Type 1 Student</span>
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59]">
                     Full Course Learner
                   </span>
                 </div>
-                <p className="text-xs text-[#4B6584] mt-0.5 font-normal">
+                <p className="text-xs text-[#152026]/75 mt-0.5">
                   Complete program: DMT medical, written exam preparation, practical training & trial exam.
                 </p>
               </div>
@@ -450,25 +438,25 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setTypeModalOpen(true)}
-              className="text-xs text-[#3F72AF] hover:text-[#0B2447] font-bold underline cursor-pointer self-end sm:self-center transition-colors"
+              className="text-xs text-[#1B3D59] hover:underline font-bold cursor-pointer self-end sm:self-center transition-colors"
             >
               Change Category
             </button>
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-amber-500 pl-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-[#1B3D59] pl-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-black flex-shrink-0 shadow-xs">
-                <Award className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-[#F3EED8] border border-[#6A97C0]/30 text-[#152026] flex items-center justify-center font-black flex-shrink-0 shadow-xs">
+                <Award className="w-6 h-6 text-[#1B3D59]" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm sm:text-base font-extrabold text-[#0B2447]">Category: Type 2 Student</span>
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                  <span className="text-sm sm:text-base font-black text-[#152026]">Category: Type 2 Student</span>
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30">
                     Trial Only Learner
                   </span>
                 </div>
-                <p className="text-xs text-[#4B6584] mt-0.5 font-normal">
+                <p className="text-xs text-[#152026]/75 mt-0.5">
                   Already DMT-cleared elsewhere. Directly book practical trial sessions upon payment verification.
                 </p>
               </div>
@@ -477,7 +465,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setTypeModalOpen(true)}
-              className="text-xs text-[#3F72AF] hover:text-[#0B2447] font-bold underline cursor-pointer self-end sm:self-center transition-colors"
+              className="text-xs text-[#1B3D59] hover:underline font-bold cursor-pointer self-end sm:self-center transition-colors"
             >
               Change Category
             </button>
@@ -486,11 +474,11 @@ export default function RegisterPage() {
       </div>
 
       {/* Main Registration Form Card */}
-      <div className="card bg-white border border-[#DBE2EF] rounded-3xl p-5 sm:p-8 md:p-10 shadow-[0_10px_40px_rgba(17,45,78,0.06)]">
+      <div className="bg-white border border-[#D4EEF8] rounded-3xl p-6 sm:p-8 md:p-10 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Full Name */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
               Full Legal Name <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -501,10 +489,10 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="e.g. Kasun Chamara Perera"
                 required
-                className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl px-4 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all"
+                className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl px-4 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all"
               />
             </div>
-            <p className="text-[11px] text-[#64748B] mt-1.5 font-normal">
+            <p className="text-[11px] text-[#6A97C0] mt-1.5">
               Enter name exactly as printed on your National Identity Card (NIC) or Passport.
             </p>
           </div>
@@ -512,11 +500,11 @@ export default function RegisterPage() {
           {/* Date of Birth & Live Calculated Age */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Date of Birth <span className="text-rose-500">*</span>
               </label>
               <div className="relative flex items-center">
-                <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                <Calendar className="w-4 h-4 text-[#6A97C0] absolute left-3.5 pointer-events-none" />
                 <input
                   type="date"
                   name="dob"
@@ -524,28 +512,28 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   max={new Date().toISOString().split('T')[0]}
                   required
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl pl-10 pr-3.5 py-3 text-sm text-[#0B2447] font-semibold placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all cursor-pointer shadow-xs"
+                  className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl pl-10 pr-3.5 py-3 text-sm text-[#152026] font-bold placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all cursor-pointer shadow-xs"
                 />
               </div>
             </div>
 
             {/* Live Visual Age Display */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Calculated Age (DMT 18+ Rule)
               </label>
               <div
                 className={`min-h-[46px] py-2 rounded-xl flex items-center px-4 transition-all duration-300 border ${
                   calculatedAge === null
-                    ? 'bg-[#F8FAFD] border-[#DBE2EF] text-[#64748B]'
+                    ? 'bg-[#FAFCFE] border-[#D4EEF8] text-[#6A97C0]'
                     : calculatedAge >= 18
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                     : 'bg-rose-50 border-rose-200 text-rose-800'
                 }`}
               >
                 {calculatedAge === null ? (
-                  <div className="text-xs text-[#64748B] flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#94A3B8]" />
+                  <div className="text-xs text-[#6A97C0] flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#6A97C0]" />
                     <span>Select DOB to calculate age</span>
                   </div>
                 ) : calculatedAge >= 18 ? (
@@ -570,7 +558,7 @@ export default function RegisterPage() {
           {/* Email & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Email Address <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -581,13 +569,13 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="name@example.com"
                   required
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl px-4 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all"
+                  className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl px-4 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Phone Number <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -598,7 +586,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="077 123 4567"
                   required
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl px-4 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all"
+                  className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl px-4 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all"
                 />
               </div>
             </div>
@@ -607,7 +595,7 @@ export default function RegisterPage() {
           {/* Preferred Branch & NIC Number */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Preferred Branch <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -616,7 +604,7 @@ export default function RegisterPage() {
                   value={formData.branch}
                   onChange={handleChange}
                   required
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl px-4 py-3 text-sm text-[#0B2447] font-semibold focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all cursor-pointer"
+                  className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl px-4 py-3 text-sm text-[#152026] font-bold focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all cursor-pointer"
                 >
                   <option value="Maharagama">Maharagama (Headquarters & Training Ground)</option>
                   <option value="Werahara">Werahara (DMT Central Exam Hub)</option>
@@ -626,7 +614,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 NIC / Passport Number
               </label>
               <div className="relative">
@@ -636,7 +624,7 @@ export default function RegisterPage() {
                   value={formData.nic}
                   onChange={handleChange}
                   placeholder="e.g. 200012345678 or 981234567V"
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl px-4 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all"
+                  className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl px-4 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all"
                 />
               </div>
             </div>
@@ -645,7 +633,7 @@ export default function RegisterPage() {
           {/* Password & Confirm Password */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -656,12 +644,12 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-[#F8FAFD] border border-[#DBE2EF] rounded-xl pl-4 pr-11 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 transition-all"
+                  className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl pl-4 pr-11 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#94A3B8] hover:text-[#0B2447] transition-colors cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#6A97C0] hover:text-[#152026] transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -669,7 +657,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#112D4E] mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#152026] mb-2">
                 Confirm Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -680,16 +668,16 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="••••••••"
                   required
-                  className={`w-full bg-[#F8FAFD] rounded-xl pl-4 pr-11 py-3 text-sm text-[#0B2447] font-medium placeholder-[#94A3B8] focus:outline-none transition-all border ${
+                  className={`w-full bg-[#FAFCFE] rounded-xl pl-4 pr-11 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none transition-all border ${
                     passwordsMatch
-                      ? 'border-[#DBE2EF] focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20'
+                      ? 'border-[#D4EEF8] focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1]'
                       : 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#94A3B8] hover:text-[#0B2447] transition-colors cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#6A97C0] hover:text-[#152026] transition-colors cursor-pointer"
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -698,15 +686,15 @@ export default function RegisterPage() {
           </div>
 
           {/* Password Guidance Note */}
-          <div className="text-[11px] text-[#64748B] flex flex-wrap items-center gap-3">
-            <span className="font-semibold text-[#112D4E]">Must contain:</span>
-            <span className={formData.password.length >= 8 ? 'text-emerald-700 font-bold' : 'text-[#94A3B8]'}>
+          <div className="text-[11px] text-[#6A97C0] flex flex-wrap items-center gap-3">
+            <span className="font-bold text-[#152026]">Must contain:</span>
+            <span className={formData.password.length >= 8 ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
               ✓ 8+ characters
             </span>
-            <span className={/[A-Za-z]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#94A3B8]'}>
+            <span className={/[A-Za-z]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
               ✓ Letters
             </span>
-            <span className={/[0-9]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#94A3B8]'}>
+            <span className={/[0-9]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
               ✓ Numbers
             </span>
             {!passwordsMatch && (
@@ -718,34 +706,34 @@ export default function RegisterPage() {
           {/* TYPE 2 ONLY: VEHICLE TRAINING PACKAGE SELECTION */}
           {/* ========================================================================= */}
           {studentType === 'Type 2' && (
-            <div className="pt-6 border-t border-[#DBE2EF] space-y-4">
+            <div className="pt-6 border-t border-[#D4EEF8] space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30">
                       Mandatory For Type 2
                     </span>
-                    <span className="text-xs text-[#4B6584] font-semibold">Select Vehicle Package</span>
+                    <span className="text-xs text-[#6A97C0] font-semibold">Select Vehicle Package</span>
                   </div>
-                  <h3 className="text-lg font-black text-[#0B2447] flex items-center gap-2">
-                    <PackageIcon className="w-5 h-5 text-[#3F72AF]" />
+                  <h3 className="text-lg font-black text-[#152026] flex items-center gap-2">
+                    <PackageIcon className="w-5 h-5 text-[#1B3D59]" />
                     Select Your Vehicle Training Package
                   </h3>
-                  <p className="text-xs text-[#4B6584] mt-0.5">
+                  <p className="text-xs text-[#152026]/75 mt-0.5">
                     As a Trial-Ready student, choose your full course trial package or pay-per-lesson plan.
                   </p>
                 </div>
               </div>
 
               {/* Category Tier Selector: C (Full Course), A (Individual), B (Standard) */}
-              <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-[#F0F4F8] border border-[#DBE2EF]">
+              <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => handleTierChange('C')}
                   className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
                     selectedTier === 'C'
-                      ? 'bg-[#3F72AF] text-white shadow-sm font-black'
-                      : 'text-[#112D4E] hover:text-[#0B2447] hover:bg-white'
+                      ? 'bg-[#1B3D59] text-white shadow-sm font-black'
+                      : 'text-[#152026] hover:bg-[#D4EEF8]/40'
                   }`}
                 >
                   <span className="flex items-center gap-1 text-[11px] sm:text-xs">
@@ -759,8 +747,8 @@ export default function RegisterPage() {
                   onClick={() => handleTierChange('A')}
                   className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
                     selectedTier === 'A'
-                      ? 'bg-[#3F72AF] text-white shadow-sm font-black'
-                      : 'text-[#112D4E] hover:text-[#0B2447] hover:bg-white'
+                      ? 'bg-[#1B3D59] text-white shadow-sm font-black'
+                      : 'text-[#152026] hover:bg-[#D4EEF8]/40'
                   }`}
                 >
                   <span className="flex items-center gap-1 text-[11px] sm:text-xs">
@@ -774,8 +762,8 @@ export default function RegisterPage() {
                   onClick={() => handleTierChange('B')}
                   className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
                     selectedTier === 'B'
-                      ? 'bg-[#3F72AF] text-white shadow-sm font-black'
-                      : 'text-[#112D4E] hover:text-[#0B2447] hover:bg-white'
+                      ? 'bg-[#1B3D59] text-white shadow-sm font-black'
+                      : 'text-[#152026] hover:bg-[#D4EEF8]/40'
                   }`}
                 >
                   <span className="flex items-center gap-1 text-[11px] sm:text-xs">
@@ -795,8 +783,8 @@ export default function RegisterPage() {
                       onClick={() => setSelectedPackageType(pkg.type)}
                       className={`cursor-pointer rounded-2xl p-4 border transition-all relative flex flex-col justify-between ${
                         isSelected
-                          ? 'bg-[#F8FAFD] border-2 border-[#3F72AF] shadow-md ring-2 ring-[#3F72AF]/20'
-                          : 'bg-white border border-[#DBE2EF] hover:border-[#3F72AF]/60 shadow-xs'
+                          ? 'bg-[#FAFCFE] border-2 border-[#1B3D59] shadow-sm'
+                          : 'bg-white border border-[#D4EEF8] hover:border-[#6A97C0]'
                       }`}
                     >
                       <div className="space-y-2.5">
@@ -805,17 +793,17 @@ export default function RegisterPage() {
                             <div
                               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                                 isSelected
-                                  ? 'bg-[#3F72AF] text-white shadow-sm'
-                                  : 'bg-[#E8F1FD] text-[#3F72AF]'
+                                  ? 'bg-[#1B3D59] text-white shadow-sm'
+                                  : 'bg-[#D4EEF8] text-[#1B3D59]'
                               }`}
                             >
                               {getVehicleIcon(pkg.vehicleCategory || pkg.type)}
                             </div>
                             <div>
-                              <h4 className="text-sm font-black text-[#0B2447] leading-snug">
+                              <h4 className="text-sm font-black text-[#152026] leading-snug">
                                 {pkg.name}
                               </h4>
-                              <span className="text-[11px] text-[#64748B] font-medium">
+                              <span className="text-[11px] text-[#6A97C0] font-medium">
                                 {pkg.isPerLesson ? 'Pay-Per-Lesson' : `${pkg.lessons} Standard Lessons`}
                               </span>
                             </div>
@@ -824,8 +812,8 @@ export default function RegisterPage() {
                           <div
                             className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
                               isSelected
-                                ? 'bg-[#3F72AF] text-white shadow-xs'
-                                : 'border border-[#DBE2EF]'
+                                ? 'bg-[#1B3D59] text-white shadow-xs'
+                                : 'border border-[#D4EEF8]'
                             }`}
                           >
                             {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -833,14 +821,14 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Price Tag */}
-                        <div className="pt-2 flex items-baseline justify-between border-t border-[#DBE2EF]">
-                          <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                        <div className="pt-2 flex items-baseline justify-between border-t border-[#D4EEF8]">
+                          <span className="text-[11px] text-[#6A97C0] font-semibold uppercase tracking-wider">
                             Rate / Price
                           </span>
-                          <span className="text-base font-black text-[#3F72AF] font-mono">
+                          <span className="text-base font-black text-[#1B3D59] font-mono">
                             LKR {Number(pkg.price).toLocaleString()}
                             {pkg.isPerLesson && (
-                              <span className="text-xs text-[#64748B] font-normal"> / lesson</span>
+                              <span className="text-xs text-[#6A97C0] font-normal"> / lesson</span>
                             )}
                           </span>
                         </div>
@@ -860,12 +848,12 @@ export default function RegisterPage() {
 
               {/* Stepper for Pay-Per-Lesson packages */}
               {activeSelectedPackage?.isPerLesson && (
-                <div className="p-4 rounded-2xl bg-[#F8FAFD] border border-[#DBE2EF] flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="space-y-0.5 text-center sm:text-left">
-                    <span className="text-xs font-bold text-[#0B2447]">
+                    <span className="text-xs font-bold text-[#152026]">
                       Initial Practice Lessons to Register
                     </span>
-                    <p className="text-[11px] text-[#64748B]">
+                    <p className="text-[11px] text-[#6A97C0]">
                       Flexible: you can top up more trial lessons anytime.
                     </p>
                   </div>
@@ -874,21 +862,21 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setLessonQty(Math.max(1, lessonQty - 1))}
-                      className="w-8 h-8 rounded-lg bg-white border border-[#DBE2EF] text-[#112D4E] flex items-center justify-center hover:bg-[#DBE2EF] font-bold transition-colors shadow-xs cursor-pointer"
+                      className="w-8 h-8 rounded-lg bg-white border border-[#D4EEF8] text-[#152026] flex items-center justify-center hover:bg-[#D4EEF8] font-bold transition-colors shadow-xs cursor-pointer"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-10 text-center font-mono font-black text-base text-[#3F72AF]">
+                    <span className="w-10 text-center font-mono font-black text-base text-[#1B3D59]">
                       {lessonQty}
                     </span>
                     <button
                       type="button"
                       onClick={() => setLessonQty(lessonQty + 1)}
-                      className="w-8 h-8 rounded-lg bg-white border border-[#DBE2EF] text-[#112D4E] flex items-center justify-center hover:bg-[#DBE2EF] font-bold transition-colors shadow-xs cursor-pointer"
+                      className="w-8 h-8 rounded-lg bg-white border border-[#D4EEF8] text-[#152026] flex items-center justify-center hover:bg-[#D4EEF8] font-bold transition-colors shadow-xs cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-xs font-bold text-[#0B2447] font-mono ml-2">
+                    <span className="text-xs font-bold text-[#152026] font-mono ml-2">
                       = LKR {(Number(activeSelectedPackage.price) * lessonQty).toLocaleString()}
                     </span>
                   </div>
@@ -897,19 +885,19 @@ export default function RegisterPage() {
 
               {/* Selected Package Confirmation Box */}
               {activeSelectedPackage && (
-                <div className="p-4 rounded-2xl bg-[#E8F1FD] border border-[#DBE2EF] space-y-2">
+                <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="badge badge-info text-[10px] font-black uppercase">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold uppercase">
                         Selected Package
                       </span>
-                      <span className="text-xs font-bold text-[#0B2447]">
+                      <span className="text-xs font-bold text-[#152026]">
                         {activeSelectedPackage.name}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-[#64748B] font-semibold mr-1.5">Package Total:</span>
-                      <span className="text-sm font-black text-[#3F72AF] font-mono">
+                      <span className="text-xs text-[#6A97C0] font-semibold mr-1.5">Package Total:</span>
+                      <span className="text-sm font-black text-[#1B3D59] font-mono">
                         LKR{' '}
                         {activeSelectedPackage.isPerLesson
                           ? (Number(activeSelectedPackage.price) * lessonQty).toLocaleString()
@@ -917,8 +905,8 @@ export default function RegisterPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-[11px] text-[#4B6584] leading-normal flex items-start gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-[#3F72AF] flex-shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-[#152026]/80 leading-normal flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-[#1B3D59] flex-shrink-0 mt-0.5" />
                     <span>
                       <strong>Advance Payment Notice:</strong> Today you only pay the fixed advance deposit of <strong>LKR 5,000</strong> to submit your application for officer verification. Package balance is paid after your account is approved.
                     </span>
@@ -929,66 +917,66 @@ export default function RegisterPage() {
           )}
 
           {/* Executive Fixed Advance Payment Milestone Card */}
-          <div className="rounded-2xl bg-gradient-to-br from-[#F8FAFD] via-white to-[#F0F5FF] border-2 border-[#DBE2EF] p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="rounded-3xl bg-[#FAFCFE] border-2 border-[#D4EEF8] p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-[#E8F1FD] border border-[#DBE2EF] flex items-center justify-center text-[#3F72AF] shadow-xs shrink-0">
-                  <CreditCard className="w-6 h-6 text-[#3F72AF]" />
+                <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] shadow-xs shrink-0">
+                  <CreditCard className="w-6 h-6 text-[#1B3D59]" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30">
                       Step 3 Milestone
                     </span>
-                    <span className="text-xs font-bold text-[#3F72AF]">Mandatory Deposit</span>
+                    <span className="text-xs font-bold text-[#1B3D59]">Mandatory Deposit</span>
                   </div>
-                  <h4 className="text-base sm:text-lg font-black text-[#0B2447] mt-0.5">
-                    Fixed Advance Payment of <span className="text-[#3F72AF]">LKR 5,000</span>
+                  <h4 className="text-base sm:text-lg font-black text-[#152026] mt-0.5">
+                    Fixed Advance Payment of <span className="text-[#1B3D59]">LKR 5,000</span>
                   </h4>
                 </div>
               </div>
 
               <div className="text-left sm:text-right shrink-0">
-                <span className="text-[11px] font-semibold text-[#64748B] block uppercase tracking-wider">Amount Due Today</span>
-                <span className="text-xl sm:text-2xl font-black text-[#0B2447] font-mono">
+                <span className="text-[11px] font-semibold text-[#6A97C0] block uppercase tracking-wider">Amount Due Today</span>
+                <span className="text-xl sm:text-2xl font-black text-[#152026] font-mono">
                   LKR 5,000
                 </span>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-[#4B6584] leading-relaxed">
-              Submitting this registration form reserves your official learner seat in <strong className="text-[#0B2447] font-bold">Pending Payment</strong> status. On the next screen, you can choose any of the 3 official payment methods below to activate your account:
+            <p className="text-xs sm:text-sm text-[#152026]/75 leading-relaxed">
+              Submitting this registration form reserves your official learner seat in <strong className="text-[#152026] font-bold">Pending Payment</strong> status. On the next screen, you can choose any of the 3 official payment methods below to activate your account:
             </p>
 
             {/* 3 Payment Methods Preview */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-              <div className="p-3 rounded-xl bg-white border border-[#DBE2EF] flex items-center gap-2.5 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-[#E8F1FD] flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4 text-[#3F72AF]" />
+              <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] flex items-center gap-2.5 shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-[#D4EEF8] flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-[#1B3D59]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#0B2447] truncate">Bank Deposit Slip</p>
-                  <p className="text-[10px] text-[#64748B] truncate">Upload receipt photo</p>
+                  <p className="text-xs font-bold text-[#152026] truncate">Bank Deposit Slip</p>
+                  <p className="text-[10px] text-[#6A97C0] truncate">Upload receipt photo</p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white border border-[#DBE2EF] flex items-center gap-2.5 shadow-2xs">
+              <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] flex items-center gap-2.5 shadow-2xs">
                 <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                   <CreditCard className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#0B2447] truncate">Online Gateway</p>
-                  <p className="text-[10px] text-[#64748B] truncate">Visa / Master card</p>
+                  <p className="text-xs font-bold text-[#152026] truncate">Online Gateway</p>
+                  <p className="text-[10px] text-[#6A97C0] truncate">Visa / Master card</p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white border border-[#DBE2EF] flex items-center gap-2.5 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-                  <Building2 className="w-4 h-4 text-amber-600" />
+              <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] flex items-center gap-2.5 shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-[#F3EED8] flex items-center justify-center shrink-0">
+                  <Building2 className="w-4 h-4 text-[#152026]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#0B2447] truncate">Branch Cash</p>
-                  <p className="text-[10px] text-[#64748B] truncate">Pay at training ground</p>
+                  <p className="text-xs font-bold text-[#152026] truncate">Branch Cash</p>
+                  <p className="text-[10px] text-[#6A97C0] truncate">Pay at training ground</p>
                 </div>
               </div>
             </div>
@@ -999,7 +987,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={submitting || (calculatedAge !== null && calculatedAge < 18)}
-              className="btn-primary w-full py-4 rounded-2xl font-black text-sm sm:text-base text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-4 rounded-2xl font-black text-sm sm:text-base text-white shadow-sm flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>
@@ -1019,9 +1007,9 @@ export default function RegisterPage() {
         </form>
 
         {/* Footer info link */}
-        <div className="mt-6 pt-6 border-t border-[#DBE2EF] text-center text-xs text-[#4B6584]">
+        <div className="mt-6 pt-6 border-t border-[#D4EEF8] text-center text-xs text-[#6A97C0]">
           Already registered and paid?{' '}
-          <Link to="/login" className="text-[#3F72AF] font-bold hover:underline hover:text-[#0B2447] transition-colors">
+          <Link to="/login" className="text-[#1B3D59] font-bold hover:underline transition-colors">
             Sign In to Portal
           </Link>
         </div>

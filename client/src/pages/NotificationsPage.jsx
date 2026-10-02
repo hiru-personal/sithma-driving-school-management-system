@@ -65,30 +65,30 @@ export default function NotificationsPage() {
   const getIcon = (type) => {
     switch (type) {
       case 'payment':
-        return <CreditCard className="w-5 h-5 text-accent" />;
+        return <CreditCard className="w-5 h-5 text-[#1B3D59]" />;
       case 'booking':
-        return <Calendar className="w-5 h-5 text-cyan-400" />;
+        return <Calendar className="w-5 h-5 text-[#1B3D59]" />;
       case 'trial':
-        return <Award className="w-5 h-5 text-emerald-400" />;
+        return <Award className="w-5 h-5 text-emerald-600" />;
       case 'dmt-date':
-        return <Clock className="w-5 h-5 text-amber-300" />;
+        return <Clock className="w-5 h-5 text-[#1B3D59]" />;
       default:
-        return <Sparkles className="w-5 h-5 text-blue-300" />;
+        return <Sparkles className="w-5 h-5 text-[#6A97C0]" />;
     }
   };
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-5xl mx-auto w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Real-Time Notifications
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Real-Time Notifications
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <Bell className="w-6 h-6 text-cyan-400" /> Notifications Center
+          <h1 className="text-2xl font-black text-[#152026] flex items-center gap-2">
+            <Bell className="w-6 h-6 text-[#1B3D59]" /> Notifications Center
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5">
             Real-time milestone updates, payment confirmations, and scheduling alerts.
           </p>
         </div>
@@ -99,7 +99,7 @@ export default function NotificationsPage() {
           </button>
           <button
             onClick={handleMarkAllRead}
-            className="btn-primary text-xs py-2 px-4 font-bold shadow-md flex items-center gap-1.5"
+            className="btn-primary text-xs py-2 px-4 font-bold shadow-sm flex items-center gap-1.5"
           >
             <CheckCheck className="w-3.5 h-3.5" /> Mark All Read
           </button>
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="card p-2 flex items-center gap-1.5 overflow-x-auto">
+      <div className="bg-white rounded-2xl p-2 border border-[#D4EEF8] shadow-sm flex items-center gap-1.5 overflow-x-auto">
         {[
           { id: 'all', label: 'All Alerts' },
           { id: 'payment', label: 'Payments' },
@@ -120,8 +120,8 @@ export default function NotificationsPage() {
             onClick={() => setFilterType(tab.id)}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               filterType === tab.id
-                ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] border border-cyan-300'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[#1B3D59] text-white shadow-sm'
+                : 'text-[#152026] hover:bg-[#D4EEF8]/40'
             }`}
           >
             {tab.label}
@@ -132,42 +132,42 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading notifications...
+          <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading notifications...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="card text-center py-12 space-y-2">
-            <Bell className="w-10 h-10 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-white">No notifications in this category</p>
-            <p className="text-xs text-slate-400">You're all caught up with your updates.</p>
+          <div className="bg-white rounded-3xl p-12 text-center space-y-2 border border-[#D4EEF8] shadow-sm">
+            <Bell className="w-10 h-10 text-[#6A97C0] mx-auto" />
+            <p className="text-sm font-bold text-[#152026]">No notifications in this category</p>
+            <p className="text-xs text-[#6A97C0]">You're all caught up with your updates.</p>
           </div>
         ) : (
           filtered.map((n) => (
             <div
               key={n._id}
               onClick={() => !n.read && handleMarkAsRead(n._id)}
-              className={`card p-4 flex items-start gap-4 transition-all cursor-pointer ${
+              className={`bg-white rounded-3xl p-4 flex items-start gap-4 border transition-all cursor-pointer shadow-sm ${
                 !n.read
-                  ? 'border-l-4 border-l-cyan-400 bg-cyan-500/10'
-                  : 'bg-slate-900/60'
+                  ? 'border-l-4 border-l-[#1B3D59] border-[#D4EEF8] bg-[#FAFCFE]'
+                  : 'border-[#D4EEF8] hover:border-[#6A97C0]'
               }`}
             >
-              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 shadow-sm flex-shrink-0">
+              <div className="p-2.5 rounded-xl bg-[#D4EEF8] border border-[#6A97C0]/30 shadow-xs flex-shrink-0">
                 {getIcon(n.type)}
               </div>
 
               <div className="flex-1 min-w-0 text-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                  <h3 className="font-bold text-sm text-white">{n.title}</h3>
-                  <span className="text-[11px] text-slate-400 font-medium">
+                  <h3 className="font-bold text-sm text-[#152026]">{n.title}</h3>
+                  <span className="text-[11px] text-[#6A97C0] font-medium">
                     {n.createdAt ? format(new Date(n.createdAt), 'MMM dd, yyyy • hh:mm a') : 'N/A'}
                   </span>
                 </div>
-                <p className="text-slate-300 leading-relaxed text-xs">{n.message}</p>
+                <p className="text-[#152026]/75 leading-relaxed text-xs">{n.message}</p>
               </div>
 
               {!n.read && (
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)] flex-shrink-0 mt-2"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#1B3D59] flex-shrink-0 mt-2"></span>
               )}
             </div>
           ))

@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import DarkVeil from './components/DarkVeil';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -81,9 +80,9 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
 export default function App() {
   return (
     <AuthProvider>
-      {/* Clean Luminous Light Canvas */}
-      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#FAFBFE]" />
-      <div className="relative z-10 min-h-screen flex flex-col font-sans text-[#1E293B] selection:bg-primary selection:text-white w-full max-w-full overflow-x-hidden bg-transparent">
+      {/* Clean Enterprise Canvas */}
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#FAFCFE]" />
+      <div className="relative z-10 min-h-screen flex flex-col font-sans text-[#152026] selection:bg-[#1B3D59] selection:text-white w-full max-w-full overflow-x-hidden bg-transparent">
         <Navbar />
 
         <main className="flex-1 w-full max-w-full overflow-x-hidden">

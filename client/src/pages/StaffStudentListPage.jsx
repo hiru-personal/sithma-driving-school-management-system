@@ -953,17 +953,17 @@ export default function StaffStudentListPage() {
         /* Standard Student Registry View */
         <>
       {/* Filter & Search Bar */}
-      <div className="card p-6 space-y-4">
+      <div className="card p-6 space-y-4 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-5 h-5 text-[#94A3B8] absolute left-4 top-3.5" />
+            <Search className="w-5 h-5 text-[#6A97C0] absolute left-4 top-3.5" />
             <input
               type="text"
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-[#DBE2EF] text-[#112D4E] placeholder-[#94A3B8] rounded-xl text-sm sm:text-base focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#6A97C0] rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
             />
           </div>
 
@@ -971,7 +971,7 @@ export default function StaffStudentListPage() {
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="px-4 py-3 border border-[#DBE2EF] rounded-xl text-sm sm:text-base bg-white text-[#112D4E] outline-none font-semibold focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20"
+            className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
           >
             <option value="All">All Branches</option>
             <option value="Maharagama">Maharagama Branch</option>
@@ -983,7 +983,7 @@ export default function StaffStudentListPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-3 border border-[#DBE2EF] rounded-xl text-sm sm:text-base bg-white text-[#112D4E] outline-none font-semibold focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20"
+            className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
           >
             <option value="">All Categories (Type 1 & 2)</option>
             <option value="Type1_NewLearner">Type 1 — New Learner</option>
@@ -994,7 +994,7 @@ export default function StaffStudentListPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 border border-[#DBE2EF] rounded-xl text-sm sm:text-base bg-white text-[#112D4E] outline-none font-semibold focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20"
+            className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
           >
             <option value="">All Progress Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -1006,21 +1006,21 @@ export default function StaffStudentListPage() {
       </div>
 
       {/* Student List Table */}
-      <div className="card p-0 overflow-hidden shadow-sm border border-[#DBE2EF]">
+      <div className="card p-0 overflow-hidden shadow-xs border border-[#D4EEF8] bg-white rounded-2xl">
         {loading ? (
-          <div className="py-16 text-center text-sm sm:text-base text-[#4B6584] flex items-center justify-center gap-3">
-            <RefreshCw className="w-5 h-5 animate-spin text-[#3F72AF]" /> Loading student database...
+          <div className="py-16 text-center text-sm sm:text-base text-[#475569] flex items-center justify-center gap-3">
+            <RefreshCw className="w-5 h-5 animate-spin text-[#1B3D59]" /> Loading student database...
           </div>
         ) : students.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <Users className="w-12 h-12 text-[#94A3B8] mx-auto" />
-            <p className="text-lg font-bold text-[#112D4E]">No students found matching your filters</p>
-            <p className="text-sm text-[#4B6584]">Try adjusting your search query or branch filters.</p>
+            <Users className="w-12 h-12 text-[#6A97C0] mx-auto" />
+            <p className="text-lg font-bold text-[#152026]">No students found matching your filters</p>
+            <p className="text-sm text-[#475569]">Try adjusting your search query or branch filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-[#F8FAFD] border-b border-[#DBE2EF] text-[#112D4E] uppercase text-xs font-black tracking-wider">
+              <thead className="bg-[#1B3D59] border-b border-[#D4EEF8] text-white uppercase text-xs font-black tracking-wider">
                 <tr>
                   <th className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">Student Name</th>
                   <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Branch & Category</th>
@@ -1031,7 +1031,7 @@ export default function StaffStudentListPage() {
                   <th className="px-4 py-3.5 whitespace-nowrap text-right min-w-[260px]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#DBE2EF]">
+              <tbody className="divide-y divide-[#D4EEF8]">
                 {students.map((st) => {
                   const isLicensed = st.trial?.licenseObtained;
                   const attemptsCount = st.trial?.attempts?.length || 0;
@@ -1048,11 +1048,11 @@ export default function StaffStudentListPage() {
                   );
 
                   return (
-                    <tr key={st._id} className="hover:bg-[#F0F4F8] transition-colors">
+                    <tr key={st._id} className="hover:bg-[#D4EEF8]/40 transition-colors">
                       {/* Name & Contact */}
-                      <td className="px-4 py-3 font-semibold text-[#0B2447]">
+                      <td className="px-4 py-3 font-semibold text-[#152026]">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm sm:text-base font-extrabold text-[#0B2447]">{st.userId?.name || 'Unknown Student'}</div>
+                          <div className="text-sm sm:text-base font-extrabold text-[#152026]">{st.userId?.name || 'Unknown Student'}</div>
                           {studentPendingReq && (
                             <button
                               type="button"
@@ -1064,7 +1064,7 @@ export default function StaffStudentListPage() {
                                 setReviewNotes('');
                                 setShowRescheduleModal(true);
                               }}
-                              className="badge bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold animate-pulse hover:bg-amber-200 flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                              className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold animate-pulse hover:bg-amber-100 flex items-center gap-1 cursor-pointer transition-all shadow-xs"
                               title="Click to review student's reschedule request"
                             >
                               <Clock className="w-3 h-3 text-amber-700" />
@@ -1072,24 +1072,26 @@ export default function StaffStudentListPage() {
                             </button>
                           )}
                         </div>
-                        <div className="text-xs text-[#4B6584] font-medium mt-0.5">
+                        <div className="text-xs text-[#475569] font-medium mt-0.5">
                           {st.userId?.phone} • {st.userId?.email}
                         </div>
                       </td>
 
                       {/* Branch & Type */}
                       <td className="px-4 py-3">
-                        <div className="font-extrabold text-xs sm:text-sm text-[#0B2447]">{st.branch}</div>
+                        <div className="font-extrabold text-xs sm:text-sm text-[#152026]">{st.branch}</div>
                         <span
-                          className={`badge text-[11px] py-0.5 px-2 mt-1 font-bold ${
-                            isType2 ? 'badge-accent' : 'badge-info'
+                          className={`inline-block text-[11px] py-0.5 px-2 mt-1 font-bold rounded-full border ${
+                            isType2
+                              ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#6A97C0]/40'
+                              : 'bg-white text-[#152026] border-[#D4EEF8]'
                           }`}
                         >
                           {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
                         </span>
                         {st.trial_date && (
                           <div className="mt-1">
-                            <span className="badge bg-[#DBE2EF] text-[#112D4E] border border-[#3F72AF]/30 text-[10px] font-bold">
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-[#D4EEF8]/60 text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
                               📅 Trial: {format(new Date(st.trial_date), 'MMM dd')}
                             </span>
                           </div>
@@ -1100,15 +1102,15 @@ export default function StaffStudentListPage() {
                       <td className="px-4 py-3">
                         {st.package?.type ? (
                           <>
-                            <div className="font-bold text-xs sm:text-sm text-[#0B2447]">{st.package.type.replace(/_/g, ' ')}</div>
-                            <div className="text-xs text-[#4B6584] font-medium mt-0.5">
+                            <div className="font-bold text-xs sm:text-sm text-[#152026]">{st.package.type.replace(/_/g, ' ')}</div>
+                            <div className="text-xs text-[#475569] font-medium mt-0.5">
                               {st.package.lessonsUsed || 0} / {st.package.lessonsTotal || 0} used
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="font-bold text-xs text-[#3F72AF]">Pending Theory Exam</div>
-                            <div className="text-[11px] text-[#64748B] font-medium mt-0.5">Selected at Step 5</div>
+                            <div className="font-bold text-xs text-[#1B3D59]">Pending Theory Exam</div>
+                            <div className="text-[11px] text-[#6A97C0] font-medium mt-0.5">Selected at Step 5</div>
                           </>
                         )}
                       </td>
@@ -1116,16 +1118,16 @@ export default function StaffStudentListPage() {
                       {/* DMT Learner Exam */}
                       <td className="px-4 py-3">
                         {isType2 ? (
-                          <span className="badge badge-success text-xs font-bold">Pre-Cleared</span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">Pre-Cleared</span>
                         ) : st.registrationStatus === 'cancelled' ? (
-                          <span className="badge badge-danger text-xs font-bold">Failed 3/3 Attempts</span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed 3/3 Attempts</span>
                         ) : st.dmtDates?.learnerExamPassed ? (
-                          <span className="badge badge-success text-xs font-bold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                             Passed {st.learnerExamMarks ? `(${st.learnerExamMarks}/40)` : 'Written Exam'}
                           </span>
                         ) : st.learnerExamAttemptsCount > 0 ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="badge badge-danger text-xs font-bold">Failed ({st.learnerExamAttemptsCount}/3)</span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed ({st.learnerExamAttemptsCount}/3)</span>
                             {st.dmtDates?.learnerExamDate && (
                               <span className="text-[10px] text-amber-700 font-bold">
                                 Next: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
@@ -1133,11 +1135,11 @@ export default function StaffStudentListPage() {
                             )}
                           </div>
                         ) : st.dmtDates?.learnerExamDate ? (
-                          <span className="badge badge-warning text-xs font-bold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-xs font-bold">
                             Exam: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
                           </span>
                         ) : (
-                          <span className="badge badge-danger text-xs font-bold">Exam Pending</span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 text-xs font-bold">Exam Pending</span>
                         )}
                       </td>
 
@@ -1146,12 +1148,12 @@ export default function StaffStudentListPage() {
                         <div className="flex items-center justify-center gap-1.5">
                           {[1, 2, 3].map((num) => {
                             const att = st.trial?.attempts?.find((a) => a.attemptNumber === num);
-                            let bg = 'bg-[#F0F4F8] text-[#4B6584] border border-[#DBE2EF]';
+                            let bg = 'bg-slate-100 text-slate-500 border border-slate-200';
                             if (att) {
                               bg =
                                 att.result === 'passed'
-                                  ? 'bg-emerald-600 text-white font-black border-emerald-500 shadow-sm'
-                                  : 'bg-rose-600 text-white font-black border-rose-500 shadow-sm';
+                                  ? 'bg-emerald-600 text-white font-black border-emerald-500 shadow-xs'
+                                  : 'bg-red-600 text-white font-black border-red-500 shadow-xs';
                             }
 
                             return (
@@ -1178,58 +1180,58 @@ export default function StaffStudentListPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-col items-start gap-1">
                           <span
-                            className={`badge text-xs font-bold ${
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                               isLicensed
-                                ? 'badge-success'
+                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                 : st.registrationStatus === 'cancelled'
-                                ? 'badge-danger bg-rose-50 text-rose-800 border border-rose-300'
+                                ? 'bg-red-50 text-red-800 border border-red-300'
                                 : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
-                                ? 'badge-info'
-                                : 'badge-warning'
+                                ? 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
+                                : 'bg-[#F3EED8] text-[#152026] border border-amber-300'
                             }`}
                           >
                             {isLicensed ? 'Licensed' : st.registrationStatus === 'cancelled' ? '❌ CANCELLED' : st.registrationStatus?.replace('_', ' ')}
                           </span>
 
                           {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment' ? (
-                            <span className="badge badge-success text-[10px] py-0 px-2 font-bold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
                               👑 Premium User
                             </span>
                           ) : (
-                            <span className="badge badge-warning text-[10px] py-0 px-2 font-extrabold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
                               🔒 Advance Pending
                             </span>
                           )}
 
                           {st.latestPayment?.slipImageUrl && !st.isAdvancePaid && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-[#3F72AF] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 font-bold">
-                              <FileText className="w-3 h-3 text-[#3F72AF]" /> Slip Uploaded
+                            <span className="inline-flex items-center gap-1 text-[10px] text-[#1B3D59] bg-[#D4EEF8] px-2 py-0.5 rounded-full border border-[#6A97C0]/30 font-bold">
+                              <FileText className="w-3 h-3 text-[#1B3D59]" /> Slip Uploaded
                             </span>
                           )}
 
                           {/* DMT Learner License Lifecycle & Completion Status */}
                           {st.learnerLicenseStatus === 'completed' && (
-                            <span className="badge bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
                               ✓ License Completed
                             </span>
                           )}
                           {st.learnerLicenseStatus === 'passed' && (
-                            <span className="badge bg-blue-50 text-blue-800 border border-blue-300 text-[10px] font-extrabold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/40 text-[10px] font-extrabold flex items-center gap-1">
                               ★ Passed (Upload DL)
                             </span>
                           )}
                           {st.learnerLicenseStatus === 'expired' && (
-                            <span className="badge bg-rose-50 text-rose-800 border border-rose-300 text-[10px] font-extrabold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-300 text-[10px] font-extrabold flex items-center gap-1">
                               ⚠️ 18M Expired
                             </span>
                           )}
                           {st.learnerLicenseStatus === 'attempts_exhausted' && (
-                            <span className="badge bg-rose-50 text-rose-800 border border-rose-300 text-[10px] font-extrabold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-300 text-[10px] font-extrabold flex items-center gap-1">
                               ❌ 3 Attempts Failed
                             </span>
                           )}
                           {st.learnerLicenseStatus === 'expiring_soon' && (
-                            <span className="badge bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
                               ⏳ Expiring Soon
                             </span>
                           )}
@@ -1242,10 +1244,10 @@ export default function StaffStudentListPage() {
                           {/* DMT Learner License Lifecycle & Completion Management */}
                           <button
                             onClick={() => openStudentModal(st, 'lifecycle')}
-                            className="p-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all cursor-pointer shadow-xs"
+                            className="p-2 rounded-xl bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] border border-[#6A97C0]/30 transition-all cursor-pointer shadow-xs"
                             title="DMT License Lifecycle (18M Validity, 3 Attempts, Final Pass & License Upload)"
                           >
-                            <FileCheck className="w-4 h-4 text-teal-700" />
+                            <FileCheck className="w-4 h-4 text-[#1B3D59]" />
                           </button>
 
                           {/* Direct Date Reschedule Review Action Button */}
@@ -1260,7 +1262,7 @@ export default function StaffStudentListPage() {
                                 setReviewNotes('');
                                 setShowRescheduleModal(true);
                               }}
-                              className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 animate-pulse transition-all shadow-xs cursor-pointer"
+                              className="p-2 rounded-xl bg-[#F3EED8] hover:bg-amber-100 text-[#152026] border border-amber-300 animate-pulse transition-all shadow-xs cursor-pointer"
                               title={`Action Required: Review ${getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Request`}
                             >
                               <Clock className="w-4 h-4 text-amber-700" />
@@ -1342,36 +1344,36 @@ export default function StaffStudentListPage() {
 
       {/* Modal Dialog: Edit DMT Dates / Record Trial Attempt */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className={`backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] ${modalMode === 'lifecycle' ? 'max-w-3xl' : 'max-w-lg'} w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto`}>
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className={`bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl ${modalMode === 'lifecycle' ? 'max-w-3xl' : 'max-w-lg'} w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]`}>
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
                   {modalMode === 'edit_dmt' ? (
                     <>
-                      <Calendar className="w-5 h-5 text-cyan-400" /> DMT Regulatory Dates: {selectedStudent.userId?.name}
+                      <Calendar className="w-5 h-5 text-[#1B3D59]" /> DMT Regulatory Dates: {selectedStudent.userId?.name}
                     </>
                   ) : modalMode === 'set_trial_date' ? (
                     <>
-                      <Calendar className="w-5 h-5 text-purple-400" /> Practical Trial Date: {selectedStudent.userId?.name}
+                      <Calendar className="w-5 h-5 text-[#1B3D59]" /> Practical Trial Date: {selectedStudent.userId?.name}
                     </>
                   ) : modalMode === 'lifecycle' ? (
                     <>
-                      <FileCheck className="w-5 h-5 text-teal-400" /> DMT License Lifecycle & Completion: {selectedStudent.userId?.name}
+                      <FileCheck className="w-5 h-5 text-[#1B3D59]" /> DMT License Lifecycle & Completion: {selectedStudent.userId?.name}
                     </>
                   ) : (
                     <>
-                      <Award className="w-5 h-5 text-amber-400" /> Record Practical Trial Attempt: {selectedStudent.userId?.name}
+                      <Award className="w-5 h-5 text-[#1B3D59]" /> Record Practical Trial Attempt: {selectedStudent.userId?.name}
                     </>
                   )}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#6A97C0]">
                   {selectedStudent.branch} Branch • {selectedStudent.studentType}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1388,19 +1390,19 @@ export default function StaffStudentListPage() {
                       (r.milestone_type === 'trial' || !r.milestone_type) &&
                       r.status === 'Pending'
                   ) && (
-                    <div className="p-3.5 bg-purple-500/15 border border-purple-400/40 rounded-xl space-y-2">
+                    <div className="p-3.5 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-2 text-[#152026]">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-purple-300 flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-purple-400 animate-pulse" />
+                        <span className="font-bold text-[#152026] flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-[#1B3D59] animate-pulse" />
                           Student Submitted Practical Trial Reschedule Request
                         </span>
-                        <span className="badge bg-purple-500/30 text-purple-200 border border-purple-400/40 text-[10px] font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-white border border-[#E2D8B3] text-[#152026] text-[10px] font-bold">
                           Pending
                         </span>
                       </div>
-                      <div className="text-slate-200 text-xs">
+                      <div className="text-xs text-[#152026]">
                         Preferred Date:{' '}
-                        <strong className="text-cyan-300 font-mono">
+                        <strong className="text-[#1B3D59] font-mono">
                           {rescheduleRequests.find(
                             (r) =>
                               (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
@@ -1427,7 +1429,7 @@ export default function StaffStudentListPage() {
                           (r.milestone_type === 'trial' || !r.milestone_type) &&
                           r.status === 'Pending'
                       )?.reason && (
-                        <div className="text-slate-300 italic text-[11px]">
+                        <div className="text-slate-600 italic text-[11px]">
                           "{rescheduleRequests.find(
                             (r) =>
                               (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
@@ -1457,7 +1459,7 @@ export default function StaffStudentListPage() {
                               toast.success(`Applied preferred date (${pDate}) to input!`);
                             }
                           }}
-                          className="px-3 py-1 rounded-lg bg-purple-500/30 hover:bg-purple-500/40 text-purple-200 border border-purple-400/40 font-bold text-[11px] flex items-center gap-1"
+                          className="px-3 py-1 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold text-[11px] flex items-center gap-1 shadow-sm"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Apply Student's Preferred Trial Date
                         </button>
@@ -1465,39 +1467,39 @@ export default function StaffStudentListPage() {
                     </div>
                   )}
 
-                <div className="p-3.5 bg-purple-500/10 border border-purple-400/20 rounded-xl space-y-1">
-                  <p className="font-bold text-purple-300 text-xs flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-purple-400" /> Schedule Practical Driving Trial Exam
+                <div className="p-3.5 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl space-y-1">
+                  <p className="font-bold text-[#1B3D59] text-xs flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-[#1B3D59]" /> Schedule Practical Driving Trial Exam
                   </p>
-                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                  <p className="text-slate-600 text-[11px] leading-relaxed">
                     Setting the official practical trial date allows the student to book lesson sessions up until this date. If not set (for Type 2) or passed, booking will be locked.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Select Practical Trial Date:
                   </label>
                   <div className="relative flex items-center">
-                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                     <input
                       type="date"
                       required
                       min={new Date().toISOString().split('T')[0]}
                       value={trialDateInput}
                       onChange={(e) => setTrialDateInput(e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900/90 border border-white/15 rounded-xl text-cyan-300 font-bold outline-none cursor-pointer"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] rounded-xl text-[#152026] font-bold outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] cursor-pointer"
                     />
                   </div>
                 </div>
 
                 {selectedStudent.trial_date && (
-                  <div className="text-[11px] text-slate-400 p-2.5 bg-white/5 rounded-xl border border-white/10">
-                    Currently Assigned: <strong className="text-white">{format(new Date(selectedStudent.trial_date), 'EEEE, MMMM dd, yyyy')}</strong>
+                  <div className="text-[11px] text-slate-600 p-2.5 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
+                    Currently Assigned: <strong className="text-[#152026]">{format(new Date(selectedStudent.trial_date), 'EEEE, MMMM dd, yyyy')}</strong>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+                <div className="flex justify-end gap-2 pt-3 border-t border-[#D4EEF8]">
                   <button
                     type="button"
                     onClick={() => setSelectedStudent(null)}
@@ -1508,7 +1510,7 @@ export default function StaffStudentListPage() {
                   <button
                     type="submit"
                     disabled={savingTrialDate || !trialDateInput}
-                    className="btn-accent text-xs py-2 px-5 font-bold shadow-md disabled:opacity-50"
+                    className="btn-primary text-xs py-2 px-5 font-bold shadow-md disabled:opacity-50"
                   >
                     {savingTrialDate ? 'Saving...' : 'Set Practical Trial Date'}
                   </button>
@@ -1527,10 +1529,10 @@ export default function StaffStudentListPage() {
                       r.status === 'Pending' &&
                       ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
                   ) && (
-                    <div className="p-3.5 bg-amber-500/15 border border-amber-400/40 rounded-2xl space-y-2 text-xs">
+                    <div className="p-3.5 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-2 text-xs text-[#152026]">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-amber-300 flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                        <span className="font-bold text-[#152026] flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-[#1B3D59] animate-pulse" />
                           Student Submitted Reschedule Request for{' '}
                           {getMilestoneLabel(
                             rescheduleRequests.find(
@@ -1541,13 +1543,13 @@ export default function StaffStudentListPage() {
                             )?.milestone_type
                           )}
                         </span>
-                        <span className="badge bg-amber-500/30 text-amber-200 border border-amber-400/40 text-[10px] font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-white border border-[#E2D8B3] text-[#152026] text-[10px] font-bold">
                           Pending DEO Action
                         </span>
                       </div>
-                      <div className="text-slate-200">
+                      <div className="text-[#152026]">
                         Preferred Date:{' '}
-                        <strong className="text-cyan-300 font-mono">
+                        <strong className="text-[#1B3D59] font-mono">
                           {rescheduleRequests.find(
                             (r) =>
                               (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
@@ -1574,7 +1576,7 @@ export default function StaffStudentListPage() {
                           r.status === 'Pending' &&
                           ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
                       )?.reason && (
-                        <div className="text-slate-300 italic text-[11px]">
+                        <div className="text-slate-600 italic text-[11px]">
                           "{rescheduleRequests.find(
                             (r) =>
                               (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
@@ -1612,7 +1614,7 @@ export default function StaffStudentListPage() {
                               );
                             }
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500/30 hover:bg-amber-500/40 text-amber-200 border border-amber-400/40 font-bold text-[11px] flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold text-[11px] flex items-center gap-1 shadow-sm"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Apply Student's Requested Date to Form
                         </button>
@@ -1621,22 +1623,22 @@ export default function StaffStudentListPage() {
                   )}
 
                 {selectedStudent.registrationStatus === 'cancelled' && (
-                  <div className="p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-xl space-y-1">
-                    <div className="font-bold text-rose-300 flex items-center gap-1.5 text-xs">
-                      <XCircle className="w-4 h-4 text-rose-400" /> Registration Auto-Cancelled (3 Failed Written Exam Attempts)
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-1">
+                    <div className="font-bold text-rose-700 flex items-center gap-1.5 text-xs">
+                      <XCircle className="w-4 h-4 text-rose-600" /> Registration Auto-Cancelled (3 Failed Written Exam Attempts)
                     </div>
-                    <p className="text-[11px] text-slate-300">
+                    <p className="text-[11px] text-slate-600">
                       This learner has failed all 3 allowed DMT written exam attempts. Their registration was cancelled and account locked. They need to re-register as a new learner and pay the Rs. 5,000 advance fee to restart.
                     </p>
                   </div>
                 )}
 
                 {/* DMT Date Sequence Order Notice */}
-                <div className="p-3 bg-cyan-500/10 border border-cyan-400/25 rounded-xl text-cyan-200 text-xs space-y-1">
-                  <div className="font-bold flex items-center gap-1.5 text-cyan-300">
-                    <Info className="w-4 h-4 text-cyan-400" /> DMT Date Validation Sequence (Server-Enforced)
+                <div className="p-3 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl text-[#152026] text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-[#1B3D59]">
+                    <Info className="w-4 h-4 text-[#1B3D59]" /> DMT Date Validation Sequence (Server-Enforced)
                   </div>
-                  <p className="text-[11px] text-slate-300">
+                  <p className="text-[11px] text-slate-600">
                     <strong>Registration Date</strong> and <strong>Medical Exam Date</strong> can be on the same date. <strong>Theory (Written) Exam Date</strong> must be scheduled after both dates.
                   </p>
                 </div>
@@ -1644,22 +1646,22 @@ export default function StaffStudentListPage() {
                 {/* 1. Registration Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-300">
+                    <label className="block font-semibold text-[#152026]">
                       1. DMT Learner Registration Date (US-05):
                     </label>
                     {selectedStudent.dmtDates?.registrationDone && (
-                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                         ✓ Student Marked Done
                       </span>
                     )}
                   </div>
                   <div className="relative flex items-center">
-                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                     <input
                       type="date"
                       value={dmtForm.learnerRegistrationDate}
                       onChange={(e) => setDmtForm({ ...dmtForm, learnerRegistrationDate: e.target.value })}
-                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                     />
                   </div>
                 </div>
@@ -1667,22 +1669,22 @@ export default function StaffStudentListPage() {
                 {/* 2. Medical Examination Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-300">
-                      2. DMT Medical Examination Date (US-04) <span className="text-cyan-400 font-mono text-[11px]">(Can be same date as Registration)</span>:
+                    <label className="block font-semibold text-[#152026]">
+                      2. DMT Medical Examination Date (US-04) <span className="text-[#6A97C0] font-mono text-[11px]">(Can be same date as Registration)</span>:
                     </label>
                     {selectedStudent.dmtDates?.medicalDone && (
-                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                         ✓ Student Marked Done
                       </span>
                     )}
                   </div>
                   <div className="relative flex items-center">
-                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                     <input
                       type="date"
                       value={dmtForm.medicalExamDate}
                       onChange={(e) => setDmtForm({ ...dmtForm, medicalExamDate: e.target.value })}
-                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                     />
                   </div>
                 </div>
@@ -1690,27 +1692,27 @@ export default function StaffStudentListPage() {
                 {/* 3. Learner Written Exam Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-300">
-                      3. DMT Learner Written Theory Exam Date <span className="text-cyan-400 font-mono text-[11px]">(&gt; Registration &amp; Medical Dates)</span>:
+                    <label className="block font-semibold text-[#152026]">
+                      3. DMT Learner Written Theory Exam Date <span className="text-[#6A97C0] font-mono text-[11px]">(&gt; Registration &amp; Medical Dates)</span>:
                     </label>
-                    <span className="text-[10px] text-cyan-300 font-mono">
+                    <span className="text-[10px] text-[#1B3D59] font-mono font-bold">
                       {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
                     </span>
                   </div>
                   <div className="relative flex items-center">
-                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                     <input
                       type="date"
                       value={dmtForm.learnerExamDate}
                       onChange={(e) => setDmtForm({ ...dmtForm, learnerExamDate: e.target.value })}
-                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                     />
                   </div>
                 </div>
 
                 {/* 4. Learner Exam Status */}
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     4. Learner Exam Status:
                   </label>
                   <select
@@ -1723,7 +1725,7 @@ export default function StaffStudentListPage() {
                         learnerExamPassed: val === 'passed',
                       });
                     }}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold cursor-pointer"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-bold cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   >
                     <option value="not_taken">Not Taken / In Progress</option>
                     <option value="passed">PASSED (Unlocks Trial Lessons)</option>
@@ -1733,10 +1735,10 @@ export default function StaffStudentListPage() {
 
                 {/* Exam Attempt History List */}
                 {selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.length > 0 && (
-                  <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
-                    <div className="font-bold text-slate-200 text-xs flex items-center justify-between">
+                  <div className="p-3 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl space-y-2">
+                    <div className="font-bold text-[#152026] text-xs flex items-center justify-between">
                       <span>Recorded Written Exam Attempts:</span>
-                      <span className="text-cyan-300 font-mono">
+                      <span className="text-[#1B3D59] font-mono font-bold">
                         {selectedStudent.learnerExamAttempts.length} of 3
                       </span>
                     </div>
@@ -1744,20 +1746,20 @@ export default function StaffStudentListPage() {
                       {selectedStudent.learnerExamAttempts.map((att, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between text-[11px] p-2 bg-slate-900/60 rounded-lg border border-white/5"
+                          className="flex items-center justify-between text-[11px] p-2 bg-white rounded-xl border border-[#D4EEF8]"
                         >
-                          <span className="font-semibold text-slate-300">
+                          <span className="font-semibold text-[#152026]">
                             Attempt #{att.attemptNumber} ({att.date ? format(new Date(att.date), 'MMM dd, yyyy') : 'No date'})
                           </span>
                           <div className="flex items-center gap-2">
                             {att.marks !== undefined && att.marks !== null && (
-                              <span className="font-mono text-cyan-300 font-bold">{att.marks}/40</span>
+                              <span className="font-mono text-[#1B3D59] font-bold">{att.marks}/40</span>
                             )}
                             <span
                               className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                 att.result === 'passed'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
                               }`}
                             >
                               {att.result?.toUpperCase()}
@@ -1770,17 +1772,17 @@ export default function StaffStudentListPage() {
                 )}
 
                 {dmtForm.learnerExamStatus === 'passed' && (
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-400/30 rounded-xl text-emerald-300 space-y-1">
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 space-y-1">
                     <div className="font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Trial Lesson Access Unlocked
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Trial Lesson Access Unlocked
                     </div>
-                    <p className="text-[11px] text-slate-300">
+                    <p className="text-[11px] text-slate-600">
                       Marking as Passed satisfies US-09. If this is a Type 1 learner, they will now be able to book practical Trial lessons.
                     </p>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                   <button
                     type="button"
                     onClick={() => setSelectedStudent(null)}
@@ -1798,37 +1800,37 @@ export default function StaffStudentListPage() {
             {/* Practical Trial Result Form */}
             {modalMode === 'record_trial' && (
               <form onSubmit={handleRecordTrial} className="space-y-4 text-xs">
-                <div className="p-3.5 bg-amber-500/10 border border-amber-400/20 rounded-xl space-y-1">
-                  <div className="font-bold text-amber-300 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" /> DMT 3-Attempt Rule:
+                <div className="p-3.5 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-1 text-[#152026]">
+                  <div className="font-bold text-[#152026] flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-[#1B3D59]" /> DMT 3-Attempt Rule:
                   </div>
-                  <p className="text-slate-300 text-[11px]">
+                  <p className="text-slate-600 text-[11px]">
                     Current attempts recorded: {selectedStudent.trial?.attempts?.length || 0} of 3 maximum allowed attempts.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Practical Trial Examination Date:
                   </label>
                   <div className="relative flex items-center">
-                    <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                     <input
                       type="date"
                       required
                       value={trialForm.attemptDate}
                       onChange={(e) => setTrialForm({ ...trialForm, attemptDate: e.target.value })}
-                      className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl cursor-pointer"
+                      className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Trial Outcome:</label>
+                  <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
                   <select
                     value={trialForm.result}
                     onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white font-bold rounded-xl"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   >
                     <option value="passed">PASSED (Issue Driver's License)</option>
                     <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
@@ -1837,7 +1839,7 @@ export default function StaffStudentListPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Examiner Notes / Feedback:
                   </label>
                   <textarea
@@ -1845,11 +1847,11 @@ export default function StaffStudentListPage() {
                     placeholder="e.g. Reverse parking cleared, minor observation on lane switching..."
                     value={trialForm.examinerNotes}
                     onChange={(e) => setTrialForm({ ...trialForm, examinerNotes: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                   <button
                     type="button"
                     onClick={() => setSelectedStudent(null)}
@@ -1857,7 +1859,7 @@ export default function StaffStudentListPage() {
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn-accent text-xs py-2 px-5 font-bold">
+                  <button type="submit" className="btn-primary text-xs py-2 px-5 font-bold">
                     Record Trial Result
                   </button>
                 </div>
@@ -1899,83 +1901,83 @@ export default function StaffStudentListPage() {
               const isExpiringSoon = diffDays !== null && diffDays <= 30 && diffDays > 0;
 
               return (
-                <div className="space-y-6 text-xs text-slate-200">
+                <div className="space-y-6 text-xs text-[#152026]">
                   {/* Top Status & Cycle Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8]">
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-400/30 font-black text-xs">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-black text-xs">
                         Registration Cycle #{cycleNum}
                       </span>
-                      <span className="text-slate-400 text-[11px]">
-                        NIC: <strong className="text-white font-mono">{selectedStudent.nic || selectedStudent.userId?.nic || 'N/A'}</strong>
+                      <span className="text-slate-600 text-[11px]">
+                        NIC: <strong className="text-[#152026] font-mono">{selectedStudent.nic || selectedStudent.userId?.nic || 'N/A'}</strong>
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       {isLicenseCompleted ? (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> License Completed
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> License Completed
                         </span>
                       ) : isFinalPassed ? (
-                        <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 font-bold flex items-center gap-1">
-                          <Award className="w-3.5 h-3.5 text-blue-400" /> Passed (Upload Final License)
+                        <span className="px-3 py-1 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold flex items-center gap-1">
+                          <Award className="w-3.5 h-3.5 text-[#1B3D59]" /> Passed (Upload Final License)
                         </span>
                       ) : isExpired ? (
-                        <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 font-bold flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> License Expired (18M)
+                        <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 font-bold flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> License Expired (18M)
                         </span>
                       ) : is3AttemptsFailed ? (
-                        <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 font-bold flex items-center gap-1">
-                          <XCircle className="w-3.5 h-3.5 text-rose-400" /> 3 Attempts Failed
+                        <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 font-bold flex items-center gap-1">
+                          <XCircle className="w-3.5 h-3.5 text-rose-600" /> 3 Attempts Failed
                         </span>
                       ) : isExpiringSoon ? (
-                        <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-amber-400" /> Expiring Soon ({diffDays}d)
+                        <span className="px-3 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-[#E2D8B3] font-bold flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-[#1B3D59]" /> Expiring Soon ({diffDays}d)
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Learner License Active
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Learner License Active
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* 1. 1.5-Year Validity Period Tracker (Sections 1 & 2) */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="font-bold text-white flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4 text-teal-400" />
+                      <div className="font-bold text-[#152026] flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-[#1B3D59]" />
                         1.5-Year Learner License Validity Period
                       </div>
-                      <span className="text-[11px] text-slate-400 font-mono">
+                      <span className="text-[11px] text-[#6A97C0] font-mono">
                         Rule: Start Date + 18 Months
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-3 rounded-xl bg-slate-900/60 border border-white/10">
-                        <span className="text-[11px] text-slate-400 block font-medium">License Start / Reg Date</span>
-                        <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+                      <div className="p-3 rounded-xl bg-white border border-[#D4EEF8]">
+                        <span className="text-[11px] text-slate-500 block font-medium">License Start / Reg Date</span>
+                        <span className="text-sm font-bold text-[#152026] font-mono mt-0.5 block">
                           {startDate ? format(new Date(startDate), 'yyyy-MM-dd') : 'Not Set'}
                         </span>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-900/60 border border-white/10">
-                        <span className="text-[11px] text-slate-400 block font-medium">Auto-Calculated Expiry (18M)</span>
-                        <span className="text-sm font-bold text-amber-300 font-mono mt-0.5 block">
+                      <div className="p-3 rounded-xl bg-white border border-[#D4EEF8]">
+                        <span className="text-[11px] text-slate-500 block font-medium">Auto-Calculated Expiry (18M)</span>
+                        <span className="text-sm font-bold text-[#1B3D59] font-mono mt-0.5 block">
                           {expiryDate ? format(new Date(expiryDate), 'yyyy-MM-dd') : 'Not Calculated'}
                         </span>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-slate-900/60 border border-white/10">
-                        <span className="text-[11px] text-slate-400 block font-medium">Validity Remaining</span>
+                      <div className="p-3 rounded-xl bg-white border border-[#D4EEF8]">
+                        <span className="text-[11px] text-slate-500 block font-medium">Validity Remaining</span>
                         <span
                           className={`text-sm font-bold font-mono mt-0.5 block ${
                             isExpired
-                              ? 'text-rose-400 font-black'
+                              ? 'text-rose-600 font-black'
                               : isExpiringSoon
-                              ? 'text-amber-400 font-black'
-                              : 'text-emerald-400'
+                              ? 'text-[#1B3D59] font-black'
+                              : 'text-emerald-700'
                           }`}
                         >
                           {isExpired
@@ -1988,12 +1990,12 @@ export default function StaffStudentListPage() {
                     </div>
 
                     {isExpired && (
-                      <div className="p-3 bg-rose-500/15 border border-rose-400/40 rounded-xl space-y-1">
-                        <div className="font-bold text-rose-300 flex items-center gap-1.5">
-                          <AlertTriangle className="w-4 h-4 text-rose-400" />
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+                        <div className="font-bold text-rose-800 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-rose-600" />
                           License Status: Expired (UNREGISTERED / EXPIRED)
                         </div>
-                        <p className="text-rose-200/90 text-[11px]">
+                        <p className="text-rose-700 text-[11px]">
                           This learner license has exceeded the 1.5-year (18 months) validity limit.
                           The current cycle is closed. <strong>Action: Register Again</strong> — learner must create a new registration cycle.
                         </p>
@@ -2001,12 +2003,12 @@ export default function StaffStudentListPage() {
                     )}
 
                     {isExpiringSoon && !isExpired && (
-                      <div className="p-3 bg-amber-500/15 border border-amber-400/40 rounded-xl space-y-1">
-                        <div className="font-bold text-amber-300 flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                      <div className="p-3 bg-[#F3EED8] border border-[#E2D8B3] rounded-xl space-y-1">
+                        <div className="font-bold text-[#152026] flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-[#1B3D59] animate-pulse" />
                           Learner License Expiring Soon
                         </div>
-                        <p className="text-amber-200/90 text-[11px]">
+                        <p className="text-slate-700 text-[11px]">
                           Remaining: <strong>{diffDays} Days</strong>. Ensure exams and licensing milestones are completed before expiration.
                         </p>
                       </div>
@@ -2014,14 +2016,14 @@ export default function StaffStudentListPage() {
                   </div>
 
                   {/* 2. Written Theory Exam Attempts (Sections 3 & 4) */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="font-bold text-white flex items-center gap-2 text-sm">
-                        <Award className="w-4 h-4 text-blue-400" />
+                      <div className="font-bold text-[#152026] flex items-center gap-2 text-sm">
+                        <Award className="w-4 h-4 text-[#1B3D59]" />
                         Written Theory Exam Attempts (Max 3 Allowed in Cycle #{cycleNum})
                       </div>
-                      <span className="text-[11px] text-slate-400">
-                        Attempts Used: <strong className="text-white">{attempts.length} of 3</strong>
+                      <span className="text-[11px] text-slate-600">
+                        Attempts Used: <strong className="text-[#152026]">{attempts.length} of 3</strong>
                       </span>
                     </div>
 
@@ -2034,9 +2036,9 @@ export default function StaffStudentListPage() {
                             className={`p-3 rounded-xl border ${
                               att
                                 ? att.result === 'passed'
-                                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
-                                  : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
-                                : 'bg-slate-900/60 border-white/10 text-slate-400'
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                  : 'bg-rose-50 border-rose-200 text-rose-900'
+                                : 'bg-white border-[#D4EEF8] text-slate-500'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-1.5">
@@ -2045,9 +2047,9 @@ export default function StaffStudentListPage() {
                                 className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                                   att
                                     ? att.result === 'passed'
-                                      ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/40'
-                                      : 'bg-rose-500/30 text-rose-300 border border-rose-400/40'
-                                    : 'bg-white/10 text-slate-400'
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                      : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                    : 'bg-slate-100 text-slate-500'
                                 }`}
                               >
                                 {att ? att.result.toUpperCase() : 'Available'}
@@ -2058,24 +2060,24 @@ export default function StaffStudentListPage() {
                               <div className="space-y-0.5 text-[11px]">
                                 <div>
                                   Date:{' '}
-                                  <strong className="text-white">
+                                  <strong className="text-[#152026]">
                                     {att.attemptDate ? format(new Date(att.attemptDate), 'yyyy-MM-dd') : 'N/A'}
                                   </strong>
                                 </div>
                                 <div>
                                   Score:{' '}
-                                  <strong className="text-white">
+                                  <strong className="text-[#152026]">
                                     {att.score !== undefined ? `${att.score}/40` : 'N/A'}
                                   </strong>
                                 </div>
                                 {att.examinerNotes && (
-                                  <div className="text-slate-400 italic text-[10px] mt-1 line-clamp-2">
+                                  <div className="text-slate-500 italic text-[10px] mt-1 line-clamp-2">
                                     "{att.examinerNotes}"
                                   </div>
                                 )}
                               </div>
                             ) : (
-                              <div className="text-[11px] text-slate-500 italic mt-1">
+                              <div className="text-[11px] text-slate-400 italic mt-1">
                                 Not recorded yet
                               </div>
                             )}
@@ -2085,12 +2087,12 @@ export default function StaffStudentListPage() {
                     </div>
 
                     {is3AttemptsFailed && (
-                      <div className="p-3 bg-rose-500/15 border border-rose-400/40 rounded-xl space-y-1">
-                        <div className="font-bold text-rose-300 flex items-center gap-1.5">
-                          <XCircle className="w-4 h-4 text-rose-400" />
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+                        <div className="font-bold text-rose-800 flex items-center gap-1.5">
+                          <XCircle className="w-4 h-4 text-rose-600" />
                           3 Attempts Failed — Cycle Unsuccessful
                         </div>
-                        <p className="text-rose-200/90 text-[11px]">
+                        <p className="text-rose-700 text-[11px]">
                           All 3 trial attempts have been used. The learner cannot receive additional attempts under Cycle #{cycleNum}.
                           <strong> Action: Register Again</strong> — a new registration cycle will reset attempts to 0 of 3.
                         </p>
@@ -2099,32 +2101,32 @@ export default function StaffStudentListPage() {
                   </div>
 
                   {/* 3. Final Pass Status & Admin Action (Section 5) */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="font-bold text-white flex items-center gap-2 text-sm">
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <div className="font-bold text-[#152026] flex items-center gap-2 text-sm">
+                        <ShieldCheck className="w-4 h-4 text-[#1B3D59]" />
                         Final Pass Status (Admin Action)
                       </div>
                       {isFinalPassed ? (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> PASSED
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> PASSED
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-white/10 font-bold">
+                        <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-bold">
                           Pending Admin Pass
                         </span>
                       )}
                     </div>
 
                     {isFinalPassed ? (
-                      <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between gap-3">
+                      <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3">
                         <div className="space-y-0.5">
-                          <div className="font-bold text-emerald-300 flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4 text-emerald-400" /> Learner Marked as PASSED
+                          <div className="font-bold text-emerald-800 flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-emerald-600" /> Learner Marked as PASSED
                           </div>
-                          <p className="text-[11px] text-slate-300">
+                          <p className="text-[11px] text-slate-600">
                             Passed On:{' '}
-                            <strong className="text-white">
+                            <strong className="text-[#152026]">
                               {selectedStudent.passedAt
                                 ? format(new Date(selectedStudent.passedAt), 'MMM dd, yyyy hh:mm a')
                                 : 'Verified'}
@@ -2134,8 +2136,8 @@ export default function StaffStudentListPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="space-y-0.5 text-slate-300 text-[11px]">
+                      <div className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-0.5 text-slate-600 text-[11px]">
                           <p>
                             Learner has not been marked as passed yet. When the learner clears all required written & trial evaluations, click below to mark as Passed.
                           </p>
@@ -2144,7 +2146,7 @@ export default function StaffStudentListPage() {
                           type="button"
                           onClick={() => handleMarkPassed(selectedStudent._id)}
                           disabled={markingPassed}
-                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all shrink-0 disabled:opacity-50"
+                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all shrink-0 disabled:opacity-50"
                         >
                           {markingPassed ? (
                             <>
@@ -2161,10 +2163,10 @@ export default function StaffStudentListPage() {
                   </div>
 
                   {/* 4. Final Driving License Photo Upload & Verification (Sections 6 & 7) */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4">
+                  <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-bold text-white flex items-center gap-2 text-sm">
-                        <FileCheck className="w-4 h-4 text-cyan-400" />
+                      <div className="font-bold text-[#152026] flex items-center gap-2 text-sm">
+                        <FileCheck className="w-4 h-4 text-[#1B3D59]" />
                         Driving License / Final License Record
                       </div>
 
@@ -2173,28 +2175,28 @@ export default function StaffStudentListPage() {
                           <span
                             className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 border ${
                               selectedStudent.finalLicense?.verificationStatus === 'verified'
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                 : selectedStudent.finalLicense?.verificationStatus === 'rejected'
-                                ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
-                                : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'
                             }`}
                           >
                             {selectedStudent.finalLicense?.verificationStatus === 'verified' ? (
                               <>
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> License Photo: Uploaded ✓ (Verified)
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> License Photo: Uploaded ✓ (Verified)
                               </>
                             ) : selectedStudent.finalLicense?.verificationStatus === 'rejected' ? (
                               <>
-                                <XCircle className="w-3.5 h-3.5 text-rose-400" /> License Photo: Rejected
+                                <XCircle className="w-3.5 h-3.5 text-rose-600" /> License Photo: Rejected
                               </>
                             ) : (
                               <>
-                                <Clock className="w-3.5 h-3.5 text-amber-400" /> License Photo: Uploaded ✓ (Pending Verification)
+                                <Clock className="w-3.5 h-3.5 text-[#1B3D59]" /> License Photo: Uploaded ✓ (Pending Verification)
                               </>
                             )}
                           </span>
                         ) : (
-                          <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-white/10 text-[11px] font-bold">
+                          <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold">
                             License Photo: Not Uploaded
                           </span>
                         )}
@@ -2203,7 +2205,7 @@ export default function StaffStudentListPage() {
 
                     {/* License Photo View & Verification Card (if uploaded) */}
                     {selectedStudent.finalLicense?.photoUrl && (
-                      <div className="p-3.5 rounded-xl bg-slate-900/70 border border-white/10 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                      <div className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                         <div className="md:col-span-1">
                           <a
                             href={
@@ -2213,18 +2215,18 @@ export default function StaffStudentListPage() {
                             }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block group relative overflow-hidden rounded-xl border border-white/15 bg-black/40 aspect-video md:aspect-4/3 flex items-center justify-center cursor-pointer"
+                            className="block group relative overflow-hidden rounded-xl border border-[#D4EEF8] bg-slate-100 aspect-video md:aspect-4/3 flex items-center justify-center cursor-pointer"
                           >
                             <img
                               src={
                                 selectedStudent.finalLicense.photoUrl.startsWith('http')
-                                  ? selectedStudent.finalLicense.photoUrl
-                                  : `http://localhost:5001${selectedStudent.finalLicense.photoUrl}`
+                                ? selectedStudent.finalLicense.photoUrl
+                                : `http://localhost:5001${selectedStudent.finalLicense.photoUrl}`
                               }
                               alt="Final Driving License"
                               className="w-full h-full object-contain transition-transform group-hover:scale-105"
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold gap-1 text-[11px]">
+                            <div className="absolute inset-0 bg-[#152026]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold gap-1 text-[11px]">
                               <ExternalLink className="w-3.5 h-3.5" /> View Full Image
                             </div>
                           </a>
@@ -2233,54 +2235,54 @@ export default function StaffStudentListPage() {
                         <div className="md:col-span-2 space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-[11px]">
                             <div>
-                              <span className="text-slate-400 block">License Number:</span>
-                              <strong className="text-cyan-300 font-mono text-xs">
+                              <span className="text-slate-500 block">License Number:</span>
+                              <strong className="text-[#1B3D59] font-mono text-xs">
                                 {selectedStudent.finalLicense.licenseNumber || 'Not provided'}
                               </strong>
                             </div>
                             <div>
-                              <span className="text-slate-400 block">Uploaded By:</span>
-                              <strong className="text-white capitalize">
+                              <span className="text-slate-500 block">Uploaded By:</span>
+                              <strong className="text-[#152026] capitalize">
                                 {selectedStudent.finalLicense.uploadedBy || 'Admin'}
                               </strong>
                             </div>
                             <div>
-                              <span className="text-slate-400 block">Upload Date:</span>
-                              <strong className="text-white">
+                              <span className="text-slate-500 block">Upload Date:</span>
+                              <strong className="text-[#152026]">
                                 {selectedStudent.finalLicense.uploadedAt
                                   ? format(new Date(selectedStudent.finalLicense.uploadedAt), 'MMM dd, yyyy')
                                   : 'N/A'}
                               </strong>
                             </div>
                             <div>
-                              <span className="text-slate-400 block">Verification Status:</span>
-                              <strong className="text-white capitalize">
+                              <span className="text-slate-500 block">Verification Status:</span>
+                              <strong className="text-[#152026] capitalize">
                                 {selectedStudent.finalLicense.verificationStatus || 'pending'}
                               </strong>
                             </div>
                           </div>
 
                           {selectedStudent.finalLicense.verificationNotes && (
-                            <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-slate-300 text-[11px]">
+                            <div className="p-2 bg-[#FAFCFE] rounded-lg border border-[#D4EEF8] text-slate-600 text-[11px]">
                               Note: {selectedStudent.finalLicense.verificationNotes}
                             </div>
                           )}
 
                           {/* Verification Actions for Staff / Admin */}
                           {selectedStudent.finalLicense.verificationStatus !== 'verified' && (
-                            <div className="pt-2 flex flex-wrap gap-2 border-t border-white/10">
+                            <div className="pt-2 flex flex-wrap gap-2 border-t border-[#D4EEF8]">
                               <button
                                 type="button"
                                 onClick={() => handleVerifyFinalLicense(selectedStudent._id, 'verify')}
                                 disabled={verifyingLicense}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Verify & Complete License
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setShowRejectLicenseInput(!showRejectLicenseInput)}
-                                className="px-3 py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                                className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
                               >
                                 <XCircle className="w-3.5 h-3.5" /> Reject Photo
                               </button>
@@ -2288,8 +2290,8 @@ export default function StaffStudentListPage() {
                           )}
 
                           {showRejectLicenseInput && (
-                            <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-500/40 space-y-2 mt-2">
-                              <label className="block text-[11px] text-rose-300 font-bold">
+                            <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 space-y-2 mt-2">
+                              <label className="block text-[11px] text-rose-800 font-bold">
                                 Reason for Rejection:
                               </label>
                               <input
@@ -2297,13 +2299,13 @@ export default function StaffStudentListPage() {
                                 placeholder="e.g. Blurry photo, corners cut off, wrong side..."
                                 value={rejectLicenseReason}
                                 onChange={(e) => setRejectLicenseReason(e.target.value)}
-                                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-rose-500/50 text-white text-xs"
+                                className="w-full px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-[#152026] text-xs focus:ring-1 focus:ring-rose-500 outline-none"
                               />
                               <div className="flex justify-end gap-2">
                                 <button
                                   type="button"
                                   onClick={() => setShowRejectLicenseInput(false)}
-                                  className="px-2.5 py-1 text-[11px] text-slate-400 hover:text-white"
+                                  className="px-2.5 py-1 text-[11px] text-slate-500 hover:text-slate-800"
                                 >
                                   Cancel
                                 </button>
@@ -2317,7 +2319,7 @@ export default function StaffStudentListPage() {
                                     )
                                   }
                                   disabled={verifyingLicense}
-                                  className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                                  className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
                                 >
                                   Confirm Rejection
                                 </button>
@@ -2331,10 +2333,10 @@ export default function StaffStudentListPage() {
                     {/* Upload / Replace License Photo Form */}
                     <form
                       onSubmit={handleStaffUploadFinalLicense}
-                      className="p-3.5 rounded-xl bg-slate-900/60 border border-white/10 space-y-3"
+                      className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] space-y-3"
                     >
-                      <div className="font-bold text-white text-xs flex items-center gap-1.5">
-                        <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                      <div className="font-bold text-[#152026] text-xs flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5 text-[#1B3D59]" />
                         {selectedStudent.finalLicense?.photoUrl
                           ? 'Replace / Update Final License Photo'
                           : 'Upload Official Final Driving License Photo'}
@@ -2342,7 +2344,7 @@ export default function StaffStudentListPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                             Driving License Number (optional):
                           </label>
                           <input
@@ -2350,12 +2352,12 @@ export default function StaffStudentListPage() {
                             placeholder="e.g. B1234567"
                             value={adminLicenseNumber}
                             onChange={(e) => setAdminLicenseNumber(e.target.value)}
-                            className="w-full px-3 py-2 border border-white/15 bg-slate-950 text-white rounded-xl font-mono text-xs"
+                            className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-mono text-xs focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                             License Photo File (JPG, PNG, WEBP, max 10MB):
                           </label>
                           <input
@@ -2376,32 +2378,32 @@ export default function StaffStudentListPage() {
                                 reader.readAsDataURL(file);
                               }
                             }}
-                            className="w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30 file:cursor-pointer"
+                            className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#D4EEF8] file:text-[#1B3D59] hover:file:bg-[#B3D5F1] file:cursor-pointer"
                           />
                         </div>
                       </div>
 
                       {adminLicensePreview && (
-                        <div className="flex items-center gap-3 p-2 bg-black/40 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-3 p-2 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
                           <img
                             src={adminLicensePreview}
                             alt="Selected License Preview"
-                            className="w-20 h-14 object-cover rounded-lg border border-white/20"
+                            className="w-20 h-14 object-cover rounded-lg border border-[#D4EEF8]"
                           />
-                          <div className="text-[11px] text-slate-300">
-                            <span className="font-bold text-white block">Preview Selected</span>
+                          <div className="text-[11px] text-slate-600">
+                            <span className="font-bold text-[#152026] block">Preview Selected</span>
                             {adminLicenseFile ? `${adminLicenseFile.name} (${(adminLicenseFile.size / 1024).toFixed(0)} KB)` : 'Current Photo'}
                           </div>
                         </div>
                       )}
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
-                        <label className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-300">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#D4EEF8]">
+                        <label className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-600">
                           <input
                             type="checkbox"
                             checked={adminAutoVerify}
                             onChange={(e) => setAdminAutoVerify(e.target.checked)}
-                            className="rounded border-white/20 bg-slate-900 text-teal-500"
+                            className="rounded border-[#D4EEF8] text-[#1B3D59] focus:ring-[#1B3D59]"
                           />
                           <span>Auto-verify and complete license upon upload</span>
                         </label>
@@ -2409,7 +2411,7 @@ export default function StaffStudentListPage() {
                         <button
                           type="submit"
                           disabled={uploadingAdminLicense}
-                          className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all disabled:opacity-50"
+                          className="btn-primary text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow-md disabled:opacity-50"
                         >
                           {uploadingAdminLicense ? (
                             <>
@@ -2426,14 +2428,14 @@ export default function StaffStudentListPage() {
                   </div>
 
                   {/* 5. Complete Registration Cycles History (Sections 4 & 10) */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="font-bold text-white flex items-center gap-2 text-sm">
-                        <History className="w-4 h-4 text-purple-400" />
+                      <div className="font-bold text-[#152026] flex items-center gap-2 text-sm">
+                        <History className="w-4 h-4 text-[#1B3D59]" />
                         Complete Registration Cycles History ({selectedStudent.registrationCycles?.length || 0})
                       </div>
-                      <span className="text-[11px] text-slate-400">
-                        Active Cycle: <strong className="text-white">#{cycleNum}</strong>
+                      <span className="text-[11px] text-slate-600">
+                        Active Cycle: <strong className="text-[#152026]">#{cycleNum}</strong>
                       </span>
                     </div>
 
@@ -2442,40 +2444,40 @@ export default function StaffStudentListPage() {
                         {selectedStudent.registrationCycles.map((cycle, idx) => (
                           <div
                             key={cycle.cycleId || idx}
-                            className="p-3.5 rounded-xl bg-slate-900/70 border border-white/10 space-y-2 text-[11px]"
+                            className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] space-y-2 text-[11px]"
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-white/10">
-                              <span className="font-bold text-white flex items-center gap-1.5">
-                                <RotateCcw className="w-3.5 h-3.5 text-purple-400" /> Cycle #{cycle.cycleNumber || idx + 1}
-                                <span className="font-mono text-slate-400 text-[10px]">({cycle.cycleId})</span>
+                            <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-[#D4EEF8]">
+                              <span className="font-bold text-[#152026] flex items-center gap-1.5">
+                                <RotateCcw className="w-3.5 h-3.5 text-[#1B3D59]" /> Cycle #{cycle.cycleNumber || idx + 1}
+                                <span className="font-mono text-slate-500 text-[10px]">({cycle.cycleId})</span>
                               </span>
-                              <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 font-bold capitalize">
+                              <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold capitalize">
                                 {cycle.reasonForClose ? cycle.reasonForClose.replace(/_/g, ' ') : 'Closed'}
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-300">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-600">
                               <div>
-                                <span className="text-slate-500 block text-[10px]">Start Date:</span>
-                                <span className="font-mono text-white">
+                                <span className="text-slate-400 block text-[10px]">Start Date:</span>
+                                <span className="font-mono text-[#152026]">
                                   {cycle.startDate ? format(new Date(cycle.startDate), 'yyyy-MM-dd') : 'N/A'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-500 block text-[10px]">18M Expiry:</span>
-                                <span className="font-mono text-amber-300">
+                                <span className="text-slate-400 block text-[10px]">18M Expiry:</span>
+                                <span className="font-mono text-[#1B3D59]">
                                   {cycle.expiryDate ? format(new Date(cycle.expiryDate), 'yyyy-MM-dd') : 'N/A'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-500 block text-[10px]">Closed Date:</span>
-                                <span className="font-mono text-white">
+                                <span className="text-slate-400 block text-[10px]">Closed Date:</span>
+                                <span className="font-mono text-[#152026]">
                                   {cycle.cycleEndedAt ? format(new Date(cycle.cycleEndedAt), 'yyyy-MM-dd') : 'N/A'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-500 block text-[10px]">Advance Fee:</span>
-                                <span className="font-bold text-emerald-400">
+                                <span className="text-slate-400 block text-[10px]">Advance Fee:</span>
+                                <span className="font-bold text-emerald-700">
                                   Rs. {Number(cycle.advancePaymentAmount || 5000).toLocaleString()}.00
                                 </span>
                               </div>
@@ -2483,8 +2485,8 @@ export default function StaffStudentListPage() {
 
                             {/* Cycle Exam Attempts */}
                             {cycle.examAttempts && cycle.examAttempts.length > 0 && (
-                              <div className="pt-2 border-t border-white/5 space-y-1">
-                                <span className="text-[10px] text-slate-400 font-bold block">
+                              <div className="pt-2 border-t border-[#D4EEF8] space-y-1">
+                                <span className="text-[10px] text-slate-500 font-bold block">
                                   Recorded Written Exam Attempts ({cycle.examAttempts.length} of 3):
                                 </span>
                                 <div className="flex flex-wrap gap-2">
@@ -2493,8 +2495,8 @@ export default function StaffStudentListPage() {
                                       key={aIdx}
                                       className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 ${
                                         att.result === 'passed'
-                                          ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                                          : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+                                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                          : 'bg-rose-50 border-rose-200 text-rose-800'
                                       }`}
                                     >
                                       <strong>Attempt {att.attemptNumber || aIdx + 1}:</strong>{' '}
@@ -2510,14 +2512,14 @@ export default function StaffStudentListPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="p-3 bg-slate-900/40 rounded-xl border border-white/5 text-slate-400 text-center text-[11px]">
+                      <div className="p-3 bg-white rounded-xl border border-[#D4EEF8] text-slate-500 text-center text-[11px]">
                         No previous registration cycles on record. Learner is currently active in Cycle #1.
                       </div>
                     )}
                   </div>
 
                   {/* Modal Footer */}
-                  <div className="flex justify-end pt-3 border-t border-white/10">
+                  <div className="flex justify-end pt-3 border-t border-[#D4EEF8]">
                     <button
                       type="button"
                       onClick={() => setSelectedStudent(null)}
@@ -2535,20 +2537,20 @@ export default function StaffStudentListPage() {
 
       {/* Walk-In Student Registration Modal (US-03) */}
       {showWalkInModal && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-cyan-400/30 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <PlusCircle className="w-5 h-5 text-cyan-400" /> Register Walk-In Student (US-03)
+                <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                  <PlusCircle className="w-5 h-5 text-[#1B3D59]" /> Register Walk-In Student (US-03)
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#6A97C0]">
                   Direct branch office intake for in-person applicants.
                 </p>
               </div>
               <button
                 onClick={() => setShowWalkInModal(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2557,8 +2559,8 @@ export default function StaffStudentListPage() {
             <form onSubmit={handleRegisterWalkIn} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Full Name <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Full Name <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -2566,13 +2568,13 @@ export default function StaffStudentListPage() {
                     placeholder="e.g. Nimal Perera"
                     value={walkInForm.name}
                     onChange={(e) => setWalkInForm({ ...walkInForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    NIC Number <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    NIC Number <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -2580,13 +2582,13 @@ export default function StaffStudentListPage() {
                     placeholder="e.g. 200119203948"
                     value={walkInForm.nic}
                     onChange={(e) => setWalkInForm({ ...walkInForm, nic: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Contact Phone <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Contact Phone <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="tel"
@@ -2594,13 +2596,13 @@ export default function StaffStudentListPage() {
                     placeholder="e.g. 0771234567"
                     value={walkInForm.phone}
                     onChange={(e) => setWalkInForm({ ...walkInForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Email Address <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Email Address <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="email"
@@ -2608,18 +2610,18 @@ export default function StaffStudentListPage() {
                     placeholder="e.g. student@gmail.com"
                     value={walkInForm.email}
                     onChange={(e) => setWalkInForm({ ...walkInForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Assigned Branch
                   </label>
                   <select
                     value={walkInForm.branch}
                     onChange={(e) => setWalkInForm({ ...walkInForm, branch: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   >
                     <option value="Maharagama">Maharagama</option>
                     <option value="Werahara">Werahara</option>
@@ -2628,13 +2630,13 @@ export default function StaffStudentListPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Student Category
                   </label>
                   <select
                     value={walkInForm.studentType}
                     onChange={(e) => setWalkInForm({ ...walkInForm, studentType: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/15 bg-slate-900/90 text-white rounded-xl font-bold text-cyan-300"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#1B3D59] rounded-xl font-bold focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                   >
                     <option value="Type1_NewLearner">Type 1 — New Learner</option>
                     <option value="Type2_TrialReady">Type 2 — Trial Ready</option>
@@ -2644,10 +2646,10 @@ export default function StaffStudentListPage() {
 
               {/* Type 1 Notice: Course package is NOT chosen at registration */}
               {walkInForm.studentType === 'Type1_NewLearner' && (
-                <div className="p-3.5 bg-cyan-500/10 border border-cyan-400/20 rounded-2xl flex items-start gap-2.5">
-                  <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-slate-300 leading-relaxed">
-                    <strong className="text-cyan-300 font-semibold block mb-0.5">
+                <div className="p-3.5 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-[#1B3D59] flex-shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-slate-700 leading-relaxed">
+                    <strong className="text-[#1B3D59] font-semibold block mb-0.5">
                       Course Package Not Required at Registration
                     </strong>
                     Type 1 (Full Course) students enroll for the DMT medical clearance and theory prep first. The vehicle training package will be selected after passing the learner's written exam.
@@ -2657,12 +2659,12 @@ export default function StaffStudentListPage() {
 
               {/* Type 2: Vehicle Package Selection */}
               {walkInForm.studentType === 'Type2_TrialReady' && (
-                <div className="space-y-2.5 p-3.5 bg-amber-500/5 border border-amber-400/30 rounded-2xl">
+                <div className="space-y-2.5 p-3.5 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl">
                   <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-amber-300">
-                      Select Training Package <span className="text-rose-400">*</span>
+                    <label className="block font-semibold text-[#152026]">
+                      Select Training Package <span className="text-rose-600">*</span>
                     </label>
-                    <span className="text-[10px] uppercase font-bold text-amber-400/80 tracking-wider">
+                    <span className="text-[10px] uppercase font-bold text-[#1B3D59] tracking-wider bg-[#D4EEF8] px-2 py-0.5 rounded-full">
                       Type 2 Trial Learner
                     </span>
                   </div>
@@ -2670,7 +2672,7 @@ export default function StaffStudentListPage() {
                   <select
                     value={walkInForm.packageType}
                     onChange={(e) => setWalkInForm({ ...walkInForm, packageType: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/20 bg-slate-900 text-white rounded-xl focus:border-amber-400 focus:ring-1 focus:ring-amber-400 text-xs"
+                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] text-xs"
                   >
                     {availablePackages.length > 0 ? (
                       <>
@@ -2742,17 +2744,17 @@ export default function StaffStudentListPage() {
                     const sel = availablePackages.find((p) => p.type === walkInForm.packageType);
                     if (!sel) return null;
                     return (
-                      <div className="text-[11px] p-2.5 rounded-xl bg-slate-900/90 border border-white/10 space-y-1">
-                        <div className="flex justify-between items-center text-slate-200">
-                          <span className="font-semibold text-white">{sel.name}</span>
-                          <span className="font-mono font-bold text-amber-300">
+                      <div className="text-[11px] p-2.5 rounded-xl bg-white border border-[#D4EEF8] space-y-1">
+                        <div className="flex justify-between items-center text-[#152026]">
+                          <span className="font-semibold text-[#152026]">{sel.name}</span>
+                          <span className="font-mono font-bold text-[#1B3D59]">
                             Rs. {Number(sel.price).toLocaleString()}
                             {sel.isPerLesson ? ' / lesson' : ' total'}
                           </span>
                         </div>
                         {sel.bonusLessons?.bike > 0 && (
-                          <div className="text-emerald-400 font-medium flex items-center gap-1">
-                            <Gift className="w-3 h-3 text-emerald-400" />
+                          <div className="text-emerald-700 font-medium flex items-center gap-1">
+                            <Gift className="w-3 h-3 text-emerald-600" />
                             <span>Bonus: 2 FREE Bike lessons + 2 FREE Three-Wheel lessons</span>
                           </div>
                         )}
@@ -2763,26 +2765,26 @@ export default function StaffStudentListPage() {
               )}
 
               {walkInForm.studentType === 'Type2_TrialReady' && (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2 text-amber-300 font-bold">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400" /> Type 2 Advance Payment Collection
+                <div className="p-3 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-2 text-[#152026]">
+                  <div className="flex items-center gap-2 text-[#152026] font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-[#1B3D59]" /> Type 2 Advance Payment Collection
                   </div>
-                  <label className="flex items-center gap-2 text-slate-200 cursor-pointer">
+                  <label className="flex items-center gap-2 text-[#152026] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={walkInForm.advancePaymentCollected}
                       onChange={(e) => setWalkInForm({ ...walkInForm, advancePaymentCollected: e.target.checked })}
-                      className="w-4 h-4 text-amber-500 rounded"
+                      className="w-4 h-4 text-[#1B3D59] rounded border-[#D4EEF8]"
                     />
                     <span>Collected Rs. 5,000 Advance Payment in cash/slip at desk</span>
                   </label>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-slate-600">
                     If checked, the student account will be activated immediately upon registration.
                   </p>
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowWalkInModal(false)}
@@ -2793,7 +2795,7 @@ export default function StaffStudentListPage() {
                 <button
                   type="submit"
                   disabled={submittingWalkIn}
-                  className="btn-accent text-xs py-2 px-5 font-bold shadow-lg"
+                  className="btn-primary text-xs py-2 px-5 font-bold shadow-md"
                 >
                   {submittingWalkIn ? 'Registering...' : 'Complete Walk-In Registration'}
                 </button>
@@ -2805,35 +2807,35 @@ export default function StaffStudentListPage() {
 
       {/* Payment Verification & Slip Review Modal */}
       {verifyModalStudent && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.9)] max-w-4xl w-full p-6 sm:p-8 space-y-6 my-8 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-4xl w-full p-6 sm:p-8 space-y-6 my-8 max-h-[92vh] overflow-y-auto text-[#152026]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="badge badge-warning text-xs font-bold uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-[#E2D8B3] text-xs font-bold uppercase tracking-wider">
                     Registration &amp; Slip Review
                   </span>
-                  <span className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-400/30">
+                  <span className="text-xs font-mono text-[#1B3D59] bg-[#D4EEF8] px-2.5 py-0.5 rounded-full border border-[#B3D5F1]">
                     Ref: {verifyModalStudent.latestPayment?.transactionReference || verifyModalStudent.advancePaymentReference || 'ADV-PENDING'}
                   </span>
                   {verifyModalStudent.isAdvancePaid && (
-                    <span className="badge badge-success text-xs font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                       👑 Account Active &amp; Verified
                     </span>
                   )}
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
-                  <CreditCard className="w-6 h-6 text-amber-400" /> Verify Student Payment &amp; Review Slip
+                <h3 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2.5">
+                  <CreditCard className="w-6 h-6 text-[#1B3D59]" /> Verify Student Payment &amp; Review Slip
                 </h3>
-                <p className="text-xs text-slate-300 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   Inspect student registration details, check the bank deposit slip document, and verify to activate student portal access.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setVerifyModalStudent(null)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-sm font-bold transition-colors"
               >
                 ✕
               </button>
@@ -2843,60 +2845,60 @@ export default function StaffStudentListPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column: Student Details (5 cols) */}
               <div className="lg:col-span-5 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-cyan-300 border-b border-white/10 pb-2">
-                  <User className="w-4 h-4 text-cyan-400" /> Student Profile &amp; Enrollment Records
+                <div className="flex items-center gap-2 text-sm font-bold text-[#1B3D59] border-b border-[#D4EEF8] pb-2">
+                  <User className="w-4 h-4 text-[#1B3D59]" /> Student Profile &amp; Enrollment Records
                 </div>
 
-                <div className="space-y-3 bg-white/5 p-4 rounded-2xl border border-white/10 text-xs">
+                <div className="space-y-3 bg-[#FAFCFE] p-4 rounded-2xl border border-[#D4EEF8] text-xs">
                   <div>
-                    <span className="text-slate-400 block text-[11px] font-semibold">Full Name</span>
-                    <span className="text-sm font-bold text-white">{verifyModalStudent.userId?.name || 'N/A'}</span>
+                    <span className="text-slate-500 block text-[11px] font-semibold">Full Name</span>
+                    <span className="text-sm font-bold text-[#152026]">{verifyModalStudent.userId?.name || 'N/A'}</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#D4EEF8]">
                     <div>
-                      <span className="text-slate-400 block text-[11px] font-semibold">Contact Phone</span>
-                      <span className="font-semibold text-white">{verifyModalStudent.userId?.phone || 'Not provided'}</span>
+                      <span className="text-slate-500 block text-[11px] font-semibold">Contact Phone</span>
+                      <span className="font-semibold text-[#152026]">{verifyModalStudent.userId?.phone || 'Not provided'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[11px] font-semibold">NIC / Passport</span>
-                      <span className="font-mono text-cyan-300 font-bold">{verifyModalStudent.nic || verifyModalStudent.userId?.nic || 'N/A'}</span>
+                      <span className="text-slate-500 block text-[11px] font-semibold">NIC / Passport</span>
+                      <span className="font-mono text-[#1B3D59] font-bold">{verifyModalStudent.nic || verifyModalStudent.userId?.nic || 'N/A'}</span>
                     </div>
                   </div>
 
-                  <div className="pt-1 border-t border-white/5">
-                    <span className="text-slate-400 block text-[11px] font-semibold">Email Address</span>
-                    <span className="text-white font-medium break-all">{verifyModalStudent.userId?.email || 'N/A'}</span>
+                  <div className="pt-1 border-t border-[#D4EEF8]">
+                    <span className="text-slate-500 block text-[11px] font-semibold">Email Address</span>
+                    <span className="text-[#152026] font-medium break-all">{verifyModalStudent.userId?.email || 'N/A'}</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#D4EEF8]">
                     <div>
-                      <span className="text-slate-400 block text-[11px] font-semibold">Registered Branch</span>
-                      <span className="badge badge-info text-xs font-bold mt-0.5">{verifyModalStudent.branch} Branch</span>
+                      <span className="text-slate-500 block text-[11px] font-semibold">Registered Branch</span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] font-bold text-xs mt-0.5 inline-block">{verifyModalStudent.branch} Branch</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[11px] font-semibold">Learner Category</span>
-                      <span className="text-xs font-bold text-cyan-300 mt-0.5 block">
+                      <span className="text-slate-500 block text-[11px] font-semibold">Learner Category</span>
+                      <span className="text-xs font-bold text-[#1B3D59] mt-0.5 block">
                         {verifyModalStudent.studentType?.includes('Type2') ? 'Category 2: Trial-Ready' : 'Category 1: New Learner'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-white/10 space-y-1">
-                    <span className="text-slate-400 block text-[11px] font-semibold">Enrolled Course Package</span>
-                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-white/10">
-                      <div className="text-xs font-black text-white">
+                  <div className="pt-2 border-t border-[#D4EEF8] space-y-1">
+                    <span className="text-slate-500 block text-[11px] font-semibold">Enrolled Course Package</span>
+                    <div className="p-2.5 rounded-xl bg-white border border-[#D4EEF8]">
+                      <div className="text-xs font-black text-[#152026]">
                         {verifyModalStudent.package?.packageId?.name ||
                           (verifyModalStudent.package?.type?.replace(/_/g, ' ')) ||
                           (verifyModalStudent.studentType?.includes('Type2') || verifyModalStudent.student_type === 'Type 2'
                             ? 'Trial Practical Package'
                             : 'Not selected yet (DMT Theory Phase)')}
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-300 mt-1">
-                        <span className="text-cyan-300 font-semibold">
+                      <div className="flex items-center justify-between text-[11px] text-slate-600 mt-1">
+                        <span className="text-[#1B3D59] font-semibold">
                           {verifyModalStudent.package?.lessonsTotal ? `${verifyModalStudent.package.lessonsTotal} Practical Lessons` : '0 Practical Lessons (Theory First)'}
                         </span>
-                        <span className="text-amber-300 font-mono font-bold">
+                        <span className="text-[#152026] font-mono font-bold">
                           {verifyModalStudent.package?.priceTotal > 0
                             ? `Course Fee: Rs. ${Number(verifyModalStudent.package.priceTotal).toLocaleString()}`
                             : 'Advance Deposit: Rs. 5,000'}
@@ -2905,16 +2907,16 @@ export default function StaffStudentListPage() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                  <div className="pt-2 border-t border-[#D4EEF8] flex items-center justify-between">
                     <div>
-                      <span className="text-slate-400 block text-[11px]">Advance Status</span>
-                      <span className={`badge text-[11px] font-extrabold ${verifyModalStudent.isAdvancePaid ? 'badge-success' : 'badge-warning'}`}>
+                      <span className="text-slate-500 block text-[11px]">Advance Status</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${verifyModalStudent.isAdvancePaid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'}`}>
                         {verifyModalStudent.isAdvancePaid ? 'Verified & Active' : 'Pending Verification'}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-slate-400 block text-[11px]">Advance Required</span>
-                      <span className="text-sm font-extrabold text-amber-300">
+                      <span className="text-slate-500 block text-[11px]">Advance Required</span>
+                      <span className="text-sm font-extrabold text-[#1B3D59]">
                         Rs. {Number(verifyModalStudent.advancePaymentAmount || 5000).toLocaleString()}.00
                       </span>
                     </div>
@@ -2922,16 +2924,16 @@ export default function StaffStudentListPage() {
 
                   {/* DMT Clearance Proof for Type 2 Student (US-02) */}
                   {verifyModalStudent.dmt_clearance_proof && (
-                    <div className="pt-2 border-t border-white/10 space-y-2">
+                    <div className="pt-2 border-t border-[#D4EEF8] space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5 text-amber-400" /> DMT Clearance Proof
+                        <span className="text-[11px] font-bold text-[#1B3D59] flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-[#1B3D59]" /> DMT Clearance Proof
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             verifyModalStudent.dmt_clearance_verified
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-amber-500/20 text-amber-300'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : 'bg-[#F3EED8] text-[#152026] border border-[#E2D8B3]'
                           }`}
                         >
                           {verifyModalStudent.dmt_clearance_verified ? 'Verified' : 'Pending Review'}
@@ -2945,7 +2947,7 @@ export default function StaffStudentListPage() {
                         }
                         target="_blank"
                         rel="noreferrer"
-                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between text-xs text-cyan-300 transition-colors group"
+                        className="p-2.5 rounded-xl bg-white hover:bg-[#D4EEF8] border border-[#D4EEF8] flex items-center justify-between text-xs text-[#1B3D59] transition-colors group"
                       >
                         <span className="truncate max-w-[180px] font-mono text-[11px]">
                           {verifyModalStudent.dmt_clearance_proof.split('/').pop()}
@@ -2959,12 +2961,12 @@ export default function StaffStudentListPage() {
 
               {/* Right Column: Payment Slip Inspection (7 cols) */}
               <div className="lg:col-span-7 space-y-4">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <div className="flex items-center gap-2 text-sm font-bold text-amber-400">
-                    <FileText className="w-4 h-4 text-amber-400" /> Submitted Payment Slip &amp; Bank Transfer
+                <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#1B3D59]">
+                    <FileText className="w-4 h-4 text-[#1B3D59]" /> Submitted Payment Slip &amp; Bank Transfer
                   </div>
                   {loadingStudentPayments && (
-                    <span className="text-[11px] text-cyan-300 flex items-center gap-1 font-bold">
+                    <span className="text-[11px] text-[#6A97C0] flex items-center gap-1 font-bold">
                       <RefreshCw className="w-3 h-3 animate-spin" /> Fetching latest slips...
                     </span>
                   )}
@@ -2988,30 +2990,30 @@ export default function StaffStudentListPage() {
 
                   return (
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-xs">
                         <div>
-                          <span className="text-slate-400 block text-[11px]">Deposited Amount</span>
-                          <span className="text-base font-black text-accent">
+                          <span className="text-slate-500 block text-[11px]">Deposited Amount</span>
+                          <span className="text-base font-black text-emerald-700">
                             Rs. {Number(currentPayment?.amount || verifyModalStudent.advancePaymentAmount || 5000).toLocaleString()}.00
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[11px]">Bank Name</span>
-                          <span className="font-bold text-white">{currentPayment?.bankName || 'Bank of Ceylon'}</span>
+                          <span className="text-slate-500 block text-[11px]">Bank Name</span>
+                          <span className="font-bold text-[#152026]">{currentPayment?.bankName || 'Bank of Ceylon'}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[11px]">Reference / Slip No.</span>
-                          <span className="font-mono text-cyan-300 font-bold break-all">
+                          <span className="text-slate-500 block text-[11px]">Reference / Slip No.</span>
+                          <span className="font-mono text-[#1B3D59] font-bold break-all">
                             {currentPayment?.transactionReference || verifyModalStudent.advancePaymentReference || 'ADV-DESK'}
                           </span>
                         </div>
                       </div>
 
                       {/* Slip Document / Image Display */}
-                      <div className="border border-white/15 rounded-2xl p-3 bg-slate-900/90 text-center space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
+                      <div className="border border-[#D4EEF8] rounded-2xl p-3 bg-[#FAFCFE] text-center space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-[#152026] px-1">
                           <span className="flex items-center gap-1.5">
-                            {isPdf ? <File className="w-4 h-4 text-rose-400" /> : <Eye className="w-4 h-4 text-cyan-400" />}
+                            {isPdf ? <File className="w-4 h-4 text-rose-500" /> : <Eye className="w-4 h-4 text-[#1B3D59]" />}
                             {isPdf ? 'Uploaded PDF Bank Slip Document' : 'Uploaded Bank Receipt / Slip Photo'}
                           </span>
                           {fullSlipUrl && (
@@ -3019,7 +3021,7 @@ export default function StaffStudentListPage() {
                               href={fullSlipUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[11px] font-bold text-cyan-300 hover:text-cyan-200 inline-flex items-center gap-1 hover:underline bg-white/5 px-2.5 py-1 rounded-lg border border-white/10"
+                              className="text-[11px] font-bold text-[#1B3D59] hover:text-[#152026] inline-flex items-center gap-1 hover:underline bg-white px-2.5 py-1 rounded-lg border border-[#D4EEF8]"
                             >
                               <ExternalLink className="w-3 h-3" /> Open Full Document
                             </a>
@@ -3028,13 +3030,13 @@ export default function StaffStudentListPage() {
 
                         {fullSlipUrl ? (
                           isPdf ? (
-                            <div className="bg-black/50 rounded-xl p-4 border border-white/10 text-center space-y-3">
-                              <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg">
+                            <div className="bg-white rounded-xl p-4 border border-[#D4EEF8] text-center space-y-3">
+                              <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shadow-sm">
                                 <FileText className="w-8 h-8" />
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-white">PDF Bank Slip Document Uploaded</p>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className="text-sm font-bold text-[#152026]">PDF Bank Slip Document Uploaded</p>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                   File: {slipUrl.split('/').pop()}
                                 </p>
                               </div>
@@ -3045,35 +3047,35 @@ export default function StaffStudentListPage() {
                                   rel="noreferrer"
                                   className="btn-secondary text-xs py-2 px-4 inline-flex items-center gap-2 font-bold"
                                 >
-                                  <ExternalLink className="w-4 h-4 text-cyan-400" /> Open PDF in New Tab
+                                  <ExternalLink className="w-4 h-4 text-[#1B3D59]" /> Open PDF in New Tab
                                 </a>
                               </div>
                               <iframe
                                 src={fullSlipUrl}
                                 title="Bank Slip PDF"
-                                className="w-full h-48 rounded-xl border border-white/10 bg-white/90 mt-2"
+                                className="w-full h-48 rounded-xl border border-[#D4EEF8] bg-white mt-2"
                               />
                             </div>
                           ) : (
-                            <div className="relative group bg-black/50 rounded-xl overflow-hidden flex items-center justify-center p-2 min-h-[220px] max-h-[320px]">
+                            <div className="relative group bg-white rounded-xl overflow-hidden flex items-center justify-center p-2 min-h-[220px] max-h-[320px] border border-[#D4EEF8]">
                               <img
                                 src={fullSlipUrl}
                                 alt="Payment Deposit Slip"
-                                className="max-h-[300px] w-auto object-contain rounded-lg shadow-2xl transition-transform hover:scale-[1.02]"
+                                className="max-h-[300px] w-auto object-contain rounded-lg shadow-sm transition-transform hover:scale-[1.02]"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'https://placehold.co/600x400/0f172a/ffffff?text=Deposit+Slip+Document';
+                                  e.target.src = 'https://placehold.co/600x400/f8fafc/152026?text=Deposit+Slip+Document';
                                 }}
                               />
                             </div>
                           )
                         ) : (
-                          <div className="py-8 px-4 bg-black/30 rounded-xl border border-dashed border-white/10 text-slate-400 text-xs space-y-2">
-                            <CheckCircle2 className="w-8 h-8 text-amber-400 mx-auto" />
-                            <p className="font-bold text-white">Manual / Desk Registration</p>
-                            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                          <div className="py-8 px-4 bg-white rounded-xl border border-dashed border-[#D4EEF8] text-slate-500 text-xs space-y-2">
+                            <CheckCircle2 className="w-8 h-8 text-[#1B3D59] mx-auto" />
+                            <p className="font-bold text-[#152026]">Manual / Desk Registration</p>
+                            <p className="text-[11px] text-slate-600 max-w-sm mx-auto">
                               No electronic slip was uploaded. The student was registered with Reference:
-                              <strong className="text-cyan-300 font-mono"> {verifyModalStudent.advancePaymentReference || 'ADV-DESK'}</strong>.
+                              <strong className="text-[#1B3D59] font-mono"> {verifyModalStudent.advancePaymentReference || 'ADV-DESK'}</strong>.
                               You can verify their cash/bank deposit directly.
                             </p>
                           </div>
@@ -3082,8 +3084,8 @@ export default function StaffStudentListPage() {
 
                       {/* Rejection reason box if opened */}
                       {showRejectInput && (
-                        <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl space-y-2 text-xs animate-in fade-in">
-                          <label className="block font-bold text-rose-300">
+                        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl space-y-2 text-xs animate-in fade-in">
+                          <label className="block font-bold text-rose-800">
                             Reason for Rejecting Slip / Payment:
                           </label>
                           <textarea
@@ -3091,13 +3093,13 @@ export default function StaffStudentListPage() {
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
                             placeholder="e.g. Deposit amount is less than Rs. 5,000, reference number illegible, or slip expired..."
-                            className="w-full px-3 py-2 bg-slate-950 border border-rose-500/40 text-white rounded-lg outline-none text-xs"
+                            className="w-full px-3 py-2 bg-white border border-rose-300 text-[#152026] rounded-lg outline-none text-xs focus:ring-1 focus:ring-rose-500"
                           />
                           <div className="flex justify-end gap-2 pt-1">
                             <button
                               type="button"
                               onClick={() => setShowRejectInput(false)}
-                              className="text-slate-400 hover:text-white px-3 py-1 text-xs"
+                              className="text-slate-500 hover:text-slate-800 px-3 py-1 text-xs"
                             >
                               Cancel
                             </button>
@@ -3105,7 +3107,7 @@ export default function StaffStudentListPage() {
                               type="button"
                               disabled={verifyingPayment}
                               onClick={() => handleVerifyStudentPayment(verifyModalStudent._id, 'reject')}
-                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center gap-1"
                             >
                               Confirm Rejection
                             </button>
@@ -3119,9 +3121,9 @@ export default function StaffStudentListPage() {
             </div>
 
             {/* Modal Actions Footer */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10">
-              <div className="text-xs text-slate-400 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#D4EEF8]">
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 Staff action will update student status and unlock full driving portal features.
               </div>
 
@@ -3139,7 +3141,7 @@ export default function StaffStudentListPage() {
                   <button
                     type="button"
                     onClick={() => setShowRejectInput(true)}
-                    className="px-4 py-2.5 rounded-xl border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-colors"
+                    className="px-4 py-2.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 font-bold text-xs transition-colors"
                   >
                     Reject Slip
                   </button>
@@ -3149,7 +3151,7 @@ export default function StaffStudentListPage() {
                   type="button"
                   disabled={verifyingPayment}
                   onClick={() => handleVerifyStudentPayment(verifyModalStudent._id, 'verify')}
-                  className="btn-accent text-xs py-2.5 px-6 font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-950/40"
+                  className="btn-primary text-xs py-2.5 px-6 font-extrabold flex items-center gap-2 shadow-md"
                 >
                   {verifyingPayment ? (
                     <>
@@ -3169,17 +3171,17 @@ export default function StaffStudentListPage() {
 
       {/* Trial Date Reschedule Requests Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-purple-400/30 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-[#152026]/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden text-[#152026]">
             {/* Modal Header */}
-            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/50">
+            <div className="p-6 border-b border-[#D4EEF8] flex items-center justify-between bg-[#FAFCFE]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300">
-                  <Clock className="w-5 h-5 text-purple-400" />
+                <div className="w-10 h-10 rounded-xl bg-[#D4EEF8] border border-[#B3D5F1] flex items-center justify-center text-[#1B3D59]">
+                  <Clock className="w-5 h-5 text-[#1B3D59]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white">Student Date Reschedule Requests</h3>
-                  <p className="text-xs text-slate-300">
+                  <h3 className="text-lg font-black text-[#152026]">Student Date Reschedule Requests</h3>
+                  <p className="text-xs text-slate-600">
                     Review student reschedule submissions for Medical Exams, Registration, Written Theory Exams, or Practical Trials.
                   </p>
                 </div>
@@ -3189,16 +3191,16 @@ export default function StaffStudentListPage() {
                   setShowRescheduleModal(false);
                   setReviewingRequest(null);
                 }}
-                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Modal Milestone & Status Filter Bar */}
-            <div className="px-6 py-3 border-b border-white/10 bg-slate-950/30 flex items-center justify-between gap-3 flex-wrap text-xs">
+            <div className="px-6 py-3 border-b border-[#D4EEF8] bg-[#FAFCFE] flex items-center justify-between gap-3 flex-wrap text-xs">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-slate-400 font-bold mr-1">Milestone:</span>
+                <span className="text-slate-600 font-bold mr-1">Milestone:</span>
                 {[
                   { id: 'All', label: 'All' },
                   { id: 'medical', label: '🩺 Medical' },
@@ -3212,8 +3214,8 @@ export default function StaffStudentListPage() {
                     onClick={() => setRescheduleMilestoneFilter(tab.id)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                       rescheduleMilestoneFilter === tab.id
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                        ? 'bg-[#1B3D59] text-white shadow-sm'
+                        : 'bg-white text-slate-600 border border-[#D4EEF8] hover:bg-[#D4EEF8]'
                     }`}
                   >
                     {tab.label}
@@ -3222,7 +3224,7 @@ export default function StaffStudentListPage() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 font-bold mr-1">Status:</span>
+                <span className="text-slate-600 font-bold mr-1">Status:</span>
                 {['All', 'Pending', 'Approved', 'Rejected'].map((stTab) => (
                   <button
                     key={stTab}
@@ -3230,8 +3232,8 @@ export default function StaffStudentListPage() {
                     onClick={() => setRescheduleStatusFilter(stTab)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                       rescheduleStatusFilter === stTab
-                        ? 'bg-white/20 text-cyan-300 border border-white/30'
-                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                        ? 'bg-[#1B3D59] text-white shadow-sm'
+                        : 'bg-white text-slate-600 border border-[#D4EEF8] hover:bg-[#D4EEF8]'
                     }`}
                   >
                     {stTab}
@@ -3243,15 +3245,15 @@ export default function StaffStudentListPage() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
               {loadingReschedule ? (
-                <div className="py-12 text-center text-slate-400 text-sm flex flex-col items-center gap-2">
-                  <RefreshCw className="w-6 h-6 animate-spin text-purple-400" />
+                <div className="py-12 text-center text-slate-500 text-sm flex flex-col items-center gap-2">
+                  <RefreshCw className="w-6 h-6 animate-spin text-[#1B3D59]" />
                   Loading reschedule requests...
                 </div>
               ) : rescheduleRequests.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-sm space-y-2">
-                  <Clock className="w-10 h-10 text-slate-600 mx-auto" />
-                  <p className="font-semibold text-slate-300">No Reschedule Requests Found</p>
-                  <p className="text-xs text-slate-400">When students submit a request to reschedule their practical trial exam, they will appear here for DEO review.</p>
+                <div className="py-12 text-center text-slate-500 text-sm space-y-2">
+                  <Clock className="w-10 h-10 text-slate-400 mx-auto" />
+                  <p className="font-semibold text-[#152026]">No Reschedule Requests Found</p>
+                  <p className="text-xs text-slate-500">When students submit a request to reschedule their practical trial exam, they will appear here for DEO review.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -3272,36 +3274,36 @@ export default function StaffStudentListPage() {
                       <div
                         key={req._id}
                         className={`p-5 rounded-2xl border transition-colors ${
-                          isPending ? 'bg-purple-950/20 border-purple-400/40' : 'bg-white/5 border-white/10'
+                          isPending ? 'bg-[#F3EED8]/40 border-[#E2D8B3]' : 'bg-white border-[#D4EEF8]'
                         } space-y-3`}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D4EEF8] pb-3">
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-white text-sm">{studentUser?.name || 'Student'}</span>
-                              <span className="badge bg-purple-500/20 border border-purple-400/30 text-purple-200 text-[11px] font-bold">
+                              <span className="font-bold text-[#152026] text-sm">{studentUser?.name || 'Student'}</span>
+                              <span className="px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] text-[11px] font-bold">
                                 {mLabel}
                               </span>
-                              <span className="badge bg-white/10 text-slate-300 text-[10px] font-mono">
+                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-mono">
                                 {req.student_id?.branch || studentUser?.branch || 'Branch'}
                               </span>
-                              <span className={`badge text-[10px] font-bold ${
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                                 req.status === 'Approved'
-                                  ? 'badge-success'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                   : req.status === 'Rejected'
-                                  ? 'badge-error'
-                                  : 'badge-warning animate-pulse'
+                                  ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                  : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'
                               }`}>
                                 {req.status}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-0.5">
+                            <p className="text-xs text-slate-500 mt-0.5">
                               {studentUser?.email} • {studentUser?.phone || 'No phone'}
                             </p>
                           </div>
-                          <div className="text-xs text-slate-400 text-right">
+                          <div className="text-xs text-slate-500 text-right">
                             <span className="block text-[11px]">Submitted:</span>
-                            <span className="font-medium text-slate-200">
+                            <span className="font-medium text-[#152026]">
                               {req.requested_at ? format(new Date(req.requested_at), 'MMM dd, yyyy HH:mm') : 'N/A'}
                             </span>
                           </div>
@@ -3309,22 +3311,22 @@ export default function StaffStudentListPage() {
 
                         {/* Dates & Reason Information */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                          <div className="p-3 bg-slate-950/60 rounded-xl border border-white/5">
-                            <span className="text-[11px] text-slate-400 block font-semibold">Previous Scheduled Date:</span>
-                            <span className="font-bold text-rose-300 font-mono">
+                          <div className="p-3 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
+                            <span className="text-[11px] text-slate-500 block font-semibold">Previous Scheduled Date:</span>
+                            <span className="font-bold text-rose-600 font-mono">
                               {req.previous_date || req.previous_trial_date ? format(new Date(req.previous_date || req.previous_trial_date), 'MMM dd, yyyy') : 'None Assigned'}
                             </span>
                           </div>
-                          <div className="p-3 bg-slate-950/60 rounded-xl border border-white/5">
-                            <span className="text-[11px] text-slate-400 block font-semibold">Requested / Preferred Date:</span>
-                            <span className="font-bold text-cyan-300 font-mono">
+                          <div className="p-3 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
+                            <span className="text-[11px] text-slate-500 block font-semibold">Requested / Preferred Date:</span>
+                            <span className="font-bold text-[#1B3D59] font-mono">
                               {req.preferred_date ? format(new Date(req.preferred_date), 'MMM dd, yyyy') : 'No preference'}
                             </span>
                           </div>
                           {(req.new_date || req.new_trial_date) && (
-                            <div className="p-3 bg-slate-950/60 rounded-xl border border-emerald-500/20">
-                              <span className="text-[11px] text-emerald-400 block font-semibold">Approved New Date:</span>
-                              <span className="font-black text-emerald-300 font-mono">
+                            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                              <span className="text-[11px] text-emerald-800 block font-semibold">Approved New Date:</span>
+                              <span className="font-black text-emerald-700 font-mono">
                                 {format(new Date(req.new_date || req.new_trial_date), 'MMM dd, yyyy')}
                               </span>
                             </div>
@@ -3332,49 +3334,49 @@ export default function StaffStudentListPage() {
                         </div>
 
                         {req.reason && (
-                          <div className="text-xs p-3 bg-white/5 rounded-xl border border-white/5">
-                            <span className="text-slate-400 font-semibold block mb-0.5">Student's Stated Reason:</span>
-                            <p className="text-slate-200 italic">"{req.reason}"</p>
+                          <div className="text-xs p-3 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
+                            <span className="text-slate-500 font-semibold block mb-0.5">Student's Stated Reason:</span>
+                            <p className="text-slate-700 italic">"{req.reason}"</p>
                           </div>
                         )}
 
                         {/* If already reviewed, display reviewer info */}
                         {!isPending && (
-                          <div className="text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 pt-2">
-                            <span>Reviewed by: <strong className="text-white">{req.reviewed_by?.name || 'Officer'}</strong></span>
+                          <div className="text-[11px] text-slate-500 flex items-center justify-between border-t border-[#D4EEF8] pt-2">
+                            <span>Reviewed by: <strong className="text-[#152026]">{req.reviewed_by?.name || 'Officer'}</strong></span>
                             <span>Date: {req.reviewed_at ? format(new Date(req.reviewed_at), 'MMM dd, yyyy') : 'N/A'}</span>
-                            {req.review_notes && <span className="text-slate-300">Notes: {req.review_notes}</span>}
+                            {req.review_notes && <span className="text-slate-700">Notes: {req.review_notes}</span>}
                           </div>
                         )}
 
                         {/* Review Action Form for Pending Requests */}
                         {isPending && (
-                          <div className="pt-2 border-t border-white/10">
+                          <div className="pt-2 border-t border-[#D4EEF8]">
                             {isBeingReviewed ? (
-                              <div className="p-4 bg-purple-950/40 rounded-2xl border border-purple-400/40 space-y-3">
-                                <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                                  <CheckCircle2 className="w-4 h-4 text-purple-400" /> DEO Review & Decision ({mLabel})
+                              <div className="p-4 bg-[#FAFCFE] rounded-2xl border border-[#D4EEF8] space-y-3">
+                                <h4 className="font-bold text-[#152026] text-xs flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-4 h-4 text-[#1B3D59]" /> DEO Review & Decision ({mLabel})
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   <div>
-                                    <label className="block text-slate-300 font-semibold mb-1 text-xs">
-                                      New {mLabel} Date <span className="text-rose-400">*</span>
+                                    <label className="block text-[#152026] font-semibold mb-1 text-xs">
+                                      New {mLabel} Date <span className="text-rose-600">*</span>
                                     </label>
                                     <div className="relative flex items-center">
-                                      <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3 pointer-events-none" />
+                                      <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3 pointer-events-none" />
                                       <input
                                         type="date"
                                         value={reviewNewTrialDate}
                                         onChange={(e) => setReviewNewTrialDate(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs font-bold cursor-pointer"
+                                        className="w-full pl-9 pr-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-xs font-bold cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                                       />
                                     </div>
-                                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                                    <span className="text-[10px] text-slate-500 block mt-0.5">
                                       Required for Approval. Will update student's {mLabel} date in system.
                                     </span>
                                   </div>
                                   <div>
-                                    <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                                    <label className="block text-[#152026] font-semibold mb-1 text-xs">
                                       Officer Review Notes (Optional)
                                     </label>
                                     <input
@@ -3382,7 +3384,7 @@ export default function StaffStudentListPage() {
                                       placeholder="e.g., Scheduled as per DMT batch availability"
                                       value={reviewNotes}
                                       onChange={(e) => setReviewNotes(e.target.value)}
-                                      className="w-full px-3 py-2 bg-slate-900 border border-white/20 text-white rounded-xl text-xs"
+                                      className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-xs focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
                                     />
                                   </div>
                                 </div>
@@ -3399,7 +3401,7 @@ export default function StaffStudentListPage() {
                                     type="button"
                                     onClick={() => handleReviewReschedule('Rejected')}
                                     disabled={reviewSubmitting}
-                                    className="px-4 py-2 rounded-xl border border-rose-500/40 text-rose-300 hover:bg-rose-500/10 font-bold text-xs"
+                                    className="px-4 py-2 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 font-bold text-xs"
                                   >
                                     Reject Request
                                   </button>
@@ -3407,7 +3409,7 @@ export default function StaffStudentListPage() {
                                     type="button"
                                     onClick={() => handleReviewReschedule('Approved')}
                                     disabled={reviewSubmitting}
-                                    className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5"
+                                    className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-md"
                                   >
                                     {reviewSubmitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                                     Approve & Assign New Date
@@ -3424,7 +3426,7 @@ export default function StaffStudentListPage() {
                                   );
                                   setReviewNotes('');
                                 }}
-                                className="btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow"
+                                className="btn-primary text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow"
                               >
                                 Review & Reschedule Trial Date
                               </button>
@@ -3439,8 +3441,8 @@ export default function StaffStudentListPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-white/10 bg-slate-950/60 flex items-center justify-between">
-              <span className="text-xs text-slate-400">
+            <div className="p-4 border-t border-[#D4EEF8] bg-[#FAFCFE] flex items-center justify-between">
+              <span className="text-xs text-slate-500">
                 {rescheduleRequests.filter((r) => r.status === 'Pending').length} pending request(s) awaiting officer action.
               </span>
               <button
