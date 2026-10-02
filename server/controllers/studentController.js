@@ -291,38 +291,27 @@ exports.updateDmtDates = async (req, res) => {
         ? (examDateInput ? new Date(examDateInput) : null)
         : (student.written_exam_date || student.dmtDates?.learnerExamDate);
 
-    // Rule 1: Medical Date >= Registration Date
-    if (effectiveRegDate && effectiveMedDate) {
-      const regTime = new Date(effectiveRegDate).setHours(0, 0, 0, 0);
-      const medTime = new Date(effectiveMedDate).setHours(0, 0, 0, 0);
-      if (medTime < regTime) {
-        return res.status(400).json({
-          success: false,
-          message: 'Medical Date must be on or after the Registration Date (Medical Date >= Registration Date).',
-        });
-      }
-    }
-
-    // Rule 2: Written (Learner's) Exam Date > Medical Date
-    if (effectiveMedDate && effectiveExamDate) {
-      const medTime = new Date(effectiveMedDate).setHours(0, 0, 0, 0);
-      const examTime = new Date(effectiveExamDate).setHours(0, 0, 0, 0);
-      if (examTime <= medTime) {
-        return res.status(400).json({
-          success: false,
-          message: 'Written Exam Date must be after the Medical Date.',
-        });
-      }
-    }
-
-    // Secondary sequence check if no medical date is provided but reg and exam dates are
-    if (effectiveRegDate && effectiveExamDate && !effectiveMedDate) {
+    // DMT Date Rules:
+    // 1. The Registration Date and Medical Exam Date CAN be the exact same date (or either order).
+    // 2. The Theory (Written) Exam Date MUST be strictly after both the Registration Date and the Medical Exam Date.
+    if (effectiveExamDate && effectiveRegDate) {
       const regTime = new Date(effectiveRegDate).setHours(0, 0, 0, 0);
       const examTime = new Date(effectiveExamDate).setHours(0, 0, 0, 0);
       if (examTime <= regTime) {
         return res.status(400).json({
           success: false,
-          message: 'Written Exam Date must be after the Registration Date.',
+          message: 'Theory (Written) Exam Date must be after the Registration Date.',
+        });
+      }
+    }
+
+    if (effectiveExamDate && effectiveMedDate) {
+      const medTime = new Date(effectiveMedDate).setHours(0, 0, 0, 0);
+      const examTime = new Date(effectiveExamDate).setHours(0, 0, 0, 0);
+      if (examTime <= medTime) {
+        return res.status(400).json({
+          success: false,
+          message: 'Theory (Written) Exam Date must be after the Medical Exam Date.',
         });
       }
     }
@@ -666,16 +655,26 @@ exports.updateDmtDates = async (req, res) => {
 };
 
 // @desc    Record a Trial attempt and result (Staff / Admin only)
-// @route   PATCH /api/students/:id/trial
+// @route   POST or PATCH /api/students/:id/trial-attempt, /api/students/:id/trial
 // @access  Staff, Admin
 exports.recordTrialAttempt = async (req, res) => {
   try {
-    const { attemptDate, result, examinerNotes } = req.body;
+    const attemptDate = req.body.attemptDate || req.body.date || new Date();
+    const result = req.body.result;
+    const examinerNotes = req.body.examinerNotes || req.body.notes || '';
 
     if (!attemptDate || !result) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide both trial attempt date and result (passed/failed/pending)',
+        message: 'Please provide both trial attempt date and result (passed/failed/absent)',
+      });
+    }
+
+    const normResult = result.toString().toLowerCase().trim();
+    if (!['passed', 'failed', 'absent'].includes(normResult)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trial outcome must be either "passed", "failed", or "absent"',
       });
     }
 
@@ -687,12 +686,30 @@ exports.recordTrialAttempt = async (req, res) => {
       });
     }
 
-    // Business Rule Check: Learner exam must be passed first
-    if (!student.dmtDates.learnerExamPassed && student.studentType !== 'Type2_TrialReady') {
+    // Business Rule Check: Learner exam must be passed first (for Type 1 learners)
+    const isType2Student =
+      student.studentType === 'Type 2' ||
+      student.studentType === 'Type2_TrialReady' ||
+      student.student_type === 'Type 2';
+
+    const examPassed =
+      student.dmtDates?.learnerExamPassed ||
+      student.learnerExamStatus === 'passed' ||
+      student.written_exam_status === 'Pass' ||
+      student.written_exam_status === 'passed';
+
+    if (!examPassed && !isType2Student) {
       return res.status(400).json({
         success: false,
-        message: 'Student must pass the DMT Learner Exam before a Trial attempt can be recorded.',
+        message: 'Student must pass the DMT Learner Written Exam before a Practical Trial attempt can be recorded.',
       });
+    }
+
+    if (!student.trial) {
+      student.trial = { attempts: [] };
+    }
+    if (!student.trial.attempts) {
+      student.trial.attempts = [];
     }
 
     // Business Rule Check: Maximum 3 attempts
@@ -707,23 +724,37 @@ exports.recordTrialAttempt = async (req, res) => {
     student.trial.attempts.push({
       attemptNumber,
       date: new Date(attemptDate),
-      result,
-      examinerNotes: examinerNotes || '',
+      result: normResult,
+      notes: examinerNotes,
+      examinerNotes: examinerNotes,
     });
+    student.trial.attemptsUsed = student.trial.attempts.length;
+
+    if (normResult === 'passed') {
+      student.trial.licenseObtained = true;
+      student.trial.licenseIssuedDate = new Date(attemptDate);
+      student.registrationStatus = 'completed';
+    }
 
     await student.save();
 
-    // Trigger in-app notification
-    await Notification.create({
-      recipientId: student.userId._id,
-      recipientRole: 'student',
-      title: result === 'passed' ? '🎉 Congratulations! Trial Exam Passed' : 'Trial Exam Result Recorded',
-      message:
-        result === 'passed'
-          ? `You passed Trial Attempt #${attemptNumber}! Your driving license process is now completed.`
-          : `Trial Attempt #${attemptNumber} result was recorded as '${result}'.`,
-      type: 'trial',
-    });
+    // Trigger in-app notification if user exists
+    if (student.userId?._id) {
+      try {
+        await Notification.create({
+          recipientId: student.userId._id,
+          recipientRole: 'student',
+          title: normResult === 'passed' ? '🎉 Congratulations! Trial Exam Passed' : 'Trial Exam Result Recorded',
+          message:
+            normResult === 'passed'
+              ? `You passed Trial Attempt #${attemptNumber}! Your driving license process is now completed.`
+              : `Trial Attempt #${attemptNumber} result was recorded as '${normResult}'.`,
+          type: 'trial',
+        });
+      } catch (notifErr) {
+        console.warn('Failed to send trial attempt notification:', notifErr.message);
+      }
+    }
 
     return res.status(200).json({
       success: true,

@@ -31,7 +31,7 @@ export default function StudentTypeSelectModal({ isOpen, onClose }) {
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-2xl bg-slate-900/95 border border-purple-400/30 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-10 backdrop-blur-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl bg-slate-900/95 border border-purple-400/30 rounded-3xl p-5 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-10 backdrop-blur-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto my-auto">
         {/* Glow accents */}
         <div className="absolute -top-12 -left-12 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none" />

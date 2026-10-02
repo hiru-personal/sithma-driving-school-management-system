@@ -1258,7 +1258,7 @@ export default function DmtMilestonesPage() {
       {/* MODAL 2: Record Exam Result Modal */}
       {isExamModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
+          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(168,85,247,0.3)] max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2 text-purple-300 font-bold text-base">
                 <BookOpen className="w-5 h-5" />
@@ -1404,7 +1404,7 @@ export default function DmtMilestonesPage() {
       {/* MODAL 2A: Update DMT Medical Exam Status & Proof Modal */}
       {showMedicalModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(16,185,129,0.25)]">
+          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(16,185,129,0.25)] max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2 text-emerald-300 font-bold text-base">
                 <Stethoscope className="w-5 h-5 text-emerald-400" />
@@ -1554,7 +1554,7 @@ export default function DmtMilestonesPage() {
       {/* MODAL 2B: Update DMT Registration Status & Proof Modal */}
       {showRegistrationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-blue-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(59,130,246,0.25)]">
+          <div className="bg-slate-900 border border-blue-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-6 shadow-[0_0_50px_rgba(59,130,246,0.25)] max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2 text-blue-300 font-bold text-base">
                 <FileText className="w-5 h-5 text-blue-400" />
@@ -1677,7 +1677,7 @@ export default function DmtMilestonesPage() {
       {/* MODAL 3: Request Date for Another Day (Reschedule Request Modal) */}
       {showRescheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-cyan-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.25)]">
+          <div className="bg-slate-900 border border-cyan-500/40 rounded-3xl p-5 sm:p-8 max-w-lg w-full space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.25)] max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2 text-cyan-300 font-bold text-base">
                 <Calendar className="w-5 h-5 text-cyan-400" />

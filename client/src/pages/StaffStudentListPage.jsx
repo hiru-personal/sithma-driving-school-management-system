@@ -307,23 +307,26 @@ export default function StaffStudentListPage() {
   const handleSaveDmtDates = async (e) => {
     e.preventDefault();
 
-    // Client-side validation: Medical Date >= Registration Date
-    if (dmtForm.learnerRegistrationDate && dmtForm.medicalExamDate) {
-      const reg = new Date(dmtForm.learnerRegistrationDate).setHours(0, 0, 0, 0);
-      const med = new Date(dmtForm.medicalExamDate).setHours(0, 0, 0, 0);
-      if (med < reg) {
-        toast.error('Medical Date must be on or after Registration Date');
-        return;
-      }
-    }
-
-    // Client-side validation: Written Exam Date > Medical Date
-    if (dmtForm.medicalExamDate && dmtForm.learnerExamDate) {
-      const med = new Date(dmtForm.medicalExamDate).setHours(0, 0, 0, 0);
+    // Client-side validation:
+    // 1. Registration Date and Medical Exam Date CAN be the exact same date (or either order).
+    // 2. Theory (Written) Exam Date MUST be strictly after both Registration Date and Medical Exam Date.
+    if (dmtForm.learnerExamDate) {
       const exam = new Date(dmtForm.learnerExamDate).setHours(0, 0, 0, 0);
-      if (exam <= med) {
-        toast.error('Written Exam Date must be after the Medical Date');
-        return;
+
+      if (dmtForm.learnerRegistrationDate) {
+        const reg = new Date(dmtForm.learnerRegistrationDate).setHours(0, 0, 0, 0);
+        if (exam <= reg) {
+          toast.error('Theory Exam Date must be after the Registration Date');
+          return;
+        }
+      }
+
+      if (dmtForm.medicalExamDate) {
+        const med = new Date(dmtForm.medicalExamDate).setHours(0, 0, 0, 0);
+        if (exam <= med) {
+          toast.error('Theory Exam Date must be after the Medical Exam Date');
+          return;
+        }
       }
     }
 
@@ -905,7 +908,7 @@ export default function StaffStudentListPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full min-w-[800px] text-left">
               <thead className="bg-slate-950/90 border-b border-purple-300/20 text-slate-300 uppercase text-xs sm:text-sm font-extrabold tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Student Name</th>
@@ -1188,7 +1191,7 @@ export default function StaffStudentListPage() {
       {/* Modal Dialog: Edit DMT Dates / Record Trial Attempt */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-6 space-y-5">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -1475,7 +1478,7 @@ export default function StaffStudentListPage() {
                     <Info className="w-4 h-4 text-cyan-400" /> DMT Date Validation Sequence (Server-Enforced)
                   </div>
                   <p className="text-[11px] text-slate-300">
-                    Chronological order required: <strong>Registration Date</strong> &rarr; <strong>Medical Date</strong> (&ge; Registration) &rarr; <strong>Written Exam Date</strong> (&gt; Medical). Inconsistent sequences will be rejected by the server.
+                    <strong>Registration Date</strong> and <strong>Medical Exam Date</strong> can be on the same date. <strong>Theory (Written) Exam Date</strong> must be scheduled after both dates.
                   </p>
                 </div>
 
@@ -1503,7 +1506,7 @@ export default function StaffStudentListPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-slate-300">
-                      2. DMT Medical Examination Date (US-04) <span className="text-cyan-400 font-mono text-[11px]">(&ge; Registration Date)</span>:
+                      2. DMT Medical Examination Date (US-04) <span className="text-cyan-400 font-mono text-[11px]">(Can be same date as Registration)</span>:
                     </label>
                     {selectedStudent.dmtDates?.medicalDone && (
                       <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
@@ -1542,7 +1545,7 @@ export default function StaffStudentListPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-slate-300">
-                      3. DMT Learner Written Exam Date <span className="text-cyan-400 font-mono text-[11px]">(&gt; Medical Date)</span>:
+                      3. DMT Learner Written Theory Exam Date <span className="text-cyan-400 font-mono text-[11px]">(&gt; Registration &amp; Medical Dates)</span>:
                     </label>
                     <span className="text-[10px] text-cyan-300 font-mono">
                       {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
@@ -1790,7 +1793,7 @@ export default function StaffStudentListPage() {
       {/* Walk-In Student Registration Modal (US-03) */}
       {showWalkInModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-cyan-400/30 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-6 space-y-5">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-cyan-400/30 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-lg w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">

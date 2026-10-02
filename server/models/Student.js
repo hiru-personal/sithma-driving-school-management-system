@@ -39,7 +39,7 @@ const learnerExamAttemptSchema = new mongoose.Schema(
     },
     result: {
       type: String,
-      enum: ['passed', 'failed'],
+      enum: ['passed', 'failed', 'absent'],
       required: true,
     },
     marks: {
@@ -49,6 +49,10 @@ const learnerExamAttemptSchema = new mongoose.Schema(
       max: [40, 'Marks cannot exceed 40'],
     },
     notes: {
+      type: String,
+      default: '',
+    },
+    examinerNotes: {
       type: String,
       default: '',
     },

@@ -888,7 +888,7 @@ export default function StudentDashboard() {
     if (!showVerifiedCelebrationModal) return null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-        <div className="card max-w-lg w-full p-6 sm:p-8 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-emerald-400/50 shadow-[0_25px_80px_rgba(16,185,129,0.3)] space-y-6 relative rounded-3xl text-center">
+        <div className="card max-w-lg w-full p-5 sm:p-8 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-emerald-400/50 shadow-[0_25px_80px_rgba(16,185,129,0.3)] space-y-6 relative rounded-3xl text-center max-h-[90vh] overflow-y-auto my-auto">
           <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)] animate-bounce">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
@@ -1456,9 +1456,9 @@ export default function StudentDashboard() {
                 </p>
               </div>
             </div>
-            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-right self-start sm:self-auto min-w-[190px]">
+            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[190px]">
               <span className="text-[10px] text-slate-400 font-semibold block">DMT Milestones:</span>
-              <span className="text-xs font-black text-emerald-400 flex items-center justify-end gap-1 mt-0.5">
+              <span className="text-xs font-black text-emerald-400 flex items-center justify-start sm:justify-end gap-1 mt-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Exempt / Complete
               </span>
               <span className="text-[10px] text-slate-400 font-semibold block mt-2">Trial Date Status:</span>
@@ -1550,7 +1550,7 @@ export default function StudentDashboard() {
                 </div>
               </div>
             </div>
-            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-right self-start sm:self-auto min-w-[180px]">
+            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[180px]">
               <span className="text-[10px] text-slate-400 font-semibold block">Your Exam Status:</span>
               <span
                 className={`text-xs font-black ${
@@ -2257,7 +2257,7 @@ export default function StudentDashboard() {
                                   <Phone className="w-3.5 h-3.5 text-slate-400" /> {branchInfo.phone} • {branchInfo.hours}
                                 </div>
                               </div>
-                              <div className="bg-slate-950 p-3 rounded-xl border border-white/10 text-right self-start sm:self-auto min-w-[200px]">
+                              <div className="bg-slate-950 p-3 rounded-xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[200px]">
                                 <span className="text-[10px] text-slate-400 block">Payment Reference Code:</span>
                                 <span className="font-mono font-bold text-amber-300 text-sm">{cashCode}</span>
                               </div>
@@ -2270,7 +2270,7 @@ export default function StudentDashboard() {
                                 type="button"
                                 onClick={handlePackagePaymentSubmit}
                                 disabled={submittingPkgPayment}
-                                className="btn-accent py-3 px-6 text-xs font-bold shadow-lg flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                                className="btn-accent py-3 px-6 text-xs font-bold shadow-lg flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 w-full sm:w-auto"
                               >
                                 {submittingPkgPayment ? 'Registering Cash Intent...' : 'Confirm In-Person Cash Payment Intent'}
                                 <ArrowRight className="w-4 h-4" />
@@ -2677,7 +2677,7 @@ export default function StudentDashboard() {
       {/* Trial Date Reschedule Request Modal */}
       {showRescheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-slate-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-purple-500/30 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-purple-400" />

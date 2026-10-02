@@ -261,26 +261,26 @@ export default function LandingPage() {
   return (
     <div className="space-y-20 py-10 px-4 sm:px-6 lg:px-10 max-w-[1440px] mx-auto w-full">
       {/* Hero Section */}
-      <section className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/70 to-slate-900/90 rounded-3xl text-white p-8 sm:p-12 lg:p-14 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] overflow-hidden">
+      <section className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/70 to-slate-900/90 rounded-2xl sm:rounded-3xl text-white p-5 sm:p-8 md:p-12 lg:p-14 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] overflow-hidden">
         <div className="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent pointer-events-none" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs">
-              <Sparkles className="w-4 h-4 text-cyan-400" /> Sri Lanka's Modern Driving Academy Management System
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10">
+          <div className="lg:col-span-7 space-y-5 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-[10px] sm:text-xs">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Sri Lanka's Modern Driving Academy Management System
             </div>
             <h1 className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tight text-white font-heading leading-tight drop-shadow">
               Master the Road with <span className="text-accent">Sithma</span> Driving School
             </h1>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
+            <p className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl">
               Serving Maharagama, Werahara, and Delgoda branches with professional certified instructors, automated DMT milestone stepper, seamless online lesson booking, and multilingual exam practice.
             </p>
 
-            <div className="pt-2 flex flex-wrap items-center gap-4">
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               {user ? (
                 <Link
                   to={user.role === 'student' ? '/student/dashboard' : '/staff/students'}
-                  className="btn-accent px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center gap-2 hover:scale-105"
+                  className="btn-accent w-full sm:w-auto px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105"
                 >
                   Go to {user.role === 'student' ? 'Student Dashboard' : 'Staff Portal'} <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -289,18 +289,17 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => setTypeModalOpen(true)}
-                    className="btn-accent px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center gap-2 hover:scale-105 cursor-pointer"
+                    className="btn-accent w-full sm:w-auto px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer"
                   >
                     Enroll as Student <ArrowRight className="w-4 h-4" />
                   </button>
                   <Link
                     to="/login"
-                    className="btn-secondary px-6 py-3.5 font-bold text-sm bg-white/10 hover:bg-white/20 border-white/20 text-white flex items-center gap-2"
+                    className="btn-secondary w-full sm:w-auto px-6 py-3.5 font-bold text-sm bg-white/10 hover:bg-white/20 border-white/20 text-white flex items-center justify-center gap-2"
                   >
                     Portal Sign In
                   </Link>
                 </>
-
               )}
             </div>
           </div>
@@ -716,7 +715,7 @@ export default function LandingPage() {
       </section>
 
       {/* Trilingual Quiz Feature Highlight Banner */}
-      <section className="backdrop-blur-2xl bg-slate-900/80 rounded-3xl p-8 sm:p-10 border border-white/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col lg:flex-row items-center justify-between gap-8">
+      <section className="backdrop-blur-2xl bg-slate-900/80 rounded-3xl p-5 sm:p-8 md:p-10 border border-white/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 sm:gap-8">
         <div className="space-y-4 max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs">
             <BookOpen className="w-3.5 h-3.5" /> Informal Self-Study Aid
@@ -734,10 +733,10 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="w-full lg:w-auto flex-shrink-0">
           <Link
             to="/student/quiz"
-            className="btn-accent px-8 py-3.5 font-bold text-sm shadow-xl flex items-center gap-2 hover:scale-105"
+            className="btn-accent px-8 py-3.5 font-bold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105 w-full sm:w-auto"
           >
             Try Practice Exam <ArrowRight className="w-4 h-4" />
           </Link>

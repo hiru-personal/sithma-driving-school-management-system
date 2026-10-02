@@ -410,7 +410,7 @@ export default function RegisterPage() {
   const isType1 = studentType === 'Type 1';
 
   return (
-    <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+    <div className="py-6 sm:py-10 px-3.5 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
       {/* Step Header Stepper */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-amber-500/20 border border-white/15 text-xs font-bold text-slate-200 mb-3 backdrop-blur-xl shadow-[0_0_20px_rgba(168,85,247,0.2)]">
@@ -418,10 +418,10 @@ export default function RegisterPage() {
           <span>Step 2 of 3: Student Registration Form</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+        <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
           Create Your Student Profile
         </h1>
-        <p className="text-sm text-slate-300 mt-2 max-w-xl mx-auto">
+        <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-xl mx-auto">
           Please fill in your legal details. Once registered, you will proceed directly to Step 3 to complete the mandatory advance payment.
         </p>
       </div>
@@ -435,7 +435,7 @@ export default function RegisterPage() {
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-black text-white">Category: Type 1 Student</span>
                   <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
                     Full Course Learner
@@ -462,7 +462,7 @@ export default function RegisterPage() {
                 <Award className="w-6 h-6" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-black text-white">Category: Type 2 Student</span>
                   <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
                     Trial Only Learner
@@ -486,7 +486,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Main Registration Form Card */}
-      <div className="backdrop-blur-2xl bg-slate-900/85 border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+      <div className="backdrop-blur-2xl bg-slate-900/85 border border-white/15 rounded-3xl p-4 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Full Name */}
           <div>
@@ -533,7 +533,7 @@ export default function RegisterPage() {
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                 Calculated Age (DMT 18+ Rule)
               </label>
-              <div className="h-[46px] rounded-xl flex items-center px-4 transition-all duration-300 border">
+              <div className="min-h-[46px] py-1.5 rounded-xl flex items-center px-4 transition-all duration-300 border">
                 {calculatedAge === null ? (
                   <div className="text-xs text-slate-400 flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-slate-500" />

@@ -48,6 +48,10 @@ router.get('/:id/heavy-vehicle-eligibility', authenticate, checkStudentOwnership
 
 // Staff/Admin only actions
 router.patch('/:id/trial-date', authenticate, authorize('staff', 'admin'), setTrialDate);
+router.post('/:id/trial-date', authenticate, authorize('staff', 'admin'), setTrialDate);
+router.post('/:id/trial-attempt', authenticate, authorize('staff', 'admin'), recordTrialAttempt);
+router.patch('/:id/trial-attempt', authenticate, authorize('staff', 'admin'), recordTrialAttempt);
+router.post('/:id/trial', authenticate, authorize('staff', 'admin'), recordTrialAttempt);
 router.patch('/:id/trial', authenticate, authorize('staff', 'admin'), recordTrialAttempt);
 router.patch('/:id/package', authenticate, authorize('staff', 'admin'), updateStudentPackage);
 router.patch('/:id/toggle-premium', authenticate, authorize('staff', 'admin'), toggleAdvancePaid);

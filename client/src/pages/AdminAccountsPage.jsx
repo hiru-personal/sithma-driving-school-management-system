@@ -183,16 +183,16 @@ export default function AdminAccountsPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <button
             onClick={() => setShowStaffModal(true)}
-            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-md"
+            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 shadow-md w-full sm:w-auto"
           >
             <UserPlus className="w-4 h-4" /> + Create Staff Account
           </button>
           <button
             onClick={() => setShowInstructorModal(true)}
-            className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shadow-md"
+            className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 shadow-md w-full sm:w-auto"
           >
             <UserPlus className="w-4 h-4" /> + Create Instructor Account
           </button>
@@ -254,7 +254,7 @@ export default function AdminAccountsPage() {
       {/* Accounts Table */}
       <div className="card overflow-hidden shadow-card p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[760px] text-left text-xs">
             <thead className="bg-slate-950/60 text-slate-400 border-b border-white/10 uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="py-3.5 px-4 font-bold">User / Account</th>
@@ -390,7 +390,7 @@ export default function AdminAccountsPage() {
       {/* Modal: Create Staff Account */}
       {showStaffModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-cyan-400/30 shadow-2xl space-y-5">
+          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-slate-900 border border-cyan-400/30 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-cyan-400" /> Create Staff Account (Data Entry Officer)
@@ -518,7 +518,7 @@ export default function AdminAccountsPage() {
       {/* Modal: Create Instructor Account */}
       {showInstructorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-accent/40 shadow-2xl space-y-5">
+          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-slate-900 border border-accent/40 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-accent" /> Create Instructor Account
@@ -661,7 +661,7 @@ export default function AdminAccountsPage() {
       {/* Modal: Admin Force Reset Password */}
       {showResetModal && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-white/20 shadow-2xl space-y-4">
+          <div className="w-full max-w-md p-5 sm:p-6 rounded-3xl bg-slate-900 border border-white/20 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-accent" /> Force Password Reset

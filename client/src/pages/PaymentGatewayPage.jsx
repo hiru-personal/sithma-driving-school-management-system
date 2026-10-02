@@ -470,7 +470,7 @@ export default function PaymentGatewayPage() {
       {/* ── Confirmation / Exit Modal ────────────────────────────────────── */}
       {showExitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-amber-400/30 p-6 sm:p-8 space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-amber-400/30 p-5 sm:p-8 space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto my-auto">
             <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 mx-auto">
               <ShieldCheck className="w-8 h-8" />
             </div>

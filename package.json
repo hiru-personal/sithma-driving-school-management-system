@@ -1,0 +1,16 @@
+{
+  "name": "sithma-driving-school-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sithma Driving School Operations, Scheduling & DMT Learner Management Platform",
+  "scripts": {
+    "dev": "npm --prefix server run dev & npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "start": "npm --prefix server start",
+    "build": "npm --prefix client run build",
+    "seed": "npm --prefix server run seed",
+    "sync:atlas": "npm --prefix server run sync:atlas",
+    "mongo:start": "npm --prefix server run mongo:start"
+  }
+}

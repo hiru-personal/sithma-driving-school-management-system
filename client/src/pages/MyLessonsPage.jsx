@@ -173,14 +173,14 @@ export default function MyLessonsPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 font-bold shadow-sm flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
             <Calendar className="w-4 h-4" /> Book New Lesson
           </Link>
-          <button onClick={openFreeClassModal} className="btn-accent text-xs py-2 px-4 font-bold shadow-sm">
+          <button onClick={openFreeClassModal} className="btn-accent text-xs py-2 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
             <Gift className="w-4 h-4 text-slate-950" /> Book Free Weekly Class
           </button>
-          <button onClick={() => setIsExtraModalOpen(true)} className="btn-secondary text-xs py-2 px-4 font-bold shadow-sm">
+          <button onClick={() => setIsExtraModalOpen(true)} className="btn-secondary text-xs py-2 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
             <PlusCircle className="w-4 h-4 text-cyan-300" /> Request Extra Lessons
           </button>
         </div>
@@ -310,7 +310,7 @@ export default function MyLessonsPage() {
       {/* Free Weekly Class Modal */}
       {isFreeModalOpen && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-6 space-y-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Gift className="w-4 h-4 text-accent" /> Book Free Weekly Theory & Practical Class
@@ -371,7 +371,7 @@ export default function MyLessonsPage() {
       {/* Request Extra Lessons Modal */}
       {isExtraModalOpen && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-6 space-y-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <PlusCircle className="w-4 h-4 text-cyan-400" /> Request Extra Practical Lessons

@@ -411,7 +411,7 @@ export default function InstructorSchedulePage() {
       {/* ROSTER MODAL: VIEW BOOKED STUDENTS */}
       {activeRosterSlot && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] max-w-2xl w-full p-6 space-y-5 max-h-[90vh] flex flex-col">
+          <div className="backdrop-blur-3xl bg-slate-950 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] max-w-2xl w-full p-5 sm:p-6 space-y-5 max-h-[90vh] flex flex-col my-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
@@ -558,7 +558,7 @@ export default function InstructorSchedulePage() {
       {/* MODAL: ADD DAILY LESSON FOR INSTRUCTORS */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] max-w-lg w-full p-6 space-y-4">
+          <div className="backdrop-blur-3xl bg-slate-950 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <span className="badge badge-info text-[10px] font-bold uppercase mb-1">

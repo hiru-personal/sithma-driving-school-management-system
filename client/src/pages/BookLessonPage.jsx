@@ -543,7 +543,7 @@ export default function BookLessonPage() {
             <label className="block text-xs font-semibold text-slate-300 mb-1">
               Vehicle Type:
             </label>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'Car', label: 'Car', icon: Car },
                 { id: 'Bike', label: 'Bike', icon: Bike },
@@ -758,7 +758,7 @@ export default function BookLessonPage() {
       {/* Booking Confirmation Modal */}
       {selectedSlot && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-6 space-y-4">
+          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-cyan-400" /> Confirm Lesson Booking
@@ -878,7 +878,7 @@ export default function BookLessonPage() {
       {/* Reschedule Request Modal */}
       {showRescheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-purple-400/30 rounded-3xl w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative">
+          <div className="bg-slate-900 border border-purple-400/30 rounded-3xl w-full max-w-lg p-5 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto my-auto">
             <button
               onClick={() => setShowRescheduleModal(false)}
               className="absolute right-5 top-5 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10"

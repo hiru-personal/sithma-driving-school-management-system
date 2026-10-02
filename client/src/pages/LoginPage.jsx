@@ -96,9 +96,9 @@ export default function LoginPage() {
       )}
 
       {/* Main Split Card */}
-      <div className="w-full rounded-3xl overflow-hidden backdrop-blur-2xl bg-slate-900/85 border border-white/15 shadow-[0_25px_70px_rgba(0,0,0,0.7)] grid grid-cols-1 lg:grid-cols-12 min-h-[640px] xl:min-h-[720px]">
+      <div className="w-full rounded-2xl sm:rounded-3xl overflow-hidden backdrop-blur-2xl bg-slate-900/85 border border-white/15 shadow-[0_25px_70px_rgba(0,0,0,0.7)] grid grid-cols-1 lg:grid-cols-12 min-h-0 lg:min-h-[640px] xl:min-h-[720px]">
         {/* Left Side: Showcase */}
-        <div className="lg:col-span-5 relative min-h-[300px] sm:min-h-[380px] lg:min-h-[640px] xl:min-h-[720px] overflow-hidden group">
+        <div className="lg:col-span-5 relative min-h-[220px] sm:min-h-[320px] lg:min-h-[640px] xl:min-h-[720px] overflow-hidden group">
           <img
             src="/images/sithma-portal-login.jpg"
             alt="Sithma Driving School training vehicles"
@@ -107,34 +107,34 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-950/50 hidden lg:block" />
 
-          <div className="absolute top-7 left-7 right-7 flex items-center justify-between z-10">
-            <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-slate-950/75 backdrop-blur-md border border-white/20 shadow-lg">
-              <div className="w-7 h-7 rounded-full bg-slate-900/90 p-0.5 flex items-center justify-center border border-cyan-400/30">
+          <div className="absolute top-4 left-4 right-4 sm:top-7 sm:left-7 sm:right-7 flex items-center justify-between z-10">
+            <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-slate-950/75 backdrop-blur-md border border-white/20 shadow-lg">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900/90 p-0.5 flex items-center justify-center border border-cyan-400/30">
                 <img src="/images/sithma-emblem.png" alt="Sithma Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-sm font-bold text-white tracking-wide">
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide">
                 Sithma <span className="text-accent">Driving School</span>
               </span>
             </div>
-            <span className="badge badge-success text-xs font-bold shadow-md px-3.5 py-1.5">
+            <span className="badge badge-success text-[10px] sm:text-xs font-bold shadow-md px-2.5 sm:px-3.5 py-1 sm:py-1.5">
               DMT Certified
             </span>
           </div>
 
-          <div className="absolute bottom-8 left-8 right-8 space-y-4 z-10">
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="w-4 h-4" /> Authentication & Portal Access
+          <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 space-y-2 sm:space-y-4 z-10">
+            <div className="space-y-1 sm:space-y-2">
+              <span className="text-[10px] sm:text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" /> Authentication & Portal Access
               </span>
-              <h3 className="text-2xl sm:text-3xl xl:text-4xl font-black text-white leading-tight drop-shadow">
+              <h3 className="text-xl sm:text-3xl xl:text-4xl font-black text-white leading-tight drop-shadow">
                 Real Driving Academy System
               </h3>
-              <p className="text-sm text-slate-200 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed hidden sm:block">
                 Log in to schedule road lessons, track your official DMT trial stages, and access bilingual exam practice tests.
               </p>
             </div>
 
-            <div className="pt-3 border-t border-white/15 space-y-2 text-sm text-slate-200">
+            <div className="pt-2 sm:pt-3 border-t border-white/15 space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-slate-200 hidden sm:block">
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span>Dual-control car, bike, three-wheeler & heavy vehicle training</span>
@@ -148,10 +148,10 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side: Sign In Form */}
-        <div className="lg:col-span-7 p-8 sm:p-12 lg:p-14 xl:p-16 flex flex-col justify-between space-y-8">
-          <div className="space-y-7">
+        <div className="lg:col-span-7 p-5 sm:p-10 lg:p-14 xl:p-16 flex flex-col justify-between space-y-6 sm:space-y-8">
+          <div className="space-y-5 sm:space-y-7">
             <div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs sm:text-sm mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs sm:text-sm mb-2 sm:mb-3">
                 <Lock className="w-3.5 h-3.5" /> Secure Portal Access
               </div>
               <h2 className="text-3xl sm:text-4xl xl:text-[2.6rem] font-black text-white font-heading tracking-tight leading-tight">

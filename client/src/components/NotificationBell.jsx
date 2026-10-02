@@ -119,7 +119,7 @@ export default function NotificationBell() {
 
       {/* Liquid Glass Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 sm:w-96 backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute -right-2 sm:right-0 mt-3 w-[calc(100vw-2rem)] sm:w-96 max-w-sm backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
           <div className="p-4 bg-white/5 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h4 className="text-xs font-bold text-white uppercase tracking-wider">In-App Alerts</h4>

@@ -89,10 +89,10 @@ export default function App() {
         warpAmount={0.5}
         speed={0.4}
       />
-      <div className="relative z-10 min-h-screen flex flex-col font-sans text-slate-100 selection:bg-purple-500 selection:text-white">
+      <div className="relative z-10 min-h-screen flex flex-col font-sans text-slate-100 selection:bg-purple-500 selection:text-white w-full max-w-full overflow-x-hidden">
         <Navbar />
 
-        <main className="flex-1 w-full">
+        <main className="flex-1 w-full max-w-full overflow-x-hidden">
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />

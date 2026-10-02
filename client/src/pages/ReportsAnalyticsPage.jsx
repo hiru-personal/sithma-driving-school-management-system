@@ -130,14 +130,14 @@ export default function ReportsAnalyticsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 print:hidden">
-          <button onClick={fetchReports} className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5 font-bold">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto print:hidden">
+          <button onClick={fetchReports} className="btn-secondary text-xs py-2 px-3 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold">
             <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </button>
-          <button onClick={handleExportCSV} className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5 font-bold">
+          <button onClick={handleExportCSV} className="btn-secondary text-xs py-2 px-3 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold">
             <Download className="w-3.5 h-3.5 text-cyan-300" /> Export CSV
           </button>
-          <button onClick={handlePrint} className="btn-primary text-xs py-2 px-4 flex items-center gap-1.5 font-bold shadow-md">
+          <button onClick={handlePrint} className="btn-primary text-xs py-2 px-4 flex-1 sm:flex-none flex items-center justify-center gap-1.5 font-bold shadow-md">
             <Printer className="w-3.5 h-3.5" /> Print Report
           </button>
         </div>
@@ -282,7 +282,7 @@ export default function ReportsAnalyticsPage() {
               Progression of Sithma students through official Ministry & Department of Motor Traffic milestones.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
               {funnelData.map((f, i) => (
                 <div
                   key={f.stage}

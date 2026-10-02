@@ -180,7 +180,7 @@ export default function DarkVeil({
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-screen h-screen bg-[#241240]">
+    <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden w-full h-full bg-[#241240]">
       {/* Radiant Light Purple & Lavender Ambient Mesh */}
       <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#4a1c86] via-[#2f1454] to-[#1a0b30]" />
 
