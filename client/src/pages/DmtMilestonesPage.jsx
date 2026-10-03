@@ -450,7 +450,7 @@ export default function DmtMilestonesPage() {
         navigate('/payment-gateway', {
           state: {
             studentName: user?.name,
-            studentId: profile?._id,
+            studentId: res.data.student?._id || profile?._id || student?._id,
             packageTitle: 'Type 1 Learner Advance Registration Fee',
             amount: 5000,
             packageType: 'advance_fee',

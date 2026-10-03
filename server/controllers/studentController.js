@@ -1801,18 +1801,6 @@ exports.reRegisterStudent = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
 
-    // Zero DMT milestone exposure for Type 2 (Trial-Only) students
-    const isType2 =
-      student.studentType === 'Type 2' ||
-      student.studentType === 'Type2_TrialReady' ||
-      student.studentType === 'type2';
-    if (isType2) {
-      return res.status(403).json({
-        success: false,
-        message: 'Re-registration workflow is only applicable for Type 1 learners.',
-      });
-    }
-
     // 1. Ensure existing cycles are initialized and archived
     if (!student.registrationCycles || student.registrationCycles.length === 0) {
       student.evaluateLifecycle();
@@ -1826,19 +1814,41 @@ exports.reRegisterStudent = async (req, res) => {
     if (currentCycle) {
       currentCycle.examAttempts = student.learnerExamAttempts || [];
       currentCycle.examAttemptsCount = (student.learnerExamAttempts || []).length;
-      if (
+      currentCycle.trialAttempts = student.trial?.attempts || student.trialAttempts || [];
+      currentCycle.trialAttemptsCount = currentCycle.trialAttempts.length;
+      currentCycle.trial = {
+        attempts: student.trial?.attempts || [],
+        attemptsUsed: student.trial?.attemptsUsed || (student.trial?.attempts || []).length,
+        trialDate: student.trial_date || student.trial?.trialDate || null,
+        licenseObtained: student.trial?.licenseObtained || false,
+        licenseIssuedDate: student.trial?.licenseIssuedDate || null,
+      };
+      currentCycle.trial_date = student.trial_date || null;
+      currentCycle.cycleEndedAt = new Date();
+
+      const isTrialExhausted =
+        currentCycle.trialAttemptsCount >= 3 &&
+        !currentCycle.trialAttempts.some((a) => a.result === 'passed');
+      const isTheoryExhausted =
         currentCycle.examAttemptsCount >= 3 &&
-        !currentCycle.examAttempts.some((a) => a.result === 'passed')
-      ) {
+        !currentCycle.examAttempts.some((a) => a.result === 'passed');
+
+      if (isTrialExhausted) {
         currentCycle.status = 'attempts_exhausted';
+        currentCycle.reasonForClose = 'Trial Attempts Exceeded (3/3 Failed)';
+      } else if (isTheoryExhausted) {
+        currentCycle.status = 'attempts_exhausted';
+        currentCycle.reasonForClose = 'Theory Attempts Exceeded (3/3 Failed)';
       } else if (new Date() > new Date(currentCycle.expiryDate)) {
         currentCycle.status = 'expired';
+        currentCycle.reasonForClose = '18-Month Validity Expired';
       } else {
         currentCycle.status = 'cancelled';
+        currentCycle.reasonForClose = student.cancellationReason || 'Registration Cancelled';
       }
     }
 
-    // 2. Create brand-new independent Registration Cycle
+    // 2. Create brand-new independent Registration Cycle (Rules 11, 12, 14)
     const nextCycleNumber = (student.registrationCycles?.length || 0) + 1;
     const newStartDate = new Date();
     const newExpiryDate = Student.compute18MonthExpiry(newStartDate);
@@ -1865,6 +1875,16 @@ exports.reRegisterStudent = async (req, res) => {
       },
       examAttempts: [],
       examAttemptsCount: 0,
+      trialAttempts: [],
+      trialAttemptsCount: 0,
+      trial: {
+        attempts: [],
+        attemptsUsed: 0,
+        trialDate: null,
+        licenseObtained: false,
+        licenseIssuedDate: null,
+      },
+      trial_date: null,
       isPassed: false,
       finalLicense: {
         licenseNumber: '',
@@ -1877,8 +1897,10 @@ exports.reRegisterStudent = async (req, res) => {
     student.registrationCycles.push(newCycle);
     student.currentCycleNumber = nextCycleNumber;
 
-    // 3. Reset active fields for the new cycle (0 of 3 attempts, fresh 18 months, new payment required)
+    // 3. Reset active fields for the new cycle (Clean start: 0 of 3 attempts, fresh 18 months, new advance fee required)
     student.registrationStatus = 'pending_payment';
+    student.cancellationReason = null;
+    student.lifecycleStatus = 'pending_payment';
     student.accountStatus = 'pending_verification';
     student.account_status = 'Unverified / Pending Payment';
     student.advancePaymentStatus = 'pending';
@@ -1886,11 +1908,25 @@ exports.reRegisterStudent = async (req, res) => {
     student.isPremium = false;
     student.trialEligible = false;
     student.trial_eligible = false;
+    student.trial_date = null;
+    student.trial = {
+      attempts: [],
+      attemptsUsed: 0,
+      status: 'pending',
+      lastTrialDate: null,
+      finalResult: null,
+      licenseObtained: false,
+      licenseIssuedDate: null,
+    };
+    student.trialAttempts = [];
+    student.trialAttemptsCount = 0;
+    student.lessonsUsed = 0;
+
     student.learnerExamStatus = 'not_taken';
     student.written_exam_status = 'Pending';
     student.written_exam_date = null;
     student.learnerExamMarks = null;
-    student.learnerExamAttempts = []; // Resets attempt count to Attempt 1 of 3
+    student.learnerExamAttempts = []; // Resets attempt count to 0 of 3
     student.learnerExamAttemptsCount = 0;
     student.advancePaymentReference = '';
 
