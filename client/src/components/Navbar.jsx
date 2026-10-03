@@ -22,7 +22,6 @@ import {
   BarChart3,
   ChevronDown,
   ShieldCheck,
-  Database,
   Package,
   FolderKanban,
 } from 'lucide-react';
@@ -63,23 +62,11 @@ export default function Navbar() {
     return path;
   };
 
-  const [dbInfo, setDbInfo] = useState(null);
   const [pendingRescheduleCount, setPendingRescheduleCount] = useState(0);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const navRef = useRef(null);
   const moreMenuRef = useRef(null);
-
-  // Fetch active database status
-  useEffect(() => {
-    api.get('/health')
-      .then((res) => {
-        if (res.data?.database) {
-          setDbInfo(res.data.database);
-        }
-      })
-      .catch(() => {});
-  }, [location.pathname]);
 
   // Fetch pending reschedule requests for Staff / DEO
   useEffect(() => {
@@ -700,32 +687,6 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 xl:gap-3 shrink-0">
             {user ? (
               <>
-                {/* Database Indicator Pill (Admin Only) */}
-                {user?.role === 'admin' && dbInfo && (
-                  <div
-                    className={`flex items-center gap-1.5 px-2 lg:px-2.5 py-1 sm:py-1.5 rounded-full text-[11px] font-semibold border transition-all shrink-0 ${
-                      dbInfo.target?.includes('Atlas')
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-xs'
-                        : 'bg-[#F3EED8] text-[#152026] border-[#B3D5F1]/60 shadow-xs'
-                    }`}
-                    title={
-                      dbInfo.target?.includes('Atlas')
-                        ? 'Connected to MongoDB Atlas Cloud Cluster'
-                        : 'Connected to Local MongoDB (127.0.0.1)'
-                    }
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full shrink-0 ${
-                        dbInfo.target?.includes('Atlas') ? 'bg-emerald-500 animate-pulse' : 'bg-[#6A97C0]'
-                      }`}
-                    />
-                    <Database className="w-3.5 h-3.5 shrink-0 text-[#1B3D59]" />
-                    <span className="hidden 2xl:inline whitespace-nowrap text-[#152026]">
-                      {dbInfo.target?.includes('Atlas') ? 'Atlas Cloud' : 'Local DB'}
-                    </span>
-                  </div>
-                )}
-
                 <NotificationBell />
 
                 {/* User Pill */}
