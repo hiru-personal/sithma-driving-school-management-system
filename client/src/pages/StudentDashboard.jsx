@@ -2369,30 +2369,45 @@ export default function StudentDashboard() {
                         )}
                       </div>
 
-                      {/* Prominent Result Header */}
+                      {/* Prominent Result Header (Exact styling requested) */}
                       {isTrialPassed ? (
-                        <div className="space-y-1">
-                          <h2 className="text-xl sm:text-2xl font-black text-emerald-800 flex items-center gap-2">
-                            Practical Trial Result: PASSED ✓
-                          </h2>
-                          <div className="text-xs text-[#475569] font-medium flex items-center gap-4 flex-wrap">
-                            <span>Attempts Used: <strong className="text-[#152026] font-mono">{trialAttemptsUsed} / 3</strong></span>
-                            <span>Trial Date: <strong className="text-[#152026] font-mono">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4 text-xs text-[#475569] font-medium flex-wrap">
+                            <span>Attempts Used: <strong className="text-[#152026] font-mono text-sm">{trialAttemptsUsed} / 3</strong></span>
+                            <span>Trial Date: <strong className="text-[#152026] font-mono text-sm">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                          </div>
+                          <div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#6A97C0] block">Result:</span>
+                            <h2 className="text-2xl sm:text-3xl font-black text-emerald-700 flex items-center gap-2">
+                              PASSED ✓
+                            </h2>
                           </div>
                         </div>
                       ) : isTrialFailed ? (
-                        <div className="space-y-1">
-                          <h2 className="text-xl sm:text-2xl font-black text-rose-800 flex items-center gap-2">
-                            Practical Trial Result: FAILED
-                          </h2>
-                          <div className="text-xs text-[#475569] font-medium flex items-center gap-4 flex-wrap">
-                            <span>Attempts Used: <strong className="text-[#152026] font-mono">{trialAttemptsUsed} / 3</strong></span>
-                            <span>Attempts Remaining: <strong className="text-rose-900 font-bold">{trialAttemptsRemaining}</strong></span>
-                            <span>Trial Date: <strong className="text-[#152026] font-mono">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4 text-xs text-[#475569] font-medium flex-wrap">
+                            <span>Attempts Used: <strong className="text-[#152026] font-mono text-sm">{trialAttemptsUsed} / 3</strong></span>
+                            <span>Attempts Remaining: <strong className="text-rose-900 font-bold text-sm bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">{trialAttemptsRemaining}</strong></span>
+                            <span>Trial Date: <strong className="text-[#152026] font-mono text-sm">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                          </div>
+                          <div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#6A97C0] block">Result:</span>
+                            <h2 className="text-2xl sm:text-3xl font-black text-rose-700 flex items-center gap-2">
+                              FAILED
+                            </h2>
                           </div>
                         </div>
                       ) : (
-                        <div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-4 text-xs text-[#475569] font-medium flex-wrap">
+                            <span>Attempts Used: <strong className="text-[#152026] font-mono text-sm">{trialAttemptsUsed} / 3</strong></span>
+                            {currentTrialDate && (
+                              <span>Trial Date: <strong className="text-[#152026] font-mono text-sm">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                            )}
+                            <span className="text-xs font-bold text-[#1B3D59] bg-[#D4EEF8] px-2.5 py-0.5 rounded-full">
+                              Status: Scheduled
+                            </span>
+                          </div>
                           <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
                             {currentTrialDate
                               ? `Scheduled Trial Date: ${formatTrialDateDisplay(currentTrialDate)}`
@@ -2408,7 +2423,7 @@ export default function StudentDashboard() {
 
                   {/* Actions Row */}
                   <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-                    {/* If Failed with attempts remaining: Book Lesson + Request Another Trial Date */}
+                    {/* If Failed with attempts remaining: Book Lesson + Request Another Trial Date + Update Outcome */}
                     {isTrialFailed && trialAttemptsRemaining > 0 && (
                       <>
                         <Link
@@ -2432,6 +2447,20 @@ export default function StudentDashboard() {
                         >
                           <Calendar className="w-4 h-4 text-[#1B3D59]" />
                           <span>📅 Request Another Trial Date</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTrialOutcomeForm({
+                              result: 'passed',
+                              attemptDate: currentTrialDate ? currentTrialDate.split('T')[0] : new Date().toISOString().split('T')[0],
+                              examinerNotes: '',
+                            });
+                            setShowTrialResultModal(true);
+                          }}
+                          className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-2 shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          <Award className="w-4 h-4 text-white" /> Update Trial Result
                         </button>
                       </>
                     )}

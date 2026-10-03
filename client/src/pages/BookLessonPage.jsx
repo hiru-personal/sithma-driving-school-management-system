@@ -129,10 +129,18 @@ export default function BookLessonPage() {
     student?.dmtDates?.learnerExamPassed
   );
   const isTrialEligible = Boolean(isType2 || isExamPassed);
+  const trialAttemptsList = student?.trial?.attempts || [];
+  const latestTrialAttempt = trialAttemptsList.length > 0 ? trialAttemptsList[trialAttemptsList.length - 1] : null;
   const isTrialPassed = Boolean(
     student?.trial?.licenseObtained ||
     student?.isPassed ||
-    student?.trial?.attempts?.some((a) => a.result === 'passed')
+    trialAttemptsList.some((a) => a.result === 'passed')
+  );
+  const isFailedWithRemaining = Boolean(
+    !isTrialPassed &&
+    latestTrialAttempt &&
+    latestTrialAttempt.result !== 'passed' &&
+    trialAttemptsList.length < 3
   );
   const isPackagePaymentConfirmed = student?.packagePaymentStatus === 'confirmed';
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
@@ -148,16 +156,17 @@ export default function BookLessonPage() {
     : null;
 
   const maxBookingDate = useMemo(() => {
-    if (!trialDateObj) return undefined;
+    // If student failed with remaining attempts and previous trial date passed, allow booking lessons
+    if (!trialDateObj || (isTrialDatePassed && isFailedWithRemaining)) return undefined;
     const maxD = new Date(trialDateObj);
     maxD.setDate(maxD.getDate() - 1);
     return maxD.toISOString().split('T')[0];
-  }, [trialDateObj]);
+  }, [trialDateObj, isTrialDatePassed, isFailedWithRemaining]);
 
   const isSelectedDateOnOrAfterTrial = useMemo(() => {
-    if (!trialDateObj || !selectedDate) return false;
+    if (!trialDateObj || !selectedDate || (isTrialDatePassed && isFailedWithRemaining)) return false;
     return new Date(selectedDate).setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0);
-  }, [trialDateObj, selectedDate]);
+  }, [trialDateObj, selectedDate, isTrialDatePassed, isFailedWithRemaining]);
 
   const unlockedCount =
     student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
@@ -182,14 +191,14 @@ export default function BookLessonPage() {
       return;
     }
 
-    // Gate 1c: Trial Date Passed Gate
-    if (isTrialDatePassed) {
+    // Gate 1c: Trial Date Passed Gate (Bypassed if student failed attempt and has remaining attempts)
+    if (isTrialDatePassed && !isFailedWithRemaining) {
       toast.error('Your practical trial date has already passed. Please contact the branch officer to reschedule your trial date.');
       return;
     }
 
     // Gate 1d: Selected Slot on or after Trial Date Gate (Rules 1 & 4)
-    if (trialDateObj && selectedSlot) {
+    if (trialDateObj && selectedSlot && !(isTrialDatePassed && isFailedWithRemaining)) {
       const slotTime = new Date(selectedSlot.date).setHours(0, 0, 0, 0);
       const trialLimit = new Date(trialDateObj).setHours(23, 59, 59, 999);
       if (slotTime > trialLimit) {
@@ -409,7 +418,47 @@ export default function BookLessonPage() {
       </div>
 
       {/* Shared Trial Date Tracking Banner (Visible to both Type 1 and Type 2) */}
-      {hasTrialDate ? (
+      {isFailedWithRemaining ? (
+        <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-300 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 font-bold flex-shrink-0">
+              <AlertCircle className="w-6 h-6 text-amber-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider">
+                  Trial Attempt #{trialAttemptsList.length} Result: FAILED
+                </span>
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                  {3 - trialAttemptsList.length} Attempt{3 - trialAttemptsList.length === 1 ? '' : 's'} Remaining
+                </span>
+              </div>
+              <h3 className="text-base font-black text-[#152026] mt-1">
+                Refresher Lesson Booking Active
+              </h3>
+              <p className="text-xs text-[#152026]/75 mt-0.5">
+                Your practical trial attempt #{trialAttemptsList.length} result was recorded as Failed. You can book practical refresher driving lessons below to prepare for your next trial exam.
+              </p>
+              {myRescheduleRequests.find((r) => r.status === 'Pending') && (
+                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/30 text-[#152026] text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5 animate-pulse text-[#1B3D59]" />
+                  <span>Re-Trial Date Request is currently pending DEO review</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="pt-2 flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setShowRescheduleModal(true)}
+              className="btn-secondary text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow-sm"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#1B3D59]" />
+              <span>Request Another Trial Date</span>
+            </button>
+          </div>
+        </div>
+      ) : hasTrialDate ? (
         <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] font-bold flex-shrink-0">
