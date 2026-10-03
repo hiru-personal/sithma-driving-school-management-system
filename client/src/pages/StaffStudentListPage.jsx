@@ -432,6 +432,35 @@ export default function StaffStudentListPage() {
     }
   };
 
+  const [reRegisteringId, setReRegisteringId] = useState(null);
+
+  // Staff / Admin action to re-register student (Rules 10, 11, 15)
+  const handleStaffReRegister = async (studentId) => {
+    if (
+      !window.confirm(
+        'Are you sure you want to initialize a new Registration Cycle for this learner? This resets exam & trial attempts to 0/3, generates a brand new 18-month validity period, and requires the Rs. 5,000 advance payment to activate.'
+      )
+    ) {
+      return;
+    }
+
+    setReRegisteringId(studentId);
+    try {
+      const res = await api.post(`/students/${studentId}/re-register`);
+      if (res.data.success) {
+        toast.success(res.data.message || 'New registration cycle created successfully!');
+        if (selectedStudent && selectedStudent._id === studentId && res.data.student) {
+          setSelectedStudent(res.data.student);
+        }
+        fetchStudents();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to re-register learner');
+    } finally {
+      setReRegisteringId(null);
+    }
+  };
+
   // Staff / Admin verification of final driving license photo (US Requirement 6, 7 & 11)
   const handleVerifyFinalLicense = async (studentId, action, notes = '') => {
     setVerifyingLicense(true);
@@ -1398,6 +1427,22 @@ export default function StaffStudentListPage() {
                             <FileCheck className="w-4 h-4 text-[#1B3D59]" />
                           </button>
 
+                          {/* Re-Register Action Button for Cancelled / Expired Students (Rules 10 & 15) */}
+                          {(st.registrationStatus === 'cancelled' ||
+                            st.accountStatus === 'cancelled' ||
+                            st.learnerLicenseStatus === 'attempts_exhausted' ||
+                            st.learnerLicenseStatus === 'expired') && (
+                            <button
+                              type="button"
+                              onClick={() => handleStaffReRegister(st._id)}
+                              disabled={reRegisteringId === st._id}
+                              className="p-2 rounded-xl bg-[#F3EED8] hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all cursor-pointer shadow-xs"
+                              title="Re-Register Student (Start New 18-Month Cycle & Reset Attempts)"
+                            >
+                              <RotateCcw className={`w-4 h-4 ${reRegisteringId === st._id ? 'animate-spin' : ''}`} />
+                            </button>
+                          )}
+
                           {/* Direct Date Reschedule Review Action Button */}
                           {studentPendingReq && (
                             <button
@@ -2171,9 +2216,18 @@ export default function StaffStudentListPage() {
                 : null;
 
               const attempts = selectedStudent.learnerExamAttempts || [];
-              const failedCount = attempts.filter((a) => a.result === 'failed').length;
+              const failedTheoryCount = attempts.filter((a) => a.result === 'failed').length;
+              const trialAttempts = selectedStudent.trial?.attempts || [];
+              const failedTrialCount = trialAttempts.filter((a) => a.result === 'failed').length;
               const is3AttemptsFailed =
-                failedCount >= 3 || selectedStudent.learnerLicenseStatus === 'attempts_exhausted';
+                failedTheoryCount >= 3 ||
+                failedTrialCount >= 3 ||
+                selectedStudent.learnerLicenseStatus === 'attempts_exhausted';
+              const isCancelled =
+                isExpired ||
+                is3AttemptsFailed ||
+                selectedStudent.registrationStatus === 'cancelled' ||
+                selectedStudent.accountStatus === 'cancelled';
               const isFinalPassed =
                 selectedStudent.isPassed ||
                 selectedStudent.learnerLicenseStatus === 'passed' ||
@@ -2205,13 +2259,14 @@ export default function StaffStudentListPage() {
                         <span className="px-3 py-1 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold flex items-center gap-1">
                           <Award className="w-3.5 h-3.5 text-[#1B3D59]" /> Passed (Upload Final License)
                         </span>
-                      ) : isExpired ? (
+                      ) : isCancelled ? (
                         <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 font-bold flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> License Expired (18M)
-                        </span>
-                      ) : is3AttemptsFailed ? (
-                        <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 font-bold flex items-center gap-1">
-                          <XCircle className="w-3.5 h-3.5 text-rose-600" /> 3 Attempts Failed
+                          <XCircle className="w-3.5 h-3.5 text-rose-600" />{' '}
+                          {isExpired
+                            ? '18M Expired'
+                            : is3AttemptsFailed
+                            ? '3 Attempts Failed'
+                            : 'Registration Cancelled'}
                         </span>
                       ) : isExpiringSoon ? (
                         <span className="px-3 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-[#E2D8B3] font-bold flex items-center gap-1">
@@ -2369,19 +2424,128 @@ export default function StaffStudentListPage() {
                       })}
                     </div>
 
-                    {is3AttemptsFailed && (
+                    {failedTheoryCount >= 3 && (
                       <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
                         <div className="font-bold text-rose-800 flex items-center gap-1.5">
                           <XCircle className="w-4 h-4 text-rose-600" />
-                          3 Attempts Failed — Cycle Unsuccessful
+                          3 Theory Exam Attempts Failed — Cycle Unsuccessful
                         </div>
                         <p className="text-rose-700 text-[11px]">
-                          All 3 trial attempts have been used. The learner cannot receive additional attempts under Cycle #{cycleNum}.
+                          All 3 written theory attempts have been used. The learner cannot receive additional attempts under Cycle #{cycleNum}.
                           <strong> Action: Register Again</strong> — a new registration cycle will reset attempts to 0 of 3.
                         </p>
                       </div>
                     )}
                   </div>
+
+                  {/* 2b. Practical Trial Exam Attempts (Rules 5, 6, 7 & 15) */}
+                  <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-[#152026] flex items-center gap-2 text-sm">
+                        <Award className="w-4 h-4 text-[#1B3D59]" />
+                        Practical Driving Trial Attempts (Max 3 Allowed in Cycle #{cycleNum})
+                      </div>
+                      <span className="text-[11px] text-slate-600">
+                        Attempts Used: <strong className="text-[#152026]">{trialAttempts.length} of 3</strong>
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[1, 2, 3].map((num) => {
+                        const att = trialAttempts.find(
+                          (a, idx) => (a.attemptNumber || idx + 1) === num
+                        );
+                        return (
+                          <div
+                            key={num}
+                            className={`p-3 rounded-xl border ${
+                              att
+                                ? att.result === 'passed'
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                  : 'bg-rose-50 border-rose-200 text-rose-900'
+                                : 'bg-white border-[#D4EEF8] text-slate-500'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-bold text-xs">Trial Attempt {num}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                  att
+                                    ? att.result === 'passed'
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                      : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                {att ? att.result.toUpperCase() : 'Available'}
+                              </span>
+                            </div>
+
+                            {att ? (
+                              <div className="space-y-0.5 text-[11px]">
+                                <div>
+                                  Date:{' '}
+                                  <strong className="text-[#152026]">
+                                    {att.date ? format(new Date(att.date), 'yyyy-MM-dd') : 'N/A'}
+                                  </strong>
+                                </div>
+                                {att.score && (
+                                  <div>
+                                    Score: <strong className="text-[#152026]">{att.score}</strong>
+                                  </div>
+                                )}
+                                {att.examinerNotes && (
+                                  <div className="text-slate-500 italic text-[10px] mt-1 line-clamp-2">
+                                    "{att.examinerNotes}"
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-400 italic mt-1">
+                                Not recorded yet
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {failedTrialCount >= 3 && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+                        <div className="font-bold text-rose-800 flex items-center gap-1.5">
+                          <XCircle className="w-4 h-4 text-rose-600" />
+                          3 Trial Exam Attempts Failed — Cycle Cancelled
+                        </div>
+                        <p className="text-rose-700 text-[11px]">
+                          All 3 practical trial attempts have been failed. Registration is cancelled in accordance with DMT rules.
+                          <strong> Action: Re-Register Student</strong> to create a new registration cycle.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Staff Re-Registration Action Banner (Rules 10, 11, 15) */}
+                  {isCancelled && (
+                    <div className="p-4 bg-[#F3EED8] border border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                      <div className="space-y-1">
+                        <div className="font-bold text-[#152026] flex items-center gap-1.5 text-xs">
+                          <RotateCcw className="w-4 h-4 text-[#1B3D59]" /> Staff Action: Re-Register Learner (Start New Cycle #{cycleNum + 1})
+                        </div>
+                        <p className="text-slate-700 text-[11px] max-w-xl">
+                          Archives current cycle records permanently and unlocks a clean, brand-new <strong>18-month validity period</strong> with <strong>3 fresh exam & trial attempts</strong>. (Pending Rs. 5,000 advance payment).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleStaffReRegister(selectedStudent._id)}
+                        disabled={reRegisteringId === selectedStudent._id}
+                        className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer whitespace-nowrap"
+                      >
+                        <RotateCcw className={`w-3.5 h-3.5 ${reRegisteringId === selectedStudent._id ? 'animate-spin' : ''}`} />
+                        {reRegisteringId === selectedStudent._id ? 'Initializing...' : 'Re-Register Learner'}
+                      </button>
+                    </div>
+                  )}
 
                   {/* 3. Final Pass Status & Admin Action (Section 5) */}
                   <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-3">
@@ -2786,6 +2950,32 @@ export default function StaffStudentListPage() {
                                       {att.result?.toUpperCase()}
                                       {att.score !== undefined && ` (${att.score}/40)`}
                                       {att.attemptDate && ` on ${format(new Date(att.attemptDate), 'MMM dd')}`}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Cycle Practical Trial Attempts (Rules 5, 12) */}
+                            {cycle.trialAttempts && cycle.trialAttempts.length > 0 && (
+                              <div className="pt-2 border-t border-[#D4EEF8] space-y-1">
+                                <span className="text-[10px] text-slate-500 font-bold block">
+                                  Recorded Practical Trial Attempts ({cycle.trialAttempts.length} of 3):
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                  {cycle.trialAttempts.map((att, aIdx) => (
+                                    <span
+                                      key={aIdx}
+                                      className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 ${
+                                        att.result === 'passed'
+                                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                          : 'bg-rose-50 border-rose-200 text-rose-800'
+                                      }`}
+                                    >
+                                      <strong>Trial #{att.attemptNumber || aIdx + 1}:</strong>{' '}
+                                      {att.result?.toUpperCase()}
+                                      {att.score && ` (Score: ${att.score})`}
+                                      {att.date && ` on ${format(new Date(att.date), 'MMM dd')}`}
                                     </span>
                                   ))}
                                 </div>

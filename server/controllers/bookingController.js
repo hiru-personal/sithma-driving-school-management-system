@@ -28,6 +28,48 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    // Evaluate lifecycle to keep student status up-to-date
+    if (student.evaluateLifecycle && student.evaluateLifecycle()) {
+      await student.save();
+    }
+
+    // Rule 17: Backend Protections
+    // 1. Student registration status is Cancelled
+    if (
+      student.registrationStatus === 'cancelled' ||
+      student.accountStatus === 'cancelled' ||
+      student.account_status === 'Cancelled'
+    ) {
+      const reason = student.cancellationReason || 'Registration cancelled';
+      return res.status(403).json({
+        success: false,
+        message: `Lesson booking locked: Your registration has been cancelled (${reason}). Please re-register to continue.`,
+      });
+    }
+
+    // 2. 18-month validity has expired
+    const nowCheck = new Date();
+    if (student.learnerLicenseExpiryDate && nowCheck > new Date(student.learnerLicenseExpiryDate)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Your 18-month registration validity period has expired. Please re-register to continue.',
+      });
+    }
+
+    // 3. All 3 attempts have failed
+    const trialAttempts = student.trial?.attempts || [];
+    const isTrialExhausted =
+      trialAttempts.length >= 3 && !trialAttempts.some((a) => a.result === 'passed');
+    const theoryAttempts = student.learnerExamAttempts || [];
+    const isTheoryExhausted =
+      theoryAttempts.length >= 3 && !theoryAttempts.some((a) => a.result === 'passed');
+    if (isTrialExhausted || isTheoryExhausted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Maximum exam attempts (3/3) have been reached. Please re-register to continue.',
+      });
+    }
+
     // 2. Gate: Account verification
     if (student.accountStatus === 'pending_verification') {
       return res.status(403).json({
@@ -364,6 +406,48 @@ exports.bookFreeClass = async (req, res) => {
     const student = await Student.findOne({ userId: req.user._id });
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student profile not found' });
+    }
+
+    // Evaluate lifecycle to keep student status up-to-date
+    if (student.evaluateLifecycle && student.evaluateLifecycle()) {
+      await student.save();
+    }
+
+    // Rule 17: Backend Protections
+    // 1. Student registration status is Cancelled
+    if (
+      student.registrationStatus === 'cancelled' ||
+      student.accountStatus === 'cancelled' ||
+      student.account_status === 'Cancelled'
+    ) {
+      const reason = student.cancellationReason || 'Registration cancelled';
+      return res.status(403).json({
+        success: false,
+        message: `Lesson booking locked: Your registration has been cancelled (${reason}). Please re-register to continue.`,
+      });
+    }
+
+    // 2. 18-month validity has expired
+    const nowFreeCheck = new Date();
+    if (student.learnerLicenseExpiryDate && nowFreeCheck > new Date(student.learnerLicenseExpiryDate)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Your 18-month registration validity period has expired. Please re-register to continue.',
+      });
+    }
+
+    // 3. All 3 attempts have failed
+    const freeTrialAttempts = student.trial?.attempts || [];
+    const isFreeTrialExhausted =
+      freeTrialAttempts.length >= 3 && !freeTrialAttempts.some((a) => a.result === 'passed');
+    const freeTheoryAttempts = student.learnerExamAttempts || [];
+    const isFreeTheoryExhausted =
+      freeTheoryAttempts.length >= 3 && !freeTheoryAttempts.some((a) => a.result === 'passed');
+    if (isFreeTrialExhausted || isFreeTheoryExhausted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Maximum exam attempts (3/3) have been reached. Please re-register to continue.',
+      });
     }
 
     const timeSlot = await TimeSlot.findById(timeSlotId);

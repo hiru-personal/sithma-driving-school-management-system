@@ -351,12 +351,12 @@ export default function StudentDashboard() {
         navigate('/payment-gateway', {
           state: {
             studentName: user?.name,
-            studentId: profile?._id,
+            studentId: res.data.student?._id || profile?._id || student?._id,
             userId: user?.id || user?._id,
             branch: profile?.branch || user?.branch,
             amount: 5000,
             paymentType: 'advance',
-            studentType: profile?.studentType || 'Type 1',
+            studentType: res.data.student?.studentType || profile?.studentType || 'Type 1',
           },
         });
       }
