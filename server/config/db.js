@@ -1,4 +1,12 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Configure reliable DNS servers (Google & Cloudflare) to resolve MongoDB Atlas SRV without ISP ECONNREFUSED
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+} catch (e) {
+  console.warn('[DNS Warning] Could not set custom DNS servers:', e.message);
+}
 
 let isConnecting = false;
 let retryTimer = null;

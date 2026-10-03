@@ -220,7 +220,7 @@ export default function PackageManagementPage() {
           <h1 className="text-2xl font-extrabold text-[#152026] flex items-center gap-2">
             <Layers className="w-6 h-6 text-[#1B3D59]" /> Training Package Management
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5">
+          <p className="text-xs text-slate-700 font-semibold mt-0.5">
             Configure vehicle training bundles, pricing structures, and custom package categories.
           </p>
         </div>
@@ -248,7 +248,7 @@ export default function PackageManagementPage() {
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             filterTab === 'all'
               ? 'bg-[#1B3D59] text-white shadow-xs'
-              : 'text-[#6A97C0] hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+              : 'text-slate-700 hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
           }`}
         >
           All Packages ({packages.length})
@@ -258,7 +258,7 @@ export default function PackageManagementPage() {
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             filterTab === 'individual'
               ? 'bg-[#1B3D59] text-white shadow-xs'
-              : 'text-[#6A97C0] hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+              : 'text-slate-700 hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -269,7 +269,7 @@ export default function PackageManagementPage() {
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             filterTab === 'comprehensive'
               ? 'bg-[#1B3D59] text-white shadow-xs'
-              : 'text-[#6A97C0] hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+              : 'text-slate-700 hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
           }`}
         >
           Full Course Packages ({packages.filter((p) => !p.isPerLesson && p.categoryGroup !== 'Other').length})
@@ -280,7 +280,7 @@ export default function PackageManagementPage() {
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               filterTab === 'other'
                 ? 'bg-[#1B3D59] text-white shadow-xs'
-                : 'text-[#6A97C0] hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+                : 'text-slate-700 hover:text-[#152026] bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
             }`}
           >
             Other Packages ({packages.filter((p) => p.categoryGroup === 'Other' || p.type?.toLowerCase().includes('other')).length})
@@ -290,7 +290,7 @@ export default function PackageManagementPage() {
 
       {/* Packages Grid */}
       {loading ? (
-        <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+        <div className="py-12 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
           <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading packages...
         </div>
       ) : (
@@ -333,7 +333,7 @@ export default function PackageManagementPage() {
                   <Tag className="w-3 h-3 text-[#1B3D59]" />
                   <span className="text-xs text-[#1B3D59] font-mono font-semibold">{pkg.type?.replace(/_/g, ' ')}</span>
                   {pkg.categoryGroup && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#FAFCFE] text-[#6A97C0] border border-[#D4EEF8]">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#FAFCFE] text-slate-700 font-bold border border-[#D4EEF8]">
                       Group {pkg.categoryGroup}
                     </span>
                   )}
@@ -341,7 +341,7 @@ export default function PackageManagementPage() {
 
                 <div className="text-2xl font-black text-[#152026] mb-3">
                   Rs. {pkg.price?.toLocaleString()}
-                  {pkg.isPerLesson && <span className="text-xs font-semibold text-[#6A97C0] ml-1">/ hr</span>}
+                  {pkg.isPerLesson && <span className="text-xs font-bold text-slate-600 ml-1">/ hr</span>}
                 </div>
 
                 <div className="space-y-1.5 text-xs text-[#152026] border-t border-[#D4EEF8] pt-3">
@@ -365,7 +365,7 @@ export default function PackageManagementPage() {
               </div>
 
               {pkg.notes && (
-                <div className="p-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[11px] text-[#6A97C0]">
+                <div className="p-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[11px] text-slate-600 font-medium">
                   {pkg.notes}
                 </div>
               )}
@@ -385,7 +385,7 @@ export default function PackageManagementPage() {
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#6A97C0] hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-slate-600 hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -471,7 +471,7 @@ export default function PackageManagementPage() {
                     placeholder="e.g. Other, VIP_Package, Electric_Car, Combo_Special..."
                     className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-lg focus:outline-none focus:border-[#1B3D59] font-medium"
                   />
-                  <p className="text-[11px] text-[#6A97C0]">
+                  <p className="text-[11px] text-slate-600 font-medium">
                     Type a new package type name or "Other". It will be saved as this package's type.
                   </p>
                 </div>

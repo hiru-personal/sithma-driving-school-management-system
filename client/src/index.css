@@ -149,56 +149,76 @@
    Global Color Mapping & Palette Enforcement
    ========================================================================== */
 
-/* 1. Universal Headings: Black Pine for main, Deep Ocean for section (on light surfaces) */
-h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
-h2:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
-.font-heading.text-2xl:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *),
-.font-heading.text-3xl:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *) {
+/* 1. Universal Headings: Black Pine for main, Deep Ocean for section (by default on light surfaces) */
+h1 {
   color: #152026;
 }
 
-h3:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
-h4:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
-h5:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
-h6:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
-.font-heading:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *) {
+h2 {
+  color: #152026;
+}
+
+h3, h4, h5, h6,
+.font-heading {
   color: #1B3D59;
 }
 
-/* Page titles on light surfaces */
-main > h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *),
-header + div > h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *),
-header + main > h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *) {
-  color: #152026;
-}
-
-/* Headings and text on dark backgrounds: ensure crisp white readability */
-[class*="bg-[#1B3D59]"] h1:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#1B3D59]"] h2:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#1B3D59]"] h3:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#1B3D59]"] h4:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#152026]"] h1:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#152026]"] h2:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#152026]"] h3:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
-[class*="bg-[#152026]"] h4:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+/* Explicit white text on dark cards and hero banners */
+.text-white,
+h1.text-white,
+h2.text-white,
+h3.text-white,
+h4.text-white,
+.text-white h1,
+.text-white h2,
+.text-white h3,
+.text-white h4,
+.text-white p,
+.banner-dark,
+.banner-dark h1,
+.banner-dark h2,
+.banner-dark h3,
+.banner-dark p,
+.banner-dark span,
+.card-deep-ocean,
+.card-deep-ocean h1,
+.card-deep-ocean h2,
+.card-deep-ocean h3,
+.card-deep-ocean h4,
+.card-deep-ocean p,
+.card-deep-ocean .text-white,
+[class*="bg-[#1B3D59]"] h1.text-white,
+[class*="bg-[#1B3D59]"] h2.text-white,
+[class*="bg-[#1B3D59]"] h3.text-white,
+[class*="bg-[#1B3D59]"] h4.text-white,
 [class*="bg-[#1B3D59]"] .text-white,
-[class*="bg-[#152026]"] .text-white {
+[class*="bg-[#152026]"] h1.text-white,
+[class*="bg-[#152026]"] h2.text-white,
+[class*="bg-[#152026]"] h3.text-white,
+[class*="bg-[#152026]"] h4.text-white,
+[class*="bg-[#152026]"] .text-white,
+div[class*="bg-gradient-to-r from-[#0F2231]"] h1,
+div[class*="bg-gradient-to-r from-[#152026]"] h1,
+div[class*="bg-gradient-to-r from-[#1B3D59]"] h1,
+div[class*="bg-[#1B3D59]"] > div > h1.text-white,
+div[class*="bg-[#1B3D59]"] > h1.text-white,
+div[class*="bg-[#152026]"] > div > h1.text-white,
+div[class*="bg-[#152026]"] > h1.text-white {
   color: #FFFFFF !important;
 }
 
 /* 2. Text Hierarchy */
-/* Secondary / muted information: Windstorm */
+/* Secondary / muted information: High-contrast slate */
 .text-slate-400,
 .text-slate-500 {
-  color: #6A97C0 !important;
+  color: #475569;
 }
 
 /* Body / readable dark neutral: Black Pine / slate */
-.text-slate-300,
 .text-slate-600,
 .text-slate-700,
 .text-slate-800 {
-  color: #152026 !important;
+  color: #152026;
 }
 
 /* Cyan / Blue highlights map to Deep Ocean or Windstorm */
@@ -258,12 +278,12 @@ div[class*="bg-white/10"] {
   color: #152026 !important;
 }
 
-/* Text inside cards that was white becomes Black Pine */
-.card .text-white:not([class*="bg-"]):not(.btn-primary):not(.btn-accent):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
-.card strong.text-white,
-.card div.text-white:not([class*="bg-"]):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
-.card p.text-white,
-.card span.text-white:not([class*="bg-"]):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+/* Text inside white cards that was white becomes Black Pine */
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) .text-white:not([class*="bg-"]):not(.btn-primary):not(.btn-accent):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) strong.text-white,
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) div.text-white:not([class*="bg-"]):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) p.text-white,
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) span.text-white:not([class*="bg-"]):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
 table .text-white:not([class*="bg-"]):not(button):not(a):not(th),
 div[class*="bg-slate"]:not(header *):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]) .text-white:not([class*="bg-"]) {
   color: #152026 !important;

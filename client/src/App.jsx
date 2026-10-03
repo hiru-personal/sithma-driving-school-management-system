@@ -56,6 +56,41 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
     return <Navigate to="/" replace />;
   }
 
+  // Learner Unpaid Gate: If a student has not submitted any payment, route directly to /payment-gateway
+  if (user.role === 'student') {
+    const isVerified = Boolean(
+      user.status === 'active' ||
+      user.account_status === 'Verified' ||
+      student?.isAdvancePaid ||
+      student?.advancePaymentStatus === 'verified'
+    );
+    const hasSubmittedPayment = Boolean(
+      student?.hasSubmittedPayment ||
+      student?.latestPayment ||
+      (student?.advancePaymentStatus && student.advancePaymentStatus !== 'none') ||
+      student?.isAdvancePaid
+    );
+    if (!isVerified && !hasSubmittedPayment) {
+      return (
+        <Navigate
+          to="/payment-gateway"
+          replace
+          state={{
+            studentName: user.name,
+            studentId: student?._id,
+            userId: user._id || user.id,
+            branch: student?.branch || user.branch,
+            nic: student?.nic || user.nic,
+            email: user.email,
+            studentType: student?.student_type || student?.studentType || user?.student_type,
+            advanceAmount: student?.advancePaymentAmount || 5000,
+            registrationReference: student?.advancePaymentReference,
+          }}
+        />
+      );
+    }
+  }
+
   // Learner Advance Payment & Verification Gate
   if (requirePremium && user.role === 'student' && !isPremium) {
     return <Navigate to="/student/dashboard" replace />;

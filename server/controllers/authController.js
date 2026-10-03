@@ -489,11 +489,27 @@ exports.login = async (req, res) => {
 
     const token = generateToken(user);
 
+    const hasSubmittedPayment = Boolean(
+      latestPayment ||
+      (studentProfile && ['pending', 'verified'].includes(studentProfile.advancePaymentStatus)) ||
+      studentProfile?.isAdvancePaid
+    );
+
     const paymentMethod =
-      latestPayment?.payment_method || latestPayment?.paymentMethod || 'physical_branch';
+      latestPayment?.payment_method ||
+      latestPayment?.paymentMethod ||
+      studentProfile?.payment_method ||
+      null;
+
     const isVerified =
       (user.account_status === 'Verified' || user.status === 'active') &&
-      studentProfile?.advancePaymentStatus === 'verified';
+      (studentProfile?.advancePaymentStatus === 'verified' || studentProfile?.isAdvancePaid === true);
+
+    const paymentStatus = isVerified
+      ? 'Verified'
+      : hasSubmittedPayment
+      ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
+      : 'none';
 
     return res.status(200).json({
       success: true,
@@ -501,14 +517,12 @@ exports.login = async (req, res) => {
       token,
       mustChangePassword: user.mustChangePassword || false,
       isVerified,
+      hasSubmittedPayment,
+      requiresPayment: !isVerified && !hasSubmittedPayment,
       account_status:
         user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
       payment_method: paymentMethod,
-      payment_status:
-        latestPayment?.payment_status ||
-        (paymentMethod === 'physical_branch'
-          ? 'Pending Branch Payment'
-          : 'Pending Verification'),
+      payment_status: paymentStatus,
       user: {
         id: user._id,
         _id: user._id,
@@ -790,23 +804,37 @@ exports.getMe = async (req, res) => {
       }).sort({ createdAt: -1 });
     }
 
+    const hasSubmittedPayment = Boolean(
+      latestPayment ||
+      (studentProfile && ['pending', 'verified'].includes(studentProfile.advancePaymentStatus)) ||
+      studentProfile?.isAdvancePaid
+    );
+
     const paymentMethod =
-      latestPayment?.payment_method || latestPayment?.paymentMethod || 'physical_branch';
+      latestPayment?.payment_method ||
+      latestPayment?.paymentMethod ||
+      studentProfile?.payment_method ||
+      null;
+
     const isVerified =
       (user.account_status === 'Verified' || user.status === 'active') &&
-      studentProfile?.advancePaymentStatus === 'verified';
+      (studentProfile?.advancePaymentStatus === 'verified' || studentProfile?.isAdvancePaid === true);
+
+    const paymentStatus = isVerified
+      ? 'Verified'
+      : hasSubmittedPayment
+      ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
+      : 'none';
 
     return res.status(200).json({
       success: true,
       isVerified,
+      hasSubmittedPayment,
+      requiresPayment: !isVerified && !hasSubmittedPayment,
       account_status:
         user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
       payment_method: paymentMethod,
-      payment_status:
-        latestPayment?.payment_status ||
-        (paymentMethod === 'physical_branch'
-          ? 'Pending Branch Payment'
-          : 'Pending Verification'),
+      payment_status: paymentStatus,
       user: {
         id: user._id,
         _id: user._id,

@@ -313,11 +313,11 @@ export default function QuestionBankManagementPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
       {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-2 text-xs font-semibold text-[#6A97C0]">
+      <nav className="flex items-center gap-2 text-xs font-semibold text-slate-600">
         <Link to="/admin/dashboard" className="hover:text-[#1B3D59] transition-colors">
           Dashboard
         </Link>
-        <ChevronRight className="w-3.5 h-3.5 text-[#6A97C0]/60" />
+        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
         <button
           onClick={() => setSelectedList(null)}
           className={`hover:text-[#1B3D59] transition-colors ${
@@ -328,9 +328,9 @@ export default function QuestionBankManagementPage() {
         </button>
         {selectedList && (
           <>
-            <ChevronRight className="w-3.5 h-3.5 text-[#6A97C0]/60" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-[#1B3D59] font-bold truncate max-w-xs">{selectedList.name}</span>
-            <ChevronRight className="w-3.5 h-3.5 text-[#6A97C0]/60" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-[#152026] font-bold">Manage Questions</span>
           </>
         )}
@@ -350,7 +350,7 @@ export default function QuestionBankManagementPage() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] font-heading flex items-center gap-2.5">
                 <Layers className="w-7 h-7 text-[#1B3D59]" /> Question Lists Management
               </h1>
-              <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
+              <p className="text-xs text-slate-700 mt-0.5 font-semibold">
                 Create and manage multiple practice exam question sets, configure paper standards, and organize questions per list.
               </p>
             </div>
@@ -374,19 +374,19 @@ export default function QuestionBankManagementPage() {
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-[#1B3D59] shadow-sm">
-              <span className="text-[11px] font-semibold text-[#6A97C0]">Total Question Lists</span>
+              <span className="text-[11px] font-bold text-slate-700">Total Question Lists</span>
               <p className="text-2xl font-black text-[#152026]">{lists.length}</p>
             </div>
             <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-emerald-600 shadow-sm">
-              <span className="text-[11px] font-semibold text-[#6A97C0]">Total Questions In Lists</span>
+              <span className="text-[11px] font-bold text-slate-700">Total Questions In Lists</span>
               <p className="text-2xl font-black text-emerald-700">{totalQuestionsAllLists}</p>
             </div>
             <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-[#6A97C0] shadow-sm">
-              <span className="text-[11px] font-semibold text-[#6A97C0]">Supported Languages</span>
+              <span className="text-[11px] font-bold text-slate-700">Supported Languages</span>
               <p className="text-sm font-black text-[#1B3D59] mt-1">English, Sinhala, Tamil</p>
             </div>
             <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 space-y-1 border-l-4 border-l-[#B3D5F1] shadow-sm">
-              <span className="text-[11px] font-semibold text-[#6A97C0]">Vehicle Classes</span>
+              <span className="text-[11px] font-bold text-slate-700">Vehicle Classes</span>
               <p className="text-sm font-black text-[#152026] mt-1">Light (Class B) & Heavy (Class D)</p>
             </div>
           </div>
@@ -394,13 +394,13 @@ export default function QuestionBankManagementPage() {
           {/* Filters Bar */}
           <div className="bg-white border border-[#D4EEF8] rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 shadow-sm">
             <div className="relative">
-              <Search className="w-4 h-4 text-[#6A97C0] absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <input
                 type="text"
                 placeholder="Search question lists by name..."
                 value={listSearch}
                 onChange={(e) => setListSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#6A97C0]/70 rounded-xl text-xs outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] placeholder-slate-400 rounded-xl text-xs outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
               />
             </div>
             <div>
@@ -430,14 +430,14 @@ export default function QuestionBankManagementPage() {
 
           {/* Question Lists Grid */}
           {loadingLists ? (
-            <div className="py-16 text-center text-xs text-[#6A97C0] font-medium flex items-center justify-center gap-2">
+            <div className="py-16 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
               <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading Question Lists...
             </div>
           ) : lists.length === 0 ? (
             <div className="bg-white border border-[#D4EEF8] rounded-3xl text-center py-12 space-y-3 p-6 shadow-sm">
-              <Layers className="w-12 h-12 text-[#6A97C0] mx-auto" />
+              <Layers className="w-12 h-12 text-slate-400 mx-auto" />
               <h3 className="text-base font-bold text-[#152026]">No Question Lists Found</h3>
-              <p className="text-xs text-[#6A97C0] max-w-md mx-auto font-medium">
+              <p className="text-xs text-slate-600 max-w-md mx-auto font-medium">
                 No question lists match your search or filter. Create your first Question List to start adding questions.
               </p>
               <button
@@ -469,14 +469,14 @@ export default function QuestionBankManagementPage() {
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={(e) => handleOpenEditListModal(list, e)}
-                          className="p-1.5 rounded-lg text-[#6A97C0] hover:text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors"
                           title="Edit List Settings"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={(e) => handleDeleteList(list, e)}
-                          className="p-1.5 rounded-lg text-[#6A97C0] hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Delete List"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -489,7 +489,7 @@ export default function QuestionBankManagementPage() {
                       <h3 className="text-base font-bold text-[#152026] group-hover:text-[#1B3D59] transition-colors line-clamp-1">
                         {list.name}
                       </h3>
-                      <p className="text-xs text-[#6A97C0] mt-1 line-clamp-2 leading-relaxed font-medium">
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed font-medium">
                         {list.description || 'No description provided.'}
                       </p>
                     </div>
@@ -501,7 +501,7 @@ export default function QuestionBankManagementPage() {
                       <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] text-[11px] font-bold">
                         {list.totalQuestions || 0} Questions
                       </span>
-                      <span className="text-[10px] text-[#6A97C0] font-medium">Pass: {list.passingScore || 80}%</span>
+                      <span className="text-[10px] text-slate-600 font-semibold">Pass: {list.passingScore || 80}%</span>
                     </div>
 
                     <button
@@ -582,27 +582,27 @@ export default function QuestionBankManagementPage() {
             </div>
 
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-[#6A97C0] absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <input
                 type="text"
                 placeholder="Search questions in this list..."
                 value={questionSearch}
                 onChange={(e) => setQuestionSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#6A97C0]/70 rounded-xl text-xs outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] placeholder-slate-400 rounded-xl text-xs outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
               />
             </div>
           </div>
 
           {/* Questions List */}
           {loadingQuestions ? (
-            <div className="py-16 text-center text-xs text-[#6A97C0] font-medium flex items-center justify-center gap-2">
+            <div className="py-16 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
               <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading questions...
             </div>
           ) : filteredQuestions.length === 0 ? (
             <div className="bg-white border border-[#D4EEF8] rounded-3xl text-center py-12 space-y-3 p-6 shadow-sm">
-              <BookOpen className="w-12 h-12 text-[#6A97C0] mx-auto" />
+              <BookOpen className="w-12 h-12 text-slate-400 mx-auto" />
               <h3 className="text-base font-bold text-[#152026]">No Questions in this List</h3>
-              <p className="text-xs text-[#6A97C0] max-w-md mx-auto font-medium">
+              <p className="text-xs text-slate-600 max-w-md mx-auto font-medium">
                 This Question List currently has no questions. Click below to add the first question.
               </p>
               <button
@@ -633,14 +633,14 @@ export default function QuestionBankManagementPage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleOpenEditQuestionModal(q)}
-                        className="p-1.5 rounded-lg text-[#6A97C0] hover:text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors"
                         title="Edit question"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteQuestion(q._id)}
-                        className="p-1.5 rounded-lg text-[#6A97C0] hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                         title="Delete question from list"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -802,7 +802,7 @@ export default function QuestionBankManagementPage() {
                   }
                   className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-xs outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                 />
-                <p className="text-[10px] text-[#6A97C0] mt-1 font-medium">
+                <p className="text-[10px] text-slate-600 mt-1 font-medium">
                   Standard DMT exam passing mark is 80% (32 correct out of 40).
                 </p>
               </div>
@@ -836,7 +836,7 @@ export default function QuestionBankManagementPage() {
                   <BookOpen className="w-5 h-5 text-[#1B3D59]" />
                   {editingQuestion ? 'Edit Question' : 'Add Question to List'}
                 </h3>
-                <p className="text-[11px] text-[#6A97C0] mt-0.5 font-medium">
+                <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
                   Target List: <strong className="text-[#1B3D59]">{selectedList?.name}</strong>
                 </p>
               </div>

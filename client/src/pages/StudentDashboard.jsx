@@ -42,6 +42,7 @@ import {
   Eye,
   Wifi,
   ChevronRight,
+  XCircle,
   History,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -315,6 +316,32 @@ export default function StudentDashboard() {
     }
   };
 
+  const [updatingExamStatus, setUpdatingExamStatus] = useState(false);
+
+  const handleUpdateExamStatus = async (status) => {
+    const studentId = profile?._id || student?._id;
+    if (!studentId) return;
+
+    setUpdatingExamStatus(true);
+    try {
+      const res = await api.patch(`/students/${studentId}/dmt-dates`, {
+        learnerExamStatus: status,
+      });
+      if (res.data.success) {
+        if (status === 'passed') {
+          toast.success('🎉 Exam marked as PASSED! Practical trial lessons are now unlocked.');
+        } else {
+          toast('Exam marked as FAILED. You can request a date reschedule from your milestones dashboard.', { icon: 'ℹ️' });
+        }
+        await fetchProfile();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update exam status');
+    } finally {
+      setUpdatingExamStatus(false);
+    }
+  };
+
   const handleReRegister = async () => {
     if (
       !window.confirm(
@@ -425,6 +452,31 @@ export default function StudentDashboard() {
             st?.accountStatus === 'active' ||
             st?.account_status === 'Verified'
           );
+
+          const hasSubmitted = Boolean(
+            st?.hasSubmittedPayment ||
+            st?.latestPayment ||
+            (st?.advancePaymentStatus && st.advancePaymentStatus !== 'none') ||
+            st?.isAdvancePaid
+          );
+
+          if (!isNowVerified && !hasSubmitted) {
+            navigate('/payment-gateway', {
+              replace: true,
+              state: {
+                studentName: user?.name || st.name,
+                studentId: st._id,
+                userId: user?._id || user?.id,
+                branch: st.branch || user?.branch,
+                nic: st.nic || user?.nic,
+                email: user?.email,
+                studentType: st.student_type || st.studentType || user?.student_type,
+                advanceAmount: st.advancePaymentAmount || 5000,
+                registrationReference: st.advancePaymentReference,
+              },
+            });
+            return;
+          }
 
           if (isNowVerified && !localStorage.getItem('seen_verified_modal_' + st._id)) {
             setShowVerifiedCelebrationModal(true);
@@ -684,10 +736,8 @@ export default function StudentDashboard() {
     user?.studentType === 'Type 2' ||
     user?.student_type === 'Type 2'
   );
-  const recordedExamMarks = profile?.learnerExamMarks ?? profile?.dmtDates?.learnerExamMarks;
   const isExamPassed = Boolean(
-    (profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed) &&
-    (recordedExamMarks === null || recordedExamMarks === undefined || recordedExamMarks > 30)
+    profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed
   );
   const currentTrialDate = profile?.trial_date || profile?.trial?.trialDate || profile?.dmtDates?.trialExamDate || null;
   const hasTrialDate = Boolean(currentTrialDate);
@@ -727,9 +777,19 @@ export default function StudentDashboard() {
     (remainingDays !== null && remainingDays <= 0 && profile?.learnerLicenseStatus !== 'completed' && profile?.learnerLicenseStatus !== 'passed')
   );
 
+  const trialAttemptsList = profile?.trial?.attempts || [];
+  const trialAttemptsUsed = trialAttemptsList.length;
+  const trialAttemptsRemaining = Math.max(0, 3 - trialAttemptsUsed);
+  const latestTrialAttempt = trialAttemptsList.length > 0 ? trialAttemptsList[trialAttemptsList.length - 1] : null;
+
+  const isTrial3AttemptsFailed = Boolean(
+    trialAttemptsUsed >= 3 && !trialAttemptsList.some((a) => a.result === 'passed')
+  );
+
   const is3AttemptsFailed = Boolean(
     profile?.learnerLicenseStatus === 'attempts_exhausted' ||
-    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed'))
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed')) ||
+    isTrial3AttemptsFailed
   );
 
   const isFinalPassed = Boolean(
@@ -777,6 +837,17 @@ export default function StudentDashboard() {
       user?.account_status === 'Verified' ||
       user?.status === 'active'
     )
+  );
+
+  const hasSubmittedPayment = Boolean(
+    profile?.hasSubmittedPayment ||
+    profile?.latestPayment ||
+    student?.hasSubmittedPayment ||
+    student?.latestPayment ||
+    (profile?.advancePaymentStatus && profile.advancePaymentStatus !== 'none') ||
+    (student?.advancePaymentStatus && student.advancePaymentStatus !== 'none') ||
+    profile?.isAdvancePaid ||
+    student?.isAdvancePaid
   );
 
   const isAdvancePaymentPending = Boolean(!isCancelled && !isVerifiedAccount);
@@ -1116,7 +1187,11 @@ export default function StudentDashboard() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-black text-[#152026]">
-                {isExpired ? 'Learner License Expired' : 'All 3 exam attempts have been used.'}
+                {isExpired
+                  ? 'Registration Expired'
+                  : isTrial3AttemptsFailed
+                  ? 'All 3 Trial Exam Attempts Used'
+                  : 'All 3 Exam Attempts Used'}
               </h1>
 
               <p className="text-xs sm:text-sm text-[#475569] leading-relaxed max-w-3xl">
@@ -1125,9 +1200,13 @@ export default function StudentDashboard() {
                     <strong className="text-[#152026]">Please register again.</strong> According to Department of Motor Traffic (DMT) regulations, once registered, a learner has a maximum of <strong>1.5 years (18 months)</strong> to complete the required licensing process. Your validity period ended on{' '}
                     <strong className="text-[#152026] underline">{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy', 'Expired') : 'Expired'}</strong>.
                   </>
+                ) : isTrial3AttemptsFailed ? (
+                  <>
+                    <strong className="text-[#152026]">Registration Cancelled.</strong> All 3 Trial Exam attempts have been used and were unsuccessful. In accordance with DMT regulations, your current registration cycle has ended. Please start a new registration.
+                  </>
                 ) : (
                   <>
-                    <strong className="text-[#152026]">Please register again.</strong> In accordance with DMT regulations, candidates are allowed a maximum of <strong>3 trial attempts</strong> for the written theory exam per registration cycle. All 3 attempts have been exhausted.
+                    <strong className="text-[#152026]">Registration Cancelled.</strong> In accordance with DMT regulations, candidates are allowed a maximum of <strong>3 attempts</strong> per registration cycle. All 3 attempts have been exhausted. Please start a new registration.
                   </>
                 )}
               </p>
@@ -1262,38 +1341,52 @@ export default function StudentDashboard() {
         </div>
 
         {/* Primary Warning Hero Card */}
-        <div className="relative rounded-3xl bg-white border-2 border-amber-300 p-6 sm:p-10 shadow-sm overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-amber-400" />
+        <div className={`relative rounded-3xl bg-white border-2 ${!hasSubmittedPayment ? 'border-rose-400' : 'border-amber-300'} p-6 sm:p-10 shadow-sm overflow-hidden`}>
+          <div className={`absolute inset-x-0 top-0 h-1.5 ${!hasSubmittedPayment ? 'bg-rose-500' : 'bg-amber-400'}`} />
 
           <div className="flex flex-col lg:flex-row items-start gap-6 relative z-10">
             {/* Glowing Icon Badge */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-[#F3EED8] border-2 border-amber-300 flex items-center justify-center text-amber-700 flex-shrink-0 shadow-xs">
-              <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-600" />
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl ${!hasSubmittedPayment ? 'bg-rose-50 border-2 border-rose-300 text-rose-700' : 'bg-[#F3EED8] border-2 border-amber-300 text-amber-700'} flex items-center justify-center flex-shrink-0 shadow-xs`}>
+              {!hasSubmittedPayment ? (
+                <CreditCard className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600" />
+              ) : (
+                <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-600" />
+              )}
             </div>
 
             <div className="space-y-4 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" /> Payment Verification In Progress
-                </span>
+                {!hasSubmittedPayment ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-800 border border-rose-300 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Advance Payment Required (Unpaid)
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" /> Payment Verification In Progress
+                  </span>
+                )}
                 <span className="text-xs text-[#6A97C0] font-mono">
-                  Ref: {profile?.advancePaymentReference || 'ADV-PENDING'}
+                  Ref: {profile?.advancePaymentReference || 'ADV-REQUIRED'}
                 </span>
               </div>
 
               <div className="space-y-3">
                 <h1 className="text-2xl sm:text-3xl font-black text-[#152026] tracking-tight">
-                  {isPhysicalCash
+                  {!hasSubmittedPayment
+                    ? `Ayubowan, ${user?.name}! Complete Your Advance Payment`
+                    : isPhysicalCash
                     ? `Ayubowan, ${user?.name}! Branch Advance Payment Pending`
                     : `Ayubowan, ${user?.name}! Payment Verification In Progress`}
                 </h1>
 
                 {/* EXACT REQUIRED STATUS PROMPT */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#F3EED8] border-2 border-amber-300 shadow-xs">
+                <div className={`p-4 sm:p-5 rounded-2xl ${!hasSubmittedPayment ? 'bg-rose-50/70 border-2 border-rose-300' : 'bg-[#F3EED8] border-2 border-amber-300'} shadow-xs`}>
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className={`w-5 h-5 ${!hasSubmittedPayment ? 'text-rose-700' : 'text-amber-700'} flex-shrink-0 mt-0.5`} />
                     <div className="text-sm sm:text-base font-extrabold text-[#152026] leading-relaxed">
-                      {isPhysicalCash
+                      {!hasSubmittedPayment
+                        ? 'Your registration details have been saved, but no advance payment or bank deposit slip has been submitted yet. Please complete your advance payment of LKR 5,000 to submit your registration for branch verification.'
+                        : isPhysicalCash
                         ? 'Please visit your nearest branch to complete your advance payment of LKR 5,000. You will gain full system access once the payment is verified by our team.'
                         : 'Your payment is currently being verified by a Data Entry Officer. You cannot access the system until your account is verified.'}
                     </div>
@@ -1304,10 +1397,12 @@ export default function StudentDashboard() {
               {/* Warning Notice Details Box */}
               <div className="rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] p-4 sm:p-5 space-y-2 text-xs sm:text-sm text-[#152026] leading-relaxed">
                 <p>
-                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-[#1B3D59]">Rs. 5,000.00</strong> is verified by our branch Staff Officer or Data Entry Officer.
+                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-[#1B3D59]">Rs. 5,000.00</strong> is paid and verified by our branch Staff Officer or Data Entry Officer.
                 </p>
                 <p className="text-[#475569] text-xs">
-                  {isPhysicalCash
+                  {!hasSubmittedPayment
+                    ? 'You can pay instantly online via card, upload a bank transfer slip (BOC, People\'s, Commercial, or HNB), or pay in cash at the counter.'
+                    : isPhysicalCash
                     ? 'Our staff will record your payment upon counter visit and immediately activate your account.'
                     : 'As soon as our Data Entry Officer approves your bank slip or gateway submission, your dashboard and practical lesson booking privileges will unlock automatically.'}
                 </p>
@@ -1328,41 +1423,68 @@ export default function StudentDashboard() {
                   </span>
                 </div>
                 <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] text-xs shadow-xs">
-                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Verification Status</span>
-                  <span className="font-bold text-amber-700 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 animate-pulse text-amber-600" /> Awaiting Officer Verification
-                  </span>
+                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Payment Status</span>
+                  {!hasSubmittedPayment ? (
+                    <span className="font-bold text-rose-700 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Payment Required (Unpaid)
+                    </span>
+                  ) : (
+                    <span className="font-bold text-amber-700 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 animate-pulse text-amber-600" /> Awaiting Officer Verification
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => fetchProfile(true)}
-                  disabled={checkingStatus}
-                  className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
-                >
-                  <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
-                  {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
-                </button>
+                {!hasSubmittedPayment ? (
+                  <Link
+                    to="/payment-gateway"
+                    state={{
+                      studentName: user?.name,
+                      studentId: profile?._id,
+                      userId: user?.id || user?._id,
+                      branch: profile?.branch || user?.branch,
+                      nic: profile?.nic || user?.nic,
+                      email: user?.email,
+                      advanceAmount: profile?.advancePaymentAmount || 5000,
+                      registrationReference: profile?.advancePaymentReference,
+                    }}
+                    className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4 text-white" /> Complete Advance Payment Now (Rs. 5,000)
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => fetchProfile(true)}
+                      disabled={checkingStatus}
+                      className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
+                      {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
+                    </button>
 
-                <Link
-                  to="/payment-gateway"
-                  state={{
-                    studentName: user?.name,
-                    studentId: profile?._id,
-                    userId: user?.id || user?._id,
-                    branch: profile?.branch || user?.branch,
-                    nic: profile?.nic || user?.nic,
-                    email: user?.email,
-                    advanceAmount: profile?.advancePaymentAmount || 5000,
-                    registrationReference: profile?.advancePaymentReference,
-                  }}
-                  className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 cursor-pointer shadow-xs"
-                >
-                  <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Re-upload / Change Payment Slip
-                </Link>
+                    <Link
+                      to="/payment-gateway"
+                      state={{
+                        studentName: user?.name,
+                        studentId: profile?._id,
+                        userId: user?.id || user?._id,
+                        branch: profile?.branch || user?.branch,
+                        nic: profile?.nic || user?.nic,
+                        email: user?.email,
+                        advanceAmount: profile?.advancePaymentAmount || 5000,
+                        registrationReference: profile?.advancePaymentReference,
+                      }}
+                      className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Re-upload / Change Payment Slip
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1551,26 +1673,30 @@ export default function StudentDashboard() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Welcome Banner */}
-      <div className="relative bg-[#1B3D59] rounded-3xl p-6 sm:p-8 text-white border border-[#6A97C0]/30 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#0F2231] via-[#1B3D59] to-[#0F2231] rounded-3xl p-6 sm:p-8 text-white border border-[#6A97C0]/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-[#3F72AF]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-[#6A97C0]/15 rounded-full blur-3xl pointer-events-none" />
+
         <div className="space-y-3 relative z-10">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/15 text-white border border-white/25 shadow-xs">
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 text-white border border-white/30 shadow-xs backdrop-blur-xs">
               {profile?.branch} Branch
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#6A97C0]/30 text-[#D4EEF8] border border-[#6A97C0]/40 shadow-xs">
+            <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-[#B3D5F1] text-[#0B2447] border border-[#B3D5F1] shadow-xs">
               {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
             </span>
             {profile?.nic && (
-              <span className="px-3 py-1 rounded-full text-xs font-mono bg-white/10 text-slate-200 border border-white/15">
+              <span className="px-3.5 py-1 rounded-full text-xs font-mono bg-white/15 text-white border border-white/25 shadow-xs">
                 NIC: {profile.nic}
               </span>
             )}
             {isAdvancePaymentPending ? (
-              <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#F3EED8] text-[#152026] border border-amber-300">
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#F3EED8] text-[#152026] border border-amber-300 shadow-xs">
                 <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" /> Status: Pending Verification
               </span>
             ) : (
-              <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/25 text-emerald-200 border border-emerald-400/40">
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/30 text-emerald-100 border border-emerald-400/50 shadow-xs">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> Status: Active Learner
               </span>
             )}
@@ -1587,13 +1713,13 @@ export default function StudentDashboard() {
         <div className="flex flex-wrap gap-2.5 sm:self-center relative z-10">
           <button
             onClick={openEditModal}
-            className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer backdrop-blur-xs"
           >
             <Edit3 className="w-4 h-4 text-[#D4EEF8]" /> Edit Details
           </button>
           <button
             onClick={fetchProfile}
-            className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer backdrop-blur-xs"
           >
             <RefreshCw className="w-4 h-4 text-[#D4EEF8]" /> Refresh
           </button>
@@ -1605,7 +1731,7 @@ export default function StudentDashboard() {
                   '🔒 Advance Payment Pending: Practical lesson booking is restricted until your advance deposit is approved by your branch officer.'
                 )
               }
-              className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-[#F3EED8] text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-80"
+              className="px-4 py-2.5 rounded-xl bg-amber-500/25 border border-amber-300/40 text-amber-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Lesson booking locked until advance payment is verified"
             >
               <Lock className="w-4 h-4 text-amber-300" /> Booking Locked (Payment Pending)
@@ -1617,7 +1743,7 @@ export default function StudentDashboard() {
                   '🔒 DMT Requirement (US-09): Practical & trial lessons can only be booked after passing your Learner Written Exam (marked Passed by your branch officer).'
                 )
               }
-              className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-85"
+              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Practical lessons locked until Learner Written Exam is passed"
             >
               <Lock className="w-4 h-4 text-amber-300" /> Lessons Locked (Exam Pending)
@@ -1629,7 +1755,7 @@ export default function StudentDashboard() {
                   '🔒 Practical Trial Date Pending: Your branch Data Entry Officer must schedule your official trial date before practical lesson sessions can be booked.'
                 )
               }
-              className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-85"
+              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Lessons locked until practical trial date is scheduled"
             >
               <Lock className="w-4 h-4 text-[#D4EEF8]" /> Lessons Locked (Trial Date Pending)
@@ -1742,30 +1868,58 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* 18-Month Validity Period Metrics */}
+        {/* Recent Trial Result Banner (if failed/absent and still has attempts) */}
+        {latestTrialAttempt && latestTrialAttempt.result !== 'passed' && trialAttemptsRemaining > 0 && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-sm text-amber-950">
+                Trial Exam Attempt #{latestTrialAttempt.attemptNumber} – {latestTrialAttempt.result === 'failed' ? 'Failed' : 'Absent'}
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                You have <strong>{trialAttemptsRemaining} of 3 attempts remaining</strong>. Your registration remains active until{' '}
+                <strong>{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : '18 months'}</strong>. You may schedule a new trial date to re-take your practical trial exam.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 18-Month Validity Period & Attempt Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
-            <span className="text-[#6A97C0] block text-[11px] font-semibold">License Start Date</span>
-            <span className="font-bold text-[#152026] font-mono text-sm">
-              {licenseStartDate ? safeFormatDate(licenseStartDate, 'dd MMMM yyyy') : 'Registered'}
-            </span>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
-            <span className="text-[#6A97C0] block text-[11px] font-semibold">18-Month Expiry Date</span>
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">18-Month Registration Validity</span>
             <span className={`font-bold font-mono text-sm ${isExpiringSoon ? 'text-amber-700' : 'text-[#1B3D59]'}`}>
               {licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : 'In 18 Months'}
             </span>
+            <span className="text-[10px] text-slate-500 block">
+              {remainingDays !== null ? `${remainingDays} Days Remaining` : 'Active'}
+            </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
-            <span className="text-[#6A97C0] block text-[11px] font-semibold">Validity Remaining</span>
-            <span className={`font-bold text-sm ${isExpiringSoon ? 'text-amber-700' : 'text-emerald-700'}`}>
-              {remainingDays !== null ? `${remainingDays} Days Remaining` : '18 Months'}
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Practical Trial Attempts</span>
+            <span className={`font-bold text-sm ${trialAttemptsRemaining === 1 ? 'text-amber-700' : trialAttemptsRemaining === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+              {trialAttemptsRemaining} of 3 Remaining
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {trialAttemptsUsed} / 3 Attempts Used
             </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
             <span className="text-[#6A97C0] block text-[11px] font-semibold">Written Exam Attempts</span>
             <span className="font-bold text-[#152026] text-sm">
               {attemptsCount} of 3 Attempts Used
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {isExamPassed ? '✓ Theory Exam Passed' : 'Pending Theory Pass'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Registration Status</span>
+            <span className="font-bold text-emerald-700 text-sm flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Registration Active
+            </span>
+            <span className="text-[10px] text-slate-500 block font-mono">
+              Cycle #{profile?.currentCycleNumber || 1}
             </span>
           </div>
         </div>
@@ -2097,23 +2251,37 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* TYPE 1: US-09 DMT LEARNER EXAM GATE NOTICE BANNER */}
-      {isType1 && !isTrialEligible && (
-        <div className="card p-6 bg-white border-2 border-[#D4EEF8] space-y-4 shadow-sm hover:border-[#6A97C0] transition-all">
+      {/* TYPE 1: US-09 DMT LEARNER EXAM GATE & STATUS SELECTOR BANNER */}
+      {isType1 && (
+        <div className="card p-6 bg-white border-2 border-[#DBE2EF] space-y-4 shadow-sm hover:border-[#3F72AF]/40 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] flex-shrink-0 shadow-inner">
-                <ShieldAlert className="w-6 h-6 text-[#1B3D59] animate-pulse" />
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner ${
+                isExamPassed
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                  : 'bg-[#DBE2EF]/70 border border-[#3F72AF]/30 text-[#112D4E]'
+              }`}>
+                {isExamPassed ? (
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                ) : (
+                  <ShieldAlert className="w-6 h-6 text-[#3F72AF] animate-pulse" />
+                )}
               </div>
               <div className="space-y-1.5">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-bold uppercase tracking-wider">
-                  US-09 DMT Regulation Active • Theory Exam Gate
+                <span className={`badge text-[10px] font-bold uppercase tracking-wider ${
+                  isExamPassed ? 'badge-success' : 'badge-warning'
+                }`}>
+                  {isExamPassed ? '✓ DMT Theory Exam Cleared' : 'US-09 DMT Regulation Active • Theory Exam Gate'}
                 </span>
-                <h3 className="text-lg sm:text-xl font-black text-[#152026] flex items-center gap-2">
-                  Practical Trial Lessons Locked Until Learner's Exam Passed
+                <h3 className="text-lg sm:text-xl font-black text-[#0B2447] flex items-center gap-2">
+                  {isExamPassed
+                    ? 'DMT Theory Exam Passed — Practical Trial Lessons Unlocked!'
+                    : 'Practical Trial Lessons Locked Until Learner\'s Exam Passed'}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#475569] max-w-2xl leading-relaxed">
-                  As a <strong className="text-[#152026]">Type 1 New Learner</strong>, you can manage your medical exam, learner registration, and written theory test on your dedicated DMT milestone dashboard. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong className="text-emerald-700">"Passed"</strong> by your branch officer.
+                <p className="text-xs sm:text-sm text-[#4B6584] max-w-2xl leading-relaxed">
+                  {isExamPassed
+                    ? 'Congratulations! You have successfully passed the DMT Written Theory Exam. You are eligible to book and schedule your practical trial training sessions.'
+                    : 'As a Type 1 New Learner, in accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is completed and passed.'}
                 </p>
                 <div className="pt-1.5">
                   <Link
@@ -2131,19 +2299,63 @@ export default function StudentDashboard() {
               <span className="text-xs text-[#6A97C0] font-bold block mb-1">Your Exam Status:</span>
               <span
                 className={`text-xs sm:text-sm font-black px-3 py-1 rounded-full inline-block ${
-                  profile?.learnerExamStatus === 'failed'
+                  isExamPassed
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : profile?.learnerExamStatus === 'failed'
                     ? 'bg-rose-50 text-rose-700 border border-rose-200'
                     : profile?.dmtDates?.learnerExamDate
                     ? 'bg-[#F3EED8] text-[#152026] border border-amber-300'
                     : 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
                 }`}
               >
-                {profile?.learnerExamStatus === 'failed'
-                  ? 'Failed (Retake Required)'
+                {isExamPassed
+                  ? '✓ PASSED'
+                  : profile?.learnerExamStatus === 'failed'
+                  ? '✕ FAILED (Retake Required)'
                   : profile?.dmtDates?.learnerExamDate
-                  ? 'Scheduled / Awaiting Result'
+                  ? '⏳ Scheduled / In Progress'
                   : 'Not Yet Faced'}
               </span>
+            </div>
+          </div>
+
+          {/* Interactive Exam Outcome Selector for Student */}
+          <div className="pt-3.5 border-t border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8FAFD]/70 -mx-6 -mb-6 p-4 rounded-b-2xl">
+            <div>
+              <span className="text-xs font-bold text-[#0B2447] block flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[#3F72AF]" /> Faced your DMT Written Theory Exam?
+              </span>
+              <span className="text-[11px] text-[#4B6584]">
+                Select your official exam outcome below to update your status across the school system:
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleUpdateExamStatus('passed')}
+                disabled={updatingExamStatus}
+                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  isExamPassed
+                    ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-500'
+                    : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Passed</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateExamStatus('failed')}
+                disabled={updatingExamStatus}
+                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  profile?.learnerExamStatus === 'failed'
+                    ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-500'
+                    : 'bg-white hover:bg-rose-50 text-rose-800 border border-rose-300'
+                }`}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Failed</span>
+              </button>
             </div>
           </div>
         </div>

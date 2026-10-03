@@ -27,15 +27,24 @@ export const AuthProvider = ({ children }) => {
           const res = await api.get('/auth/me');
           if (res.data.success) {
             setUser(res.data.user);
-            setStudent(res.data.student);
+            const enrichedStudent = res.data.student
+              ? {
+                  ...res.data.student,
+                  hasSubmittedPayment: res.data.hasSubmittedPayment,
+                  requiresPayment: res.data.requiresPayment,
+                  latestPayment: res.data.latestPayment,
+                  payment_status: res.data.payment_status,
+                }
+              : null;
+            setStudent(enrichedStudent);
             setMustChangePassword(Boolean(res.data.user?.mustChangePassword));
             localStorage.setItem('sithma_user', JSON.stringify(res.data.user));
             localStorage.setItem(
               'sithma_must_change_pwd',
               res.data.user?.mustChangePassword ? 'true' : 'false'
             );
-            if (res.data.student) {
-              localStorage.setItem('sithma_student', JSON.stringify(res.data.student));
+            if (enrichedStudent) {
+              localStorage.setItem('sithma_student', JSON.stringify(enrichedStudent));
             }
           }
         } catch (err) {
@@ -58,10 +67,29 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (res.data.success) {
-        const { token, user, student, mustChangePassword: pwdChangeRequired } = res.data;
+        const {
+          token,
+          user,
+          student,
+          mustChangePassword: pwdChangeRequired,
+          hasSubmittedPayment,
+          requiresPayment,
+          latestPayment,
+          isVerified,
+          payment_status,
+        } = res.data;
+        const enrichedStudent = student
+          ? {
+              ...student,
+              hasSubmittedPayment,
+              requiresPayment,
+              latestPayment,
+              payment_status,
+            }
+          : null;
         setToken(token);
         setUser(user);
-        setStudent(student);
+        setStudent(enrichedStudent);
         setMustChangePassword(Boolean(pwdChangeRequired));
 
         localStorage.setItem('sithma_token', token);
@@ -70,15 +98,20 @@ export const AuthProvider = ({ children }) => {
           'sithma_must_change_pwd',
           pwdChangeRequired ? 'true' : 'false'
         );
-        if (student) {
-          localStorage.setItem('sithma_student', JSON.stringify(student));
+        if (enrichedStudent) {
+          localStorage.setItem('sithma_student', JSON.stringify(enrichedStudent));
         }
 
         toast.success(`Welcome back, ${user.name}!`);
         return {
           success: true,
           user,
-          student,
+          student: enrichedStudent,
+          hasSubmittedPayment: Boolean(hasSubmittedPayment),
+          requiresPayment: Boolean(requiresPayment),
+          latestPayment,
+          isVerified: Boolean(isVerified),
+          payment_status,
           mustChangePassword: Boolean(pwdChangeRequired),
         };
       }

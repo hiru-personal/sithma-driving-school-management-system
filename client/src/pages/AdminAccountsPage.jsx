@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   X,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,8 @@ export default function AdminAccountsPage() {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showInstructorModal, setShowInstructorModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Forms
@@ -166,6 +169,23 @@ export default function AdminAccountsPage() {
     }
   };
 
+  const handleDeleteAccount = async (user) => {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      const res = await api.delete(`/admin/accounts/${user._id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Account deleted successfully');
+        setAccounts((prev) => prev.filter((u) => u._id !== user._id));
+        setDeleteConfirmUser(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete account');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
@@ -177,7 +197,7 @@ export default function AdminAccountsPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] font-heading flex items-center gap-2.5">
             Staff & Instructor Account Management
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
+          <p className="text-xs text-slate-700 mt-0.5 font-semibold">
             Admin provisioning: Create Data Entry Officer and Instructor accounts, enforce password policies, and manage lifecycle.
           </p>
         </div>
@@ -291,7 +311,7 @@ export default function AdminAccountsPage() {
                       <div className="text-[11px] text-[#1B3D59] font-mono font-semibold">
                         @{user.username || user.email.split('@')[0]}
                       </div>
-                      <div className="text-[10px] text-[#6A97C0]">{user.email}</div>
+                      <div className="text-[10px] text-slate-600 font-medium">{user.email}</div>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -309,7 +329,7 @@ export default function AdminAccountsPage() {
                         {user.role === 'staff' ? 'Data Entry Officer' : user.role}
                       </span>
                       {user.role === 'instructor' && (
-                        <div className="text-[10px] text-[#6A97C0] mt-1 font-medium">
+                        <div className="text-[10px] text-slate-600 mt-1 font-medium">
                           Teaches: <strong className="text-[#152026]">{user.teachingCategories || 'Light'}</strong>
                         </div>
                       )}
@@ -321,7 +341,7 @@ export default function AdminAccountsPage() {
 
                     <td className="py-3.5 px-4">
                       <div className="font-mono font-medium text-[#152026]">{user.nic || '—'}</div>
-                      <div className="text-[11px] text-[#6A97C0]">{user.phone}</div>
+                      <div className="text-[11px] text-slate-700 font-medium">{user.phone}</div>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -355,30 +375,43 @@ export default function AdminAccountsPage() {
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      {user.role !== 'admin' && (
-                        <button
-                          onClick={() => handleToggleStatus(user)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
-                            user.status === 'active'
-                              ? 'border-rose-300 text-rose-700 hover:bg-rose-50'
-                              : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
-                          }`}
-                        >
-                          {user.status === 'active' ? 'Deactivate' : 'Activate'}
-                        </button>
-                      )}
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {user.role !== 'admin' && (
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                              user.status === 'active'
+                                ? 'border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100'
+                                : 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                            }`}
+                          >
+                            {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          </button>
+                        )}
 
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowResetModal(true);
-                        }}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-[#6A97C0]/40 text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors"
-                        title="Force Reset Password"
-                      >
-                        Reset Password
-                      </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowResetModal(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-[#6A97C0]/40 text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors cursor-pointer"
+                          title="Force Reset Password"
+                        >
+                          Reset Password
+                        </button>
+
+                        {user.role !== 'admin' && (
+                          <button
+                            onClick={() => setDeleteConfirmUser(user)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                            title={user.role === 'student' ? 'Permanently Delete Student Account' : 'Permanently Delete Account'}
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-600" />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -710,6 +743,69 @@ export default function AdminAccountsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Permanent Account Deletion */}
+      {deleteConfirmUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md p-6 rounded-3xl bg-white border border-rose-200 shadow-2xl space-y-5 text-[#152026]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-rose-950">
+                  Delete {deleteConfirmUser.role === 'student' ? 'Student' : 'User'} Account?
+                </h3>
+                <span className="text-xs text-rose-600 font-semibold uppercase tracking-wider">
+                  Permanent Removal • Non-Reversible
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200 text-xs text-rose-900 space-y-2">
+              <p>
+                Are you sure you want to permanently delete the account for{' '}
+                <strong className="text-rose-950 underline">{deleteConfirmUser.name}</strong>{' '}
+                ({deleteConfirmUser.email || deleteConfirmUser.username})?
+              </p>
+              {deleteConfirmUser.role === 'student' && (
+                <p className="text-[11px] text-rose-800 leading-relaxed font-medium">
+                  ⚠️ This will permanently remove the student's registration, course progress, payment logs, and milestones from the school database.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteConfirmUser(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => handleDeleteAccount(deleteConfirmUser)}
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

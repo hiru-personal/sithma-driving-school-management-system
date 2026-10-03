@@ -382,7 +382,7 @@ export default function Navbar() {
                             <p className={`text-xs font-bold transition-colors ${
                               isActive('/staff/slots') ? 'text-[#1B3D59]' : 'text-[#152026] group-hover:text-[#1B3D59]'
                             }`}>Slot Creator</p>
-                            <p className="text-[11px] text-[#6A97C0] truncate leading-snug">Lesson slots, scheduling & limits</p>
+                            <p className="text-[11px] text-slate-600 font-medium truncate leading-snug">Lesson slots, scheduling & limits</p>
                           </div>
                         </Link>
 
@@ -407,7 +407,7 @@ export default function Navbar() {
                             <p className={`text-xs font-bold transition-colors ${
                               isActive('/staff/payments') ? 'text-[#1B3D59]' : 'text-[#152026] group-hover:text-[#1B3D59]'
                             }`}>Payment Queue</p>
-                            <p className="text-[11px] text-[#6A97C0] truncate leading-snug">Verify slips & advance fees</p>
+                            <p className="text-[11px] text-slate-600 font-medium truncate leading-snug">Verify slips & advance fees</p>
                           </div>
                         </Link>
 
@@ -432,7 +432,7 @@ export default function Navbar() {
                             <p className={`text-xs font-bold transition-colors ${
                               isActive('/staff/packages') ? 'text-[#1B3D59]' : 'text-[#152026] group-hover:text-[#1B3D59]'
                             }`}>Course Packages</p>
-                            <p className="text-[11px] text-[#6A97C0] truncate leading-snug">Classes, curriculum & pricing</p>
+                            <p className="text-[11px] text-slate-600 font-medium truncate leading-snug">Classes, curriculum & pricing</p>
                           </div>
                         </Link>
 
@@ -457,7 +457,7 @@ export default function Navbar() {
                             <p className={`text-xs font-bold transition-colors ${
                               isActive('/admin/question-lists') || isActive('/staff/quiz') ? 'text-[#1B3D59]' : 'text-[#152026] group-hover:text-[#1B3D59]'
                             }`}>Question Lists</p>
-                            <p className="text-[11px] text-[#6A97C0] truncate leading-snug">Create & manage multiple question sets</p>
+                            <p className="text-[11px] text-slate-600 font-medium truncate leading-snug">Create & manage multiple question sets</p>
                           </div>
                         </Link>
 
@@ -482,7 +482,7 @@ export default function Navbar() {
                             <p className={`text-xs font-bold transition-colors ${
                               isActive('/staff/reports') ? 'text-[#1B3D59]' : 'text-[#152026] group-hover:text-[#1B3D59]'
                             }`}>Reports & Analytics</p>
-                            <p className="text-[11px] text-[#6A97C0] truncate leading-snug">Branch performance & exam statistics</p>
+                            <p className="text-[11px] text-slate-600 font-medium truncate leading-snug">Branch performance & exam statistics</p>
                           </div>
                         </Link>
                       </div>

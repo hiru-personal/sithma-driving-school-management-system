@@ -33,6 +33,11 @@ export default function SlotManagementPage() {
     instructorId: '',
   });
 
+  // Edit / Assign Instructor Modal
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [editInstructorId, setEditInstructorId] = useState('');
+  const [updatingInstructor, setUpdatingInstructor] = useState(false);
+
   const fetchSlots = async () => {
     setLoading(true);
     try {
@@ -49,9 +54,31 @@ export default function SlotManagementPage() {
     }
   };
 
+  const fetchInstructors = async () => {
+    try {
+      const res = await api.get('/slots/instructors');
+      if (res.data.success) {
+        setInstructors(res.data.instructors || []);
+      }
+    } catch (err) {
+      console.error('Failed to load instructors', err);
+    }
+  };
+
   useEffect(() => {
     fetchSlots();
+    fetchInstructors();
   }, [selectedBranch, selectedDate]);
+
+  const handleOpenAddModal = () => {
+    setNewSlotForm({
+      startTime: '16:30',
+      endTime: '17:30',
+      vehicleCategory: 'Light',
+      instructorId: instructors.find((i) => i.branch === selectedBranch)?._id || instructors[0]?._id || '',
+    });
+    setIsAddModalOpen(true);
+  };
 
   const handleCreateSlot = async (e) => {
     e.preventDefault();
@@ -71,6 +98,31 @@ export default function SlotManagementPage() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create time slot');
+    }
+  };
+
+  const handleOpenEditInstructor = (slot) => {
+    setEditingSlot(slot);
+    setEditInstructorId(slot.instructorId?._id || slot.instructorId || '');
+  };
+
+  const handleUpdateInstructor = async (e) => {
+    e.preventDefault();
+    if (!editingSlot) return;
+    setUpdatingInstructor(true);
+    try {
+      const res = await api.put(`/slots/${editingSlot._id}`, {
+        instructorId: editInstructorId || null,
+      });
+      if (res.data.success) {
+        toast.success('Instructor assignment updated successfully');
+        setEditingSlot(null);
+        fetchSlots();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update instructor');
+    } finally {
+      setUpdatingInstructor(false);
     }
   };
 
@@ -98,7 +150,7 @@ export default function SlotManagementPage() {
           <h1 className="text-2xl font-extrabold text-[#152026] flex items-center gap-2">
             <Clock className="w-6 h-6 text-[#1B3D59]" /> Branch Slot & Instructor Scheduling
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5">
+          <p className="text-xs text-slate-700 font-semibold mt-0.5">
             Configure daily training sessions, assign instructors, and monitor booking capacities per branch.
           </p>
         </div>
@@ -111,7 +163,7 @@ export default function SlotManagementPage() {
             <RefreshCw className={`w-3.5 h-3.5 text-[#1B3D59] ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2 px-4 rounded-xl font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Session Slot
@@ -151,14 +203,14 @@ export default function SlotManagementPage() {
       {/* Slots Table */}
       <div className="card p-0 overflow-hidden shadow-sm border border-[#D4EEF8] bg-white rounded-3xl">
         {loading ? (
-          <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+          <div className="py-12 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
             <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading branch slots...
           </div>
         ) : slots.length === 0 ? (
           <div className="py-12 text-center space-y-2">
-            <Clock className="w-10 h-10 text-[#6A97C0] mx-auto" />
+            <Clock className="w-10 h-10 text-slate-400 mx-auto" />
             <p className="text-sm font-bold text-[#152026]">No slots found for this date</p>
-            <p className="text-xs text-[#6A97C0]">Click "Add Session Slot" to schedule a session.</p>
+            <p className="text-xs text-slate-600 font-medium">Click "Add Session Slot" to schedule a session.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -196,20 +248,36 @@ export default function SlotManagementPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="font-semibold text-[#152026]">
-                          {slot.instructorId?.name || (
-                            <span className="text-amber-700 font-normal">Unassigned</span>
-                          )}
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <div className="font-semibold text-[#152026]">
+                              {slot.instructorId?.name || (
+                                <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 text-[11px] font-medium">
+                                  Unassigned
+                                </span>
+                              )}
+                            </div>
+                            {slot.instructorId?.phone && (
+                              <div className="text-[11px] text-slate-600 font-medium">
+                                {slot.instructorId.phone}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditInstructor(slot)}
+                            className="p-1 rounded-lg text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors cursor-pointer"
+                            title="Assign or Change Instructor"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        {slot.instructorId?.phone && (
-                          <div className="text-[11px] text-[#6A97C0]">{slot.instructorId.phone}</div>
-                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="font-extrabold text-[#152026] text-xs">
                           {bookedCount} / {capacity} Students
                         </div>
-                        <div className="text-[10px] text-[#6A97C0]">
+                        <div className="text-[10px] text-slate-600 font-medium">
                           {isFull ? 'Capacity Full' : `${remaining} seat(s) open`}
                         </div>
                       </td>
@@ -227,14 +295,24 @@ export default function SlotManagementPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          disabled={bookedCount > 0}
-                          onClick={() => handleDeleteSlot(slot._id)}
-                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                          title={bookedCount > 0 ? 'Cannot delete slot with active booked students' : 'Delete slot'}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditInstructor(slot)}
+                            className="p-1.5 rounded-lg bg-[#D4EEF8]/60 hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] transition-colors cursor-pointer"
+                            title="Assign or Change Instructor"
+                          >
+                            <User className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            disabled={bookedCount > 0}
+                            onClick={() => handleDeleteSlot(slot._id)}
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                            title={bookedCount > 0 ? 'Cannot delete slot with active booked students' : 'Delete slot'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -255,7 +333,7 @@ export default function SlotManagementPage() {
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#6A97C0] hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-slate-600 hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -299,6 +377,29 @@ export default function SlotManagementPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Assign Instructor: <span className="text-slate-500 font-normal">(Optional)</span>
+                </label>
+                <select
+                  value={newSlotForm.instructorId}
+                  onChange={(e) =>
+                    setNewSlotForm({ ...newSlotForm, instructorId: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-medium focus:border-[#1B3D59] outline-none cursor-pointer"
+                >
+                  <option value="">-- No Instructor (Leave Unassigned) --</option>
+                  {instructors.map((inst) => (
+                    <option key={inst._id} value={inst._id}>
+                      {inst.name} ({inst.branch} • {inst.teachingCategories || 'All Vehicles'}{inst.phone ? ` • ${inst.phone}` : ''})
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Select a licensed driving instructor stationed at {selectedBranch} or all branches.
+                </span>
+              </div>
+
               <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
@@ -312,6 +413,77 @@ export default function SlotManagementPage() {
                   className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2 px-5 rounded-xl font-bold cursor-pointer shadow-md transition-all"
                 >
                   Create Slot
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Assign / Edit Instructor Modal */}
+      {editingSlot && (
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto text-[#152026] animate-fade-in">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <User className="w-4 h-4 text-[#1B3D59]" /> Assign / Change Instructor
+              </h3>
+              <button
+                onClick={() => setEditingSlot(null)}
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-slate-600 hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8] text-xs space-y-1">
+              <div className="font-bold text-[#152026]">
+                {editingSlot.startTime} – {editingSlot.endTime} • {editingSlot.vehicleType || editingSlot.vehicleCategory}
+              </div>
+              <div className="text-slate-600">
+                {editingSlot.lessonTitle || 'Practical Driving Session'} ({editingSlot.branch} Branch)
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateInstructor} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Select Driving Instructor:
+                </label>
+                <select
+                  value={editInstructorId}
+                  onChange={(e) => setEditInstructorId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-medium focus:border-[#1B3D59] outline-none cursor-pointer"
+                >
+                  <option value="">-- No Instructor Assigned (Unassigned) --</option>
+                  {instructors.map((inst) => (
+                    <option key={inst._id} value={inst._id}>
+                      {inst.name} ({inst.branch} • {inst.teachingCategories || 'All Vehicles'}{inst.phone ? ` • ${inst.phone}` : ''})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
+                <button
+                  type="button"
+                  onClick={() => setEditingSlot(null)}
+                  className="py-2 px-4 rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingInstructor}
+                  className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2 px-5 rounded-xl font-bold cursor-pointer shadow-md transition-all flex items-center gap-1.5"
+                >
+                  {updatingInstructor ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    'Save Instructor'
+                  )}
                 </button>
               </div>
             </form>

@@ -212,18 +212,17 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Gating Rule: Booking only allowed on or before the Trial Date
+    // Gating Rule 1 & 4: Cut-Off Date - Lessons cannot be booked on or after the Trial Exam Date
     if (student.trial_date) {
       const slotDateObj = new Date(timeSlot.date);
       slotDateObj.setHours(0, 0, 0, 0);
       const trialDateObj = new Date(student.trial_date);
-      trialDateObj.setHours(23, 59, 59, 999);
+      trialDateObj.setHours(0, 0, 0, 0);
 
-      if (slotDateObj > trialDateObj) {
-        const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
+      if (slotDateObj.getTime() >= trialDateObj.getTime()) {
         return res.status(400).json({
           success: false,
-          message: `You can only book lessons up until your scheduled Trial Date (${formattedTrialDate}). Please select a lesson slot on or before your trial date.`,
+          message: 'Lessons cannot be booked on or after your Trial Exam Date.',
         });
       }
     }
@@ -370,6 +369,21 @@ exports.bookFreeClass = async (req, res) => {
     const timeSlot = await TimeSlot.findById(timeSlotId);
     if (!timeSlot || timeSlot.status !== 'available') {
       return res.status(400).json({ success: false, message: 'Time slot is not available' });
+    }
+
+    // Cut-Off Date: Free classes also cannot be booked on or after the Trial Exam Date
+    if (student.trial_date) {
+      const slotDateObj = new Date(timeSlot.date);
+      slotDateObj.setHours(0, 0, 0, 0);
+      const trialDateObj = new Date(student.trial_date);
+      trialDateObj.setHours(0, 0, 0, 0);
+
+      if (slotDateObj.getTime() >= trialDateObj.getTime()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Lessons cannot be booked on or after your Trial Exam Date.',
+        });
+      }
     }
 
     timeSlot.status = 'booked';

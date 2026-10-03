@@ -35,6 +35,18 @@ import {
   Upload,
   History,
   RotateCcw,
+  GraduationCap,
+  ArrowRight,
+  ArrowLeft,
+  Lock,
+  EyeOff,
+  Bike,
+  Truck,
+  Layers,
+  Plus,
+  Minus,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -74,6 +86,27 @@ const formatShortTrialDate = (dateVal) => {
   }
 };
 
+// Official Vehicle Training Package Catalog for Sithma Driving School
+const WALK_IN_FALLBACK_PACKAGES = [
+  // A. Individual / Private Single Lessons (Pay-Per-Lesson)
+  { type: 'Bike_Individual', name: 'Bike (Individual / Private)', categoryGroup: 'A', vehicleCategory: 'Bike', lessons: 1, price: 2000, isPerLesson: true, desc: '1-on-1 private lesson with dedicated instructor. LKR 2,000 / lesson.' },
+  { type: 'ThreeWheeler_Individual', name: 'Three-Wheel (Individual / Private)', categoryGroup: 'A', vehicleCategory: 'Three-Wheel', lessons: 1, price: 2500, isPerLesson: true, desc: '1-on-1 private lesson with dedicated instructor. LKR 2,500 / lesson.' },
+  { type: 'Car_Individual', name: 'Car (Auto / Manual — Individual / Private)', categoryGroup: 'A', vehicleCategory: 'Car', lessons: 1, price: 3000, isPerLesson: true, desc: '1-on-1 private lesson with dual-control vehicle. LKR 3,000 / lesson.' },
+  { type: 'HeavyVehicle_Individual', name: 'Heavy Vehicle (Individual / Private)', categoryGroup: 'A', vehicleCategory: 'Heavy', lessons: 1, price: 3500, isPerLesson: true, desc: '1-on-1 private heavy vehicle commercial training. LKR 3,500 / lesson.' },
+
+  // B. Standard Single Lessons (Pay-Per-Lesson)
+  { type: 'Bike_Standard', name: 'Bike (Standard Single Lesson)', categoryGroup: 'B', vehicleCategory: 'Bike', lessons: 1, price: 800, isPerLesson: true, desc: 'Standard single practice lesson. LKR 800 / lesson.' },
+  { type: 'ThreeWheeler_Standard', name: 'Three-Wheel (Standard Single Lesson)', categoryGroup: 'B', vehicleCategory: 'Three-Wheel', lessons: 1, price: 1500, isPerLesson: true, desc: 'Standard single practice lesson. LKR 1,500 / lesson.' },
+  { type: 'Car_Standard', name: 'Car (Standard Single Lesson)', categoryGroup: 'B', vehicleCategory: 'Car', lessons: 1, price: 2000, isPerLesson: true, desc: 'Standard single practice session (Auto/Manual). LKR 2,000 / lesson.' },
+  { type: 'HeavyVehicle_Standard', name: 'Heavy Vehicle (Standard Single Lesson)', categoryGroup: 'B', vehicleCategory: 'Heavy', lessons: 1, price: 2500, isPerLesson: true, desc: 'Standard single heavy vehicle session. LKR 2,500 / lesson.' },
+
+  // C. Full Course Packages (Includes 15 Standard Lessons)
+  { type: 'Car_Full', name: 'Car Package (Auto Car OR Manual Car)', categoryGroup: 'C', vehicleCategory: 'Car', lessons: 15, price: 40000, isPerLesson: false, bonusText: 'Includes 2 FREE Bike lessons + 2 FREE Three-Wheel lessons.', bonusLessons: { bike: 2, threeWheeler: 2 }, desc: 'Includes 15 standard lessons + 2 FREE Bike lessons + 2 FREE Three-Wheel lessons.' },
+  { type: 'Combo_Full', name: 'Combo Package (Car + Bike + Three-Wheel)', categoryGroup: 'C', vehicleCategory: 'Combo', lessons: 15, price: 65000, isPerLesson: false, bonusText: 'Includes full access to 15 standard lessons across all three categories.', bonusLessons: { bike: 0, threeWheeler: 0 }, desc: 'Includes full access to 15 standard lessons across all three categories.' },
+  { type: 'HeavyVehicle_Full', name: 'Heavy Vehicle Full Package', categoryGroup: 'C', vehicleCategory: 'Heavy', lessons: 15, price: 70000, isPerLesson: false, bonusText: 'Includes 15 standard heavy vehicle training lessons.', bonusLessons: { bike: 0, threeWheeler: 0 }, desc: 'Includes 15 standard heavy vehicle training lessons.' },
+];
+
+
 export default function StaffStudentListPage() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,24 +140,74 @@ export default function StaffStudentListPage() {
 
   // Walk-in Student Registration Modal State (US-03)
   const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [walkInStep, setWalkInStep] = useState(1);
   const [availablePackages, setAvailablePackages] = useState([]);
   const [submittingWalkIn, setSubmittingWalkIn] = useState(false);
+  const [showWalkInPassword, setShowWalkInPassword] = useState(false);
+  const [walkInSelectedTier, setWalkInSelectedTier] = useState('C');
   const [walkInForm, setWalkInForm] = useState({
     name: '',
+    dob: '',
     email: '',
     phone: '',
     nic: '',
     branch: 'Maharagama',
     studentType: 'Type1_NewLearner',
     packageType: 'Car_Full',
-    advancePaymentCollected: false,
+    lessonQty: 1,
+    password: 'Password@123',
+    advancePaymentCollected: true,
+    skipVerificationQueue: true,
     advanceAmount: 5000,
   });
+
+  const walkInCalculatedAge = React.useMemo(() => {
+    if (!walkInForm.dob) return null;
+    const dob = new Date(walkInForm.dob);
+    if (isNaN(dob.getTime())) return null;
+
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  }, [walkInForm.dob]);
+
+  const walkInDisplayedPackages = React.useMemo(() => {
+    return WALK_IN_FALLBACK_PACKAGES.map((fallback) => {
+      const live = availablePackages.find((p) => p.type === fallback.type);
+      return {
+        ...fallback,
+        _id: live?._id || fallback.type,
+        price: live?.price || fallback.price,
+        name: live?.name || fallback.name,
+      };
+    });
+  }, [availablePackages]);
+
+  const walkInActivePackagesForTier = React.useMemo(() => {
+    return walkInDisplayedPackages.filter((p) => p.categoryGroup === walkInSelectedTier);
+  }, [walkInDisplayedPackages, walkInSelectedTier]);
+
+  const activeWalkInPackage = React.useMemo(() => {
+    return walkInDisplayedPackages.find((p) => p.type === walkInForm.packageType) || walkInDisplayedPackages[0];
+  }, [walkInDisplayedPackages, walkInForm.packageType]);
+
+  const getWalkInVehicleIcon = (category) => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('bike')) return <Bike className="w-5 h-5 text-[#1B3D59]" />;
+    if (cat.includes('heavy') || cat.includes('bus') || cat.includes('truck')) return <Truck className="w-5 h-5 text-[#1B3D59]" />;
+    if (cat.includes('combo')) return <Layers className="w-5 h-5 text-[#1B3D59]" />;
+    return <Car className="w-5 h-5 text-[#1B3D59]" />;
+  };
 
   // Form State for Recording Trial Attempt
   const [trialForm, setTrialForm] = useState({
     attemptDate: new Date().toISOString().split('T')[0],
     result: 'passed',
+    score: '',
     examinerNotes: '',
   });
 
@@ -190,27 +273,89 @@ export default function StaffStudentListPage() {
   };
 
   const handleRegisterWalkIn = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+
+    if (!walkInForm.name.trim()) {
+      toast.error('Please enter student full name');
+      setWalkInStep(2);
+      return;
+    }
+
+    if (!walkInForm.dob) {
+      toast.error('Please enter student date of birth');
+      setWalkInStep(2);
+      return;
+    }
+
+    if (walkInCalculatedAge !== null && walkInCalculatedAge < 18) {
+      toast.error('Under DMT regulations, applicant must be at least 18 years old.');
+      setWalkInStep(2);
+      return;
+    }
+
+    if (!walkInForm.nic.trim()) {
+      toast.error('Please enter student NIC / Passport number');
+      setWalkInStep(2);
+      return;
+    }
+
+    if (!walkInForm.phone.trim()) {
+      toast.error('Please enter contact phone number');
+      setWalkInStep(2);
+      return;
+    }
+
+    if (!walkInForm.email.trim() || !walkInForm.email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      setWalkInStep(2);
+      return;
+    }
+
     setSubmittingWalkIn(true);
     try {
+      const isType2 = walkInForm.studentType === 'Type2_TrialReady' || walkInForm.studentType === 'Type 2';
+      const activePkg = walkInDisplayedPackages.find((p) => p.type === walkInForm.packageType);
+
       const payload = {
-        ...walkInForm,
-        packageType: walkInForm.studentType === 'Type1_NewLearner' ? null : walkInForm.packageType,
+        name: walkInForm.name.trim(),
+        email: walkInForm.email.trim().toLowerCase(),
+        phone: walkInForm.phone.trim(),
+        nic: walkInForm.nic.trim(),
+        dob: walkInForm.dob || undefined,
+        branch: walkInForm.branch,
+        studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
+        packageType: isType2 ? walkInForm.packageType : null,
+        packageId: isType2 && activePkg ? activePkg._id : null,
+        lessonQty: isType2 && activePkg?.isPerLesson ? (walkInForm.lessonQty || 1) : (activePkg?.lessons || 15),
+        password: walkInForm.password || 'Password@123',
+        advancePaymentCollected: Boolean(walkInForm.advancePaymentCollected),
+        skipVerificationQueue: Boolean(walkInForm.advancePaymentCollected && walkInForm.skipVerificationQueue),
+        advanceAmount: walkInForm.advanceAmount || 5000,
       };
+
       const res = await api.post('/students/walk-in', payload);
       if (res.data.success) {
-        toast.success(`Walk-in student ${res.data.student.userId?.name} registered successfully!`);
-        setStudents((prev) => [res.data.student, ...prev]);
+        toast.success(`Walk-in student ${res.data.student?.userId?.name || walkInForm.name} registered successfully!`);
+        if (res.data.student) {
+          setStudents((prev) => [res.data.student, ...prev]);
+        } else {
+          fetchStudents();
+        }
         setShowWalkInModal(false);
+        setWalkInStep(1);
         setWalkInForm({
           name: '',
+          dob: '',
           email: '',
           phone: '',
           nic: '',
           branch: 'Maharagama',
           studentType: 'Type1_NewLearner',
           packageType: 'Car_Full',
-          advancePaymentCollected: false,
+          lessonQty: 1,
+          password: 'Password@123',
+          advancePaymentCollected: true,
+          skipVerificationQueue: true,
           advanceAmount: 5000,
         });
       }
@@ -267,8 +412,9 @@ export default function StaffStudentListPage() {
       setTrialTimeInput('09:00');
     }
     setTrialForm({
-      attemptDate: new Date().toISOString().split('T')[0],
+      attemptDate: student.trial_date ? student.trial_date.split('T')[0] : new Date().toISOString().split('T')[0],
       result: 'passed',
+      score: '',
       examinerNotes: '',
     });
 
@@ -607,8 +753,11 @@ export default function StaffStudentListPage() {
             )}
           </button>
           <button
-            onClick={() => setShowWalkInModal(true)}
-            className="btn-accent text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-md"
+            onClick={() => {
+              setWalkInStep(1);
+              setShowWalkInModal(true);
+            }}
+            className="btn-accent text-sm py-3 px-5 flex items-center gap-2 font-bold shadow-md cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" /> Register Walk-In Student
           </button>
@@ -1009,13 +1158,13 @@ export default function StaffStudentListPage() {
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-5 h-5 text-[#6A97C0] absolute left-4 top-3.5" />
+            <Search className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
             <input
               type="text"
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#6A97C0] rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-slate-400 rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
             />
           </div>
 
@@ -1065,7 +1214,7 @@ export default function StaffStudentListPage() {
           </div>
         ) : students.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <Users className="w-12 h-12 text-[#6A97C0] mx-auto" />
+            <Users className="w-12 h-12 text-slate-400 mx-auto" />
             <p className="text-lg font-bold text-[#152026]">No students found matching your filters</p>
             <p className="text-sm text-[#475569]">Try adjusting your search query or branch filters.</p>
           </div>
@@ -1162,7 +1311,7 @@ export default function StaffStudentListPage() {
                         ) : (
                           <>
                             <div className="font-bold text-xs text-[#1B3D59]">Pending Theory Exam</div>
-                            <div className="text-[11px] text-[#6A97C0] font-medium mt-0.5">Selected at Step 5</div>
+                            <div className="text-[11px] text-slate-600 font-medium mt-0.5">Selected at Step 5</div>
                           </>
                         )}
                       </td>
@@ -1420,7 +1569,7 @@ export default function StaffStudentListPage() {
                     </>
                   )}
                 </h3>
-                <p className="text-xs text-[#6A97C0]">
+                <p className="text-xs text-slate-600 font-medium">
                   {selectedStudent.branch} Branch • {selectedStudent.studentType}
                 </p>
               </div>
@@ -1724,7 +1873,7 @@ export default function StaffStudentListPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-[#152026]">
-                      2. DMT Medical Examination Date (US-04) <span className="text-[#6A97C0] font-mono text-[11px]">(Can be same date as Registration)</span>:
+                      2. DMT Medical Examination Date (US-04) <span className="text-slate-600 font-mono text-[11px] font-medium">(Can be same date as Registration)</span>:
                     </label>
                     {selectedStudent.dmtDates?.medicalDone && (
                       <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -1747,7 +1896,7 @@ export default function StaffStudentListPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-[#152026]">
-                      3. DMT Learner Written Theory Exam Date <span className="text-[#6A97C0] font-mono text-[11px]">(&gt; Registration &amp; Medical Dates)</span>:
+                      3. DMT Learner Written Theory Exam Date <span className="text-slate-600 font-mono text-[11px] font-medium">(&gt; Registration &amp; Medical Dates)</span>:
                     </label>
                     <span className="text-[10px] text-[#1B3D59] font-mono font-bold">
                       {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
@@ -1764,28 +1913,99 @@ export default function StaffStudentListPage() {
                   </div>
                 </div>
 
-                {/* 4. Learner Exam Status */}
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    4. Learner Exam Status:
-                  </label>
-                  <select
-                    value={dmtForm.learnerExamStatus}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setDmtForm({
-                        ...dmtForm,
-                        learnerExamStatus: val,
-                        learnerExamPassed: val === 'passed',
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-bold cursor-pointer focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  >
-                    <option value="not_taken">Not Taken / In Progress</option>
-                    <option value="passed">PASSED (Unlocks Trial Lessons)</option>
-                    <option value="failed">FAILED</option>
-                  </select>
-                </div>
+                {/* 4. Learner Exam Status (Auto-reflected from Student Dashboard) */}
+                {(() => {
+                  const isStudentPassed = Boolean(
+                    selectedStudent.learnerExamStatus === 'passed' || selectedStudent.dmtDates?.learnerExamPassed
+                  );
+                  const isStudentFailed = Boolean(
+                    selectedStudent.learnerExamStatus === 'failed' ||
+                    (selectedStudent.learnerExamAttempts &&
+                      selectedStudent.learnerExamAttempts.length > 0 &&
+                      selectedStudent.learnerExamAttempts[selectedStudent.learnerExamAttempts.length - 1]?.result === 'failed')
+                  );
+
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block font-semibold text-slate-800 text-xs">
+                          4. Learner Exam Status:
+                        </label>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          (Auto-updated from Student Dashboard)
+                        </span>
+                      </div>
+
+                      {isStudentPassed ? (
+                        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-xs space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-300">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              </div>
+                              <div className="truncate">
+                                <span className="font-bold text-emerald-950 text-sm block truncate">
+                                  Passed Written Theory Exam
+                                </span>
+                              </div>
+                            </div>
+                            <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold px-3 py-1 rounded-full shrink-0 flex items-center gap-1 shadow-2xs whitespace-nowrap">
+                              ✓ Passed
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-800/90 pl-10.5 leading-relaxed">
+                            Student marked their exam as passed on the dashboard. Practical driving lessons and trials are unlocked.
+                          </p>
+                        </div>
+                      ) : isStudentFailed ? (
+                        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl shadow-xs space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 border border-rose-300">
+                                <XCircle className="w-4 h-4 text-rose-600" />
+                              </div>
+                              <div className="truncate">
+                                <span className="font-bold text-rose-950 text-sm block truncate">
+                                  Failed Exam Attempt
+                                </span>
+                              </div>
+                            </div>
+                            <span className="bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold px-3 py-1 rounded-full shrink-0 flex items-center gap-1 shadow-2xs whitespace-nowrap">
+                              ✕ Failed
+                            </span>
+                          </div>
+                          <p className="text-xs text-rose-800/90 pl-10.5 leading-relaxed">
+                            Student recorded a failed attempt on their dashboard. Date reschedule is required for the next attempt.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl shadow-xs space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-300">
+                                <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                              </div>
+                              <div className="flex items-center gap-2 truncate">
+                                <span className="font-bold text-amber-950 text-sm whitespace-nowrap">
+                                  In Progress
+                                </span>
+                                <span className="text-[11px] text-amber-800/80 font-medium truncate hidden sm:inline">
+                                  • Awaiting Student Result
+                                </span>
+                              </div>
+                            </div>
+                            <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1 rounded-full shrink-0 flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
+                              ⏳ In Progress
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-900/90 pl-10.5 leading-relaxed">
+                            Dates are scheduled. Once the student faces their exam and selects Passed or Failed on their dashboard, this status will automatically update here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Exam Attempt History List */}
                 {selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.length > 0 && (
@@ -1812,8 +2032,8 @@ export default function StaffStudentListPage() {
                             <span
                               className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                 att.result === 'passed'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                   : 'bg-rose-50 text-rose-700 border border-rose-200'
                               }`}
                             >
                               {att.result?.toUpperCase()}
@@ -1822,17 +2042,6 @@ export default function StaffStudentListPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {dmtForm.learnerExamStatus === 'passed' && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 space-y-1">
-                    <div className="font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Trial Lesson Access Unlocked
-                    </div>
-                    <p className="text-[11px] text-slate-600">
-                      Marking as Passed satisfies US-09. If this is a Type 1 learner, they will now be able to book practical Trial lessons.
-                    </p>
                   </div>
                 )}
 
@@ -1854,14 +2063,77 @@ export default function StaffStudentListPage() {
             {/* Practical Trial Result Form */}
             {modalMode === 'record_trial' && (
               <form onSubmit={handleRecordTrial} className="space-y-4 text-xs">
-                <div className="p-3.5 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-1 text-[#152026]">
-                  <div className="font-bold text-[#152026] flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-[#1B3D59]" /> DMT 3-Attempt Rule:
+                {/* 3-Attempt Rule & 18-Month Validity Banner */}
+                <div className="p-4 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-2 text-[#152026]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="font-extrabold text-[#1B3D59] flex items-center gap-1.5 text-xs">
+                      <AlertTriangle className="w-4 h-4 text-[#1B3D59]" /> DMT 3-Attempt & 18-Month Rule
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1B3D59] text-white">
+                      Attempt #{Math.min(3, (selectedStudent.trial?.attempts?.length || 0) + 1)} of 3
+                    </span>
                   </div>
-                  <p className="text-slate-600 text-[11px]">
-                    Current attempts recorded: {selectedStudent.trial?.attempts?.length || 0} of 3 maximum allowed attempts.
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+                    <div className="bg-white/80 p-2 rounded-xl border border-[#E2D8B3]/60">
+                      <span className="text-slate-500 block text-[10px]">Attempts Used:</span>
+                      <strong className="text-[#152026]">{selectedStudent.trial?.attempts?.length || 0} / 3</strong>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-xl border border-[#E2D8B3]/60">
+                      <span className="text-slate-500 block text-[10px]">Attempts Remaining:</span>
+                      <strong className="text-emerald-700">
+                        {Math.max(0, 3 - (selectedStudent.trial?.attempts?.length || 0))} Remaining
+                      </strong>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-xl border border-[#E2D8B3]/60 col-span-2 sm:col-span-1">
+                      <span className="text-slate-500 block text-[10px]">18-Month Expiry:</span>
+                      <strong className="text-[#1B3D59]">
+                        {selectedStudent.learnerLicenseExpiryDate
+                          ? new Date(selectedStudent.learnerLicenseExpiryDate).toLocaleDateString()
+                          : '18 Months'}
+                      </strong>
+                    </div>
+                  </div>
+                  <p className="text-slate-600 text-[10.5px] leading-relaxed pt-1">
+                    Failed attempts 1 and 2 do not cancel registration. Registration is only cancelled if all 3 attempts are failed OR the 18-month validity expires.
                   </p>
                 </div>
+
+                {/* Previous Attempts History */}
+                {selectedStudent.trial?.attempts && selectedStudent.trial.attempts.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="block font-bold text-[#152026]">
+                      Previous Trial Attempts Recorded ({selectedStudent.trial.attempts.length} of 3):
+                    </label>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {selectedStudent.trial.attempts.map((att, idx) => (
+                        <div
+                          key={att._id || idx}
+                          className="p-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <span className="font-bold text-[#152026]">Attempt #{att.attemptNumber || idx + 1}: </span>
+                            <span className="text-slate-600">{new Date(att.date).toLocaleDateString()}</span>
+                            {att.score && (
+                              <span className="text-[#1B3D59] font-semibold ml-2">• Score: {att.score}</span>
+                            )}
+                            {att.examinerNotes && (
+                              <p className="text-[11px] text-slate-500 mt-0.5 truncate max-w-xs">{att.examinerNotes}</p>
+                            )}
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              att.result === 'passed'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-rose-100 text-rose-800 border border-rose-300'
+                            }`}
+                          >
+                            {att.result}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block font-semibold text-[#152026] mb-1">
@@ -1879,17 +2151,29 @@ export default function StaffStudentListPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
-                  <select
-                    value={trialForm.result}
-                    onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  >
-                    <option value="passed">PASSED (Issue Driver's License)</option>
-                    <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
-                    <option value="absent">ABSENT</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
+                    <select
+                      value={trialForm.result}
+                      onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                    >
+                      <option value="passed">PASSED (Issue Driver's License)</option>
+                      <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
+                      <option value="absent">ABSENT</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[#152026] mb-1">Score / Marks (Optional):</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 85% or Pass Grade A"
+                      value={trialForm.score || ''}
+                      onChange={(e) => setTrialForm({ ...trialForm, score: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -2009,7 +2293,7 @@ export default function StaffStudentListPage() {
                         <Calendar className="w-4 h-4 text-[#1B3D59]" />
                         1.5-Year Learner License Validity Period
                       </div>
-                      <span className="text-[11px] text-[#6A97C0] font-mono">
+                      <span className="text-[11px] text-slate-600 font-mono font-medium">
                         Rule: Start Date + 18 Months
                       </span>
                     </div>
@@ -2591,272 +2875,735 @@ export default function StaffStudentListPage() {
         </div>
       )}
 
-      {/* Walk-In Student Registration Modal (US-03) */}
+      {/* Walk-In Student Registration Modal (Full Multi-Step Process) */}
       {showWalkInModal && (
-        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
-            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-3xl w-full p-5 sm:p-7 space-y-6 max-h-[92vh] overflow-y-auto my-auto text-[#152026] animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
               <div>
-                <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
-                  <PlusCircle className="w-5 h-5 text-[#1B3D59]" /> Register Walk-In Student (US-03)
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] font-bold text-xs mb-1.5 shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Direct Branch Intake • Walk-In Registration
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2">
+                  <PlusCircle className="w-6 h-6 text-[#1B3D59]" /> Complete Student Registration Process
                 </h3>
-                <p className="text-xs text-[#6A97C0]">
-                  Direct branch office intake for in-person applicants.
+                <p className="text-xs text-slate-600 font-medium">
+                  Enroll new applicants directly at the branch office with legal profile verification & training allocation.
                 </p>
               </div>
               <button
                 onClick={() => setShowWalkInModal(false)}
-                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                title="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleRegisterWalkIn} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    Full Name <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Nimal Perera"
-                    value={walkInForm.name}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  />
+            {/* Stepper Progress Bar */}
+            <div className="grid grid-cols-4 gap-2 border-b border-[#D4EEF8] pb-4">
+              {[
+                { step: 1, label: '1. Category', desc: 'Type 1 / Type 2' },
+                { step: 2, label: '2. Profile Details', desc: 'Legal & Contact Info' },
+                { step: 3, label: '3. Package', desc: 'Curriculum & Tier' },
+                { step: 4, label: '4. Desk Intake', desc: 'Payment & Review' },
+              ].map((s) => (
+                <button
+                  key={s.step}
+                  type="button"
+                  onClick={() => {
+                    if (s.step > 2 && (!walkInForm.name.trim() || !walkInForm.dob || !walkInForm.nic.trim() || !walkInForm.phone.trim() || !walkInForm.email.trim())) {
+                      toast.error('Please complete student personal details first');
+                      setWalkInStep(2);
+                      return;
+                    }
+                    setWalkInStep(s.step);
+                  }}
+                  className={`text-left p-2.5 rounded-2xl border transition-all cursor-pointer ${
+                    walkInStep === s.step
+                      ? 'bg-[#1B3D59] text-white border-[#1B3D59] shadow-sm'
+                      : walkInStep > s.step
+                      ? 'bg-emerald-50 text-emerald-950 border-emerald-300 font-semibold'
+                      : 'bg-[#FAFCFE] text-slate-600 border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold">
+                    {walkInStep > s.step ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-black ${
+                        walkInStep === s.step ? 'bg-white text-[#1B3D59]' : 'bg-[#D4EEF8] text-[#1B3D59]'
+                      }`}>
+                        {s.step}
+                      </span>
+                    )}
+                    <span className="truncate">{s.label}</span>
+                  </div>
+                  <div className={`text-[10px] mt-0.5 truncate hidden sm:block ${
+                    walkInStep === s.step ? 'text-[#D4EEF8]' : 'text-slate-500'
+                  }`}>
+                    {s.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Step 1: Category Selection */}
+            {walkInStep === 1 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div className="text-center space-y-1">
+                  <h4 className="text-lg font-black text-[#152026]">Step 1: Select Student Enrollment Category</h4>
+                  <p className="text-xs text-slate-600 font-medium max-w-lg mx-auto">
+                    Determine whether the applicant is starting from scratch (New Learner) or already has a valid DMT Learner Permit (Trial-Ready).
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    NIC Number <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 200119203948"
-                    value={walkInForm.nic}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, nic: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    Contact Phone <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="e.g. 0771234567"
-                    value={walkInForm.phone}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    Email Address <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. student@gmail.com"
-                    value={walkInForm.email}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    Assigned Branch
-                  </label>
-                  <select
-                    value={walkInForm.branch}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, branch: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  {/* Option A: Type 1 */}
+                  <div
+                    onClick={() => setWalkInForm({ ...walkInForm, studentType: 'Type1_NewLearner' })}
+                    className={`cursor-pointer p-5 sm:p-6 rounded-2xl border-2 transition-all flex flex-col justify-between text-left ${
+                      walkInForm.studentType === 'Type1_NewLearner'
+                        ? 'border-[#1B3D59] bg-[#FAFCFE] shadow-md ring-2 ring-[#1B3D59]/20'
+                        : 'border-[#D4EEF8] bg-white hover:border-[#1B3D59]/50 hover:bg-[#FAFCFE]'
+                    }`}
                   >
-                    <option value="Maharagama">Maharagama</option>
-                    <option value="Werahara">Werahara</option>
-                    <option value="Delgoda">Delgoda</option>
-                  </select>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] flex items-center justify-center shadow-xs">
+                          <GraduationCap className="w-6 h-6" />
+                        </div>
+                        <span className="text-[10px] uppercase font-black px-3 py-1 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1]">
+                          Type 1 Student
+                        </span>
+                      </div>
+
+                      <h5 className="text-base font-extrabold text-[#152026]">Full Course Learner</h5>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed font-medium">
+                        Complete driving curriculum from scratch for beginner applicants.
+                      </p>
+
+                      <div className="mt-4 space-y-2 border-t border-[#D4EEF8] pt-3 text-xs text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>DMT Medical Examination & Registration (US-04)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Written Theory Exam Training & Quizzes (US-05)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Vehicle package selected after passing theory exam</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-[#D4EEF8] flex items-center justify-between text-xs font-bold text-[#1B3D59]">
+                      <span>{walkInForm.studentType === 'Type1_NewLearner' ? '✓ Selected Category' : 'Click to Select Type 1'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Option B: Type 2 */}
+                  <div
+                    onClick={() => setWalkInForm({ ...walkInForm, studentType: 'Type2_TrialReady' })}
+                    className={`cursor-pointer p-5 sm:p-6 rounded-2xl border-2 transition-all flex flex-col justify-between text-left ${
+                      walkInForm.studentType === 'Type2_TrialReady'
+                        ? 'border-[#1B3D59] bg-[#FAFCFE] shadow-md ring-2 ring-[#1B3D59]/20'
+                        : 'border-[#D4EEF8] bg-white hover:border-[#1B3D59]/50 hover:bg-[#FAFCFE]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-12 h-12 rounded-2xl bg-[#F3EED8] border border-amber-300 text-amber-800 flex items-center justify-center shadow-xs">
+                          <Award className="w-6 h-6 text-amber-800" />
+                        </div>
+                        <span className="text-[10px] uppercase font-black px-3 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300">
+                          Type 2 Student
+                        </span>
+                      </div>
+
+                      <h5 className="text-base font-extrabold text-[#152026]">Trial-Ready Learner</h5>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed font-medium">
+                        Applicant already holds a valid Sri Lankan DMT Learner Permit.
+                      </p>
+
+                      <div className="mt-4 space-y-2 border-t border-[#D4EEF8] pt-3 text-xs text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Theory Exam Pre-Cleared Elsewhere</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Direct Vehicle Training Package Selection (Step 3)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Immediate Trial Prep & Practical Scheduling</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-[#D4EEF8] flex items-center justify-between text-xs font-bold text-[#1B3D59]">
+                      <span>{walkInForm.studentType === 'Type2_TrialReady' ? '✓ Selected Category' : 'Click to Select Type 2'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    Student Category
-                  </label>
-                  <select
-                    value={walkInForm.studentType}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, studentType: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#1B3D59] rounded-xl font-bold focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                <div className="p-3 rounded-2xl bg-[#D4EEF8]/40 border border-[#B3D5F1] flex items-center gap-2.5 text-xs text-[#1B3D59]">
+                  <ShieldCheck className="w-4 h-4 text-[#1B3D59] shrink-0" />
+                  <span>DMT Requirement: All registered applicants must be at least 18 years of age.</span>
+                </div>
+
+                <div className="flex justify-between items-center pt-3 border-t border-[#D4EEF8]">
+                  <button
+                    type="button"
+                    onClick={() => setShowWalkInModal(false)}
+                    className="btn-secondary text-xs py-2 px-4 cursor-pointer"
                   >
-                    <option value="Type1_NewLearner">Type 1 — New Learner</option>
-                    <option value="Type2_TrialReady">Type 2 — Trial Ready</option>
-                  </select>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWalkInStep(2)}
+                    className="btn-primary text-xs py-2.5 px-6 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    Next: Personal Details <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* Type 1 Notice: Course package is NOT chosen at registration */}
-              {walkInForm.studentType === 'Type1_NewLearner' && (
-                <div className="p-3.5 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl flex items-start gap-2.5">
-                  <Info className="w-4 h-4 text-[#1B3D59] flex-shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-slate-700 leading-relaxed">
-                    <strong className="text-[#1B3D59] font-semibold block mb-0.5">
-                      Course Package Not Required at Registration
-                    </strong>
-                    Type 1 (Full Course) students enroll for the DMT medical clearance and theory prep first. The vehicle training package will be selected after passing the learner's written exam.
+            {/* Step 2: Personal Details */}
+            {walkInStep === 2 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-black text-[#152026]">Step 2: Student Profile & Verification</h4>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Enter legal identification and contact details for the applicant.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1]">
+                    {walkInForm.studentType === 'Type1_NewLearner' ? 'Type 1 Full Course' : 'Type 2 Trial Ready'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 text-xs">
+                  {/* Full Name */}
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-[#152026] mb-1">
+                      Full Legal Name <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Kasun Chamara Perera"
+                      value={walkInForm.name}
+                      onChange={(e) => setWalkInForm({ ...walkInForm, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] font-medium rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Must match the applicant's official NIC or Passport exactly.</p>
+                  </div>
+
+                  {/* Date of Birth & Live Age Calculation */}
+                  <div>
+                    <label className="block font-bold text-[#152026] mb-1">
+                      Date of Birth <span className="text-rose-600">*</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <Calendar className="w-4 h-4 text-slate-500 absolute left-3 pointer-events-none" />
+                      <input
+                        type="date"
+                        required
+                        max={new Date().toISOString().split('T')[0]}
+                        value={walkInForm.dob}
+                        onChange={(e) => setWalkInForm({ ...walkInForm, dob: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Calculated Age Badge */}
+                  <div>
+                    <label className="block font-bold text-[#152026] mb-1">
+                      DMT Age Eligibility (18+ Rule)
+                    </label>
+                    <div className={`py-2 px-3 rounded-xl border flex items-center gap-2 min-h-[38px] ${
+                      walkInCalculatedAge === null
+                        ? 'bg-[#FAFCFE] border-[#D4EEF8] text-slate-500'
+                        : walkInCalculatedAge >= 18
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                        : 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
+                    }`}>
+                      {walkInCalculatedAge === null ? (
+                        <span>Select DOB to calculate age</span>
+                      ) : walkInCalculatedAge >= 18 ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>{walkInCalculatedAge} Years Old — Eligible under DMT</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-rose-600" />
+                          <span>{walkInCalculatedAge} Years Old — Underage (Must be 18+)</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* NIC Number */}
+                  <div>
+                    <label className="block font-bold text-[#152026] mb-1">
+                      NIC / Passport Number <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 200012345678 or 981234567V"
+                      value={walkInForm.nic}
+                      onChange={(e) => setWalkInForm({ ...walkInForm, nic: e.target.value })}
+                      className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] font-mono font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none"
+                    />
+                  </div>
+
+                  {/* Contact Phone */}
+                  <div>
+                    <label className="block font-bold text-[#152026] mb-1">
+                      Contact Phone <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. 077 123 4567"
+                      value={walkInForm.phone}
+                      onChange={(e) => setWalkInForm({ ...walkInForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none"
+                    />
+                  </div>
+
+                  {/* Email Address */}
+                  <div>
+                    <label className="block font-bold text-[#152026] mb-1">
+                      Email Address <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. student@gmail.com"
+                      value={walkInForm.email}
+                      onChange={(e) => setWalkInForm({ ...walkInForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none"
+                    />
+                  </div>
+
+                  {/* Assigned Branch */}
+                  <div>
+                    <label className="block font-bold text-[#152026] mb-1">
+                      Assigned Branch <span className="text-rose-600">*</span>
+                    </label>
+                    <select
+                      value={walkInForm.branch}
+                      onChange={(e) => setWalkInForm({ ...walkInForm, branch: e.target.value })}
+                      className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none cursor-pointer"
+                    >
+                      <option value="Maharagama">Maharagama (Headquarters & Ground)</option>
+                      <option value="Werahara">Werahara (DMT Hub)</option>
+                      <option value="Delgoda">Delgoda (Branch Center)</option>
+                    </select>
+                  </div>
+
+                  {/* Default Student Portal Password */}
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-[#152026] mb-1">
+                      Student Portal Login Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showWalkInPassword ? 'text' : 'password'}
+                        value={walkInForm.password}
+                        onChange={(e) => setWalkInForm({ ...walkInForm, password: e.target.value })}
+                        placeholder="••••••••"
+                        className="w-full pl-3.5 pr-10 py-2 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] rounded-xl focus:border-[#1B3D59] outline-none font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowWalkInPassword(!showWalkInPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#152026] cursor-pointer"
+                      >
+                        {showWalkInPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">Default set to <code>Password@123</code>. The student uses their email and this password to log in.</p>
                   </div>
                 </div>
-              )}
 
-              {/* Type 2: Vehicle Package Selection */}
-              {walkInForm.studentType === 'Type2_TrialReady' && (
-                <div className="space-y-2.5 p-3.5 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-[#152026]">
-                      Select Training Package <span className="text-rose-600">*</span>
-                    </label>
-                    <span className="text-[10px] uppercase font-bold text-[#1B3D59] tracking-wider bg-[#D4EEF8] px-2 py-0.5 rounded-full">
-                      Type 2 Trial Learner
-                    </span>
-                  </div>
-
-                  <select
-                    value={walkInForm.packageType}
-                    onChange={(e) => setWalkInForm({ ...walkInForm, packageType: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] text-xs"
+                <div className="flex justify-between items-center pt-3 border-t border-[#D4EEF8]">
+                  <button
+                    type="button"
+                    onClick={() => setWalkInStep(1)}
+                    className="btn-secondary text-xs py-2 px-4 flex items-center gap-1.5 cursor-pointer"
                   >
-                    {availablePackages.length > 0 ? (
-                      <>
-                        <optgroup label="A. Individual / Private Single Lessons (Pay-Per-Lesson)">
-                          {availablePackages
-                            .filter((p) => p.categoryGroup === 'A' || p.type.includes('Individual'))
-                            .map((pkg) => (
-                              <option key={pkg._id} value={pkg.type}>
-                                {pkg.name} — Rs. {Number(pkg.price).toLocaleString()} / lesson
-                              </option>
-                            ))}
-                        </optgroup>
-                        <optgroup label="B. Standard Single Lessons (Pay-Per-Lesson)">
-                          {availablePackages
-                            .filter((p) => p.categoryGroup === 'B' || p.type.includes('Standard'))
-                            .map((pkg) => (
-                              <option key={pkg._id} value={pkg.type}>
-                                {pkg.name} — Rs. {Number(pkg.price).toLocaleString()} / lesson
-                              </option>
-                            ))}
-                        </optgroup>
-                        <optgroup label="C. Full Course Packages (Includes 15 Lessons)">
-                          {availablePackages
-                            .filter((p) => p.categoryGroup === 'C' || (!p.type.includes('Individual') && !p.type.includes('Standard')))
-                            .map((pkg) => (
-                              <option key={pkg._id} value={pkg.type}>
-                                {pkg.name} — Rs. {Number(pkg.price).toLocaleString()}
-                                {pkg.bonusLessons?.bike > 0 ? ` (+ ${pkg.bonusLessons.bike} Bike & ${pkg.bonusLessons.threeWheeler} 3-Wheel Free)` : ''}
-                              </option>
-                            ))}
-                        </optgroup>
-                        {availablePackages.some((p) => p.categoryGroup === 'Other' || (!['A', 'B', 'C'].includes(p.categoryGroup) && !p.type.includes('Individual') && !p.type.includes('Standard'))) && (
-                          <optgroup label="Other / Custom Packages">
-                            {availablePackages
-                              .filter((p) => p.categoryGroup === 'Other' || (!['A', 'B', 'C'].includes(p.categoryGroup) && !p.type.includes('Individual') && !p.type.includes('Standard')))
-                              .map((pkg) => (
-                                <option key={pkg._id} value={pkg.type}>
-                                  {pkg.name} — Rs. {Number(pkg.price).toLocaleString()}
-                                </option>
-                              ))}
-                          </optgroup>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <optgroup label="A. Individual / Private Single Lessons (Pay-Per-Lesson)">
-                          <option value="Bike_Individual">Bike (Individual / Private) — Rs. 2,000 / lesson</option>
-                          <option value="ThreeWheeler_Individual">Three-Wheel (Individual / Private) — Rs. 2,500 / lesson</option>
-                          <option value="Car_Individual">Car (Auto/Manual — Individual / Private) — Rs. 3,000 / lesson</option>
-                          <option value="HeavyVehicle_Individual">Heavy Vehicle (Individual / Private) — Rs. 3,500 / lesson</option>
-                        </optgroup>
-                        <optgroup label="B. Standard Single Lessons (Pay-Per-Lesson)">
-                          <option value="Bike_Standard">Bike (Standard Single Lesson) — Rs. 800 / lesson</option>
-                          <option value="ThreeWheeler_Standard">Three-Wheel (Standard Single Lesson) — Rs. 1,500 / lesson</option>
-                          <option value="Car_Standard">Car (Standard Single Lesson) — Rs. 2,000 / lesson</option>
-                          <option value="HeavyVehicle_Standard">Heavy Vehicle (Standard Single Lesson) — Rs. 2,500 / lesson</option>
-                        </optgroup>
-                        <optgroup label="C. Full Course Packages">
-                          <option value="Car_Full">Car Package (Auto / Manual) — Rs. 40,000 (15 Lessons + 2 Free Bike + 2 Free 3-Wheel)</option>
-                          <option value="Combo_Full">Combo Package (Car + Bike + Three-Wheel) — Rs. 65,000 (15 Lessons across all 3)</option>
-                          <option value="HeavyVehicle_Full">Heavy Vehicle Full Package — Rs. 70,000 (15 Lessons)</option>
-                        </optgroup>
-                      </>
-                    )}
-                  </select>
+                    <ArrowLeft className="w-4 h-4" /> Back to Category
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!walkInForm.name.trim()) return toast.error('Full name is required');
+                      if (!walkInForm.dob) return toast.error('Date of birth is required');
+                      if (walkInCalculatedAge !== null && walkInCalculatedAge < 18) {
+                        return toast.error('Applicant must be at least 18 years old under DMT Sri Lanka rules.');
+                      }
+                      if (!walkInForm.nic.trim()) return toast.error('NIC number is required');
+                      if (!walkInForm.phone.trim()) return toast.error('Phone number is required');
+                      if (!walkInForm.email.trim() || !walkInForm.email.includes('@')) {
+                        return toast.error('Valid email is required');
+                      }
+                      setWalkInStep(3);
+                    }}
+                    className="btn-primary text-xs py-2.5 px-6 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    Next: Training Package <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
 
-                  {/* Selected Package Details Pill */}
-                  {(() => {
-                    const sel = availablePackages.find((p) => p.type === walkInForm.packageType);
-                    if (!sel) return null;
-                    return (
-                      <div className="text-[11px] p-2.5 rounded-xl bg-white border border-[#D4EEF8] space-y-1">
-                        <div className="flex justify-between items-center text-[#152026]">
-                          <span className="font-semibold text-[#152026]">{sel.name}</span>
-                          <span className="font-mono font-bold text-[#1B3D59]">
-                            Rs. {Number(sel.price).toLocaleString()}
-                            {sel.isPerLesson ? ' / lesson' : ' total'}
+            {/* Step 3: Vehicle Training Package Selection */}
+            {walkInStep === 3 && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-black text-[#152026]">Step 3: Vehicle Training Package Selection</h4>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Configure vehicle curriculum, lesson bundle, or hourly practice slots.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1]">
+                    {walkInForm.studentType === 'Type1_NewLearner' ? 'Type 1 Full Course' : 'Type 2 Trial Ready'}
+                  </span>
+                </div>
+
+                {/* If Type 1: Informational Card */}
+                {walkInForm.studentType === 'Type1_NewLearner' ? (
+                  <div className="p-6 rounded-3xl bg-[#D4EEF8]/40 border-2 border-[#B3D5F1] space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#1B3D59] text-white flex items-center justify-center shadow-md">
+                        <GraduationCap className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h5 className="text-base font-black text-[#152026]">Course Package Not Required at Registration</h5>
+                        <span className="text-xs text-[#1B3D59] font-bold">Standard Sri Lanka DMT Milestone Sequence (US-04 & US-05)</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                      Under Sithma Academy protocol, <strong>Type 1 (Full Course)</strong> students enroll for the official Ministry & DMT medical clearance and theory test preparation first. The physical vehicle training package (Auto Car, Manual Car, Bike, or Combo) will be selected in <strong>Milestone Step 5</strong> after the learner successfully passes the DMT written exam.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                      <div className="p-3 bg-white rounded-xl border border-[#D4EEF8]">
+                        <span className="text-slate-500 font-medium block text-[11px]">Immediate Stage</span>
+                        <strong className="text-[#152026] font-bold">Medical & Written Exam Intake</strong>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-[#D4EEF8]">
+                        <span className="text-slate-500 font-medium block text-[11px]">Advance Deposit Required</span>
+                        <strong className="text-emerald-700 font-bold">LKR 5,000 Advance Fee</strong>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* If Type 2: Rich Tiered Package Selector */
+                  <div className="space-y-4">
+                    {/* Category Tier Selector: C (Full Course), A (Individual), B (Standard) */}
+                    <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWalkInSelectedTier('C');
+                          const firstInTier = walkInDisplayedPackages.find((p) => p.categoryGroup === 'C');
+                          if (firstInTier) setWalkInForm({ ...walkInForm, packageType: firstInTier.type });
+                        }}
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
+                          walkInSelectedTier === 'C'
+                            ? 'bg-[#1B3D59] text-white shadow-sm font-black'
+                            : 'text-[#152026] hover:bg-[#D4EEF8]/40'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                          <Layers className="w-3.5 h-3.5" /> Full Packages
+                        </span>
+                        <span className="text-[10px] opacity-85">Group C • 15 Lessons</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWalkInSelectedTier('A');
+                          const firstInTier = walkInDisplayedPackages.find((p) => p.categoryGroup === 'A');
+                          if (firstInTier) setWalkInForm({ ...walkInForm, packageType: firstInTier.type });
+                        }}
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
+                          walkInSelectedTier === 'A'
+                            ? 'bg-[#1B3D59] text-white shadow-sm font-black'
+                            : 'text-[#152026] hover:bg-[#D4EEF8]/40'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                          <Award className="w-3.5 h-3.5" /> Individual / Private
+                        </span>
+                        <span className="text-[10px] opacity-85">Group A • Hourly</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWalkInSelectedTier('B');
+                          const firstInTier = walkInDisplayedPackages.find((p) => p.categoryGroup === 'B');
+                          if (firstInTier) setWalkInForm({ ...walkInForm, packageType: firstInTier.type });
+                        }}
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
+                          walkInSelectedTier === 'B'
+                            ? 'bg-[#1B3D59] text-white shadow-sm font-black'
+                            : 'text-[#152026] hover:bg-[#D4EEF8]/40'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Standard Single
+                        </span>
+                        <span className="text-[10px] opacity-85">Group B • Hourly</span>
+                      </button>
+                    </div>
+
+                    {/* Package Cards Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-56 overflow-y-auto p-1">
+                      {walkInActivePackagesForTier.map((pkg) => {
+                        const isSelected = walkInForm.packageType === pkg.type;
+                        return (
+                          <div
+                            key={pkg.type}
+                            onClick={() => setWalkInForm({ ...walkInForm, packageType: pkg.type })}
+                            className={`cursor-pointer rounded-2xl p-3.5 border transition-all relative flex flex-col justify-between ${
+                              isSelected
+                                ? 'bg-[#FAFCFE] border-2 border-[#1B3D59] shadow-sm'
+                                : 'bg-white border border-[#D4EEF8] hover:border-[#1B3D59]/50'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                                    isSelected ? 'bg-[#1B3D59] text-white' : 'bg-[#D4EEF8] text-[#1B3D59]'
+                                  }`}>
+                                    {getWalkInVehicleIcon(pkg.vehicleCategory || pkg.type)}
+                                  </div>
+                                  <div>
+                                    <h6 className="text-xs font-black text-[#152026] leading-snug">{pkg.name}</h6>
+                                    <span className="text-[10px] text-slate-600 font-medium">
+                                      {pkg.isPerLesson ? 'Pay-Per-Lesson' : `${pkg.lessons} Lessons Package`}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                                  isSelected ? 'bg-[#1B3D59] text-white' : 'border border-[#D4EEF8]'
+                                }`}>
+                                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                </div>
+                              </div>
+
+                              <div className="pt-2 flex items-baseline justify-between border-t border-[#D4EEF8]">
+                                <span className="text-[10px] text-slate-500 font-bold uppercase">Rate</span>
+                                <span className="text-xs font-black text-[#1B3D59] font-mono">
+                                  Rs. {Number(pkg.price).toLocaleString()}
+                                  {pkg.isPerLesson && <span className="text-[10px] text-slate-500 font-normal"> / hr</span>}
+                                </span>
+                              </div>
+
+                              {pkg.bonusText && (
+                                <div className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 flex items-center gap-1.5">
+                                  <Gift className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  <span className="truncate">{pkg.bonusText}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Stepper for Pay-Per-Lesson quantity */}
+                    {activeWalkInPackage?.isPerLesson && (
+                      <div className="p-3 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl flex items-center justify-between">
+                        <div>
+                          <label className="text-xs font-bold text-[#152026] block">Session Hours / Lessons:</label>
+                          <span className="text-[10px] text-slate-600">
+                            LKR {Number(activeWalkInPackage.price).toLocaleString()} × {walkInForm.lessonQty} = <strong className="text-[#1B3D59]">LKR {(Number(activeWalkInPackage.price) * (walkInForm.lessonQty || 1)).toLocaleString()}</strong>
                           </span>
                         </div>
-                        {sel.bonusLessons?.bike > 0 && (
-                          <div className="text-emerald-700 font-medium flex items-center gap-1">
-                            <Gift className="w-3 h-3 text-emerald-600" />
-                            <span>Bonus: 2 FREE Bike lessons + 2 FREE Three-Wheel lessons</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setWalkInForm({ ...walkInForm, lessonQty: Math.max(1, (walkInForm.lessonQty || 1) - 1) })}
+                            className="w-7 h-7 rounded-xl bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8] flex items-center justify-center font-black text-xs cursor-pointer"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="w-8 text-center font-mono font-black text-sm">{walkInForm.lessonQty || 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => setWalkInForm({ ...walkInForm, lessonQty: Math.min(20, (walkInForm.lessonQty || 1) + 1) })}
+                            className="w-7 h-7 rounded-xl bg-white border border-[#D4EEF8] hover:bg-[#D4EEF8] flex items-center justify-center font-black text-xs cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {walkInForm.studentType === 'Type2_TrialReady' && (
-                <div className="p-3 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-2 text-[#152026]">
-                  <div className="flex items-center gap-2 text-[#152026] font-bold">
-                    <CheckCircle2 className="w-4 h-4 text-[#1B3D59]" /> Type 2 Advance Payment Collection
+                    )}
                   </div>
-                  <label className="flex items-center gap-2 text-[#152026] cursor-pointer">
+                )}
+
+                <div className="flex justify-between items-center pt-3 border-t border-[#D4EEF8]">
+                  <button
+                    type="button"
+                    onClick={() => setWalkInStep(2)}
+                    className="btn-secondary text-xs py-2 px-4 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back to Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWalkInStep(4)}
+                    className="btn-primary text-xs py-2.5 px-6 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    Next: Intake & Payment <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Desk Intake & Payment Collection */}
+            {walkInStep === 4 && (
+              <form onSubmit={handleRegisterWalkIn} className="space-y-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-black text-[#152026]">Step 4: Branch Desk Intake & Advance Fee</h4>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Review registration details and record on-the-spot physical cash payment.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 border border-emerald-300">
+                    Final Confirmation
+                  </span>
+                </div>
+
+                {/* Summary Card */}
+                <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-2.5 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <span className="text-slate-500 font-bold block text-[10px] uppercase">Applicant</span>
+                      <strong className="text-[#152026] text-xs truncate block">{walkInForm.name || '—'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-bold block text-[10px] uppercase">NIC / Age</span>
+                      <strong className="text-[#152026] text-xs block font-mono">{walkInForm.nic || '—'} {walkInCalculatedAge ? `(${walkInCalculatedAge} yrs)` : ''}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-bold block text-[10px] uppercase">Category</span>
+                      <strong className="text-[#1B3D59] text-xs block">
+                        {walkInForm.studentType === 'Type1_NewLearner' ? 'Type 1 Full Course' : 'Type 2 Trial Only'}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-bold block text-[10px] uppercase">Branch Center</span>
+                      <strong className="text-[#152026] text-xs block">{walkInForm.branch} Branch</strong>
+                    </div>
+                  </div>
+
+                  {walkInForm.studentType === 'Type2_TrialReady' && activeWalkInPackage && (
+                    <div className="pt-2 border-t border-[#D4EEF8] flex items-center justify-between">
+                      <span className="text-slate-600 font-medium">Selected Training Package:</span>
+                      <strong className="text-[#1B3D59]">
+                        {activeWalkInPackage.name} {activeWalkInPackage.isPerLesson ? `(${walkInForm.lessonQty} hrs)` : '(15 Lessons)'} • LKR {activeWalkInPackage.isPerLesson ? ((activeWalkInPackage.price || 0) * (walkInForm.lessonQty || 1)).toLocaleString() : (activeWalkInPackage.price || 0).toLocaleString()}
+                      </strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desk Payment Collection Options */}
+                <div className="p-4 rounded-2xl bg-[#F3EED8] border border-amber-300 space-y-3 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-[#152026]">
+                    <DollarSign className="w-5 h-5 text-[#1B3D59]" />
+                    <span>In-Person Physical Cash Advance Payment (Counter Intake)</span>
+                  </div>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={walkInForm.advancePaymentCollected}
                       onChange={(e) => setWalkInForm({ ...walkInForm, advancePaymentCollected: e.target.checked })}
-                      className="w-4 h-4 text-[#1B3D59] rounded border-[#D4EEF8]"
+                      className="w-4 h-4 text-[#1B3D59] rounded border-slate-300 mt-0.5"
                     />
-                    <span>Collected Rs. 5,000 Advance Payment in cash/slip at desk</span>
+                    <div>
+                      <strong className="text-[#152026] block">
+                        Collected LKR 5,000 Advance Fee in physical cash at the branch desk
+                      </strong>
+                      <span className="text-[11px] text-slate-700">
+                        Generates a verified counter payment entry with official reference <code>WALKIN-ADV-...</code>.
+                      </span>
+                    </div>
                   </label>
-                  <p className="text-[10px] text-slate-600">
-                    If checked, the student account will be activated immediately upon registration.
-                  </p>
-                </div>
-              )}
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
-                <button
-                  type="button"
-                  onClick={() => setShowWalkInModal(false)}
-                  className="btn-secondary text-xs py-2 px-4"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingWalkIn}
-                  className="btn-primary text-xs py-2 px-5 font-bold shadow-md"
-                >
-                  {submittingWalkIn ? 'Registering...' : 'Complete Walk-In Registration'}
-                </button>
-              </div>
-            </form>
+                  {walkInForm.advancePaymentCollected && (
+                    <div className="pl-6 pt-2 border-t border-amber-200">
+                      <label className="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={walkInForm.skipVerificationQueue}
+                          onChange={(e) => setWalkInForm({ ...walkInForm, skipVerificationQueue: e.target.checked })}
+                          className="w-4 h-4 text-[#1B3D59] rounded border-slate-300 mt-0.5"
+                        />
+                        <div>
+                          <strong className="text-emerald-900 block font-bold">
+                            ✓ Immediately Activate Student Account (Instant Registration)
+                          </strong>
+                          <span className="text-[11px] text-slate-700">
+                            Student account becomes Active right now. The student can immediately log into the student portal, start online theory revision, and schedule practice sessions.
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-3 border-t border-[#D4EEF8]">
+                  <button
+                    type="button"
+                    onClick={() => setWalkInStep(3)}
+                    className="btn-secondary text-xs py-2 px-4 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back to Package
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingWalkIn}
+                    className="btn-primary text-xs py-2.5 px-6 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {submittingWalkIn ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" /> Registering Student...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" /> Complete Walk-In Registration
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -3022,7 +3769,7 @@ export default function StaffStudentListPage() {
                     <FileText className="w-4 h-4 text-[#1B3D59]" /> Submitted Payment Slip &amp; Bank Transfer
                   </div>
                   {loadingStudentPayments && (
-                    <span className="text-[11px] text-[#6A97C0] flex items-center gap-1 font-bold">
+                    <span className="text-[11px] text-slate-600 flex items-center gap-1 font-bold">
                       <RefreshCw className="w-3 h-3 animate-spin" /> Fetching latest slips...
                     </span>
                   )}

@@ -4,6 +4,8 @@ const Package = require('../models/Package');
 const Notification = require('../models/Notification');
 const Payment = require('../models/Payment');
 const RescheduleRequest = require('../models/RescheduleRequest');
+const Booking = require('../models/Booking');
+const TimeSlot = require('../models/TimeSlot');
 
 // @desc    Get all students with filtering, searching, and pagination (Staff/Admin only)
 // @route   GET /api/students
@@ -204,9 +206,27 @@ exports.getStudentById = async (req, res) => {
       });
     }
 
+    const Payment = require('../models/Payment');
+    const latestPayment = await Payment.findOne({
+      studentId: student._id,
+      paymentType: 'advance',
+    }).sort({ createdAt: -1 });
+
+    const studentObj = sanitizeStudentForType(student.toObject());
+    const hasSubmittedPayment = Boolean(
+      latestPayment ||
+      ['pending', 'verified'].includes(student.advancePaymentStatus) ||
+      student.isAdvancePaid
+    );
+    studentObj.latestPayment = latestPayment;
+    studentObj.hasSubmittedPayment = hasSubmittedPayment;
+    if (latestPayment && latestPayment.transactionReference) {
+      studentObj.advancePaymentReference = latestPayment.transactionReference;
+    }
+
     return res.status(200).json({
       success: true,
-      student: sanitizeStudentForType(student),
+      student: studentObj,
     });
   } catch (error) {
     return res.status(500).json({
@@ -544,6 +564,16 @@ exports.updateDmtDates = async (req, res) => {
           student.learnerExamMarks = null;
           student.dmtDates.learnerExamMarks = null;
         }
+        if (!student.learnerExamAttempts || student.learnerExamAttempts.length === 0 || student.learnerExamAttempts[student.learnerExamAttempts.length - 1]?.result !== 'passed') {
+          student.learnerExamAttempts = student.learnerExamAttempts || [];
+          student.learnerExamAttempts.push({
+            attemptNumber: student.learnerExamAttempts.length + 1,
+            date: new Date(),
+            result: 'passed',
+            marks: numericMarks || 35,
+          });
+          student.learnerExamAttemptsCount = student.learnerExamAttempts.length;
+        }
         updates.push('Learner Exam Status (Passed — Trial Lessons Unlocked)');
       } else if (isFailed) {
         student.written_exam_status = 'Fail';
@@ -551,6 +581,16 @@ exports.updateDmtDates = async (req, res) => {
         student.dmtDates.learnerExamPassed = false;
         if (student.studentType === 'Type1_NewLearner' || student.studentType === 'Type 1') {
           student.trialEligible = false;
+        }
+        if (!student.learnerExamAttempts || student.learnerExamAttempts.length === 0 || student.learnerExamAttempts[student.learnerExamAttempts.length - 1]?.result !== 'failed') {
+          student.learnerExamAttempts = student.learnerExamAttempts || [];
+          student.learnerExamAttempts.push({
+            attemptNumber: student.learnerExamAttempts.length + 1,
+            date: new Date(),
+            result: 'failed',
+            marks: numericMarks || 25,
+          });
+          student.learnerExamAttemptsCount = student.learnerExamAttempts.length;
         }
         updates.push('Learner Exam Status (Failed)');
       } else {
@@ -672,6 +712,7 @@ exports.updateDmtDates = async (req, res) => {
 };
 
 // @desc    Record a Trial attempt and result (Staff / Admin only)
+// @desc    Record a practical trial attempt outcome (Passed/Failed/Absent) - US Requirements 5, 6, 7, 8
 // @route   POST or PATCH /api/students/:id/trial-attempt, /api/students/:id/trial
 // @access  Staff, Admin
 exports.recordTrialAttempt = async (req, res) => {
@@ -679,6 +720,9 @@ exports.recordTrialAttempt = async (req, res) => {
     const attemptDate = req.body.attemptDate || req.body.date || new Date();
     const result = req.body.result;
     const examinerNotes = req.body.examinerNotes || req.body.notes || '';
+    const score = req.body.score || req.body.marks || '';
+    const marks = req.body.marks !== undefined && req.body.marks !== null && req.body.marks !== '' ? Number(req.body.marks) : null;
+    const completionDate = req.body.completionDate || attemptDate;
 
     if (!attemptDate || !result) {
       return res.status(400).json({
@@ -700,6 +744,15 @@ exports.recordTrialAttempt = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Student record not found',
+      });
+    }
+
+    // Rule 7 & 8: Check 1.5-Year / 18-Month Validity Period
+    const now = new Date();
+    if (student.learnerLicenseExpiryDate && now > new Date(student.learnerLicenseExpiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration Expired: 18-month validity period has ended. No further attempts can be recorded in this cycle. Please start a new registration.',
       });
     }
 
@@ -729,55 +782,105 @@ exports.recordTrialAttempt = async (req, res) => {
       student.trial.attempts = [];
     }
 
-    // Business Rule Check: Maximum 3 attempts
+    // Rule 5: Maximum 3 attempts allowed in current registration cycle
     if (student.trial.attempts.length >= 3) {
       return res.status(400).json({
         success: false,
-        message: 'Maximum limit reached: A student is allowed a maximum of 3 Trial attempts.',
+        message: 'All 3 Trial Exam attempts have already been used for this registration cycle.',
       });
     }
 
+    // Rule 5: Track Attempt number, Trial Exam Date, Result, Score, Pass/Fail status, Completion date
     const attemptNumber = student.trial.attempts.length + 1;
     student.trial.attempts.push({
       attemptNumber,
       date: new Date(attemptDate),
       result: normResult,
+      score: score ? score.toString() : '',
+      marks,
+      status: normResult === 'passed' ? 'passed' : normResult === 'failed' ? 'failed' : 'absent',
+      completionDate: new Date(completionDate),
       notes: examinerNotes,
       examinerNotes: examinerNotes,
     });
     student.trial.attemptsUsed = student.trial.attempts.length;
 
+    // Rule 6: Failed attempt does NOT immediately cancel registration (remaining: 2, 1, 0)
+    // Rule 8: Condition A – Only when all 3 attempts fail is registration cancelled
     if (normResult === 'passed') {
       student.trial.licenseObtained = true;
       student.trial.licenseIssuedDate = new Date(attemptDate);
       student.registrationStatus = 'completed';
+      student.isPassed = true;
+      student.learnerLicenseStatus = 'completed';
+    } else {
+      const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
+      if (attemptsRemaining === 0) {
+        // Condition A triggered: All 3 attempts failed -> Cancel registration
+        student.registrationStatus = 'cancelled';
+        student.accountStatus = 'cancelled';
+        student.account_status = 'Cancelled';
+        student.learnerLicenseStatus = 'attempts_exhausted';
+        student.isAdvancePaid = false;
+        student.isPremium = false;
+      }
     }
 
+    student.lastActivityDate = new Date();
     await student.save();
 
     // Trigger in-app notification if user exists
     if (student.userId?._id) {
       try {
-        await Notification.create({
-          recipientId: student.userId._id,
-          recipientRole: 'student',
-          title: normResult === 'passed' ? '🎉 Congratulations! Trial Exam Passed' : 'Trial Exam Result Recorded',
-          message:
-            normResult === 'passed'
-              ? `You passed Trial Attempt #${attemptNumber}! Your driving license process is now completed.`
-              : `Trial Attempt #${attemptNumber} result was recorded as '${normResult}'.`,
-          type: 'trial',
-        });
+        const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
+        if (normResult === 'passed') {
+          await Notification.create({
+            recipientId: student.userId._id,
+            recipientRole: 'student',
+            title: '🎉 Congratulations! Trial Exam Passed',
+            message: `You passed Trial Attempt #${attemptNumber}! Your practical driving license process is now completed.`,
+            type: 'trial',
+            link: '/student/dashboard',
+          });
+        } else if (attemptsRemaining > 0) {
+          await Notification.create({
+            recipientId: student.userId._id,
+            recipientRole: 'student',
+            title: `Trial Exam Attempt #${attemptNumber} Result Recorded`,
+            message: `Trial Attempt #${attemptNumber} result was recorded as ${normResult}. You have ${attemptsRemaining} of 3 attempt(s) remaining. Registration remains active.`,
+            type: 'trial',
+            link: '/student/dashboard',
+          });
+        } else {
+          await Notification.create({
+            recipientId: student.userId._id,
+            recipientRole: 'student',
+            title: '⚠️ Registration Cancelled – 3 Trial Attempts Exhausted',
+            message: 'All 3 Trial Exam attempts have been used and were unsuccessful. Your current registration cycle has been cancelled in accordance with DMT regulations. Please visit your dashboard to initiate a new registration cycle.',
+            type: 'trial',
+            link: '/student/dashboard',
+          });
+        }
       } catch (notifErr) {
         console.warn('Failed to send trial attempt notification:', notifErr.message);
       }
     }
 
+    const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
+    const message = normResult === 'passed'
+      ? `Trial attempt #${attemptNumber} recorded as PASSED! License process completed.`
+      : attemptsRemaining > 0
+      ? `Trial attempt #${attemptNumber} recorded as ${normResult}. Student has ${attemptsRemaining} attempt(s) remaining.`
+      : `All 3 Trial attempts failed. Registration cycle has been automatically cancelled.`;
+
     return res.status(200).json({
       success: true,
-      message: `Trial attempt #${attemptNumber} recorded successfully`,
+      message,
       trial: student.trial,
+      attemptsRemaining,
+      registrationStatus: student.registrationStatus,
       licenseObtained: student.trial.licenseObtained,
+      student: sanitizeStudentForType(student),
     });
   } catch (error) {
     console.error('Error recording trial attempt:', error);
@@ -1125,6 +1228,7 @@ exports.registerWalkInStudent = async (req, res) => {
       email,
       phone,
       nic,
+      dob,
       branch = 'Maharagama',
       studentType = 'Type1_NewLearner',
       packageId,
@@ -1197,6 +1301,7 @@ exports.registerWalkInStudent = async (req, res) => {
       email: cleanEmail,
       phone: phone.trim(),
       nic: nic.trim(),
+      dob: dob ? new Date(dob) : undefined,
       passwordHash,
       role: 'student',
       status: initialStatus,
@@ -1211,6 +1316,7 @@ exports.registerWalkInStudent = async (req, res) => {
     const student = await Student.create({
       userId: user._id,
       nic: nic.trim(),
+      dob: dob ? new Date(dob) : undefined,
       studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
       branch,
       registrationStatus: isImmediateVerified ? 'registered' : 'pending_payment',
@@ -2169,6 +2275,74 @@ exports.getRegistrationCycles = async (req, res) => {
   }
 };
 
+// Helper to cancel any bookings scheduled on or after Trial Exam Date (Rules 2 & 3)
+const cancelBookingsOnOrAfterTrialDate = async (student, trialDate, staffUser) => {
+  try {
+    const cutoffDate = new Date(trialDate);
+    cutoffDate.setHours(0, 0, 0, 0);
+
+    const activeBookings = await Booking.find({
+      studentId: student._id,
+      status: { $in: ['confirmed', 'pending'] },
+    }).populate('timeSlotId');
+
+    const conflictingBookings = activeBookings.filter((b) => {
+      if (!b.timeSlotId || !b.timeSlotId.date) return false;
+      const slotDate = new Date(b.timeSlotId.date);
+      slotDate.setHours(0, 0, 0, 0);
+      return slotDate.getTime() >= cutoffDate.getTime();
+    });
+
+    let cancelledCount = 0;
+    for (const b of conflictingBookings) {
+      b.status = 'cancelled';
+      b.cancellationReason = 'Cancelled – Trial Exam Date Restriction';
+      await b.save();
+
+      if (b.timeSlotId && b.timeSlotId._id) {
+        const slot = await TimeSlot.findById(b.timeSlotId._id);
+        if (slot) {
+          slot.bookedCount = Math.max(0, (slot.bookedCount || 1) - 1);
+          if (slot.status === 'full') {
+            slot.status = 'available';
+          }
+          await slot.save();
+        }
+      }
+      cancelledCount++;
+    }
+
+    if (cancelledCount > 0) {
+      student.lessonsUsed = Math.max(0, (student.lessonsUsed || 0) - cancelledCount);
+      if (student.package) {
+        student.package.lessonsUsed = student.lessonsUsed;
+      }
+      await student.save();
+
+      const dateFormatted = new Date(trialDate).toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+
+      await Notification.create({
+        recipientId: student.userId?._id || student.userId,
+        recipientRole: 'student',
+        title: '⚠️ Lesson Bookings Cancelled – Trial Exam Cut-Off',
+        message: `${cancelledCount} lesson booking(s) scheduled on or after your newly scheduled Trial Exam Date (${dateFormatted}) have been automatically cancelled. Lessons cannot be taken on or after the trial date. Your package lesson balance has been restored.`,
+        type: 'booking',
+        link: '/student/lessons',
+      });
+    }
+
+    return cancelledCount;
+  } catch (err) {
+    console.error('Error auto-cancelling bookings after trial date:', err);
+    return 0;
+  }
+};
+
 // @desc    Set or update Practical Trial Date for a student (Staff / Admin only)
 // @route   PATCH /api/students/:id/trial-date
 // @access  Staff, Admin
@@ -2207,6 +2381,9 @@ exports.setTrialDate = async (req, res) => {
 
     await student.save();
 
+    // Cancel any existing lesson bookings on or after the newly assigned Trial Exam Date (Rules 2 & 3)
+    const cancelledCount = await cancelBookingsOnOrAfterTrialDate(student, parsedDate, req.user);
+
     // Trigger in-app notification for student
     const hasTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
     const dateFormatted = parsedDate.toLocaleDateString('en-US', {
@@ -2221,7 +2398,7 @@ exports.setTrialDate = async (req, res) => {
       recipientId: student.userId._id || student.userId,
       recipientRole: 'student',
       title: '📅 Practical Trial Date Scheduled',
-      message: `Your practical trial exam has been scheduled for ${dateFormatted} by ${req.user.name || 'Branch Staff'}. You may book practical lessons up until this date.`,
+      message: `Your practical trial exam has been scheduled for ${dateFormatted} by ${req.user.name || 'Branch Staff'}. In accordance with DMT regulations, lessons can only be booked before this date.${cancelledCount > 0 ? ` ${cancelledCount} conflicting lesson(s) on or after this date have been automatically cancelled and your package balance restored.` : ''}`,
       type: 'trial',
       link: '/student/dashboard',
     });
@@ -2231,9 +2408,14 @@ exports.setTrialDate = async (req, res) => {
       .populate('package.packageId')
       .populate('trial_date_set_by', 'name role');
 
+    const message = cancelledCount > 0
+      ? `Practical trial date scheduled for ${dateFormatted}. ${cancelledCount} lesson booking(s) on or after this date were automatically cancelled.`
+      : 'Trial date scheduled successfully';
+
     return res.status(200).json({
       success: true,
-      message: 'Trial date scheduled successfully',
+      message,
+      cancelledCount,
       trialDate: student.trial_date,
       student: sanitizeStudentForType(populatedStudent),
     });
@@ -2547,6 +2729,7 @@ exports.reviewRescheduleRequest = async (req, res) => {
           student.trialEligible = true;
           if (!student.trial) student.trial = {};
           student.trial.trialDate = parsedNewDate;
+          await cancelBookingsOnOrAfterTrialDate(student, parsedNewDate, req.user);
         }
 
         student.lastActivityDate = new Date();

@@ -125,23 +125,21 @@ export default function DmtMilestoneTimeline({ student }) {
   ];
 
   return (
-    <div className="bg-white border border-[#D4EEF8] rounded-3xl p-6 space-y-6 shadow-sm text-[#152026]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D4EEF8] pb-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DBE2EF] pb-4">
         <div>
-          <h2 className="text-lg font-bold text-[#152026] flex items-center gap-2">
+          <h2 className="text-lg font-black text-[#0B2447] flex items-center gap-2">
             <Clock className="w-5 h-5 text-[#1B3D59]" /> DMT Regulatory Milestone Stepper
           </h2>
-          <p className="text-xs text-[#6A97C0] font-medium">
+          <p className="text-xs text-slate-700 font-semibold leading-relaxed">
             {isType2
               ? 'Type 2 (Trial-Ready) Track — Learner Exam pre-cleared, tracking practical trial attempts & 1.5-yr window'
               : 'Type 1 (New Learner) Track — Tracking Medical, Learner Exam, and Practical Trial Progression'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] text-xs font-bold">
-            {student.branch} Branch
-          </span>
-          <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30 text-xs font-bold">
+          <span className="badge badge-info font-bold">{student.branch} Branch</span>
+          <span className={`badge ${isType2 ? 'badge-accent' : 'badge-success'} font-bold`}>
             {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
           </span>
         </div>
@@ -150,19 +148,19 @@ export default function DmtMilestoneTimeline({ student }) {
       {/* Deadline Alert Banner */}
       {deadlineWarning && (
         <div
-          className={`p-3.5 rounded-2xl flex items-center gap-2.5 text-xs font-semibold ${
+          className={`p-3.5 rounded-xl flex items-center gap-2.5 text-xs font-bold ${
             deadlineWarning.type === 'danger'
-              ? 'bg-rose-50 text-rose-800 border border-rose-200'
-              : 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
+              ? 'bg-rose-50 text-rose-900 border border-rose-200'
+              : 'bg-amber-50 text-amber-900 border border-amber-300'
           }`}
         >
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-[#1B3D59]" />
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           <span>{deadlineWarning.message}</span>
         </div>
       )}
 
       {/* Timeline Stepper */}
-      <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#D4EEF8]">
+      <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#B3D5F1]">
         {milestones.map((m) => {
           const Icon = m.icon;
           const isCompleted = m.status === 'completed';
@@ -172,26 +170,26 @@ export default function DmtMilestoneTimeline({ student }) {
             <div key={m.id} className="relative group">
               {/* Stepper Dot */}
               <div
-                className={`absolute -left-6 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all border shadow-xs ${
+                className={`absolute -left-6 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all border shadow-sm ${
                   isCompleted
                     ? 'bg-emerald-600 text-white border-emerald-400'
                     : isInProgress
-                    ? 'bg-[#1B3D59] text-white border-[#6A97C0]'
-                    : 'bg-[#FAFCFE] text-[#6A97C0] border-[#D4EEF8]'
+                    ? 'bg-[#1B3D59] text-white border-blue-300 animate-pulse'
+                    : 'bg-slate-100 text-slate-600 border-slate-300'
                 }`}
               >
                 {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
               </div>
 
               {/* Step Content */}
-              <div className="bg-[#FAFCFE] p-4 rounded-2xl border border-[#D4EEF8] hover:border-[#1B3D59] transition-colors">
+              <div className="bg-[#FAFBFC] p-4 rounded-xl border border-[#D4EEF8] hover:border-[#6A97C0] transition-colors shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                  <h3 className="font-bold text-sm text-[#152026] flex items-center gap-2">
+                  <h3 className="font-black text-sm text-[#0B2447] flex items-center gap-2">
                     {m.title}
                   </h3>
-                  <span className="text-xs text-[#6A97C0] font-semibold">{m.date}</span>
+                  <span className="text-xs text-[#1B3D59] font-black font-mono">{m.date}</span>
                 </div>
-                <p className="text-xs text-[#152026]/80 leading-relaxed font-medium">{m.desc}</p>
+                <p className="text-xs text-slate-700 leading-relaxed font-semibold">{m.desc}</p>
               </div>
             </div>
           );
