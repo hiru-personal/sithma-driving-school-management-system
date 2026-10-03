@@ -2171,23 +2171,34 @@ exports.uploadFinalLicense = async (req, res) => {
     student.lastActivityDate = new Date();
     await student.save();
 
-    if (req.user.role === 'student') {
-      await Notification.create({
-        recipientRole: 'staff',
-        title: '📸 Final Driving License Photo Uploaded',
-        message: `Student ${student.userId.name} (${student.branch}) has uploaded their final driving license photo for verification.`,
-        type: 'general',
-        link: '/staff/students',
-      });
-    } else if (student.finalLicense.verificationStatus === 'verified') {
-      await Notification.create({
-        recipientId: student.userId._id || student.userId,
-        recipientRole: 'student',
-        title: '🏁 LICENSE COMPLETED!',
-        message: 'Your driving license information has been successfully verified and completed!',
-        type: 'dmt-date',
-        link: '/student/dashboard',
-      });
+    try {
+      if (req.user.role === 'student') {
+        const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } }, '_id role');
+        for (const su of staffUsers) {
+          await Notification.create({
+            recipientId: su._id,
+            recipientRole: su.role,
+            title: '📸 Final Driving License Photo Uploaded',
+            message: `Student ${student.userId?.name || 'A student'} (${student.branch || 'Branch'}) has uploaded their final driving license photo for verification.`,
+            type: 'system',
+            link: '/staff/students',
+          });
+        }
+      } else if (student.finalLicense.verificationStatus === 'verified') {
+        const studentUserId = student.userId?._id || student.userId;
+        if (studentUserId) {
+          await Notification.create({
+            recipientId: studentUserId,
+            recipientRole: 'student',
+            title: '🏁 LICENSE COMPLETED!',
+            message: 'Your driving license information has been successfully verified and completed!',
+            type: 'dmt-date',
+            link: '/student/dashboard',
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.warn('Failed to send license upload notification:', notifErr.message);
     }
 
     const populatedStudent = await Student.findById(student._id)
@@ -2200,7 +2211,7 @@ exports.uploadFinalLicense = async (req, res) => {
         student.finalLicense.verificationStatus === 'verified'
           ? 'Driving license photo verified. License process completed!'
           : 'Driving license photo uploaded successfully. Pending verification.',
-      student: populatedStudent,
+      student: sanitizeStudentForType(populatedStudent),
     });
   } catch (error) {
     console.error('Error uploading final license photo:', error);

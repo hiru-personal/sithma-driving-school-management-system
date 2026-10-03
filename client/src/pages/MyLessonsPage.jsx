@@ -49,6 +49,11 @@ export default function MyLessonsPage() {
     student?.learnerExamStatus === 'passed' ||
     student?.dmtDates?.learnerExamPassed
   );
+  const isTrialPassed = Boolean(
+    student?.trial?.licenseObtained ||
+    student?.isPassed ||
+    student?.trial?.attempts?.some((a) => a.result === 'passed')
+  );
 
   // Shared Trial Date Tracking
   const hasTrialDate = Boolean(student?.trial_date && !isNaN(new Date(student.trial_date).getTime()));
@@ -185,21 +190,52 @@ export default function MyLessonsPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <Link to="/student/lessons/book" className="btn-primary text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
-            <Calendar className="w-4 h-4" /> Book New Lesson
-          </Link>
-          <button onClick={openFreeClassModal} className="btn-secondary text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
-            <Gift className="w-4 h-4 text-[#1B3D59]" /> Book Free Weekly Class
-          </button>
-          <button onClick={() => setIsExtraModalOpen(true)} className="btn-light text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
-            <PlusCircle className="w-4 h-4 text-[#1B3D59]" /> Request Extra Lessons
-          </button>
-        </div>
+        {isTrialPassed ? (
+          <div className="px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-1.5 shadow-xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Practical Trial Passed • Lessons Closed</span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <Link to="/student/lessons/book" className="btn-primary text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
+              <Calendar className="w-4 h-4" /> Book New Lesson
+            </Link>
+            <button onClick={openFreeClassModal} className="btn-secondary text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
+              <Gift className="w-4 h-4 text-[#1B3D59]" /> Book Free Weekly Class
+            </button>
+            <button onClick={() => setIsExtraModalOpen(true)} className="btn-light text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
+              <PlusCircle className="w-4 h-4 text-[#1B3D59]" /> Request Extra Lessons
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Shared Trial Date Tracking Banner */}
-      {hasTrialDate ? (
+      {isTrialPassed ? (
+        <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 font-bold flex-shrink-0">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider">
+                  Practical Trial Passed ✓
+                </span>
+              </div>
+              <h3 className="text-base font-black text-emerald-950 mt-1">
+                Practical Training & Trial Examination Completed
+              </h3>
+              <p className="text-xs text-emerald-800 mt-0.5">
+                You have successfully cleared your official Practical Driving Trial. Practical lesson bookings are now closed. Review your completed driving sessions below.
+              </p>
+            </div>
+          </div>
+          <Link to="/student/dashboard" className="btn-primary text-xs py-2.5 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-sm bg-emerald-700 hover:bg-emerald-800 text-white">
+            Go to Dashboard <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      ) : hasTrialDate ? (
         <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] font-bold flex-shrink-0">
@@ -283,9 +319,11 @@ export default function MyLessonsPage() {
           <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-[#D4EEF8] shadow-sm">
             <Calendar className="w-8 h-8 text-[#6A97C0] mx-auto" />
             <p className="text-sm font-bold text-[#152026]">You have no upcoming lessons booked</p>
-            <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold shadow-sm">
-              Book a Lesson Now <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {!isTrialPassed && (
+              <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold shadow-sm">
+                Book a Lesson Now <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

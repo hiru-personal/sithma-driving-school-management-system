@@ -368,12 +368,16 @@ export default function StudentDashboard() {
         if (res.data.student) {
           setProfile(res.data.student);
           updateStudentData(res.data.student);
+        } else {
+          fetchProfile();
         }
         setLicensePhotoFile(null);
         setLicensePhotoPreview(null);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to upload driving license photo');
+      const errMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to upload driving license photo';
+      toast.error(errMsg);
+      console.error('License upload error:', err.response?.data || err.message);
     } finally {
       setUploadingLicensePhoto(false);
     }
@@ -960,14 +964,15 @@ export default function StudentDashboard() {
     (profile?.lessonsUnlocked || 0) <= (profile?.lessonsUsed || 0)
   );
   const showPackagePaymentBanner =
-    showPaymentFormOverride ||
-    ((!isPackagePaymentConfirmed || hasUnfinishedInstallments || hasCompletedSingleLesson) &&
-      (
-        // Type 2: can select package & pay as soon as they are a verified/active student (no trial date needed)
-        (isType2 && isVerifiedAccount) ||
-        // Type 1: can select package after passing the written exam
-        (isType1 && isExamPassed)
-      ));
+    !isTrialPassed &&
+    (showPaymentFormOverride ||
+      ((!isPackagePaymentConfirmed || hasUnfinishedInstallments || hasCompletedSingleLesson) &&
+        (
+          // Type 2: can select package & pay as soon as they are a verified/active student (no trial date needed)
+          (isType2 && isVerifiedAccount) ||
+          // Type 1: can select package after passing the written exam
+          (isType1 && isExamPassed)
+        )));
 
 
   const renderEditModal = () => {
@@ -2745,45 +2750,47 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Interactive Exam Outcome Selector for Student */}
-          <div className="pt-3.5 border-t border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8FAFD]/70 -mx-6 -mb-6 p-4 rounded-b-2xl">
-            <div>
-              <span className="text-xs font-bold text-[#0B2447] block flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-[#3F72AF]" /> Faced your DMT Written Theory Exam?
-              </span>
-              <span className="text-[11px] text-[#4B6584]">
-                Select your official exam outcome below to update your status across the school system:
-              </span>
+          {/* Interactive Exam Outcome Selector for Student (Hidden once trial is passed) */}
+          {!isTrialPassed && (
+            <div className="pt-3.5 border-t border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8FAFD]/70 -mx-6 -mb-6 p-4 rounded-b-2xl">
+              <div>
+                <span className="text-xs font-bold text-[#0B2447] block flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-[#3F72AF]" /> Faced your DMT Written Theory Exam?
+                </span>
+                <span className="text-[11px] text-[#4B6584]">
+                  Select your official exam outcome below to update your status across the school system:
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleUpdateExamStatus('passed')}
+                  disabled={updatingExamStatus}
+                  className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                    isExamPassed
+                      ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-500'
+                      : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Passed</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateExamStatus('failed')}
+                  disabled={updatingExamStatus}
+                  className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                    profile?.learnerExamStatus === 'failed'
+                      ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-500'
+                      : 'bg-white hover:bg-rose-50 text-rose-800 border border-rose-300'
+                  }`}
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  <span>Failed</span>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleUpdateExamStatus('passed')}
-                disabled={updatingExamStatus}
-                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
-                  isExamPassed
-                    ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-500'
-                    : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'
-                }`}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Passed</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleUpdateExamStatus('failed')}
-                disabled={updatingExamStatus}
-                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
-                  profile?.learnerExamStatus === 'failed'
-                    ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-500'
-                    : 'bg-white hover:bg-rose-50 text-rose-800 border border-rose-300'
-                }`}
-              >
-                <XCircle className="w-3.5 h-3.5" />
-                <span>Failed</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -3860,7 +3867,24 @@ export default function StudentDashboard() {
                 </Link>
               )}
 
-              {isType1 && !isExamPassed ? (
+              {isTrialPassed ? (
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#152026] block text-sm">
+                        Practical Training Completed
+                      </span>
+                      <span className="text-xs text-emerald-700 font-semibold">
+                        Practical trial passed ✓ (Lesson booking closed)
+                      </span>
+                    </div>
+                  </div>
+                  <span className="badge badge-success text-[10px] font-bold">Completed</span>
+                </div>
+              ) : isType1 && !isExamPassed ? (
                 <div
                   onClick={() =>
                     toast.error(
@@ -3930,31 +3954,33 @@ export default function StudentDashboard() {
                 </Link>
               )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPaymentFormOverride(true);
-                  setTimeout(() => {
-                    document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 50);
-                }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group text-left cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59] group-hover:bg-[#1B3D59] group-hover:text-white transition-colors">
-                    <PlusCircle className="w-5 h-5 text-[#1B3D59] group-hover:text-white" />
+              {!isTrialPassed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentFormOverride(true);
+                    setTimeout(() => {
+                      document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 50);
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group text-left cursor-pointer shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59] group-hover:bg-[#1B3D59] group-hover:text-white transition-colors">
+                      <PlusCircle className="w-5 h-5 text-[#1B3D59] group-hover:text-white" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#152026] group-hover:text-[#1B3D59] block text-sm">
+                        Need Additional Practice Lessons?
+                      </span>
+                      <span className="text-xs text-[#6A97C0]">
+                        Upgrade package or add single lessons
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-bold text-[#152026] group-hover:text-[#1B3D59] block text-sm">
-                      Need Additional Practice Lessons?
-                    </span>
-                    <span className="text-xs text-[#6A97C0]">
-                      Upgrade package or add single lessons
-                    </span>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-[#1B3D59] group-hover:translate-x-1 transition-transform" />
-              </button>
+                  <ArrowRight className="w-4 h-4 text-[#1B3D59] group-hover:translate-x-1 transition-transform" />
+                </button>
+              )}
 
               <Link
                 to="/student/payments"

@@ -14,6 +14,7 @@ import {
   User,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   ShieldAlert,
   RefreshCw,
   X,
@@ -128,6 +129,11 @@ export default function BookLessonPage() {
     student?.dmtDates?.learnerExamPassed
   );
   const isTrialEligible = Boolean(isType2 || isExamPassed);
+  const isTrialPassed = Boolean(
+    student?.trial?.licenseObtained ||
+    student?.isPassed ||
+    student?.trial?.attempts?.some((a) => a.result === 'passed')
+  );
   const isPackagePaymentConfirmed = student?.packagePaymentStatus === 'confirmed';
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
 
@@ -239,6 +245,42 @@ export default function BookLessonPage() {
       setBookingLoading(false);
     }
   };
+
+  // ─────────────────────────────────────────────────────────────
+  // PRACTICAL TRIAL PASSED: TRAINING COMPLETED - BOOKING CLOSED
+  // ─────────────────────────────────────────────────────────────
+  if (isTrialPassed) {
+    return (
+      <div className="py-10 px-4 sm:px-6 lg:px-10 max-w-4xl mx-auto w-full space-y-8">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-emerald-300 shadow-xl space-y-6 relative overflow-hidden text-center">
+          <div className="w-20 h-20 rounded-3xl bg-emerald-100 border-2 border-emerald-300 flex items-center justify-center text-emerald-700 mx-auto shadow-sm">
+            <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+          </div>
+
+          <div className="space-y-2 max-w-xl mx-auto">
+            <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+              Practical Training Completed ✓
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026]">
+              Practical Trial Passed!
+            </h1>
+            <p className="text-sm text-[#475569] leading-relaxed">
+              Congratulations! You have successfully passed your DMT Practical Driving Trial. Practical lesson bookings are now closed. Please visit your dashboard to upload your driving license certificate.
+            </p>
+          </div>
+
+          <div className="pt-4">
+            <Link
+              to="/student/dashboard"
+              className="btn-primary text-sm py-3 px-6 font-bold inline-flex items-center gap-2 shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4" /> Return to Student Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────
   // US-09: TYPE 1 STUDENTS WHO HAVE NOT PASSED EXAM CANNOT VIEW
