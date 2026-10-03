@@ -340,11 +340,12 @@ export default function DmtMilestonesPage() {
 
   // Exam and milestone calculations
   const recordedExamMarks = profile?.learnerExamMarks ?? profile?.dmtDates?.learnerExamMarks;
+  // isExamPassed: derive from attempts array first — any passed attempt = PASSED, regardless of earlier failures
   const isExamPassed = Boolean(
-    (profile?.learnerExamPassed ||
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.some((a) => a.result === 'passed')) ||
     profile?.learnerExamStatus === 'passed' ||
-    profile?.dmtDates?.learnerExamPassed) &&
-    (recordedExamMarks === null || recordedExamMarks === undefined || recordedExamMarks > 30)
+    profile?.dmtDates?.learnerExamPassed ||
+    profile?.learnerExamPassed
   );
   const attemptsCount = profile?.learnerExamAttempts?.length || (profile?.learnerExamStatus === 'failed' || (!isExamPassed && recordedExamMarks !== null && recordedExamMarks <= 30) ? 1 : 0);
   const remainingAttempts = Math.max(0, 3 - attemptsCount);

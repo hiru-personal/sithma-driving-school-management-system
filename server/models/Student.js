@@ -627,57 +627,80 @@ studentSchema.pre('save', function (next) {
     this.learnerExamMarks = this.dmtDates.learnerExamMarks;
   }
 
-  // DMT Written Theory Exam Rule: Passing requires marks strictly greater than 30 (out of 40)
+  // DMT Written Theory Exam Rule: Derive overall exam status from attempts array.
+  // CRITICAL: A passed attempt on attempt 2 or 3 must ALWAYS override previous failed attempts.
   const isType2Student =
     this.student_type === 'Type 2' ||
     this.studentType === 'Type2_TrialReady' ||
     this.studentType === 'Type 2';
 
-  if (!isType2Student && this.learnerExamMarks !== null && this.learnerExamMarks !== undefined) {
-    if (this.learnerExamMarks <= 30) {
-      // Score of 30 or below is an automatic Fail
-      this.written_exam_status = 'Fail';
+  if (!isType2Student) {
+    const theoryAttempts = this.learnerExamAttempts || [];
+
+    // Rule: If ANY attempt in the current cycle has result === 'passed', overall status = passed
+    const hasPassedAttempt = theoryAttempts.some((a) => a.result === 'passed');
+    const allFailed =
+      theoryAttempts.length >= 3 && !hasPassedAttempt;
+
+    if (hasPassedAttempt) {
+      // Passed on attempt 1, 2, or 3 — status is PASSED regardless of earlier failures
+      this.learnerExamStatus = 'passed';
+      this.written_exam_status = 'Pass';
+      if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
+    } else if (allFailed) {
+      // All 3 attempts failed
       this.learnerExamStatus = 'failed';
+      this.written_exam_status = 'Fail';
       if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+    } else if (theoryAttempts.length > 0) {
+      // Some attempts recorded, none passed yet, still has remaining attempts
+      this.learnerExamStatus = 'failed';
+      this.written_exam_status = 'Fail';
+      if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+    } else {
+      // No attempt records — fall back to marks-based derivation for legacy data
+      if (this.learnerExamMarks !== null && this.learnerExamMarks !== undefined) {
+        if (this.learnerExamMarks <= 30) {
+          this.written_exam_status = 'Fail';
+          this.learnerExamStatus = 'failed';
+          if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+        } else {
+          // Marks > 30 with no attempts array: treat as passed (legacy)
+          if (this.learnerExamStatus === 'passed') {
+            this.written_exam_status = 'Pass';
+            if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
+          }
+        }
+      }
+
+      // Sync written_exam_status ↔ learnerExamStatus for records with no attempts array
+      if (this.written_exam_status) {
+        if (this.written_exam_status === 'Pass' || this.written_exam_status === 'passed') {
+          this.written_exam_status = 'Pass';
+          this.learnerExamStatus = 'passed';
+          if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
+        } else if (this.written_exam_status === 'Fail' || this.written_exam_status === 'failed') {
+          this.written_exam_status = 'Fail';
+          this.learnerExamStatus = 'failed';
+          if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
+        } else {
+          this.written_exam_status = 'Pending';
+          if (!this.learnerExamStatus || this.learnerExamStatus === 'not_taken') {
+            this.learnerExamStatus = 'not_taken';
+          }
+        }
+      } else if (this.learnerExamStatus) {
+        if (this.learnerExamStatus === 'passed') {
+          this.written_exam_status = 'Pass';
+        } else if (this.learnerExamStatus === 'failed') {
+          this.written_exam_status = 'Fail';
+        } else {
+          this.written_exam_status = 'Pending';
+        }
+      }
     }
   }
 
-  if (this.written_exam_status) {
-    if (this.written_exam_status === 'Pass' || this.written_exam_status === 'passed') {
-      if (!isType2Student && this.learnerExamMarks !== null && this.learnerExamMarks !== undefined && this.learnerExamMarks <= 30) {
-        this.written_exam_status = 'Fail';
-        this.learnerExamStatus = 'failed';
-        if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
-      } else {
-        this.written_exam_status = 'Pass';
-        this.learnerExamStatus = 'passed';
-        if (this.dmtDates) this.dmtDates.learnerExamPassed = true;
-      }
-    } else if (this.written_exam_status === 'Fail' || this.written_exam_status === 'failed') {
-      this.written_exam_status = 'Fail';
-      this.learnerExamStatus = 'failed';
-      if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
-    } else {
-      this.written_exam_status = 'Pending';
-      if (!this.learnerExamStatus || this.learnerExamStatus === 'not_taken') {
-        this.learnerExamStatus = 'not_taken';
-      }
-    }
-  } else if (this.learnerExamStatus) {
-    if (this.learnerExamStatus === 'passed') {
-      if (!isType2Student && this.learnerExamMarks !== null && this.learnerExamMarks !== undefined && this.learnerExamMarks <= 30) {
-        this.written_exam_status = 'Fail';
-        this.learnerExamStatus = 'failed';
-        if (this.dmtDates) this.dmtDates.learnerExamPassed = false;
-      } else {
-        this.written_exam_status = 'Pass';
-      }
-    } else if (this.learnerExamStatus === 'failed') {
-      this.written_exam_status = 'Fail';
-    } else {
-      this.written_exam_status = 'Pending';
-    }
-  }
 
   if (this.trial_date) {
     if (!this.trial) this.trial = {};

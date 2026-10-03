@@ -736,8 +736,11 @@ export default function StudentDashboard() {
     user?.studentType === 'Type 2' ||
     user?.student_type === 'Type 2'
   );
+  // isExamPassed: always derive from attempts array first (any passed attempt = PASSED, regardless of earlier failures)
   const isExamPassed = Boolean(
-    profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed
+    profile?.learnerExamStatus === 'passed' ||
+    profile?.dmtDates?.learnerExamPassed ||
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.some((a) => a.result === 'passed'))
   );
   const currentTrialDate = profile?.trial_date || profile?.trial?.trialDate || profile?.dmtDates?.trialExamDate || null;
   const hasTrialDate = Boolean(currentTrialDate);
@@ -880,7 +883,12 @@ export default function StudentDashboard() {
   const showPackagePaymentBanner =
     showPaymentFormOverride ||
     ((!isPackagePaymentConfirmed || hasUnfinishedInstallments || hasCompletedSingleLesson) &&
-      ((isType2 && hasTrialDate) || (isType1 && isExamPassed)));
+      (
+        // Type 2: can select package & pay as soon as they are a verified/active student (no trial date needed)
+        (isType2 && isVerifiedAccount) ||
+        // Type 1: can select package after passing the written exam
+        (isType1 && isExamPassed)
+      ));
 
 
   const renderEditModal = () => {
@@ -2184,7 +2192,7 @@ export default function StudentDashboard() {
                 </h3>
                 <p className="text-xs text-[#475569] mt-1 max-w-2xl leading-relaxed">
                   As a <strong>Type 2 (Trial-Ready)</strong> student holding an existing learner permit, you are <strong>exempt from DMT Medical, Registration, and Written Theory Exam</strong>.
-                  Your branch Data Entry Officer will schedule your official Practical Driving Trial Date. Once scheduled, your course package selection, payment plans (Monthly 3 Installments, Full Course, or Daily Pay-Per-Lesson), and lesson booking up to your trial date will unlock automatically.
+                  Your branch Data Entry Officer will schedule your official Practical Driving Trial Date. In the meantime, you can <strong>select your course package and complete payment below</strong> — this will allow us to prepare your lesson schedule. <strong>Lesson booking will unlock once your trial date is assigned.</strong>
                 </p>
               </div>
             </div>
@@ -2371,8 +2379,10 @@ export default function StudentDashboard() {
                   ? `Installment #${(profile?.installmentsPaidCount || 0) + 1} Due • Unlock 5 More Lessons`
                   : hasCompletedSingleLesson
                   ? 'Single Lesson Completed • Book Another or Upgrade to Full Course'
+                  : isType2 && !hasTrialDate
+                  ? 'Type 2 Student • Step 1: Select Course Package & Pay'
                   : isType2
-                  ? 'Practical Trial Date Scheduled • Step 2: Course Package Selection & Payment'
+                  ? 'Trial Date Scheduled • Step 2: Course Package Selection & Payment'
                   : 'Theory Exam Passed • Step 2: Course Package Selection & Payment'}
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2">
@@ -2384,6 +2394,8 @@ export default function StudentDashboard() {
               <p className="text-xs text-[#475569] mt-1">
                 {hasUnfinishedInstallments
                   ? `You have unlocked ${profile?.lessonsUnlocked || 5} lessons. Pay your next installment to unlock 5 additional lessons.`
+                  : isType2 && !hasTrialDate
+                  ? 'Select your vehicle training package and complete payment. Your lesson booking will be unlocked once your branch officer assigns your Practical Trial Date.'
                   : isType2
                   ? `Your practical trial is scheduled for ${currentTrialDate ? safeFormatDate(currentTrialDate, 'MMMM dd, yyyy') : 'your scheduled trial session'}. Select your vehicle package below and choose your payment plan (3 Monthly Installments, Full Course, or Daily Pay-Per-Lesson) to unlock lessons up until your trial date.`
                   : 'Congratulations on passing your DMT Written Examination! Select your package below and choose your payment plan (3 Monthly Installments, Full Course, or Daily Pay-Per-Lesson) to unlock practical driving lessons up until your trial date.'}
@@ -3272,7 +3284,7 @@ export default function StudentDashboard() {
                 </button>
               </div>
             </div>
-          ) : (!isPackagePaymentConfirmed && ((isType1 && isExamPassed) || (isType2 && hasTrialDate))) ? (
+          ) : (!isPackagePaymentConfirmed && ((isType1 && isExamPassed) || (isType2 && isVerifiedAccount))) ? (
             <div className="card p-5 bg-[#F3EED8] border border-[#E2D9B8] space-y-3 text-[#152026]">
               <div className="flex items-center gap-2.5 text-[#152026] font-bold text-sm">
                 <CreditCard className="w-5 h-5 text-[#1B3D59]" />
@@ -3281,7 +3293,7 @@ export default function StudentDashboard() {
               <p className="text-xs text-[#475569] leading-relaxed">
                 {isType1
                   ? '🎉 Congratulations on passing your Theory Exam! Please select your vehicle package and choose your payment plan below to unlock practical lessons.'
-                  : '🎉 Your official practical trial date is scheduled! Please select your vehicle package and payment plan (Monthly Installments, Full Course, or Daily Pay-Per-Lesson) below to unlock practical lessons.'}
+                  : '📦 Select your vehicle training package and complete payment below. Lesson booking will unlock once your branch officer assigns your Practical Trial Date.'}
               </p>
               <a
                 href="#package-selection-payment"
@@ -3291,18 +3303,22 @@ export default function StudentDashboard() {
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
             </div>
-          ) : isType2 && !hasTrialDate ? (
+          ) : isType2 && isPackagePaymentConfirmed && !hasTrialDate ? (
             <div className="card p-5 bg-[#D4EEF8] border border-[#B3D5F1] space-y-3 text-[#152026]">
-              <div className="flex items-center gap-2.5 text-[#1B3D59] font-bold text-sm">
-                <Calendar className="w-5 h-5 text-[#1B3D59]" />
-                <span>Stage 1: Trial Date Assignment</span>
+              <div className="flex items-center gap-2.5 text-emerald-700 font-bold text-sm">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>Package Paid ✓ — Awaiting Trial Date to Unlock Booking</span>
               </div>
               <p className="text-xs text-[#475569] leading-relaxed">
-                As a Type 2 student with an existing learner permit, DMT Medical, Registration, and Theory Exam are exempt. Your branch Data Entry Officer will schedule your practical trial date shortly.
+                Your course package payment has been confirmed. Your branch Data Entry Officer will schedule your official Practical Driving Trial Date shortly. Lesson booking will unlock automatically once the trial date is assigned.
               </p>
               <div className="pt-2 border-t border-[#B3D5F1] flex items-center justify-between text-[11px] text-[#6A97C0]">
-                <span>Current Status:</span>
-                <span className="text-[#152026] font-bold">Awaiting Trial Date</span>
+                <span>Payment Status:</span>
+                <span className="text-emerald-700 font-bold">Confirmed ✓</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#6A97C0]">
+                <span>Trial Date:</span>
+                <span className="text-[#152026] font-bold">Awaiting Branch Assignment</span>
               </div>
             </div>
           ) : isType1 && !isExamPassed ? (

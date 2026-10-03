@@ -1961,13 +1961,18 @@ export default function StaffStudentListPage() {
                 {/* 4. Learner Exam Status (Auto-reflected from Student Dashboard) */}
                 {(() => {
                   const isStudentPassed = Boolean(
-                    selectedStudent.learnerExamStatus === 'passed' || selectedStudent.dmtDates?.learnerExamPassed
+                    // Check attempts array first — any passed attempt = PASSED
+                    (selectedStudent.learnerExamAttempts && selectedStudent.learnerExamAttempts.some((a) => a.result === 'passed')) ||
+                    selectedStudent.learnerExamStatus === 'passed' ||
+                    selectedStudent.dmtDates?.learnerExamPassed
                   );
                   const isStudentFailed = Boolean(
-                    selectedStudent.learnerExamStatus === 'failed' ||
-                    (selectedStudent.learnerExamAttempts &&
-                      selectedStudent.learnerExamAttempts.length > 0 &&
-                      selectedStudent.learnerExamAttempts[selectedStudent.learnerExamAttempts.length - 1]?.result === 'failed')
+                    !isStudentPassed && (
+                      selectedStudent.learnerExamStatus === 'failed' ||
+                      (selectedStudent.learnerExamAttempts &&
+                        selectedStudent.learnerExamAttempts.length > 0 &&
+                        !selectedStudent.learnerExamAttempts.some((a) => a.result === 'passed'))
+                    )
                   );
 
                   return (
