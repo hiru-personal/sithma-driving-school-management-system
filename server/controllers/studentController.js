@@ -1145,6 +1145,7 @@ exports.registerWalkInStudent = async (req, res) => {
       email,
       phone,
       nic,
+      dob,
       branch = 'Maharagama',
       studentType = 'Type1_NewLearner',
       packageId,
@@ -1217,6 +1218,7 @@ exports.registerWalkInStudent = async (req, res) => {
       email: cleanEmail,
       phone: phone.trim(),
       nic: nic.trim(),
+      dob: dob ? new Date(dob) : undefined,
       passwordHash,
       role: 'student',
       status: initialStatus,
@@ -1231,6 +1233,7 @@ exports.registerWalkInStudent = async (req, res) => {
     const student = await Student.create({
       userId: user._id,
       nic: nic.trim(),
+      dob: dob ? new Date(dob) : undefined,
       studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
       branch,
       registrationStatus: isImmediateVerified ? 'registered' : 'pending_payment',
