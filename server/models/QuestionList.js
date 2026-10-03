@@ -14,7 +14,8 @@ const questionListSchema = new mongoose.Schema(
     },
     language: {
       type: String,
-      enum: ['Sinhala', 'Tamil', 'English', 'All'],
+      enum: ['Sinhala', 'Tamil', 'English'],
+      required: [true, 'Question List language is required'],
       default: 'English',
     },
     vehicleCategory: {

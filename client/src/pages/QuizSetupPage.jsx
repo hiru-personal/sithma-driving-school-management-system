@@ -41,16 +41,16 @@ export default function QuizSetupPage() {
         const res = await api.get('/quiz/lists');
         if (res.data.success && res.data.lists) {
           setQuestionLists(res.data.lists);
-          // Auto-select first matching list or first list
+          // Auto-select first matching list for the initial language and category
           const match = res.data.lists.find(
             (l) =>
-              (l.language === language || l.language === 'All') &&
+              l.language?.toLowerCase() === language.toLowerCase() &&
               (l.vehicleCategory === vehicleCategory || l.vehicleCategory === 'All')
           );
           if (match) {
             setSelectedListId(match._id);
-          } else if (res.data.lists.length > 0) {
-            setSelectedListId(res.data.lists[0]._id);
+          } else {
+            setSelectedListId('');
           }
         }
       } catch (err) {
@@ -85,35 +85,48 @@ export default function QuizSetupPage() {
     fetchRecent();
   }, [student, user]);
 
-  // When language or vehicleCategory changes, update selectedListId if necessary
+  // When language or vehicleCategory changes, update selectedListId strictly
   useEffect(() => {
     if (questionLists.length > 0) {
       const match = questionLists.find(
         (l) =>
-          (l.language === language || l.language === 'All') &&
+          l.language?.toLowerCase() === language.toLowerCase() &&
           (l.vehicleCategory === vehicleCategory || l.vehicleCategory === 'All')
       );
       if (match) {
         setSelectedListId(match._id);
+      } else {
+        setSelectedListId('');
       }
     }
   }, [language, vehicleCategory, questionLists]);
 
   const handleStartQuiz = () => {
-    let url = `/student/quiz/take?language=${language}&category=${vehicleCategory}`;
-    if (selectedListId) {
-      url += `&listId=${selectedListId}`;
+    if (listsToShow.length === 0) {
+      toast.error(`No question lists are available in ${language} for the selected vehicle category.`);
+      return;
     }
+    const chosenList = questionLists.find((l) => l._id === selectedListId);
+    if (!chosenList) {
+      toast.error('Please select a question list to start the exam.');
+      return;
+    }
+    if (chosenList.language?.toLowerCase() !== language?.toLowerCase()) {
+      toast.error(`Selected question list language (${chosenList.language}) does not match current exam language (${language}).`);
+      return;
+    }
+    let url = `/student/quiz/take?language=${language}&category=${vehicleCategory}&listId=${chosenList._id}`;
     navigate(url);
   };
 
+  // Strictly filter lists by selected language and category (NO fallback to other languages)
   const matchingLists = questionLists.filter(
     (l) =>
-      (l.language === language || l.language === 'All') &&
+      l.language?.toLowerCase() === language.toLowerCase() &&
       (l.vehicleCategory === vehicleCategory || l.vehicleCategory === 'All')
   );
 
-  const listsToShow = matchingLists.length > 0 ? matchingLists : questionLists;
+  const listsToShow = matchingLists;
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-5xl mx-auto w-full">
@@ -254,8 +267,12 @@ export default function QuizSetupPage() {
           {loadingLists ? (
             <div className="py-8 text-center text-xs text-[#6A97C0] font-medium">Loading Question Lists...</div>
           ) : listsToShow.length === 0 ? (
-            <div className="p-4 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl text-xs text-[#6A97C0]">
-              No question lists found for this category. Standard practice exam will be loaded.
+            <div className="p-8 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl text-center space-y-2">
+              <Layers className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="font-bold text-sm text-[#152026]">No Question Lists Available</p>
+              <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                There are currently no question lists available for {language}.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -274,7 +291,15 @@ export default function QuizSetupPage() {
                     <div>
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="inline-block px-2 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[9px]">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-full font-bold text-[9px] ${
+                              list.language === 'Sinhala'
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : list.language === 'Tamil'
+                                ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                                : 'bg-blue-100 text-blue-800 border border-blue-300'
+                            }`}
+                          >
                             {list.language}
                           </span>
                           <span className="inline-block px-2 py-0.5 rounded-full bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-semibold text-[9px]">
@@ -314,7 +339,8 @@ export default function QuizSetupPage() {
           </div>
           <button
             onClick={handleStartQuiz}
-            className="btn-primary px-8 py-3.5 font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+            disabled={listsToShow.length === 0 || !selectedListId}
+            className="btn-primary px-8 py-3.5 font-bold text-sm shadow-md flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             Start Practice Exam <ArrowRight className="w-4 h-4" />
           </button>

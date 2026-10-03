@@ -148,6 +148,43 @@ async function ensureQuestionLists() {
     defaultList = await QuestionList.findOne({});
   }
 
+  // Ensure Sinhala and Tamil question lists exist (Rules 1 & 7)
+  const sinhalaCount = await QuestionList.countDocuments({ language: 'Sinhala' });
+  if (sinhalaCount === 0) {
+    const sinhalaList = await QuestionList.create({
+      name: 'Sinhala DMT Theory Paper - Set 1 (සිංහල මාර්ග නීති)',
+      description: 'ශ්‍රී ලංකා මෝටර් රථ ප්‍රවාහන දෙපාර්තමේන්තුවේ නිල මාර්ග නීති හා සංඥා ප්‍රශ්න පත්‍රය.',
+      language: 'Sinhala',
+      vehicleCategory: 'Light',
+      passingScore: 80,
+      isActive: true,
+    });
+    const sinhalaQuestions = initialQuestions.map((q) => ({
+      ...q,
+      language: 'Sinhala',
+      questionListId: sinhalaList._id,
+    }));
+    await QuizQuestion.insertMany(sinhalaQuestions);
+  }
+
+  const tamilCount = await QuestionList.countDocuments({ language: 'Tamil' });
+  if (tamilCount === 0) {
+    const tamilList = await QuestionList.create({
+      name: 'Tamil DMT Theory Paper - Set 1 (தமிழ் வீதி விதிகள்)',
+      description: 'இலங்கை மோட்டார் போக்குவரத்து திணைக்களத்தின் உத்தியோகபூர்வ வீதி விதிகள் வினாத்தாள்.',
+      language: 'Tamil',
+      vehicleCategory: 'Light',
+      passingScore: 80,
+      isActive: true,
+    });
+    const tamilQuestions = initialQuestions.map((q) => ({
+      ...q,
+      language: 'Tamil',
+      questionListId: tamilList._id,
+    }));
+    await QuizQuestion.insertMany(tamilQuestions);
+  }
+
   // Ensure questions exist in DB
   const qCount = await QuizQuestion.countDocuments({});
   if (qCount === 0) {
@@ -182,7 +219,7 @@ exports.getQuestionLists = async (req, res) => {
     const filter = {};
 
     if (language && language !== 'All') {
-      filter.language = { $in: [language, 'All'] };
+      filter.language = language;
     }
     if (vehicleCategory && vehicleCategory !== 'All') {
       filter.vehicleCategory = { $in: [vehicleCategory, 'All'] };
@@ -289,10 +326,20 @@ exports.createQuestionList = async (req, res) => {
       });
     }
 
+    const validLangs = ['English', 'Sinhala', 'Tamil'];
+    const selectedLang = language ? language.trim() : '';
+    if (!selectedLang || !validLangs.map((l) => l.toLowerCase()).includes(selectedLang.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Question List language is required and must be English, Sinhala, or Tamil',
+      });
+    }
+    const normalizedLang = validLangs.find((l) => l.toLowerCase() === selectedLang.toLowerCase()) || 'English';
+
     const newList = await QuestionList.create({
       name: name.trim(),
       description: description ? description.trim() : '',
-      language: language || 'English',
+      language: normalizedLang,
       vehicleCategory: vehicleCategory || 'Light',
       passingScore: passingScore ? Number(passingScore) : 80,
       createdBy: req.user?._id || null,
@@ -327,7 +374,17 @@ exports.updateQuestionList = async (req, res) => {
 
     if (name !== undefined) list.name = name.trim();
     if (description !== undefined) list.description = description.trim();
-    if (language !== undefined) list.language = language;
+    if (language !== undefined) {
+      const validLangs = ['English', 'Sinhala', 'Tamil'];
+      const selectedLang = language ? language.trim() : '';
+      if (!selectedLang || !validLangs.map((l) => l.toLowerCase()).includes(selectedLang.toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Question List language must be English, Sinhala, or Tamil',
+        });
+      }
+      list.language = validLangs.find((l) => l.toLowerCase() === selectedLang.toLowerCase()) || 'English';
+    }
     if (vehicleCategory !== undefined) list.vehicleCategory = vehicleCategory;
     if (passingScore !== undefined) list.passingScore = Number(passingScore);
     if (isActive !== undefined) list.isActive = Boolean(isActive);
@@ -428,6 +485,16 @@ exports.getQuizQuestions = async (req, res) => {
     const filter = { isActive: true };
 
     if (questionListId) {
+      const targetList = await QuestionList.findById(questionListId);
+      if (!targetList) {
+        return res.status(404).json({ success: false, message: 'Selected Question List not found' });
+      }
+      if (language && targetList.language && targetList.language.toLowerCase() !== language.toLowerCase()) {
+        return res.status(400).json({
+          success: false,
+          message: `Language mismatch: Selected Question List is in ${targetList.language}, but you selected ${language}.`,
+        });
+      }
       filter.questionListId = questionListId;
     } else {
       if (language && language !== 'All') filter.language = language;
@@ -619,9 +686,16 @@ exports.submitQuizAttempt = async (req, res) => {
     let qListDoc = null;
     if (questionListId) {
       qListDoc = await QuestionList.findById(questionListId);
-      if (qListDoc) {
-        listName = qListDoc.name;
+      if (!qListDoc) {
+        return res.status(404).json({ success: false, message: 'Selected Question List not found' });
       }
+      if (language && qListDoc.language && qListDoc.language.toLowerCase() !== language.toLowerCase()) {
+        return res.status(400).json({
+          success: false,
+          message: `Language mismatch: Question List "${qListDoc.name}" is in ${qListDoc.language}, but your selected exam language is ${language}.`,
+        });
+      }
+      listName = qListDoc.name;
     }
 
     // Fetch questions with correct answers from DB
