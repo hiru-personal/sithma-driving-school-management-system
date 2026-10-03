@@ -558,6 +558,14 @@ const studentSchema = new mongoose.Schema(
       type: finalLicenseSchema,
       default: () => ({}),
     },
+    isPassed: {
+      type: Boolean,
+      default: false,
+    },
+    passedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -781,6 +789,14 @@ studentSchema.pre('save', function (next) {
         this.trial.licenseIssuedDate = passedAttempt.date || new Date();
       }
       this.registrationStatus = 'completed';
+      this.isPassed = true;
+      this.passedAt = this.passedAt || passedAttempt.date || new Date();
+      this.learnerLicenseStatus = 'completed';
+    } else if (this.trial.attemptsUsed >= 3) {
+      this.registrationStatus = 'cancelled';
+      this.accountStatus = 'cancelled';
+      this.account_status = 'Cancelled';
+      this.learnerLicenseStatus = 'attempts_exhausted';
     }
   }
 

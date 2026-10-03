@@ -205,6 +205,52 @@ export default function StudentDashboard() {
       setSubmittingReschedule(false);
     }
   };
+
+  // Trial Outcome Self-Update State (US Trial Exam update by student, no scores)
+  const [showTrialResultModal, setShowTrialResultModal] = useState(false);
+  const [submittingTrialResult, setSubmittingTrialResult] = useState(false);
+  const [trialOutcomeForm, setTrialOutcomeForm] = useState({
+    result: 'passed',
+    attemptDate: new Date().toISOString().split('T')[0],
+    examinerNotes: '',
+  });
+
+  const handleStudentTrialSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingTrialResult(true);
+    try {
+      const studentId = profile?._id || user?.studentId || user?._id;
+      const res = await api.post(`/students/${studentId}/trial-attempt`, {
+        result: trialOutcomeForm.result,
+        attemptDate: trialOutcomeForm.attemptDate,
+        examinerNotes: trialOutcomeForm.examinerNotes,
+      });
+
+      if (res.data.success) {
+        if (trialOutcomeForm.result === 'passed') {
+          toast.success('🎉 Congratulations! Practical Trial recorded as PASSED! Driver\'s License issued.');
+        } else if (res.data.registrationStatus === 'cancelled') {
+          toast.error('⚠️ Maximum 3 trial attempts failed. Registration has been cancelled.');
+        } else {
+          toast(`⚠️ Trial attempt recorded as ${trialOutcomeForm.result.toUpperCase()}. ${res.data.attemptsRemaining} attempt(s) remaining.`, {
+            icon: '⚠️',
+          });
+        }
+
+        if (res.data.student) {
+          setProfile(res.data.student);
+          updateStudentData(res.data.student);
+        } else {
+          fetchProfile();
+        }
+        setShowTrialResultModal(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to record trial outcome');
+    } finally {
+      setSubmittingTrialResult(false);
+    }
+  };
   const [selectedPlan, setSelectedPlan] = useState('full'); // 'full' | 'installments' | 'single'
   const [activePaymentMethod, setActivePaymentMethod] = useState('slip'); // 'slip' | 'online' | 'physical'
   const [selectedBankId, setSelectedBankId] = useState('BOC');
@@ -800,10 +846,17 @@ export default function StudentDashboard() {
     (isExamPassed && profile?.learnerLicenseStatus !== 'active' && profile?.learnerLicenseStatus !== 'expiring_soon' && profile?.learnerLicenseStatus !== 'pending_payment')
   );
 
+  const isTrialPassed = Boolean(
+    profile?.trial?.licenseObtained ||
+    profile?.isPassed ||
+    trialAttemptsList.some((a) => a.result === 'passed')
+  );
+
   const isLicenseCompleted = Boolean(
     profile?.learnerLicenseStatus === 'completed' ||
     profile?.finalLicense?.verificationStatus === 'verified' ||
-    profile?.trial?.licenseObtained
+    profile?.trial?.licenseObtained ||
+    isTrialPassed
   );
 
   const isExpiringSoon = Boolean(
@@ -2211,51 +2264,136 @@ export default function StudentDashboard() {
       )}
 
       {/* Shared Practical Trial Date & Reschedule Banner (Active for both Type 1 & Type 2) */}
-      {hasTrialDate && (
-        <div className="card p-6 border-2 border-[#D4EEF8] bg-white rounded-3xl shadow-sm hover:border-[#6A97C0] transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] shrink-0 shadow-inner">
-              <Calendar className="w-6 h-6 text-[#1B3D59]" />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs uppercase tracking-wider font-extrabold text-[#1B3D59]">
-                  {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
-                </span>
-                {Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
-                  <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
-                    Trial Date Passed (Booking Locked)
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
-                    Booking Window Active
-                  </span>
-                )}
-                {myRescheduleRequests.find((r) => r.status === 'Pending') && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[11px] font-bold flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-amber-700 animate-pulse" /> Reschedule Pending DEO Review
-                  </span>
-                )}
+      {(hasTrialDate || (isTrialEligible && trialAttemptsUsed > 0) || isTrialPassed) && (
+        <div className="card p-6 border-2 border-[#D4EEF8] bg-white rounded-3xl shadow-sm hover:border-[#6A97C0] transition-all flex flex-col gap-5">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] shrink-0 shadow-inner">
+                <Calendar className="w-6 h-6 text-[#1B3D59]" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
-                Scheduled Trial Date: {formatTrialDateDisplay(currentTrialDate)}
-              </h2>
-              <p className="text-xs sm:text-sm text-[#475569] max-w-xl leading-relaxed">
-                {Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
-                  ? 'Your scheduled trial date has passed. Practical lesson booking is locked. Submit a reschedule request to have a Data Entry Officer assign a new trial date and reopen lesson booking.'
-                  : 'You can book practical driving lessons up until your scheduled trial date. Need to change your trial date? Submit a reschedule request to your Data Entry Officer.'}
-              </p>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs uppercase tracking-wider font-extrabold text-[#1B3D59]">
+                    {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
+                  </span>
+                  {isTrialPassed ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-700" /> DMT Practical Trial Passed (Licensed)
+                    </span>
+                  ) : isTrial3AttemptsFailed ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
+                      All 3 Trial Attempts Failed
+                    </span>
+                  ) : Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
+                      Trial Date Passed (Booking Locked)
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
+                      Booking Window Active
+                    </span>
+                  )}
+                  {myRescheduleRequests.find((r) => r.status === 'Pending') && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[11px] font-bold flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-700 animate-pulse" /> Reschedule Pending DEO Review
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
+                  {isTrialPassed
+                    ? 'Practical Driving Trial Cleared'
+                    : currentTrialDate
+                    ? `Scheduled Trial Date: ${formatTrialDateDisplay(currentTrialDate)}`
+                    : 'Practical Trial Assigned (Awaiting Date)'}
+                </h2>
+                <p className="text-xs sm:text-sm text-[#475569] max-w-xl leading-relaxed">
+                  {isTrialPassed
+                    ? 'Congratulations! You have passed your practical driving trial examination. Your official driver\'s license process is completed.'
+                    : Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
+                    ? 'Your scheduled trial date has passed. Please update your trial outcome below, or submit a reschedule request if you need a new trial date.'
+                    : 'You can book practical driving lessons up until your scheduled trial date. After your trial exam at DMT, update your trial outcome here.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+              {!isTrialPassed && !isTrial3AttemptsFailed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTrialOutcomeForm({
+                      result: 'passed',
+                      attemptDate: currentTrialDate ? currentTrialDate.split('T')[0] : new Date().toISOString().split('T')[0],
+                      examinerNotes: '',
+                    });
+                    setShowTrialResultModal(true);
+                  }}
+                  className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <Award className="w-4 h-4 text-white" /> Update Trial Result
+                </button>
+              )}
+              {!isTrialPassed && !isTrial3AttemptsFailed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRescheduleMilestone('trial');
+                    setShowRescheduleModal(true);
+                  }}
+                  className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Clock className="w-4 h-4 text-[#1B3D59]" /> Request Trial Reschedule
+                </button>
+              )}
             </div>
           </div>
-          <button
-            onClick={() => {
-              setRescheduleMilestone('trial');
-              setShowRescheduleModal(true);
-            }}
-            className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs shrink-0 cursor-pointer"
-          >
-            <Clock className="w-4 h-4 text-white" /> Request Trial Reschedule
-          </button>
+
+          {/* Recorded Trial Attempts History (No Scores) */}
+          {trialAttemptsList.length > 0 && (
+            <div className="w-full pt-4 border-t border-[#D4EEF8]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-[#152026]">
+                  Recorded Practical Trial Attempts ({trialAttemptsList.length} of 3):
+                </span>
+                <span className="text-[11px] text-[#6A97C0] font-semibold">
+                  {trialAttemptsRemaining} attempt{trialAttemptsRemaining === 1 ? '' : 's'} remaining
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {trialAttemptsList.map((att, idx) => (
+                  <div
+                    key={att._id || idx}
+                    className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                      att.result === 'passed'
+                        ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                        : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-extrabold text-[#152026]">Attempt #{att.attemptNumber || idx + 1}</div>
+                      <div className="text-[11px] text-slate-500 font-medium">
+                        {safeFormatDate(att.date || att.attemptDate, 'MMM dd, yyyy', 'Recorded')}
+                      </div>
+                      {att.examinerNotes && (
+                        <p className="text-[10px] text-slate-600 italic mt-0.5 line-clamp-1 max-w-[180px]">
+                          "{att.examinerNotes}"
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        att.result === 'passed'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-red-600 text-white'
+                      }`}
+                    >
+                      {att.result}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -3664,6 +3802,109 @@ export default function StudentDashboard() {
                 >
                   {submittingReschedule ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   Submit Reschedule Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Student Practical Trial Outcome Modal (US DMT Practical Trial Outcome Update) */}
+      {showTrialResultModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-[#D4EEF8] shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-[#D4EEF8]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[#152026]">Record Practical Trial Outcome</h3>
+                  <p className="text-xs text-[#6A97C0]">
+                    Attempt #{Math.min(3, trialAttemptsUsed + 1)} of 3 • Official DMT Practical Exam
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTrialResultModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleStudentTrialSubmit} className="space-y-4 text-xs">
+              <div className="p-3.5 bg-blue-50/60 border border-blue-100 rounded-2xl text-[#1B3D59] space-y-1">
+                <p className="font-bold text-xs flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Update Your Trial Status
+                </p>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Record the outcome of your practical driving trial at the Department of Motor Traffic. Passing completes your driver's license process.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Practical Trial Examination Date:
+                </label>
+                <div className="relative flex items-center">
+                  <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="date"
+                    required
+                    value={trialOutcomeForm.attemptDate}
+                    onChange={(e) => setTrialOutcomeForm({ ...trialOutcomeForm, attemptDate: e.target.value })}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] text-xs font-bold cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
+                <select
+                  value={trialOutcomeForm.result}
+                  onChange={(e) => setTrialOutcomeForm({ ...trialOutcomeForm, result: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                >
+                  <option value="passed">PASSED (Issue Driver's License)</option>
+                  <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
+                  <option value="absent">ABSENT</option>
+                </select>
+                <span className="text-[10px] text-slate-500 block mt-1">
+                  * Note: Practical trial examinations have a Pass or Fail result (no score or marks).
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Examiner Notes / Feedback (Optional):
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Reverse parking cleared, minor observation on lane switching..."
+                  value={trialOutcomeForm.examinerNotes}
+                  onChange={(e) => setTrialOutcomeForm({ ...trialOutcomeForm, examinerNotes: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
+                <button
+                  type="button"
+                  onClick={() => setShowTrialResultModal(false)}
+                  disabled={submittingTrialResult}
+                  className="btn-secondary text-xs py-2 px-4 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingTrialResult}
+                  className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                >
+                  {submittingTrialResult ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Submit Trial Outcome
                 </button>
               </div>
             </form>

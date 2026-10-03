@@ -26,14 +26,21 @@ exports.getAdminAnalytics = async (req, res) => {
     const confirmedPayments = await Payment.find({ status: 'confirmed' });
     const totalRevenue = confirmedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
-    // Upcoming Trials (next 30 days)
+    // Upcoming Trials (next 30 days) - only students who haven't passed or cancelled
     const today = new Date();
     const thirtyDaysAhead = new Date();
     thirtyDaysAhead.setDate(today.getDate() + 30);
 
     const upcomingTrials = await Student.find({
       ...studentFilter,
-      'trial.scheduledDate': { $gte: today, $lte: thirtyDaysAhead },
+      $or: [
+        { 'trial.trialDate': { $gte: today, $lte: thirtyDaysAhead } },
+        { 'trial.scheduledDate': { $gte: today, $lte: thirtyDaysAhead } },
+        { 'trial_date': { $gte: today, $lte: thirtyDaysAhead } },
+      ],
+      'trial.licenseObtained': { $ne: true },
+      isPassed: { $ne: true },
+      registrationStatus: { $ne: 'cancelled' },
     })
       .populate('userId', 'name phone')
       .limit(10);
@@ -61,7 +68,7 @@ exports.getAdminAnalytics = async (req, res) => {
     );
 
     // 3. Trial Pass Rate Breakdown (Donut/Pie Chart)
-    const allStudents = await Student.find(studentFilter, 'trial');
+    const allStudents = await Student.find(studentFilter, 'trial trial_date isPassed registrationStatus');
     let pass1st = 0;
     let pass2nd = 0;
     let pass3rd = 0;
@@ -69,13 +76,16 @@ exports.getAdminAnalytics = async (req, res) => {
     let pendingTrial = 0;
 
     allStudents.forEach((s) => {
-      const history = s.trial?.history || [];
-      const passAttempt = history.find((h) => h.result === 'Pass');
+      const attempts = s.trial?.attempts || s.trial?.history || [];
+      const passAttempt = attempts.find(
+        (h) => h.result?.toLowerCase() === 'passed' || h.result?.toLowerCase() === 'pass'
+      );
       if (passAttempt) {
-        if (passAttempt.attemptNumber === 1) pass1st++;
-        else if (passAttempt.attemptNumber === 2) pass2nd++;
+        const attNum = passAttempt.attemptNumber || 1;
+        if (attNum === 1) pass1st++;
+        else if (attNum === 2) pass2nd++;
         else pass3rd++;
-      } else if (history.length >= 3) {
+      } else if (attempts.length >= 3 || s.trial?.attemptsUsed >= 3 || s.registrationStatus === 'cancelled') {
         failed++;
       } else {
         pendingTrial++;

@@ -720,8 +720,6 @@ exports.recordTrialAttempt = async (req, res) => {
     const attemptDate = req.body.attemptDate || req.body.date || new Date();
     const result = req.body.result;
     const examinerNotes = req.body.examinerNotes || req.body.notes || '';
-    const score = req.body.score || req.body.marks || '';
-    const marks = req.body.marks !== undefined && req.body.marks !== null && req.body.marks !== '' ? Number(req.body.marks) : null;
     const completionDate = req.body.completionDate || attemptDate;
 
     if (!attemptDate || !result) {
@@ -790,14 +788,12 @@ exports.recordTrialAttempt = async (req, res) => {
       });
     }
 
-    // Rule 5: Track Attempt number, Trial Exam Date, Result, Score, Pass/Fail status, Completion date
+    // Rule 5: Track Attempt number, Trial Exam Date, Result, Pass/Fail status, Completion date (Trial exams do NOT have scores/marks)
     const attemptNumber = student.trial.attempts.length + 1;
     student.trial.attempts.push({
       attemptNumber,
       date: new Date(attemptDate),
       result: normResult,
-      score: score ? score.toString() : '',
-      marks,
       status: normResult === 'passed' ? 'passed' : normResult === 'failed' ? 'failed' : 'absent',
       completionDate: new Date(completionDate),
       notes: examinerNotes,
@@ -812,6 +808,7 @@ exports.recordTrialAttempt = async (req, res) => {
       student.trial.licenseIssuedDate = new Date(attemptDate);
       student.registrationStatus = 'completed';
       student.isPassed = true;
+      student.passedAt = new Date(attemptDate);
       student.learnerLicenseStatus = 'completed';
     } else {
       const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
@@ -863,6 +860,25 @@ exports.recordTrialAttempt = async (req, res) => {
         }
       } catch (notifErr) {
         console.warn('Failed to send trial attempt notification:', notifErr.message);
+      }
+    }
+
+    // If updated by student, notify branch staff & admin
+    if (req.user?.role === 'student') {
+      try {
+        const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } }, '_id role');
+        for (const su of staffUsers) {
+          await Notification.create({
+            recipientId: su._id,
+            recipientRole: su.role,
+            title: `Student Updated Trial Outcome: ${student.userId?.name || 'Student'}`,
+            message: `Trial Attempt #${attemptNumber} was marked as ${normResult.toUpperCase()} by student ${student.userId?.name || ''}.`,
+            type: 'trial',
+            link: '/staff/students',
+          });
+        }
+      } catch (staffNotifErr) {
+        console.warn('Failed to notify staff of student trial update:', staffNotifErr.message);
       }
     }
 

@@ -207,7 +207,6 @@ export default function StaffStudentListPage() {
   const [trialForm, setTrialForm] = useState({
     attemptDate: new Date().toISOString().split('T')[0],
     result: 'passed',
-    score: '',
     examinerNotes: '',
   });
 
@@ -414,7 +413,6 @@ export default function StaffStudentListPage() {
     setTrialForm({
       attemptDate: student.trial_date ? student.trial_date.split('T')[0] : new Date().toISOString().split('T')[0],
       result: 'passed',
-      score: '',
       examinerNotes: '',
     });
 
@@ -1263,7 +1261,11 @@ export default function StaffStudentListPage() {
               </thead>
               <tbody className="divide-y divide-[#D4EEF8]">
                 {students.map((st) => {
-                  const isLicensed = st.trial?.licenseObtained;
+                  const isLicensed = Boolean(
+                    st.trial?.licenseObtained ||
+                    st.isPassed ||
+                    st.trial?.attempts?.some((a) => a.result === 'passed')
+                  );
                   const attemptsCount = st.trial?.attempts?.length || 0;
                   const isType2 =
                     st.studentType === 'Type2_TrialReady' ||
@@ -2163,9 +2165,6 @@ export default function StaffStudentListPage() {
                           <div>
                             <span className="font-bold text-[#152026]">Attempt #{att.attemptNumber || idx + 1}: </span>
                             <span className="text-slate-600">{new Date(att.date).toLocaleDateString()}</span>
-                            {att.score && (
-                              <span className="text-[#1B3D59] font-semibold ml-2">• Score: {att.score}</span>
-                            )}
                             {att.examinerNotes && (
                               <p className="text-[11px] text-slate-500 mt-0.5 truncate max-w-xs">{att.examinerNotes}</p>
                             )}
@@ -2201,29 +2200,17 @@ export default function StaffStudentListPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
-                    <select
-                      value={trialForm.result}
-                      onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                    >
-                      <option value="passed">PASSED (Issue Driver's License)</option>
-                      <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
-                      <option value="absent">ABSENT</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-[#152026] mb-1">Score / Marks (Optional):</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 85% or Pass Grade A"
-                      value={trialForm.score || ''}
-                      onChange={(e) => setTrialForm({ ...trialForm, score: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                    />
-                  </div>
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
+                  <select
+                    value={trialForm.result}
+                    onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                  >
+                    <option value="passed">PASSED (Issue Driver's License)</option>
+                    <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
+                    <option value="absent">ABSENT</option>
+                  </select>
                 </div>
 
                 <div>
@@ -2555,11 +2542,6 @@ export default function StaffStudentListPage() {
                                     {att.date ? format(new Date(att.date), 'yyyy-MM-dd') : 'N/A'}
                                   </strong>
                                 </div>
-                                {att.score && (
-                                  <div>
-                                    Score: <strong className="text-[#152026]">{att.score}</strong>
-                                  </div>
-                                )}
                                 {att.examinerNotes && (
                                   <div className="text-slate-500 italic text-[10px] mt-1 line-clamp-2">
                                     "{att.examinerNotes}"
@@ -3036,7 +3018,6 @@ export default function StaffStudentListPage() {
                                     >
                                       <strong>Trial #{att.attemptNumber || aIdx + 1}:</strong>{' '}
                                       {att.result?.toUpperCase()}
-                                      {att.score && ` (Score: ${att.score})`}
                                       {att.date && ` on ${format(new Date(att.date), 'MMM dd')}`}
                                     </span>
                                   ))}

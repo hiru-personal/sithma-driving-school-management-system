@@ -308,9 +308,9 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="text-right">
                     <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-bold">
-                      {safeFormatDate(s.trial?.scheduledDate, 'MMM dd, yyyy', 'Pending')}
+                      {safeFormatDate(s.trial_date || s.trial?.trialDate || s.trial?.scheduledDate, 'MMM dd, yyyy', 'Pending')}
                     </span>
-                    <p className="text-[10px] text-[#6A97C0] mt-1">Attempt #{s.trial?.currentAttempt || 1}</p>
+                    <p className="text-[10px] text-[#6A97C0] mt-1">Attempt #{s.trial?.attempts?.length ? s.trial.attempts.length + 1 : (s.trial?.currentAttempt || 1)}</p>
                   </div>
                 </div>
               ))}
