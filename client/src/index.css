@@ -149,25 +149,61 @@
    Global Color Mapping & Palette Enforcement
    ========================================================================== */
 
-/* 1. Universal Headings: Black Pine for main, Deep Ocean for section */
-h1, h2,
-.font-heading.text-2xl,
-.font-heading.text-3xl {
-  color: #152026 !important;
+/* 1. Universal Headings: Black Pine for main, Deep Ocean for section (only on light surfaces) */
+h1:not(.text-white):not([class*="text-white"]):not([class*="text-"]):not([class*="!text-white"]),
+h2:not(.text-white):not([class*="text-white"]):not([class*="text-"]):not([class*="!text-white"]),
+.font-heading.text-2xl:not(.text-white):not([class*="text-white"]),
+.font-heading.text-3xl:not(.text-white):not([class*="text-white"]) {
+  color: #152026;
 }
 
-h3, h4, h5, h6,
-.font-heading {
-  color: #1B3D59 !important;
+h3:not(.text-white):not([class*="text-white"]):not([class*="text-"]):not([class*="!text-white"]),
+h4:not(.text-white):not([class*="text-white"]):not([class*="text-"]):not([class*="!text-white"]),
+h5:not(.text-white):not([class*="text-white"]):not([class*="text-"]):not([class*="!text-white"]),
+h6:not(.text-white):not([class*="text-white"]):not([class*="text-"]):not([class*="!text-white"]),
+.font-heading:not(.text-white):not([class*="text-white"]) {
+  color: #1B3D59;
 }
 
-/* Page titles */
-main h1,
-header + div h1,
-header + main h1,
-.space-y-6 > div > h1,
-.space-y-8 > div > h1 {
-  color: #152026 !important;
+/* Page titles on light backgrounds */
+main > div > h1:not(.text-white):not([class*="text-white"]),
+header + div h1:not(.text-white):not([class*="text-white"]),
+header + main h1:not(.text-white):not([class*="text-white"]),
+.space-y-6 > div:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not([class*="from-"]):not([class*="text-white"]) > h1,
+.space-y-8 > div:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not([class*="from-"]):not([class*="text-white"]) > h1 {
+  color: #152026;
+}
+
+/* 1.1 Absolute Priority: Pure White Headings and Text on Dark Containers and Gradients */
+.text-white,
+[class*="text-white"],
+h1.text-white,
+h2.text-white,
+h3.text-white,
+h4.text-white,
+h1[class*="text-white"],
+h2[class*="text-white"],
+h3[class*="text-white"],
+[class*="bg-[#1B3D59]"] h1,
+[class*="bg-[#1B3D59]"] h2,
+[class*="bg-[#1B3D59]"] h3,
+[class*="bg-[#1B3D59]"] h4,
+[class*="bg-[#152026]"] h1,
+[class*="bg-[#152026]"] h2,
+[class*="bg-[#152026]"] h3,
+[class*="bg-[#152026]"] h4,
+[class*="bg-slate-900"] h1,
+[class*="bg-slate-900"] h2,
+[class*="bg-slate-950"] h1,
+[class*="bg-slate-950"] h2,
+div[class*="from-[#152026]"] h1,
+div[class*="from-[#152026]"] h2,
+div[class*="from-[#1B3D59]"] h1,
+div[class*="from-[#1B3D59]"] h2,
+.welcome-hero h1,
+.welcome-hero h2,
+.welcome-hero .text-white {
+  color: #FFFFFF !important;
 }
 
 /* 2. Text Hierarchy */

@@ -1550,31 +1550,35 @@ export default function StudentDashboard() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Welcome Banner */}
-      <div className="relative bg-[#1B3D59] rounded-3xl p-6 sm:p-8 text-white border border-[#6A97C0]/30 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#0F2231] via-[#1B3D59] to-[#0F2231] rounded-3xl p-6 sm:p-8 text-white border border-[#6A97C0]/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-[#3F72AF]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-[#6A97C0]/15 rounded-full blur-3xl pointer-events-none" />
+
         <div className="space-y-3 relative z-10">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/15 text-white border border-white/25 shadow-xs">
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 text-white border border-white/30 shadow-xs backdrop-blur-xs">
               {profile?.branch} Branch
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#6A97C0]/30 text-[#D4EEF8] border border-[#6A97C0]/40 shadow-xs">
+            <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-[#B3D5F1] text-[#0B2447] border border-[#B3D5F1] shadow-xs">
               {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
             </span>
             {profile?.nic && (
-              <span className="px-3 py-1 rounded-full text-xs font-mono bg-white/10 text-slate-200 border border-white/15">
+              <span className="px-3.5 py-1 rounded-full text-xs font-mono bg-white/15 text-white border border-white/25 shadow-xs">
                 NIC: {profile.nic}
               </span>
             )}
             {isAdvancePaymentPending ? (
-              <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#F3EED8] text-[#152026] border border-amber-300">
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#F3EED8] text-[#152026] border border-amber-300 shadow-xs">
                 <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" /> Status: Pending Verification
               </span>
             ) : (
-              <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/25 text-emerald-200 border border-emerald-400/40">
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/30 text-emerald-100 border border-emerald-400/50 shadow-xs">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> Status: Active Learner
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight drop-shadow-sm !text-white" style={{ color: '#FFFFFF' }}>
             Ayubowan, {user?.name}!
           </h1>
           <p className="text-[#D4EEF8] text-xs sm:text-sm max-w-xl leading-relaxed font-normal">
@@ -1586,13 +1590,13 @@ export default function StudentDashboard() {
         <div className="flex flex-wrap gap-2.5 sm:self-center relative z-10">
           <button
             onClick={openEditModal}
-            className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer backdrop-blur-xs"
           >
             <Edit3 className="w-4 h-4 text-[#D4EEF8]" /> Edit Details
           </button>
           <button
             onClick={fetchProfile}
-            className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer backdrop-blur-xs"
           >
             <RefreshCw className="w-4 h-4 text-[#D4EEF8]" /> Refresh
           </button>
@@ -1604,7 +1608,7 @@ export default function StudentDashboard() {
                   '🔒 Advance Payment Pending: Practical lesson booking is restricted until your advance deposit is approved by your branch officer.'
                 )
               }
-              className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-[#F3EED8] text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-80"
+              className="px-4 py-2.5 rounded-xl bg-amber-500/25 border border-amber-300/40 text-amber-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Lesson booking locked until advance payment is verified"
             >
               <Lock className="w-4 h-4 text-amber-300" /> Booking Locked (Payment Pending)
@@ -1616,7 +1620,7 @@ export default function StudentDashboard() {
                   '🔒 DMT Requirement (US-09): Practical & trial lessons can only be booked after passing your Learner Written Exam (marked Passed by your branch officer).'
                 )
               }
-              className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-85"
+              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Practical lessons locked until Learner Written Exam is passed"
             >
               <Lock className="w-4 h-4 text-amber-300" /> Lessons Locked (Exam Pending)
@@ -1628,7 +1632,7 @@ export default function StudentDashboard() {
                   '🔒 Practical Trial Date Pending: Your branch Data Entry Officer must schedule your official trial date before practical lesson sessions can be booked.'
                 )
               }
-              className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-85"
+              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Lessons locked until practical trial date is scheduled"
             >
               <Lock className="w-4 h-4 text-[#D4EEF8]" /> Lessons Locked (Trial Date Pending)
