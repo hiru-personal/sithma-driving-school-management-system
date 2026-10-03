@@ -712,6 +712,7 @@ exports.updateDmtDates = async (req, res) => {
 };
 
 // @desc    Record a Trial attempt and result (Staff / Admin only)
+// @desc    Record a practical trial attempt outcome (Passed/Failed/Absent) - US Requirements 5, 6, 7, 8
 // @route   POST or PATCH /api/students/:id/trial-attempt, /api/students/:id/trial
 // @access  Staff, Admin
 exports.recordTrialAttempt = async (req, res) => {
@@ -719,6 +720,9 @@ exports.recordTrialAttempt = async (req, res) => {
     const attemptDate = req.body.attemptDate || req.body.date || new Date();
     const result = req.body.result;
     const examinerNotes = req.body.examinerNotes || req.body.notes || '';
+    const score = req.body.score || req.body.marks || '';
+    const marks = req.body.marks !== undefined && req.body.marks !== null && req.body.marks !== '' ? Number(req.body.marks) : null;
+    const completionDate = req.body.completionDate || attemptDate;
 
     if (!attemptDate || !result) {
       return res.status(400).json({
@@ -740,6 +744,15 @@ exports.recordTrialAttempt = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Student record not found',
+      });
+    }
+
+    // Rule 7 & 8: Check 1.5-Year / 18-Month Validity Period
+    const now = new Date();
+    if (student.learnerLicenseExpiryDate && now > new Date(student.learnerLicenseExpiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration Expired: 18-month validity period has ended. No further attempts can be recorded in this cycle. Please start a new registration.',
       });
     }
 
@@ -769,55 +782,105 @@ exports.recordTrialAttempt = async (req, res) => {
       student.trial.attempts = [];
     }
 
-    // Business Rule Check: Maximum 3 attempts
+    // Rule 5: Maximum 3 attempts allowed in current registration cycle
     if (student.trial.attempts.length >= 3) {
       return res.status(400).json({
         success: false,
-        message: 'Maximum limit reached: A student is allowed a maximum of 3 Trial attempts.',
+        message: 'All 3 Trial Exam attempts have already been used for this registration cycle.',
       });
     }
 
+    // Rule 5: Track Attempt number, Trial Exam Date, Result, Score, Pass/Fail status, Completion date
     const attemptNumber = student.trial.attempts.length + 1;
     student.trial.attempts.push({
       attemptNumber,
       date: new Date(attemptDate),
       result: normResult,
+      score: score ? score.toString() : '',
+      marks,
+      status: normResult === 'passed' ? 'passed' : normResult === 'failed' ? 'failed' : 'absent',
+      completionDate: new Date(completionDate),
       notes: examinerNotes,
       examinerNotes: examinerNotes,
     });
     student.trial.attemptsUsed = student.trial.attempts.length;
 
+    // Rule 6: Failed attempt does NOT immediately cancel registration (remaining: 2, 1, 0)
+    // Rule 8: Condition A – Only when all 3 attempts fail is registration cancelled
     if (normResult === 'passed') {
       student.trial.licenseObtained = true;
       student.trial.licenseIssuedDate = new Date(attemptDate);
       student.registrationStatus = 'completed';
+      student.isPassed = true;
+      student.learnerLicenseStatus = 'completed';
+    } else {
+      const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
+      if (attemptsRemaining === 0) {
+        // Condition A triggered: All 3 attempts failed -> Cancel registration
+        student.registrationStatus = 'cancelled';
+        student.accountStatus = 'cancelled';
+        student.account_status = 'Cancelled';
+        student.learnerLicenseStatus = 'attempts_exhausted';
+        student.isAdvancePaid = false;
+        student.isPremium = false;
+      }
     }
 
+    student.lastActivityDate = new Date();
     await student.save();
 
     // Trigger in-app notification if user exists
     if (student.userId?._id) {
       try {
-        await Notification.create({
-          recipientId: student.userId._id,
-          recipientRole: 'student',
-          title: normResult === 'passed' ? '🎉 Congratulations! Trial Exam Passed' : 'Trial Exam Result Recorded',
-          message:
-            normResult === 'passed'
-              ? `You passed Trial Attempt #${attemptNumber}! Your driving license process is now completed.`
-              : `Trial Attempt #${attemptNumber} result was recorded as '${normResult}'.`,
-          type: 'trial',
-        });
+        const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
+        if (normResult === 'passed') {
+          await Notification.create({
+            recipientId: student.userId._id,
+            recipientRole: 'student',
+            title: '🎉 Congratulations! Trial Exam Passed',
+            message: `You passed Trial Attempt #${attemptNumber}! Your practical driving license process is now completed.`,
+            type: 'trial',
+            link: '/student/dashboard',
+          });
+        } else if (attemptsRemaining > 0) {
+          await Notification.create({
+            recipientId: student.userId._id,
+            recipientRole: 'student',
+            title: `Trial Exam Attempt #${attemptNumber} Result Recorded`,
+            message: `Trial Attempt #${attemptNumber} result was recorded as ${normResult}. You have ${attemptsRemaining} of 3 attempt(s) remaining. Registration remains active.`,
+            type: 'trial',
+            link: '/student/dashboard',
+          });
+        } else {
+          await Notification.create({
+            recipientId: student.userId._id,
+            recipientRole: 'student',
+            title: '⚠️ Registration Cancelled – 3 Trial Attempts Exhausted',
+            message: 'All 3 Trial Exam attempts have been used and were unsuccessful. Your current registration cycle has been cancelled in accordance with DMT regulations. Please visit your dashboard to initiate a new registration cycle.',
+            type: 'trial',
+            link: '/student/dashboard',
+          });
+        }
       } catch (notifErr) {
         console.warn('Failed to send trial attempt notification:', notifErr.message);
       }
     }
 
+    const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
+    const message = normResult === 'passed'
+      ? `Trial attempt #${attemptNumber} recorded as PASSED! License process completed.`
+      : attemptsRemaining > 0
+      ? `Trial attempt #${attemptNumber} recorded as ${normResult}. Student has ${attemptsRemaining} attempt(s) remaining.`
+      : `All 3 Trial attempts failed. Registration cycle has been automatically cancelled.`;
+
     return res.status(200).json({
       success: true,
-      message: `Trial attempt #${attemptNumber} recorded successfully`,
+      message,
       trial: student.trial,
+      attemptsRemaining,
+      registrationStatus: student.registrationStatus,
       licenseObtained: student.trial.licenseObtained,
+      student: sanitizeStudentForType(student),
     });
   } catch (error) {
     console.error('Error recording trial attempt:', error);

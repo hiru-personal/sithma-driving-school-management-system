@@ -14,10 +14,31 @@ const trialAttemptSchema = new mongoose.Schema(
     },
     result: {
       type: String,
-      enum: ['pending', 'passed', 'failed'],
+      enum: ['pending', 'passed', 'failed', 'absent'],
       default: 'pending',
     },
+    score: {
+      type: String,
+      default: '',
+    },
+    marks: {
+      type: Number,
+      default: null,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'passed', 'failed', 'absent'],
+      default: 'pending',
+    },
+    completionDate: {
+      type: Date,
+      default: Date.now,
+    },
     examinerNotes: {
+      type: String,
+      default: '',
+    },
+    notes: {
       type: String,
       default: '',
     },
@@ -182,6 +203,21 @@ const registrationCycleSchema = new mongoose.Schema(
       min: 0,
       max: 3,
     },
+    trialAttempts: [trialAttemptSchema],
+    trialAttemptsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 3,
+    },
+    trial: {
+      attempts: [trialAttemptSchema],
+      attemptsUsed: { type: Number, default: 0, max: 3 },
+      trialDate: { type: Date, default: null },
+      licenseObtained: { type: Boolean, default: false },
+      licenseIssuedDate: { type: Date, default: null },
+    },
+    trial_date: { type: Date, default: null },
     isPassed: {
       type: Boolean,
       default: false,
@@ -811,6 +847,18 @@ studentSchema.methods.evaluateLifecycle = function () {
     // Sync attempts & marks
     currentCycle.examAttempts = this.learnerExamAttempts || [];
     currentCycle.examAttemptsCount = (this.learnerExamAttempts || []).length;
+    currentCycle.trialAttempts = this.trial?.attempts || [];
+    currentCycle.trialAttemptsCount = (this.trial?.attempts || []).length;
+    if (this.trial) {
+      currentCycle.trial = {
+        attempts: this.trial.attempts || [],
+        attemptsUsed: this.trial.attemptsUsed || (this.trial.attempts || []).length,
+        trialDate: this.trial.trialDate || this.trial_date || null,
+        licenseObtained: Boolean(this.trial.licenseObtained),
+        licenseIssuedDate: this.trial.licenseIssuedDate || null,
+      };
+    }
+    currentCycle.trial_date = this.trial_date || this.trial?.trialDate || null;
     currentCycle.isAdvancePaid = Boolean(this.isAdvancePaid);
     currentCycle.isPassed = Boolean(this.isPassed || currentCycle.isPassed);
     if (this.finalLicense && (this.finalLicense.photoUrl || this.finalLicense.licensePhotoUrl)) {
@@ -825,6 +873,18 @@ studentSchema.methods.evaluateLifecycle = function () {
       this.learnerLicenseStatus === 'completed' ||
       this.trial?.licenseObtained;
 
+    // Check Condition A: 3 attempts failed (Trial OR Theory)
+    const trialAttempts = this.trial?.attempts || [];
+    const isTrialExhausted =
+      trialAttempts.length >= 3 && !trialAttempts.some((a) => a.result === 'passed');
+    const theoryAttempts = currentCycle.examAttempts || this.learnerExamAttempts || [];
+    const isTheoryExhausted =
+      theoryAttempts.length >= 3 && !theoryAttempts.some((a) => a.result === 'passed');
+    const areAttemptsExhausted = isTrialExhausted || isTheoryExhausted;
+
+    // Check Condition B: 18 months expired
+    const is18MonthsExpired = now > currentCycle.expiryDate;
+
     if (isCompleted) {
       if (currentCycle.status !== 'completed' || this.learnerLicenseStatus !== 'completed') {
         currentCycle.status = 'completed';
@@ -838,8 +898,8 @@ studentSchema.methods.evaluateLifecycle = function () {
         this.learnerLicenseStatus = 'passed';
         changed = true;
       }
-    } else if (now > currentCycle.expiryDate) {
-      // 18-month validity expired!
+    } else if (is18MonthsExpired) {
+      // Condition B – 18 Months Expired (Independent cancellation)
       if (currentCycle.status !== 'expired' || this.learnerLicenseStatus !== 'expired') {
         currentCycle.status = 'expired';
         this.learnerLicenseStatus = 'expired';
@@ -850,12 +910,8 @@ studentSchema.methods.evaluateLifecycle = function () {
         this.isPremium = false;
         changed = true;
       }
-    } else if (
-      currentCycle.examAttempts &&
-      currentCycle.examAttempts.length >= 3 &&
-      !currentCycle.examAttempts.some((a) => a.result === 'passed')
-    ) {
-      // 3 exam attempts failed!
+    } else if (areAttemptsExhausted) {
+      // Condition A – All 3 Attempts Failed (Independent cancellation)
       if (currentCycle.status !== 'attempts_exhausted' || this.learnerLicenseStatus !== 'attempts_exhausted') {
         currentCycle.status = 'attempts_exhausted';
         this.learnerLicenseStatus = 'attempts_exhausted';

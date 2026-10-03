@@ -753,9 +753,19 @@ export default function StudentDashboard() {
     (remainingDays !== null && remainingDays <= 0 && profile?.learnerLicenseStatus !== 'completed' && profile?.learnerLicenseStatus !== 'passed')
   );
 
+  const trialAttemptsList = profile?.trial?.attempts || [];
+  const trialAttemptsUsed = trialAttemptsList.length;
+  const trialAttemptsRemaining = Math.max(0, 3 - trialAttemptsUsed);
+  const latestTrialAttempt = trialAttemptsList.length > 0 ? trialAttemptsList[trialAttemptsList.length - 1] : null;
+
+  const isTrial3AttemptsFailed = Boolean(
+    trialAttemptsUsed >= 3 && !trialAttemptsList.some((a) => a.result === 'passed')
+  );
+
   const is3AttemptsFailed = Boolean(
     profile?.learnerLicenseStatus === 'attempts_exhausted' ||
-    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed'))
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed')) ||
+    isTrial3AttemptsFailed
   );
 
   const isFinalPassed = Boolean(
@@ -1153,18 +1163,26 @@ export default function StudentDashboard() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-black text-[#152026]">
-                {isExpired ? 'Learner License Expired' : 'All 3 exam attempts have been used.'}
+                {isExpired
+                  ? 'Registration Expired'
+                  : isTrial3AttemptsFailed
+                  ? 'All 3 Trial Exam Attempts Used'
+                  : 'All 3 Exam Attempts Used'}
               </h1>
 
               <p className="text-xs sm:text-sm text-[#475569] leading-relaxed max-w-3xl">
                 {isExpired ? (
                   <>
-                    <strong className="text-[#152026]">Please register again.</strong> According to Department of Motor Traffic (DMT) regulations, once registered, a learner has a maximum of <strong>1.5 years (18 months)</strong> to complete the required licensing process. Your validity period ended on{' '}
-                    <strong className="text-[#152026] underline">{licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired'}</strong>.
+                    <strong className="text-[#152026]">Registration Expired.</strong> Your 18-month registration period has ended. According to Department of Motor Traffic (DMT) regulations, once registered, a learner has a maximum of <strong>1.5 years (18 months)</strong> to complete the process. Your validity period ended on{' '}
+                    <strong className="text-[#152026] underline">{licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired'}</strong>. Please start a new registration.
+                  </>
+                ) : isTrial3AttemptsFailed ? (
+                  <>
+                    <strong className="text-[#152026]">Registration Cancelled.</strong> All 3 Trial Exam attempts have been used and were unsuccessful. In accordance with DMT regulations, your current registration cycle has ended. Please start a new registration.
                   </>
                 ) : (
                   <>
-                    <strong className="text-[#152026]">Please register again.</strong> In accordance with DMT regulations, candidates are allowed a maximum of <strong>3 trial attempts</strong> for the written theory exam per registration cycle. All 3 attempts have been exhausted.
+                    <strong className="text-[#152026]">Registration Cancelled.</strong> In accordance with DMT regulations, candidates are allowed a maximum of <strong>3 attempts</strong> per registration cycle. All 3 attempts have been exhausted. Please start a new registration.
                   </>
                 )}
               </p>
@@ -1824,30 +1842,58 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* 18-Month Validity Period Metrics */}
+        {/* Recent Trial Result Banner (if failed/absent and still has attempts) */}
+        {latestTrialAttempt && latestTrialAttempt.result !== 'passed' && trialAttemptsRemaining > 0 && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-sm text-amber-950">
+                Trial Exam Attempt #{latestTrialAttempt.attemptNumber} – {latestTrialAttempt.result === 'failed' ? 'Failed' : 'Absent'}
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                You have <strong>{trialAttemptsRemaining} of 3 attempts remaining</strong>. Your registration remains active until{' '}
+                <strong>{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : '18 months'}</strong>. You may schedule a new trial date to re-take your practical trial exam.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 18-Month Validity Period & Attempt Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
-            <span className="text-[#6A97C0] block text-[11px] font-semibold">License Start Date</span>
-            <span className="font-bold text-[#152026] font-mono text-sm">
-              {licenseStartDate ? safeFormatDate(licenseStartDate, 'dd MMMM yyyy') : 'Registered'}
-            </span>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
-            <span className="text-[#6A97C0] block text-[11px] font-semibold">18-Month Expiry Date</span>
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">18-Month Registration Validity</span>
             <span className={`font-bold font-mono text-sm ${isExpiringSoon ? 'text-amber-700' : 'text-[#1B3D59]'}`}>
               {licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : 'In 18 Months'}
             </span>
+            <span className="text-[10px] text-slate-500 block">
+              {remainingDays !== null ? `${remainingDays} Days Remaining` : 'Active'}
+            </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
-            <span className="text-[#6A97C0] block text-[11px] font-semibold">Validity Remaining</span>
-            <span className={`font-bold text-sm ${isExpiringSoon ? 'text-amber-700' : 'text-emerald-700'}`}>
-              {remainingDays !== null ? `${remainingDays} Days Remaining` : '18 Months'}
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Practical Trial Attempts</span>
+            <span className={`font-bold text-sm ${trialAttemptsRemaining === 1 ? 'text-amber-700' : trialAttemptsRemaining === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+              {trialAttemptsRemaining} of 3 Remaining
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {trialAttemptsUsed} / 3 Attempts Used
             </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
             <span className="text-[#6A97C0] block text-[11px] font-semibold">Written Exam Attempts</span>
             <span className="font-bold text-[#152026] text-sm">
               {attemptsCount} of 3 Attempts Used
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {isExamPassed ? '✓ Theory Exam Passed' : 'Pending Theory Pass'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Registration Status</span>
+            <span className="font-bold text-emerald-700 text-sm flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Registration Active
+            </span>
+            <span className="text-[10px] text-slate-500 block font-mono">
+              Cycle #{profile?.currentCycleNumber || 1}
             </span>
           </div>
         </div>

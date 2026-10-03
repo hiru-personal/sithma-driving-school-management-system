@@ -171,6 +171,7 @@ export default function StaffStudentListPage() {
   const [trialForm, setTrialForm] = useState({
     attemptDate: new Date().toISOString().split('T')[0],
     result: 'passed',
+    score: '',
     examinerNotes: '',
   });
 
@@ -359,8 +360,9 @@ export default function StaffStudentListPage() {
       setTrialDateInput('');
     }
     setTrialForm({
-      attemptDate: new Date().toISOString().split('T')[0],
+      attemptDate: student.trial_date ? student.trial_date.split('T')[0] : new Date().toISOString().split('T')[0],
       result: 'passed',
+      score: '',
       examinerNotes: '',
     });
 
@@ -2006,14 +2008,77 @@ export default function StaffStudentListPage() {
             {/* Practical Trial Result Form */}
             {modalMode === 'record_trial' && (
               <form onSubmit={handleRecordTrial} className="space-y-4 text-xs">
-                <div className="p-3.5 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-1 text-[#152026]">
-                  <div className="font-bold text-[#152026] flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-[#1B3D59]" /> DMT 3-Attempt Rule:
+                {/* 3-Attempt Rule & 18-Month Validity Banner */}
+                <div className="p-4 bg-[#F3EED8] border border-[#E2D8B3] rounded-2xl space-y-2 text-[#152026]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="font-extrabold text-[#1B3D59] flex items-center gap-1.5 text-xs">
+                      <AlertTriangle className="w-4 h-4 text-[#1B3D59]" /> DMT 3-Attempt & 18-Month Rule
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1B3D59] text-white">
+                      Attempt #{Math.min(3, (selectedStudent.trial?.attempts?.length || 0) + 1)} of 3
+                    </span>
                   </div>
-                  <p className="text-slate-600 text-[11px]">
-                    Current attempts recorded: {selectedStudent.trial?.attempts?.length || 0} of 3 maximum allowed attempts.
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+                    <div className="bg-white/80 p-2 rounded-xl border border-[#E2D8B3]/60">
+                      <span className="text-slate-500 block text-[10px]">Attempts Used:</span>
+                      <strong className="text-[#152026]">{selectedStudent.trial?.attempts?.length || 0} / 3</strong>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-xl border border-[#E2D8B3]/60">
+                      <span className="text-slate-500 block text-[10px]">Attempts Remaining:</span>
+                      <strong className="text-emerald-700">
+                        {Math.max(0, 3 - (selectedStudent.trial?.attempts?.length || 0))} Remaining
+                      </strong>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-xl border border-[#E2D8B3]/60 col-span-2 sm:col-span-1">
+                      <span className="text-slate-500 block text-[10px]">18-Month Expiry:</span>
+                      <strong className="text-[#1B3D59]">
+                        {selectedStudent.learnerLicenseExpiryDate
+                          ? new Date(selectedStudent.learnerLicenseExpiryDate).toLocaleDateString()
+                          : '18 Months'}
+                      </strong>
+                    </div>
+                  </div>
+                  <p className="text-slate-600 text-[10.5px] leading-relaxed pt-1">
+                    Failed attempts 1 and 2 do not cancel registration. Registration is only cancelled if all 3 attempts are failed OR the 18-month validity expires.
                   </p>
                 </div>
+
+                {/* Previous Attempts History */}
+                {selectedStudent.trial?.attempts && selectedStudent.trial.attempts.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="block font-bold text-[#152026]">
+                      Previous Trial Attempts Recorded ({selectedStudent.trial.attempts.length} of 3):
+                    </label>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {selectedStudent.trial.attempts.map((att, idx) => (
+                        <div
+                          key={att._id || idx}
+                          className="p-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <span className="font-bold text-[#152026]">Attempt #{att.attemptNumber || idx + 1}: </span>
+                            <span className="text-slate-600">{new Date(att.date).toLocaleDateString()}</span>
+                            {att.score && (
+                              <span className="text-[#1B3D59] font-semibold ml-2">• Score: {att.score}</span>
+                            )}
+                            {att.examinerNotes && (
+                              <p className="text-[11px] text-slate-500 mt-0.5 truncate max-w-xs">{att.examinerNotes}</p>
+                            )}
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              att.result === 'passed'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-rose-100 text-rose-800 border border-rose-300'
+                            }`}
+                          >
+                            {att.result}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block font-semibold text-[#152026] mb-1">
@@ -2031,17 +2096,29 @@ export default function StaffStudentListPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
-                  <select
-                    value={trialForm.result}
-                    onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
-                  >
-                    <option value="passed">PASSED (Issue Driver's License)</option>
-                    <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
-                    <option value="absent">ABSENT</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[#152026] mb-1">Trial Outcome:</label>
+                    <select
+                      value={trialForm.result}
+                      onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                    >
+                      <option value="passed">PASSED (Issue Driver's License)</option>
+                      <option value="failed">FAILED (Requires Re-trial Scheduling)</option>
+                      <option value="absent">ABSENT</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[#152026] mb-1">Score / Marks (Optional):</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 85% or Pass Grade A"
+                      value={trialForm.score || ''}
+                      onChange={(e) => setTrialForm({ ...trialForm, score: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59]"
+                    />
+                  </div>
                 </div>
 
                 <div>
