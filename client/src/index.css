@@ -180,6 +180,23 @@ h4.text-white,
 .banner-dark h3,
 .banner-dark p,
 .banner-dark span,
+.card-deep-ocean,
+.card-deep-ocean h1,
+.card-deep-ocean h2,
+.card-deep-ocean h3,
+.card-deep-ocean h4,
+.card-deep-ocean p,
+.card-deep-ocean .text-white,
+[class*="bg-[#1B3D59]"] h1.text-white,
+[class*="bg-[#1B3D59]"] h2.text-white,
+[class*="bg-[#1B3D59]"] h3.text-white,
+[class*="bg-[#1B3D59]"] h4.text-white,
+[class*="bg-[#1B3D59]"] .text-white,
+[class*="bg-[#152026]"] h1.text-white,
+[class*="bg-[#152026]"] h2.text-white,
+[class*="bg-[#152026]"] h3.text-white,
+[class*="bg-[#152026]"] h4.text-white,
+[class*="bg-[#152026]"] .text-white,
 div[class*="bg-gradient-to-r from-[#0F2231]"] h1,
 div[class*="bg-gradient-to-r from-[#152026]"] h1,
 div[class*="bg-gradient-to-r from-[#1B3D59]"] h1,
@@ -187,7 +204,7 @@ div[class*="bg-[#1B3D59]"] > div > h1.text-white,
 div[class*="bg-[#1B3D59]"] > h1.text-white,
 div[class*="bg-[#152026]"] > div > h1.text-white,
 div[class*="bg-[#152026]"] > h1.text-white {
-  color: #FFFFFF;
+  color: #FFFFFF !important;
 }
 
 /* 2. Text Hierarchy */
@@ -261,12 +278,12 @@ div[class*="bg-white/10"] {
   color: #152026 !important;
 }
 
-/* Text inside cards that was white becomes Black Pine */
-.card .text-white:not([class*="bg-"]):not(.btn-primary):not(.btn-accent):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
-.card strong.text-white,
-.card div.text-white:not([class*="bg-"]):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
-.card p.text-white,
-.card span.text-white:not([class*="bg-"]):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+/* Text inside white cards that was white becomes Black Pine */
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) .text-white:not([class*="bg-"]):not(.btn-primary):not(.btn-accent):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) strong.text-white,
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) div.text-white:not([class*="bg-"]):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) p.text-white,
+.card:not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]):not(.card-deep-ocean):not(.banner-dark) span.text-white:not([class*="bg-"]):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
 table .text-white:not([class*="bg-"]):not(button):not(a):not(th),
 div[class*="bg-slate"]:not(header *):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]) .text-white:not([class*="bg-"]) {
   color: #152026 !important;

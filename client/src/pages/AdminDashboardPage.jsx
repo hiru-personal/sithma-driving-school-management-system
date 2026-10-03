@@ -168,14 +168,18 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Executive Quick Links Bar: Question Lists */}
-      <div className="card p-5 sm:p-6 bg-[#1B3D59] text-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md border border-[#6A97C0]/30">
+      <div className="p-5 sm:p-6 bg-[#1B3D59] text-white rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-[#B3D5F1]/20">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-[#D4EEF8] shrink-0">
-            <Layers className="w-5 h-5 text-[#D4EEF8]" />
+          <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center text-white shrink-0 shadow-inner">
+            <Layers className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">DMT Exam Question Lists Management</h3>
-            <p className="text-xs text-[#D4EEF8]">Create multiple question lists, manage trilingual questions, and configure exam pass benchmarks.</p>
+            <h3 className="text-base font-extrabold text-white tracking-wide" style={{ color: '#FFFFFF' }}>
+              DMT Exam Question Lists Management
+            </h3>
+            <p className="text-xs text-[#D4EEF8] font-medium mt-0.5">
+              Create multiple question lists, manage trilingual questions, and configure exam pass benchmarks.
+            </p>
           </div>
         </div>
         <Link
