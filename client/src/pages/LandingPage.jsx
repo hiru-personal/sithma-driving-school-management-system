@@ -30,7 +30,6 @@ export default function LandingPage() {
   const [selectedBranch, setSelectedBranch] = useState('Maharagama');
   const [typeModalOpen, setTypeModalOpen] = useState(false);
 
-
   const branches = [
     {
       id: 'Maharagama',
@@ -114,7 +113,7 @@ export default function LandingPage() {
         'Official trial day vehicle provision & accompaniment',
       ],
       icon: Car,
-      color: 'border-cyan-400',
+      color: 'border-[#1B3D59]',
       packageType: 'Car_Full',
     },
     {
@@ -132,7 +131,7 @@ export default function LandingPage() {
         'Flexible custom scheduling',
       ],
       icon: Car,
-      color: 'border-blue-400',
+      color: 'border-[#6A97C0]',
       packageType: 'Car_Refresher',
     },
     {
@@ -150,7 +149,7 @@ export default function LandingPage() {
         'Experienced heavy transport instructors',
       ],
       icon: Bus,
-      color: 'border-amber-400',
+      color: 'border-[#152026]',
       packageType: 'HeavyVehicle_Bus',
     },
   ];
@@ -171,7 +170,7 @@ export default function LandingPage() {
         'Certified instructor in dual-control vehicle',
       ],
       icon: Car,
-      color: 'border-cyan-400',
+      color: 'border-[#1B3D59]',
       packageType: 'Car_Individual',
     },
     {
@@ -189,7 +188,7 @@ export default function LandingPage() {
         'Trial bike & safety gear provided',
       ],
       icon: Bike,
-      color: 'border-emerald-400',
+      color: 'border-[#6A97C0]',
       packageType: 'Bike_Individual',
     },
     {
@@ -207,7 +206,7 @@ export default function LandingPage() {
         'Government DMT road trial exam prep',
       ],
       icon: Bus,
-      color: 'border-purple-400',
+      color: 'border-[#152026]',
       packageType: 'HeavyVehicle_Individual',
     },
     {
@@ -225,7 +224,7 @@ export default function LandingPage() {
         'Trial vehicle & practice track accompaniment',
       ],
       icon: Car,
-      color: 'border-amber-400',
+      color: 'border-[#1B3D59]',
       packageType: 'ThreeWheeler_Individual',
     },
   ];
@@ -261,18 +260,16 @@ export default function LandingPage() {
   return (
     <div className="space-y-20 py-10 px-4 sm:px-6 lg:px-10 max-w-[1440px] mx-auto w-full">
       {/* Hero Section */}
-      <section className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/70 to-slate-900/90 rounded-2xl sm:rounded-3xl text-white p-5 sm:p-8 md:p-12 lg:p-14 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] overflow-hidden">
-        <div className="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent pointer-events-none" />
-        
+      <section className="relative bg-white rounded-3xl p-6 sm:p-10 md:p-12 lg:p-14 border border-[#D4EEF8] shadow-sm overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10">
           <div className="lg:col-span-7 space-y-5 sm:space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-[10px] sm:text-xs">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Sri Lanka's Modern Driving Academy Management System
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[11px] sm:text-xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Sri Lanka's Modern Driving Academy Management System
             </div>
-            <h1 className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tight text-white font-heading leading-tight drop-shadow">
-              Master the Road with <span className="text-accent">Sithma</span> Driving School
+            <h1 className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tight text-[#152026] leading-tight">
+              Master the Road with <span className="text-[#1B3D59]">Sithma</span> Driving School
             </h1>
-            <p className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl">
+            <p className="text-[#152026]/75 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl font-medium">
               Serving Maharagama, Werahara, and Delgoda branches with professional certified instructors, automated DMT milestone stepper, seamless online lesson booking, and multilingual exam practice.
             </p>
 
@@ -280,7 +277,7 @@ export default function LandingPage() {
               {user ? (
                 <Link
                   to={user.role === 'student' ? '/student/dashboard' : '/staff/students'}
-                  className="btn-accent w-full sm:w-auto px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105"
+                  className="btn-primary w-full sm:w-auto px-8 py-3.5 font-bold text-sm shadow-sm flex items-center justify-center gap-2"
                 >
                   Go to {user.role === 'student' ? 'Student Dashboard' : 'Staff Portal'} <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -289,13 +286,13 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => setTypeModalOpen(true)}
-                    className="btn-accent w-full sm:w-auto px-8 py-3.5 font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer"
+                    className="btn-primary w-full sm:w-auto px-8 py-3.5 font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Enroll as Student <ArrowRight className="w-4 h-4" />
                   </button>
                   <Link
                     to="/login"
-                    className="btn-secondary w-full sm:w-auto px-6 py-3.5 font-bold text-sm bg-white/10 hover:bg-white/20 border-white/20 text-white flex items-center justify-center gap-2"
+                    className="btn-secondary w-full sm:w-auto px-6 py-3.5 font-bold text-sm flex items-center justify-center gap-2 shadow-sm"
                   >
                     Portal Sign In
                   </Link>
@@ -306,41 +303,41 @@ export default function LandingPage() {
 
           {/* Hero Visual Photo Card */}
           <div className="lg:col-span-5 relative group">
-            <div className="relative rounded-3xl overflow-hidden border-2 border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.7)] group-hover:border-cyan-400/60 transition-all duration-500">
+            <div className="relative rounded-3xl overflow-hidden border-2 border-[#D4EEF8] shadow-md group-hover:border-[#6A97C0] transition-all duration-300">
               <img
                 src="/images/hero-driving-school.jpg"
                 alt="Sithma Driving School professional dual-control car in road lesson"
                 className="w-full h-[300px] sm:h-[350px] object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/15 flex items-center justify-between">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#152026]/80 via-transparent to-transparent"></div>
+              <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-2xl bg-white border border-[#D4EEF8] flex items-center justify-between shadow-lg">
                 <div>
-                  <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider block">Official Training Ground</span>
-                  <h4 className="text-xs sm:text-sm font-bold text-white">Dual-Control Learner Fleet</h4>
+                  <span className="text-[10px] font-bold text-[#6A97C0] uppercase tracking-wider block">Official Training Ground</span>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#152026]">Dual-Control Learner Fleet</h4>
                 </div>
-                <span className="badge badge-success text-[11px] font-bold">98% Pass Rate</span>
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">98% Pass Rate</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Floating Metrics Pill */}
-        <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+        <div className="mt-10 pt-8 border-t border-[#D4EEF8] grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div>
-            <div className="text-2xl sm:text-3xl font-black text-cyan-300">3 Branches</div>
-            <p className="text-[11px] text-slate-400 font-medium">Maharagama • Werahara • Delgoda</p>
+            <div className="text-2xl sm:text-3xl font-black text-[#1B3D59]">3 Branches</div>
+            <p className="text-xs text-[#6A97C0] font-bold mt-0.5">Maharagama • Werahara • Delgoda</p>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-400">98%</div>
-            <p className="text-[11px] text-slate-400 font-medium">First-Time Trial Pass Rate</p>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-700">98%</div>
+            <p className="text-xs text-[#6A97C0] font-bold mt-0.5">First-Time Trial Pass Rate</p>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-black text-amber-300">6 Instructors</div>
-            <p className="text-[11px] text-slate-400 font-medium">Certified 1-on-1 Road Trainers</p>
+            <div className="text-2xl sm:text-3xl font-black text-[#6A97C0]">6 Instructors</div>
+            <p className="text-xs text-[#6A97C0] font-bold mt-0.5">Certified 1-on-1 Road Trainers</p>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-black text-white">3 Languages</div>
-            <p className="text-[11px] text-slate-400 font-medium">Sinhala • Tamil • English Prep</p>
+            <div className="text-2xl sm:text-3xl font-black text-[#152026]">3 Languages</div>
+            <p className="text-xs text-[#6A97C0] font-bold mt-0.5">Sinhala • Tamil • English Prep</p>
           </div>
         </div>
       </section>
@@ -348,32 +345,32 @@ export default function LandingPage() {
       {/* DMT 5-Stage Stepper Roadmap */}
       <section className="space-y-6">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4" /> Official Sri Lanka DMT Protocol
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B3D59] uppercase tracking-wider">
+            <ShieldCheck className="w-4 h-4 text-[#1B3D59]" /> Official Sri Lanka DMT Protocol
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading">
+          <h2 className="text-2xl sm:text-3xl font-black text-[#152026]">
             Your Structured Path to a Driving License
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-[#6A97C0]">
             From your first medical appointment to your final practical trial pass, our system tracks every milestone in real time.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4">
-          {dmtSteps.map((s, idx) => (
+          {dmtSteps.map((s) => (
             <div
               key={s.step}
-              className="card p-5 space-y-3 relative flex flex-col justify-between hover:border-cyan-400/50 transition-colors"
+              className="bg-white rounded-3xl p-5 space-y-3 relative flex flex-col justify-between border border-[#D4EEF8] hover:border-[#6A97C0] transition-colors shadow-sm"
             >
               <div>
-                <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex items-center justify-center font-black text-xs mb-3">
+                <div className="w-8 h-8 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30 flex items-center justify-center font-black text-xs mb-3">
                   {s.step}
                 </div>
-                <h3 className="text-sm font-bold text-white mb-1">{s.title}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">{s.desc}</p>
+                <h3 className="text-sm font-bold text-[#152026] mb-1">{s.title}</h3>
+                <p className="text-xs text-[#152026]/75 leading-relaxed">{s.desc}</p>
               </div>
-              <div className="text-[10px] font-semibold text-cyan-300/80 pt-2 border-t border-white/10 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-cyan-400" /> Tracked in Portal
+              <div className="text-[10px] font-bold text-[#1B3D59] pt-2 border-t border-[#D4EEF8] flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-[#1B3D59]" /> Tracked in Portal
               </div>
             </div>
           ))}
@@ -384,10 +381,10 @@ export default function LandingPage() {
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider">
-              <Building2 className="w-4 h-4" /> 3 Modern Training Hubs
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B3D59] uppercase tracking-wider">
+              <Building2 className="w-4 h-4 text-[#1B3D59]" /> 3 Modern Training Hubs
             </div>
-            <h2 className="text-2xl font-extrabold text-white font-heading mt-1">
+            <h2 className="text-2xl font-black text-[#152026] mt-1">
               Select Your Training Branch
             </h2>
           </div>
@@ -398,8 +395,8 @@ export default function LandingPage() {
                 onClick={() => setSelectedBranch(b.id)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   selectedBranch === b.id
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-[0_0_12px_rgba(6,182,212,0.6)]'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#1B3D59] text-white shadow-sm'
+                    : 'text-[#152026] hover:bg-[#D4EEF8]/40'
                 }`}
               >
                 {b.name.replace(' Branch', '')}
@@ -413,33 +410,33 @@ export default function LandingPage() {
             <div
               key={b.id}
               onClick={() => setSelectedBranch(b.id)}
-              className={`card p-6 space-y-4 cursor-pointer transition-all ${
+              className={`bg-white rounded-3xl p-6 space-y-4 cursor-pointer transition-all border shadow-sm ${
                 selectedBranch === b.id
-                  ? 'border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400'
-                  : 'hover:border-white/20'
+                  ? 'border-2 border-[#1B3D59] shadow-md ring-1 ring-[#1B3D59]'
+                  : 'border-[#D4EEF8] hover:border-[#6A97C0]'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="badge badge-info text-[10px]">{b.tag}</span>
-                <MapPin className="w-5 h-5 text-cyan-400" />
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold">{b.tag}</span>
+                <MapPin className="w-5 h-5 text-[#1B3D59]" />
               </div>
 
               <div>
-                <h3 className="text-base font-bold text-white">{b.name}</h3>
-                <p className="text-xs text-slate-400 mt-1">{b.address}</p>
+                <h3 className="text-base font-bold text-[#152026]">{b.name}</h3>
+                <p className="text-xs text-[#6A97C0] mt-1">{b.address}</p>
               </div>
 
-              <div className="space-y-2 text-xs text-slate-300 border-t border-white/10 pt-3">
-                <p className="flex items-center gap-2">
-                  <Users className="w-3.5 h-3.5 text-cyan-300" />
+              <div className="space-y-2 text-xs text-[#152026]/75 border-t border-[#D4EEF8] pt-3">
+                <p className="flex items-center gap-2 font-medium">
+                  <Users className="w-3.5 h-3.5 text-[#1B3D59]" />
                   <span>{b.instructors}</span>
                 </p>
-                <p className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                <p className="flex items-center gap-2 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-[#6A97C0]" />
                   <span>{b.timings}</span>
                 </p>
-                <p className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                <p className="flex items-center gap-2 font-medium">
+                  <Phone className="w-3.5 h-3.5 text-[#1B3D59]" />
                   <span>{b.phone}</span>
                 </p>
               </div>
@@ -452,19 +449,19 @@ export default function LandingPage() {
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-400 uppercase tracking-wider">
-              <Camera className="w-4 h-4" /> Real Practice Grounds & Fleet
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B3D59] uppercase tracking-wider">
+              <Camera className="w-4 h-4 text-[#1B3D59]" /> Real Practice Grounds & Fleet
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading mt-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#152026] mt-1">
               State-of-the-Art Training Fleet & Grounds
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#6A97C0] mt-1 max-w-xl">
               Inspect our certified dual-control fleet, official Werahara Figure-8 tracks, and specialized test rigs designed to guarantee your 1st-attempt license pass.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="badge badge-info text-[10px] font-bold px-3 py-1.5 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> DMT Exam Certified
+            <span className="inline-block px-3 py-1.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold shadow-xs">
+              <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 text-[#1B3D59]" /> DMT Exam Certified
             </span>
           </div>
         </div>
@@ -473,7 +470,7 @@ export default function LandingPage() {
           {fleetPhotos.map((item, idx) => (
             <div
               key={idx}
-              className="card card-hover overflow-hidden border border-white/10 group flex flex-col justify-between bg-slate-900/60"
+              className="bg-white rounded-3xl overflow-hidden border border-[#D4EEF8] group flex flex-col justify-between shadow-sm hover:border-[#6A97C0] transition-colors"
             >
               <div>
                 <div className="relative h-48 overflow-hidden">
@@ -483,38 +480,38 @@ export default function LandingPage() {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#152026]/80 via-transparent to-transparent" />
                   <div className="absolute top-3 left-3">
-                    <span className="badge badge-info text-[10px] font-bold shadow-lg backdrop-blur-md bg-cyan-950/80 border border-cyan-400/40 text-cyan-300">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/95 text-[#1B3D59] text-[10px] font-bold border border-[#D4EEF8] shadow-sm">
                       {item.badge}
                     </span>
                   </div>
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] text-slate-200">
-                    <span className="flex items-center gap-1 font-semibold text-xs text-white">
-                      <MapPin className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px]">
+                    <span className="flex items-center gap-1 font-bold text-xs text-white">
+                      <MapPin className="w-3.5 h-3.5 text-[#B3D5F1] flex-shrink-0" />
                       {item.tag}
                     </span>
                   </div>
                 </div>
 
                 <div className="p-4 space-y-2">
-                  <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                  <div className="text-[11px] font-bold text-[#6A97C0] uppercase tracking-wider">
                     {item.category}
                   </div>
-                  <h3 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">
+                  <h3 className="text-base font-bold text-[#152026] group-hover:text-[#1B3D59] transition-colors">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-[#152026]/75 leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
               </div>
 
-              <div className="px-4 pb-4 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-cyan-300/90 font-medium">
+              <div className="px-4 pb-4 pt-2 border-t border-[#D4EEF8] flex items-center justify-between text-[11px] text-[#1B3D59] font-bold">
                 <span className="flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Hands-On Coaching
+                  <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Hands-On Coaching
                 </span>
-                <span className="text-slate-500 font-semibold">100% Practical</span>
+                <span className="text-[#6A97C0] font-semibold">100% Practical</span>
               </div>
             </div>
           ))}
@@ -524,13 +521,13 @@ export default function LandingPage() {
       {/* Course Packages & Pricing */}
       <section className="space-y-6">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 uppercase tracking-wider">
-            <Award className="w-4 h-4" /> Transparent Pricing Catalog
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B3D59] uppercase tracking-wider">
+            <Award className="w-4 h-4 text-[#1B3D59]" /> Transparent Pricing Catalog
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading">
+          <h2 className="text-2xl sm:text-3xl font-black text-[#152026]">
             {pricingTab === 'individual' ? 'Individual Vehicle Packages' : 'Comprehensive Driving Packages'}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-[#6A97C0]">
             {pricingTab === 'individual'
               ? 'Flexible pay-as-you-learn individual hourly packages for targeted trial revision or skill enhancement.'
               : 'Complete all-inclusive courses from registration and theory to practical trial accompaniment.'}
@@ -538,18 +535,18 @@ export default function LandingPage() {
 
           {/* Pricing Catalog Switcher */}
           <div className="flex justify-center pt-3">
-            <div className="p-1 bg-slate-900/90 rounded-2xl border border-white/15 inline-flex items-center gap-1 shadow-xl">
+            <div className="p-1 bg-[#FAFCFE] rounded-2xl border border-[#D4EEF8] inline-flex items-center gap-1 shadow-sm">
               <button
                 onClick={() => setPricingTab('individual')}
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                   pricingTab === 'individual'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#1B3D59] text-white shadow-sm'
+                    : 'text-[#152026] hover:bg-[#D4EEF8]/40'
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <Sparkles className="w-3.5 h-3.5 text-[#B3D5F1]" />
                 Individual Packages (Hourly)
-                <span className="text-[10px] py-0.5 px-1.5 rounded-md bg-amber-400/20 text-amber-300 font-extrabold">
+                <span className="text-[10px] py-0.5 px-1.5 rounded-md bg-[#D4EEF8] text-[#1B3D59] font-black">
                   4 Vehicles
                 </span>
               </button>
@@ -557,8 +554,8 @@ export default function LandingPage() {
                 onClick={() => setPricingTab('comprehensive')}
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   pricingTab === 'comprehensive'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#1B3D59] text-white shadow-sm'
+                    : 'text-[#152026] hover:bg-[#D4EEF8]/40'
                 }`}
               >
                 Full Course Packages
@@ -576,7 +573,7 @@ export default function LandingPage() {
               return (
                 <div
                   key={pkg.name}
-                  className="card card-hover flex flex-col justify-between border border-white/10 hover:border-cyan-500/40 relative group overflow-hidden bg-slate-900/60"
+                  className="bg-white rounded-3xl flex flex-col justify-between border border-[#D4EEF8] hover:border-[#1B3D59] relative group overflow-hidden shadow-sm transition-all"
                 >
                   <div>
                     {/* Vehicle Photo Header */}
@@ -587,36 +584,36 @@ export default function LandingPage() {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#152026] via-transparent to-transparent" />
                       <div className="absolute top-3 left-3">
-                        <span className="badge badge-info text-[10px] font-bold shadow-md bg-cyan-950/90 border border-cyan-400/40 text-cyan-300">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/95 text-[#1B3D59] text-[10px] font-bold border border-[#D4EEF8] shadow-sm">
                           {pkg.badge}
                         </span>
                       </div>
-                      <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 flex items-center justify-center text-cyan-300 shadow-md">
+                      <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-white/95 border border-[#D4EEF8] flex items-center justify-center text-[#1B3D59] shadow-sm">
                         <Icon className="w-4 h-4" />
                       </div>
                     </div>
 
                     <div className="p-5 space-y-3">
                       <div>
-                        <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
+                        <h3 className="text-lg font-bold text-[#152026] group-hover:text-[#1B3D59] transition-colors">
                           {pkg.name}
                         </h3>
-                        <p className="text-xs text-slate-400">{pkg.type}</p>
+                        <p className="text-xs text-[#6A97C0]">{pkg.type}</p>
                       </div>
 
-                      <div className="p-3 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                        <div className="text-2xl font-black text-accent">{pkg.price}</div>
-                        <p className="text-xs font-semibold text-cyan-300 capitalize">{pkg.lessons}</p>
+                      <div className="p-3 bg-[#FAFCFE] rounded-2xl border border-[#D4EEF8] space-y-0.5">
+                        <div className="text-2xl font-black text-[#1B3D59]">{pkg.price}</div>
+                        <p className="text-xs font-bold text-[#6A97C0] capitalize">{pkg.lessons}</p>
                       </div>
 
-                      <p className="text-xs text-slate-300 leading-relaxed">{pkg.bonus}</p>
+                      <p className="text-xs text-[#152026]/75 leading-relaxed">{pkg.bonus}</p>
 
-                      <div className="space-y-2 pt-2 text-xs text-slate-300 border-t border-white/10">
+                      <div className="space-y-2 pt-2 text-xs text-[#152026]/75 border-t border-[#D4EEF8]">
                         {pkg.features.map((f, i) => (
                           <div key={i} className="flex items-start gap-2">
-                            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                            <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                             <span>{f}</span>
                           </div>
                         ))}
@@ -628,7 +625,7 @@ export default function LandingPage() {
                     <button
                       type="button"
                       onClick={() => setTypeModalOpen(true)}
-                      className="btn-accent w-full py-3 font-bold text-xs text-center shadow-lg hover:scale-105 block"
+                      className="btn-primary w-full py-3 font-bold text-xs text-center shadow-sm block"
                     >
                       Register to Enroll
                     </button>
@@ -648,7 +645,7 @@ export default function LandingPage() {
               return (
                 <div
                   key={pkg.name}
-                  className="card card-hover flex flex-col justify-between border border-white/10 hover:border-amber-400/40 relative group overflow-hidden bg-slate-900/60"
+                  className="bg-white rounded-3xl flex flex-col justify-between border border-[#D4EEF8] hover:border-[#1B3D59] relative group overflow-hidden shadow-sm transition-all"
                 >
                   <div>
                     {/* Course Photo Header */}
@@ -659,38 +656,38 @@ export default function LandingPage() {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#152026] via-transparent to-transparent" />
                       <div className="absolute top-3 left-3">
-                        <span className="badge badge-warning text-[10px] font-bold shadow-md bg-amber-950/90 border border-amber-400/40 text-amber-300">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] text-[10px] font-bold border border-[#6A97C0]/30 shadow-sm">
                           {pkg.badge}
                         </span>
                       </div>
-                      <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 flex items-center justify-center text-cyan-300 shadow-md">
+                      <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-white/95 border border-[#D4EEF8] flex items-center justify-center text-[#1B3D59] shadow-sm">
                         <Icon className="w-4 h-4" />
                       </div>
                     </div>
 
                     <div className="p-6 space-y-4">
                       <div>
-                        <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
+                        <h3 className="text-lg font-bold text-[#152026] group-hover:text-[#1B3D59] transition-colors">
                           {pkg.name}
                         </h3>
-                        <p className="text-xs text-slate-400">{pkg.type}</p>
+                        <p className="text-xs text-[#6A97C0]">{pkg.type}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <div className="text-3xl font-black text-accent">{pkg.price}</div>
-                        <p className="text-xs font-semibold text-cyan-300">{pkg.lessons}</p>
+                        <div className="text-3xl font-black text-[#1B3D59]">{pkg.price}</div>
+                        <p className="text-xs font-bold text-[#6A97C0]">{pkg.lessons}</p>
                       </div>
 
-                      <p className="text-xs font-bold text-amber-300 bg-white/5 p-2 rounded-xl border border-white/10">
+                      <p className="text-xs font-bold text-[#152026] bg-[#F3EED8] p-2.5 rounded-xl border border-[#6A97C0]/30">
                         {pkg.bonus}
                       </p>
 
-                      <div className="space-y-2 pt-2 text-xs text-slate-300 border-t border-white/10">
+                      <div className="space-y-2 pt-2 text-xs text-[#152026]/75 border-t border-[#D4EEF8]">
                         {pkg.features.map((f, i) => (
                           <div key={i} className="flex items-start gap-2">
-                            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                            <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                             <span>{f}</span>
                           </div>
                         ))}
@@ -702,7 +699,7 @@ export default function LandingPage() {
                     <button
                       type="button"
                       onClick={() => setTypeModalOpen(true)}
-                      className="btn-accent w-full py-3 font-bold text-xs text-center shadow-lg hover:scale-105 block"
+                      className="btn-primary w-full py-3 font-bold text-xs text-center shadow-sm block"
                     >
                       Register to Enroll
                     </button>
@@ -715,28 +712,28 @@ export default function LandingPage() {
       </section>
 
       {/* Trilingual Quiz Feature Highlight Banner */}
-      <section className="backdrop-blur-2xl bg-slate-900/80 rounded-3xl p-5 sm:p-8 md:p-10 border border-white/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 sm:gap-8">
+      <section className="bg-white rounded-3xl p-6 sm:p-10 border border-[#D4EEF8] shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 sm:gap-8">
         <div className="space-y-4 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-bold text-xs">
-            <BookOpen className="w-3.5 h-3.5" /> Informal Self-Study Aid
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs">
+            <BookOpen className="w-3.5 h-3.5 text-[#1B3D59]" /> Informal Self-Study Aid
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading">
+          <h2 className="text-2xl sm:text-3xl font-black text-[#152026]">
             Trilingual DMT Written Exam Practice
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#152026]/75 leading-relaxed">
             Practice realistic multiple-choice questions on road safety, priority signs, and traffic rules in <strong>Sinhala (සිංහල)</strong>, <strong>Tamil (தமிழ்)</strong>, or <strong>English</strong>. Real-time scoring against the official 80% passing benchmark.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <span className="badge bg-white/10 text-cyan-300 border border-white/15 text-xs">English Practice</span>
-            <span className="badge bg-white/10 text-cyan-300 border border-white/15 text-xs">සිංහල පුහුණුව</span>
-            <span className="badge bg-white/10 text-cyan-300 border border-white/15 text-xs">தமிழ் பயிற்சி</span>
+            <span className="inline-block px-3 py-1 rounded-full bg-[#FAFCFE] text-[#152026] border border-[#D4EEF8] text-xs font-bold">English Practice</span>
+            <span className="inline-block px-3 py-1 rounded-full bg-[#FAFCFE] text-[#152026] border border-[#D4EEF8] text-xs font-bold">සිංහල පුහුණුව</span>
+            <span className="inline-block px-3 py-1 rounded-full bg-[#FAFCFE] text-[#152026] border border-[#D4EEF8] text-xs font-bold">தமிழ் பயிற்சி</span>
           </div>
         </div>
 
         <div className="w-full lg:w-auto flex-shrink-0">
           <Link
             to="/student/quiz"
-            className="btn-accent px-8 py-3.5 font-bold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-105 w-full sm:w-auto"
+            className="btn-primary px-8 py-3.5 font-bold text-sm shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             Try Practice Exam <ArrowRight className="w-4 h-4" />
           </Link>
@@ -744,37 +741,37 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 pt-10 text-xs text-slate-400 space-y-6">
+      <footer className="border-t border-[#D4EEF8] pt-10 text-xs text-[#6A97C0] space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
-            <div className="flex items-center gap-2 text-white font-bold font-heading text-sm mb-2">
-              <Car className="w-4 h-4 text-cyan-400" /> Sithma Driving School (Pvt) Ltd
+            <div className="flex items-center gap-2 text-[#152026] font-black text-sm mb-2">
+              <Car className="w-4 h-4 text-[#1B3D59]" /> Sithma Driving School (Pvt) Ltd
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-[#6A97C0] leading-relaxed">
               Official accredited driving academy registered under the Department of Motor Traffic (DMT) Sri Lanka.
             </p>
           </div>
 
           <div>
-            <h4 className="font-bold text-white mb-2">Quick Navigation</h4>
-            <div className="space-y-1.5 text-[11px]">
+            <h4 className="font-bold text-[#152026] mb-2">Quick Navigation</h4>
+            <div className="space-y-1.5 text-[11px] text-[#6A97C0]">
               <p>
                 <button
                   type="button"
                   onClick={() => setTypeModalOpen(true)}
-                  className="hover:text-cyan-300 text-left cursor-pointer"
+                  className="hover:text-[#1B3D59] text-left cursor-pointer transition-colors"
                 >
                   Student Self-Registration
                 </button>
               </p>
-              <p><Link to="/login" className="hover:text-cyan-300">Student & Staff Portal Sign In</Link></p>
-              <p><Link to="/student/quiz" className="hover:text-cyan-300">Multilingual Practice Quiz</Link></p>
+              <p><Link to="/login" className="hover:text-[#1B3D59] transition-colors">Student & Staff Portal Sign In</Link></p>
+              <p><Link to="/student/quiz" className="hover:text-[#1B3D59] transition-colors">Multilingual Practice Quiz</Link></p>
             </div>
           </div>
 
           <div>
-            <h4 className="font-bold text-white mb-2">Inquiries & Support</h4>
-            <div className="space-y-1 text-[11px]">
+            <h4 className="font-bold text-[#152026] mb-2">Inquiries & Support</h4>
+            <div className="space-y-1 text-[11px] text-[#6A97C0]">
               <p>Hotline: 011 284 9201 / 077 123 4567</p>
               <p>Email: support@sithma.lk</p>
               <p>Branches: Maharagama • Werahara • Delgoda</p>
@@ -782,7 +779,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="pt-6 border-t border-white/10 text-center text-[10px] text-slate-500">
+        <div className="pt-6 border-t border-[#D4EEF8] text-center text-[10px] text-[#6A97C0]">
           © {new Date().getFullYear()} Sithma Driving School Management System. Designed for academic demonstration & evaluation.
         </div>
       </footer>
@@ -795,4 +792,3 @@ export default function LandingPage() {
     </div>
   );
 }
-

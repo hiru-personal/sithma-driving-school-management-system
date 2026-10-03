@@ -20,10 +20,15 @@ const {
   reviewRescheduleRequest,
   uploadMilestoneProof,
   uploadStudentProfilePhoto,
+  markStudentPassed,
+  uploadFinalLicense,
+  verifyFinalLicense,
+  getRegistrationCycles,
 } = require('../controllers/studentController');
 const { authenticate, authorize, checkStudentOwnership } = require('../middleware/auth');
 const dmtProofUpload = require('../middleware/dmtProofUpload');
 const avatarUpload = require('../middleware/avatarUpload');
+const finalLicenseUpload = require('../middleware/finalLicenseUpload');
 
 // Protected Routes
 router.get('/reports/summary', authenticate, authorize('staff', 'admin'), getReportsSummary);
@@ -43,10 +48,14 @@ router.post('/:id/profile-photo', authenticate, checkStudentOwnership, avatarUpl
 router.patch('/:id/dmt-dates', authenticate, checkStudentOwnership, updateDmtDates);
 router.post('/:id/exam-attempt', authenticate, checkStudentOwnership, recordExamAttempt);
 router.post('/:id/re-register', authenticate, checkStudentOwnership, reRegisterStudent);
+router.get('/:id/registration-cycles', authenticate, checkStudentOwnership, getRegistrationCycles);
+router.post('/:id/final-license', authenticate, checkStudentOwnership, finalLicenseUpload.single('licensePhoto'), uploadFinalLicense);
 router.post('/:id/milestone-proof', authenticate, checkStudentOwnership, dmtProofUpload.single('proofDocument'), uploadMilestoneProof);
 router.get('/:id/heavy-vehicle-eligibility', authenticate, checkStudentOwnership, checkHeavyVehicleEligibility);
 
 // Staff/Admin only actions
+router.patch('/:id/final-pass', authenticate, authorize('staff', 'admin'), markStudentPassed);
+router.patch('/:id/final-license/verify', authenticate, authorize('staff', 'admin'), verifyFinalLicense);
 router.patch('/:id/trial-date', authenticate, authorize('staff', 'admin'), setTrialDate);
 router.post('/:id/trial-date', authenticate, authorize('staff', 'admin'), setTrialDate);
 router.post('/:id/trial-attempt', authenticate, authorize('staff', 'admin'), recordTrialAttempt);

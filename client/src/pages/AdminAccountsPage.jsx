@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   X,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,8 @@ export default function AdminAccountsPage() {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showInstructorModal, setShowInstructorModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Forms
@@ -166,18 +169,35 @@ export default function AdminAccountsPage() {
     }
   };
 
+  const handleDeleteAccount = async (user) => {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      const res = await api.delete(`/admin/accounts/${user._id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Account deleted successfully');
+        setAccounts((prev) => prev.filter((u) => u._id !== user._id));
+        setDeleteConfirmUser(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete account');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Shield className="w-3.5 h-3.5" /> Administrative Authority
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/40 text-[#1B3D59] font-bold text-xs mb-2">
+            <Shield className="w-3.5 h-3.5 text-[#1B3D59]" /> Administrative Authority
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2.5 drop-shadow">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] font-heading flex items-center gap-2.5">
             Staff & Instructor Account Management
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-700 mt-0.5 font-semibold">
             Admin provisioning: Create Data Entry Officer and Instructor accounts, enforce password policies, and manage lifecycle.
           </p>
         </div>
@@ -186,13 +206,13 @@ export default function AdminAccountsPage() {
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <button
             onClick={() => setShowStaffModal(true)}
-            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 shadow-md w-full sm:w-auto"
+            className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto"
           >
             <UserPlus className="w-4 h-4" /> + Create Staff Account
           </button>
           <button
             onClick={() => setShowInstructorModal(true)}
-            className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 shadow-md w-full sm:w-auto"
+            className="bg-[#6A97C0] hover:bg-[#1B3D59] text-white text-xs py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all w-full sm:w-auto"
           >
             <UserPlus className="w-4 h-4" /> + Create Instructor Account
           </button>
@@ -200,7 +220,7 @@ export default function AdminAccountsPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="card p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-[#D4EEF8] shadow-sm rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -208,13 +228,13 @@ export default function AdminAccountsPage() {
           }}
           className="relative w-full md:w-96"
         >
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-3" />
           <input
             type="text"
             placeholder="Search by name, username, NIC, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-white/15 text-white rounded-xl text-xs outline-none focus:border-cyan-400"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#6A97C0]/70 rounded-xl text-xs outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] transition-all"
           />
         </form>
 
@@ -222,7 +242,7 @@ export default function AdminAccountsPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-900/90 border border-white/15 text-white rounded-xl text-xs font-semibold outline-none"
+            className="px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-xs font-semibold outline-none focus:border-[#1B3D59]"
           >
             <option value="all">All Roles</option>
             <option value="staff">Data Entry Officers (Staff)</option>
@@ -234,7 +254,7 @@ export default function AdminAccountsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-900/90 border border-white/15 text-white rounded-xl text-xs font-semibold outline-none"
+            className="px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-xs font-semibold outline-none focus:border-[#1B3D59]"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -245,6 +265,7 @@ export default function AdminAccountsPage() {
           <button
             onClick={fetchAccounts}
             className="btn-secondary text-xs py-2 px-3 flex items-center gap-1 font-bold"
+            title="Refresh List"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -252,10 +273,10 @@ export default function AdminAccountsPage() {
       </div>
 
       {/* Accounts Table */}
-      <div className="card overflow-hidden shadow-card p-0">
+      <div className="bg-white border border-[#D4EEF8] rounded-2xl shadow-sm overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-xs">
-            <thead className="bg-slate-950/60 text-slate-400 border-b border-white/10 uppercase tracking-wider text-[10px]">
+            <thead className="bg-[#1B3D59] text-white uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="py-3.5 px-4 font-bold">User / Account</th>
                 <th className="py-3.5 px-4 font-bold">Role</th>
@@ -266,71 +287,71 @@ export default function AdminAccountsPage() {
                 <th className="py-3.5 px-4 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10 text-slate-200">
+            <tbody className="divide-y divide-[#D4EEF8] text-[#152026]">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-cyan-300 font-semibold">
+                  <td colSpan={7} className="py-12 text-center text-[#1B3D59] font-semibold">
                     <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" />
                       Loading system accounts...
                     </div>
                   </td>
                 </tr>
               ) : accounts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
+                  <td colSpan={7} className="py-10 text-center text-[#6A97C0] font-medium">
                     No accounts found matching the criteria.
                   </td>
                 </tr>
               ) : (
                 accounts.map((user) => (
-                  <tr key={user._id} className="hover:bg-white/5 transition-colors">
+                  <tr key={user._id} className="hover:bg-[#D4EEF8]/40 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-white text-sm">{user.name}</div>
-                      <div className="text-[11px] text-cyan-300 font-mono">
+                      <div className="font-bold text-[#152026] text-sm">{user.name}</div>
+                      <div className="text-[11px] text-[#1B3D59] font-mono font-semibold">
                         @{user.username || user.email.split('@')[0]}
                       </div>
-                      <div className="text-[10px] text-slate-400">{user.email}</div>
+                      <div className="text-[10px] text-slate-600 font-medium">{user.email}</div>
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span
-                        className={`badge text-[10px] uppercase font-bold ${
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide ${
                           user.role === 'admin'
-                            ? 'badge-danger'
+                            ? 'bg-[#152026] text-white'
                             : user.role === 'staff'
-                            ? 'badge-info'
+                            ? 'bg-[#B3D5F1] text-[#1B3D59] border border-[#6A97C0]/40'
                             : user.role === 'instructor'
-                            ? 'badge-success'
-                            : 'badge-warning'
+                            ? 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
+                            : 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30'
                         }`}
                       >
                         {user.role === 'staff' ? 'Data Entry Officer' : user.role}
                       </span>
                       {user.role === 'instructor' && (
-                        <div className="text-[10px] text-slate-400 mt-1">
-                          Teaches: <strong className="text-slate-200">{user.teachingCategories || 'Light'}</strong>
+                        <div className="text-[10px] text-slate-600 mt-1 font-medium">
+                          Teaches: <strong className="text-[#152026]">{user.teachingCategories || 'Light'}</strong>
                         </div>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 font-semibold text-slate-300">
+                    <td className="py-3.5 px-4 font-semibold text-[#152026]">
                       {user.branch || 'Maharagama'}
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="font-mono text-slate-200">{user.nic || '—'}</div>
-                      <div className="text-[11px] text-slate-400">{user.phone}</div>
+                      <div className="font-mono font-medium text-[#152026]">{user.nic || '—'}</div>
+                      <div className="text-[11px] text-slate-700 font-medium">{user.phone}</div>
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span
-                        className={`badge text-[10px] font-bold ${
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           user.status === 'active'
-                            ? 'badge-success'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : user.status === 'pending_verification'
-                            ? 'badge-warning'
-                            : 'badge-danger'
+                            ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
                       >
                         {user.status || 'active'}
@@ -339,45 +360,58 @@ export default function AdminAccountsPage() {
 
                     <td className="py-3.5 px-4 space-y-1">
                       {user.mustChangePassword ? (
-                        <span className="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold">
+                        <span className="inline-block px-2 py-0.5 rounded bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40 text-[9px] font-bold">
                           Password Change Pending
                         </span>
                       ) : (
-                        <span className="text-[10px] text-emerald-400 font-medium">
-                          Verified Password
+                        <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 inline" /> Verified Password
                         </span>
                       )}
                       {user.lockedUntil && new Date(user.lockedUntil) > new Date() && (
-                        <div className="text-[9px] text-rose-400 font-bold">
+                        <div className="text-[9px] text-rose-600 font-bold">
                           🔒 Locked until {new Date(user.lockedUntil).toLocaleTimeString()}
                         </div>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      {user.role !== 'admin' && (
-                        <button
-                          onClick={() => handleToggleStatus(user)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
-                            user.status === 'active'
-                              ? 'border-rose-400/40 text-rose-300 hover:bg-rose-500/20'
-                              : 'border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20'
-                          }`}
-                        >
-                          {user.status === 'active' ? 'Deactivate' : 'Activate'}
-                        </button>
-                      )}
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {user.role !== 'admin' && (
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                              user.status === 'active'
+                                ? 'border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100'
+                                : 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                            }`}
+                          >
+                            {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          </button>
+                        )}
 
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowResetModal(true);
-                        }}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-white/20 text-slate-300 hover:text-white hover:bg-white/10"
-                        title="Force Reset Password"
-                      >
-                        Reset Password
-                      </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowResetModal(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-[#6A97C0]/40 text-[#1B3D59] hover:bg-[#D4EEF8] transition-colors cursor-pointer"
+                          title="Force Reset Password"
+                        >
+                          Reset Password
+                        </button>
+
+                        {user.role !== 'admin' && (
+                          <button
+                            onClick={() => setDeleteConfirmUser(user)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                            title={user.role === 'student' ? 'Permanently Delete Student Account' : 'Permanently Delete Account'}
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-600" />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -389,29 +423,29 @@ export default function AdminAccountsPage() {
 
       {/* Modal: Create Staff Account */}
       {showStaffModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-slate-900 border border-cyan-400/30 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-cyan-400" /> Create Staff Account (Data Entry Officer)
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm">
+          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-white border border-[#D4EEF8] shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#1B3D59]" /> Create Staff Account (Data Entry Officer)
               </h3>
               <button
                 onClick={() => setShowStaffModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#6A97C0] hover:text-[#152026] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#6A97C0] font-medium">
               Only Administrators can create Data Entry Officer accounts. Upon creation, status is Active immediately, and the officer will be forced to change their password on first login.
             </p>
 
             <form onSubmit={handleCreateStaff} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Full Name <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -419,13 +453,13 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. Nimali Fernando"
                     value={staffForm.name}
                     onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    NIC Number <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    NIC Number <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -433,13 +467,13 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. 198854321098"
                     value={staffForm.nic}
                     onChange={(e) => setStaffForm({ ...staffForm, nic: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Contact Phone <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Contact Phone <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -447,18 +481,18 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. 0772000002"
                     value={staffForm.phone}
                     onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Assigned Branch <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Assigned Branch <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={staffForm.branch}
                     onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   >
                     <option value="Maharagama">Maharagama</option>
                     <option value="Werahara">Werahara</option>
@@ -467,8 +501,8 @@ export default function AdminAccountsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Desired Username <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Desired Username <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -476,25 +510,25 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. nimali.staff"
                     value={staffForm.username}
                     onChange={(e) => setStaffForm({ ...staffForm, username: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Initial Temporary Password <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Initial Temporary Password <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={staffForm.initialPassword}
                     onChange={(e) => setStaffForm({ ...staffForm, initialPassword: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none font-mono"
+                    className="w-full px-3 py-2 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl outline-none font-mono focus:border-[#1B3D59]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowStaffModal(false)}
@@ -517,29 +551,29 @@ export default function AdminAccountsPage() {
 
       {/* Modal: Create Instructor Account */}
       {showInstructorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-slate-900 border border-accent/40 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-accent" /> Create Instructor Account
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm">
+          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-white border border-[#D4EEF8] shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#1B3D59]" /> Create Instructor Account
               </h3>
               <button
                 onClick={() => setShowInstructorModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#6A97C0] hover:text-[#152026] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#6A97C0] font-medium">
               Instructors are provisioned directly by Admin with teaching qualifications. They can only view their own driving lesson schedules.
             </p>
 
             <form onSubmit={handleCreateInstructor} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Full Name <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -547,13 +581,13 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. Samantha Perera"
                     value={instructorForm.name}
                     onChange={(e) => setInstructorForm({ ...instructorForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    NIC Number <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    NIC Number <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -561,13 +595,13 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. 198422334455"
                     value={instructorForm.nic}
                     onChange={(e) => setInstructorForm({ ...instructorForm, nic: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Contact Phone <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Contact Phone <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -575,18 +609,18 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. 0713000003"
                     value={instructorForm.phone}
                     onChange={(e) => setInstructorForm({ ...instructorForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Assigned Branch <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Assigned Branch <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={instructorForm.branch}
                     onChange={(e) => setInstructorForm({ ...instructorForm, branch: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   >
                     <option value="Maharagama">Maharagama</option>
                     <option value="Werahara">Werahara</option>
@@ -595,13 +629,13 @@ export default function AdminAccountsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Teaching Categories <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Teaching Categories <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={instructorForm.vehicleCategories}
                     onChange={(e) => setInstructorForm({ ...instructorForm, vehicleCategories: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none font-bold text-accent"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#1B3D59] rounded-xl outline-none font-bold focus:border-[#1B3D59]"
                   >
                     <option value="Light">Light Vehicle (Car, Bike, Three-Wheeler)</option>
                     <option value="Heavy">Heavy Vehicle (Bus, Lorry)</option>
@@ -610,8 +644,8 @@ export default function AdminAccountsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Desired Username <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Desired Username <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -619,25 +653,25 @@ export default function AdminAccountsPage() {
                     placeholder="e.g. instructor.samantha"
                     value={instructorForm.username}
                     onChange={(e) => setInstructorForm({ ...instructorForm, username: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none"
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Initial Temporary Password <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Initial Temporary Password <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={instructorForm.initialPassword}
                     onChange={(e) => setInstructorForm({ ...instructorForm, initialPassword: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none font-mono"
+                    className="w-full px-3 py-2 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl outline-none font-mono focus:border-[#1B3D59]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowInstructorModal(false)}
@@ -648,7 +682,7 @@ export default function AdminAccountsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-accent text-xs py-2 px-5 font-bold"
+                  className="btn-primary text-xs py-2 px-5 font-bold"
                 >
                   {submitting ? 'Creating...' : 'Provision Instructor Account'}
                 </button>
@@ -660,39 +694,39 @@ export default function AdminAccountsPage() {
 
       {/* Modal: Admin Force Reset Password */}
       {showResetModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-md p-5 sm:p-6 rounded-3xl bg-slate-900 border border-white/20 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-accent" /> Force Password Reset
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm">
+          <div className="w-full max-w-md p-5 sm:p-6 rounded-3xl bg-white border border-[#D4EEF8] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-[#1B3D59]" /> Force Password Reset
               </h3>
               <button
                 onClick={() => setShowResetModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#6A97C0] hover:text-[#152026] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              Reset the password for <strong className="text-white">{selectedUser.name}</strong> ({selectedUser.email}). The user will be forced to change this temporary password upon their next login.
+            <p className="text-xs text-[#6A97C0] font-medium">
+              Reset the password for <strong className="text-[#152026]">{selectedUser.name}</strong> ({selectedUser.email}). The user will be forced to change this temporary password upon their next login.
             </p>
 
             <form onSubmit={handleForceResetPassword} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Temporary Password <span className="text-rose-400">*</span>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Temporary Password <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={tempPassword}
                   onChange={(e) => setTempPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm font-mono outline-none"
+                  className="w-full px-3.5 py-2.5 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl text-sm font-mono outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-2 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowResetModal(false)}
@@ -703,12 +737,75 @@ export default function AdminAccountsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-accent text-xs py-2 px-4 font-bold"
+                  className="btn-primary text-xs py-2 px-4 font-bold"
                 >
                   {submitting ? 'Resetting...' : 'Set Temporary Password'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Permanent Account Deletion */}
+      {deleteConfirmUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md p-6 rounded-3xl bg-white border border-rose-200 shadow-2xl space-y-5 text-[#152026]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-rose-950">
+                  Delete {deleteConfirmUser.role === 'student' ? 'Student' : 'User'} Account?
+                </h3>
+                <span className="text-xs text-rose-600 font-semibold uppercase tracking-wider">
+                  Permanent Removal • Non-Reversible
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200 text-xs text-rose-900 space-y-2">
+              <p>
+                Are you sure you want to permanently delete the account for{' '}
+                <strong className="text-rose-950 underline">{deleteConfirmUser.name}</strong>{' '}
+                ({deleteConfirmUser.email || deleteConfirmUser.username})?
+              </p>
+              {deleteConfirmUser.role === 'student' && (
+                <p className="text-[11px] text-rose-800 leading-relaxed font-medium">
+                  ⚠️ This will permanently remove the student's registration, course progress, payment logs, and milestones from the school database.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteConfirmUser(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => handleDeleteAccount(deleteConfirmUser)}
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

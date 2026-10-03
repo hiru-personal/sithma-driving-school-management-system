@@ -1,5 +1,10 @@
 const User = require('../models/User');
 const Student = require('../models/Student');
+const Booking = require('../models/Booking');
+const Payment = require('../models/Payment');
+const QuizAttempt = require('../models/QuizAttempt');
+const PasswordResetToken = require('../models/PasswordResetToken');
+const Notification = require('../models/Notification');
 
 // Helper to validate strong password policy
 const validatePasswordPolicy = (password, username, email) => {
@@ -347,3 +352,61 @@ exports.forceResetPassword = async (req, res) => {
     });
   }
 };
+
+// @desc    Admin permanently deletes an account (Student, Staff, Instructor)
+// @route   DELETE /api/admin/accounts/:id
+// @access  Admin only
+exports.deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Account not found' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin accounts cannot be deleted.',
+      });
+    }
+
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot delete your own account.',
+      });
+    }
+
+    // Cascade delete student-related documents
+    if (user.role === 'student') {
+      const student = await Student.findOne({ userId: user._id });
+      if (student) {
+        await Booking.deleteMany({ studentId: student._id });
+        await Payment.deleteMany({ $or: [{ studentId: student._id }, { userId: user._id }] });
+        await QuizAttempt.deleteMany({ $or: [{ studentId: student._id }, { userId: user._id }] });
+        await Student.findByIdAndDelete(student._id);
+      } else {
+        await Student.deleteMany({ userId: user._id });
+      }
+    }
+
+    // Delete password reset tokens and notifications
+    await PasswordResetToken.deleteMany({ userId: user._id });
+    await Notification.deleteMany({ userId: user._id });
+
+    // Delete the user record
+    await User.findByIdAndDelete(user._id);
+
+    return res.status(200).json({
+      success: true,
+      message: `Account for ${user.name} (${user.role}) has been permanently deleted.`,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete account',
+      error: error.message,
+    });
+  }
+};
+

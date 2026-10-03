@@ -28,6 +28,48 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    // Evaluate lifecycle to keep student status up-to-date
+    if (student.evaluateLifecycle && student.evaluateLifecycle()) {
+      await student.save();
+    }
+
+    // Rule 17: Backend Protections
+    // 1. Student registration status is Cancelled
+    if (
+      student.registrationStatus === 'cancelled' ||
+      student.accountStatus === 'cancelled' ||
+      student.account_status === 'Cancelled'
+    ) {
+      const reason = student.cancellationReason || 'Registration cancelled';
+      return res.status(403).json({
+        success: false,
+        message: `Lesson booking locked: Your registration has been cancelled (${reason}). Please re-register to continue.`,
+      });
+    }
+
+    // 2. 18-month validity has expired
+    const nowCheck = new Date();
+    if (student.learnerLicenseExpiryDate && nowCheck > new Date(student.learnerLicenseExpiryDate)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Your 18-month registration validity period has expired. Please re-register to continue.',
+      });
+    }
+
+    // 3. All 3 attempts have failed
+    const trialAttempts = student.trial?.attempts || [];
+    const isTrialExhausted =
+      trialAttempts.length >= 3 && !trialAttempts.some((a) => a.result === 'passed');
+    const theoryAttempts = student.learnerExamAttempts || [];
+    const isTheoryExhausted =
+      theoryAttempts.length >= 3 && !theoryAttempts.some((a) => a.result === 'passed');
+    if (isTrialExhausted || isTheoryExhausted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Maximum exam attempts (3/3) have been reached. Please re-register to continue.',
+      });
+    }
+
     // 2. Gate: Account verification
     if (student.accountStatus === 'pending_verification') {
       return res.status(403).json({
@@ -212,18 +254,17 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Gating Rule: Booking only allowed on or before the Trial Date
+    // Gating Rule 1 & 4: Cut-Off Date - Lessons cannot be booked on or after the Trial Exam Date
     if (student.trial_date) {
       const slotDateObj = new Date(timeSlot.date);
       slotDateObj.setHours(0, 0, 0, 0);
       const trialDateObj = new Date(student.trial_date);
-      trialDateObj.setHours(23, 59, 59, 999);
+      trialDateObj.setHours(0, 0, 0, 0);
 
-      if (slotDateObj > trialDateObj) {
-        const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
+      if (slotDateObj.getTime() >= trialDateObj.getTime()) {
         return res.status(400).json({
           success: false,
-          message: `You can only book lessons up until your scheduled Trial Date (${formattedTrialDate}). Please select a lesson slot on or before your trial date.`,
+          message: 'Lessons cannot be booked on or after your Trial Exam Date.',
         });
       }
     }
@@ -367,9 +408,66 @@ exports.bookFreeClass = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student profile not found' });
     }
 
+    // Evaluate lifecycle to keep student status up-to-date
+    if (student.evaluateLifecycle && student.evaluateLifecycle()) {
+      await student.save();
+    }
+
+    // Rule 17: Backend Protections
+    // 1. Student registration status is Cancelled
+    if (
+      student.registrationStatus === 'cancelled' ||
+      student.accountStatus === 'cancelled' ||
+      student.account_status === 'Cancelled'
+    ) {
+      const reason = student.cancellationReason || 'Registration cancelled';
+      return res.status(403).json({
+        success: false,
+        message: `Lesson booking locked: Your registration has been cancelled (${reason}). Please re-register to continue.`,
+      });
+    }
+
+    // 2. 18-month validity has expired
+    const nowFreeCheck = new Date();
+    if (student.learnerLicenseExpiryDate && nowFreeCheck > new Date(student.learnerLicenseExpiryDate)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Your 18-month registration validity period has expired. Please re-register to continue.',
+      });
+    }
+
+    // 3. All 3 attempts have failed
+    const freeTrialAttempts = student.trial?.attempts || [];
+    const isFreeTrialExhausted =
+      freeTrialAttempts.length >= 3 && !freeTrialAttempts.some((a) => a.result === 'passed');
+    const freeTheoryAttempts = student.learnerExamAttempts || [];
+    const isFreeTheoryExhausted =
+      freeTheoryAttempts.length >= 3 && !freeTheoryAttempts.some((a) => a.result === 'passed');
+    if (isFreeTrialExhausted || isFreeTheoryExhausted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Lesson booking locked: Maximum exam attempts (3/3) have been reached. Please re-register to continue.',
+      });
+    }
+
     const timeSlot = await TimeSlot.findById(timeSlotId);
     if (!timeSlot || timeSlot.status !== 'available') {
       return res.status(400).json({ success: false, message: 'Time slot is not available' });
+    }
+
+    // Cut-Off Date: Free classes also cannot be booked on or after the Trial Exam Date
+    if (student.trial_date) {
+      const slotDateObj = new Date(timeSlot.date);
+      slotDateObj.setHours(0, 0, 0, 0);
+      const trialDateObj = new Date(student.trial_date);
+      trialDateObj.setHours(0, 0, 0, 0);
+
+      if (slotDateObj.getTime() >= trialDateObj.getTime()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Lessons cannot be booked on or after your Trial Exam Date.',
+        });
+      }
     }
 
     timeSlot.status = 'booked';

@@ -7,10 +7,22 @@ const quizAnswerItemSchema = new mongoose.Schema(
       ref: 'QuizQuestion',
       required: true,
     },
+    questionText: {
+      type: String,
+      default: '',
+    },
+    options: {
+      type: [String],
+      default: [],
+    },
+    explanation: {
+      type: String,
+      default: '',
+    },
     selectedOption: {
       type: Number,
       required: true,
-      min: 0,
+      min: -1,
       max: 3,
     },
     correctOption: {
@@ -38,6 +50,20 @@ const quizAttemptSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    questionListId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'QuestionList',
+      default: null,
+    },
+    questionListName: {
+      type: String,
+      default: 'General DMT Practice Exam',
+    },
+    status: {
+      type: String,
+      enum: ['Completed', 'In Progress', 'Abandoned'],
+      default: 'Completed',
     },
     language: {
       type: String,

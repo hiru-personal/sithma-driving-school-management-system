@@ -42,20 +42,34 @@ import {
   Eye,
   Wifi,
   ChevronRight,
+  XCircle,
+  History,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { SITHMA_OFFICIAL_BANKS } from './PaymentGatewayPage';
 
-const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy') => {
-  if (!dateVal) return 'None';
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
+  if (!dateVal) return fallback;
   try {
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return 'None';
+    if (isNaN(d.getTime())) return fallback;
     return format(d, formatStr);
   } catch {
-    return 'None';
+    return fallback;
+  }
+};
+
+const formatTrialDateDisplay = (dateVal, fallback = 'None') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+    return format(d, hasTime ? 'EEEE, MMMM dd, yyyy • hh:mm a' : 'EEEE, MMMM dd, yyyy');
+  } catch {
+    return fallback;
   }
 };
 
@@ -235,7 +249,98 @@ export default function StudentDashboard() {
     packageId: '',
   });
 
+  // Final Driving License Photo State (US Requirements 6 & 7)
+  const [licensePhotoFile, setLicensePhotoFile] = useState(null);
+  const [licensePhotoPreview, setLicensePhotoPreview] = useState(null);
+  const [licenseNumberInput, setLicenseNumberInput] = useState('');
+  const [uploadingLicensePhoto, setUploadingLicensePhoto] = useState(false);
+  const [showCycleHistoryModal, setShowCycleHistoryModal] = useState(false);
 
+  useEffect(() => {
+    if (profile?.finalLicense?.licenseNumber) {
+      setLicenseNumberInput(profile.finalLicense.licenseNumber);
+    }
+  }, [profile?.finalLicense?.licenseNumber]);
+
+  const handleLicensePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/i)) {
+      toast.error('Only JPG, JPEG, PNG, or WEBP image formats are supported.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be 10MB or less.');
+      return;
+    }
+    setLicensePhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLicensePhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadFinalLicense = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!licensePhotoFile && !profile?.finalLicense?.licensePhotoUrl) {
+      toast.error('Please choose a license photo to upload.');
+      return;
+    }
+    setUploadingLicensePhoto(true);
+    try {
+      const studentId = profile?._id || student?._id;
+      const formData = new FormData();
+      if (licensePhotoFile) {
+        formData.append('licensePhoto', licensePhotoFile);
+      }
+      if (licenseNumberInput) {
+        formData.append('licenseNumber', licenseNumberInput.trim());
+      }
+      const res = await api.post(`/students/${studentId}/final-license`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || 'Final Driving License photo uploaded successfully!');
+        if (res.data.student) {
+          setProfile(res.data.student);
+          updateStudentData(res.data.student);
+        }
+        setLicensePhotoFile(null);
+        setLicensePhotoPreview(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload driving license photo');
+    } finally {
+      setUploadingLicensePhoto(false);
+    }
+  };
+
+  const [updatingExamStatus, setUpdatingExamStatus] = useState(false);
+
+  const handleUpdateExamStatus = async (status) => {
+    const studentId = profile?._id || student?._id;
+    if (!studentId) return;
+
+    setUpdatingExamStatus(true);
+    try {
+      const res = await api.patch(`/students/${studentId}/dmt-dates`, {
+        learnerExamStatus: status,
+      });
+      if (res.data.success) {
+        if (status === 'passed') {
+          toast.success('🎉 Exam marked as PASSED! Practical trial lessons are now unlocked.');
+        } else {
+          toast('Exam marked as FAILED. You can request a date reschedule from your milestones dashboard.', { icon: 'ℹ️' });
+        }
+        await fetchProfile();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update exam status');
+    } finally {
+      setUpdatingExamStatus(false);
+    }
+  };
 
   const handleReRegister = async () => {
     if (
@@ -258,12 +363,12 @@ export default function StudentDashboard() {
         navigate('/payment-gateway', {
           state: {
             studentName: user?.name,
-            studentId: profile?._id,
+            studentId: res.data.student?._id || profile?._id || student?._id,
             userId: user?.id || user?._id,
             branch: profile?.branch || user?.branch,
             amount: 5000,
             paymentType: 'advance',
-            studentType: profile?.studentType || 'Type 1',
+            studentType: res.data.student?.studentType || profile?.studentType || 'Type 1',
           },
         });
       }
@@ -347,6 +452,31 @@ export default function StudentDashboard() {
             st?.accountStatus === 'active' ||
             st?.account_status === 'Verified'
           );
+
+          const hasSubmitted = Boolean(
+            st?.hasSubmittedPayment ||
+            st?.latestPayment ||
+            (st?.advancePaymentStatus && st.advancePaymentStatus !== 'none') ||
+            st?.isAdvancePaid
+          );
+
+          if (!isNowVerified && !hasSubmitted) {
+            navigate('/payment-gateway', {
+              replace: true,
+              state: {
+                studentName: user?.name || st.name,
+                studentId: st._id,
+                userId: user?._id || user?.id,
+                branch: st.branch || user?.branch,
+                nic: st.nic || user?.nic,
+                email: user?.email,
+                studentType: st.student_type || st.studentType || user?.student_type,
+                advanceAmount: st.advancePaymentAmount || 5000,
+                registrationReference: st.advancePaymentReference,
+              },
+            });
+            return;
+          }
 
           if (isNowVerified && !localStorage.getItem('seen_verified_modal_' + st._id)) {
             setShowVerifiedCelebrationModal(true);
@@ -503,6 +633,7 @@ export default function StudentDashboard() {
       try {
         await new Promise((r) => setTimeout(r, 1200));
 
+        const cardDigits = (cardForm.cardNum || '').replace(/\s/g, '');
         const res = await api.post('/payments/package-payment', {
           packageId: selectedPkg._id,
           packageType: selectedPkg.type,
@@ -510,15 +641,21 @@ export default function StudentDashboard() {
           installmentNumber: finalPlan === 'installments' ? currentInstDue : undefined,
           amount: payAmount,
           paymentMethod: 'online_gateway',
+          cardLast4: cardDigits.slice(-4) || '4242',
+          cardBrand: cardDigits.startsWith('4') ? 'Visa' : (cardDigits.startsWith('5') ? 'Mastercard' : 'Visa / Mastercard'),
+          cardHolder: cardForm.holderName || user?.name,
           bankName: 'Online Payment Gateway (Visa/Mastercard)',
-          transactionReference: `CARD-PKG-${Date.now()}`,
+          transactionReference: `CARD-PKG-${Date.now().toString().slice(-8)}`,
         });
 
         if (res.data?.success) {
-          toast.success('🎉 Card payment approved! Your lessons are unlocked for booking immediately!');
-          setProfile(res.data.student);
-          updateStudentData(res.data.student);
+          toast.success('🎉 Online card payment submitted! Your payment is pending verification by the branch officer. Lessons will unlock once approved.');
+          if (res.data.student) {
+            setProfile(res.data.student);
+            updateStudentData(res.data.student);
+          }
           setShowPaymentFormOverride(false);
+          if (fetchProfile) fetchProfile();
         }
       } catch (err) {
         toast.error(err.response?.data?.message || 'Card payment processing failed');
@@ -599,16 +736,93 @@ export default function StudentDashboard() {
     user?.studentType === 'Type 2' ||
     user?.student_type === 'Type 2'
   );
-  const recordedExamMarks = profile?.learnerExamMarks ?? profile?.dmtDates?.learnerExamMarks;
   const isExamPassed = Boolean(
-    (profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed) &&
-    (recordedExamMarks === null || recordedExamMarks === undefined || recordedExamMarks > 30)
+    profile?.learnerExamStatus === 'passed' || profile?.dmtDates?.learnerExamPassed
   );
   const currentTrialDate = profile?.trial_date || profile?.trial?.trialDate || profile?.dmtDates?.trialExamDate || null;
   const hasTrialDate = Boolean(currentTrialDate);
   const isTrialEligible = Boolean((isType2 && hasTrialDate) || (!isType2 && isExamPassed));
 
+  // DMT 1.5-Year Learner License Lifecycle & Multi-Cycle Tracking
+  const licenseStartDate =
+    profile?.learnerLicenseStartDate ||
+    profile?.registration_date ||
+    profile?.dmtDates?.learnerRegistrationDate ||
+    profile?.createdAt ||
+    null;
+
+  const licenseExpiryDate = useMemo(() => {
+    if (profile?.learnerLicenseExpiryDate) {
+      const d = new Date(profile.learnerLicenseExpiryDate);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (licenseStartDate) {
+      const d = new Date(licenseStartDate);
+      if (!isNaN(d.getTime())) {
+        d.setMonth(d.getMonth() + 18);
+        return d;
+      }
+    }
+    return null;
+  }, [profile?.learnerLicenseExpiryDate, licenseStartDate]);
+
+  const remainingDays = useMemo(() => {
+    if (!licenseExpiryDate || isNaN(licenseExpiryDate.getTime())) return null;
+    const diff = licenseExpiryDate.getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }, [licenseExpiryDate]);
+
+  const isExpired = Boolean(
+    profile?.learnerLicenseStatus === 'expired' ||
+    (remainingDays !== null && remainingDays <= 0 && profile?.learnerLicenseStatus !== 'completed' && profile?.learnerLicenseStatus !== 'passed')
+  );
+
+  const trialAttemptsList = profile?.trial?.attempts || [];
+  const trialAttemptsUsed = trialAttemptsList.length;
+  const trialAttemptsRemaining = Math.max(0, 3 - trialAttemptsUsed);
+  const latestTrialAttempt = trialAttemptsList.length > 0 ? trialAttemptsList[trialAttemptsList.length - 1] : null;
+
+  const isTrial3AttemptsFailed = Boolean(
+    trialAttemptsUsed >= 3 && !trialAttemptsList.some((a) => a.result === 'passed')
+  );
+
+  const is3AttemptsFailed = Boolean(
+    profile?.learnerLicenseStatus === 'attempts_exhausted' ||
+    (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed')) ||
+    isTrial3AttemptsFailed
+  );
+
+  const isFinalPassed = Boolean(
+    profile?.learnerLicenseStatus === 'passed' ||
+    (isExamPassed && profile?.learnerLicenseStatus !== 'active' && profile?.learnerLicenseStatus !== 'expiring_soon' && profile?.learnerLicenseStatus !== 'pending_payment')
+  );
+
+  const isLicenseCompleted = Boolean(
+    profile?.learnerLicenseStatus === 'completed' ||
+    profile?.finalLicense?.verificationStatus === 'verified' ||
+    profile?.trial?.licenseObtained
+  );
+
+  const isExpiringSoon = Boolean(
+    !isExpired && !is3AttemptsFailed && !isFinalPassed && !isLicenseCompleted &&
+    (profile?.learnerLicenseStatus === 'expiring_soon' || (remainingDays !== null && remainingDays <= 30 && remainingDays > 0))
+  );
+
+  const isLicenseActive = Boolean(
+    !isExpired && !is3AttemptsFailed && !isFinalPassed && !isLicenseCompleted && !isExpiringSoon
+  );
+
+  const currentRegistrationCycle = useMemo(() => {
+    if (!profile?.registrationCycles || profile.registrationCycles.length === 0) return null;
+    return (
+      profile.registrationCycles.find((c) => c.cycleNumber === profile.currentCycleNumber) ||
+      profile.registrationCycles[profile.registrationCycles.length - 1]
+    );
+  }, [profile?.registrationCycles, profile?.currentCycleNumber]);
+
   const isCancelled = Boolean(
+    isExpired ||
+    is3AttemptsFailed ||
     profile?.registrationStatus === 'cancelled' ||
     profile?.accountStatus === 'cancelled' ||
     profile?.account_status === 'Cancelled'
@@ -623,6 +837,17 @@ export default function StudentDashboard() {
       user?.account_status === 'Verified' ||
       user?.status === 'active'
     )
+  );
+
+  const hasSubmittedPayment = Boolean(
+    profile?.hasSubmittedPayment ||
+    profile?.latestPayment ||
+    student?.hasSubmittedPayment ||
+    student?.latestPayment ||
+    (profile?.advancePaymentStatus && profile.advancePaymentStatus !== 'none') ||
+    (student?.advancePaymentStatus && student.advancePaymentStatus !== 'none') ||
+    profile?.isAdvancePaid ||
+    student?.isAdvancePaid
   );
 
   const isAdvancePaymentPending = Boolean(!isCancelled && !isVerifiedAccount);
@@ -662,24 +887,24 @@ export default function StudentDashboard() {
     if (!isEditModalOpen) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="card max-w-lg w-full p-6 sm:p-8 bg-slate-900/95 border border-white/20 shadow-[0_25px_70px_rgba(0,0,0,0.85)] space-y-6 relative rounded-3xl max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="card max-w-lg w-full p-6 sm:p-8 bg-white border border-[#D4EEF8] shadow-2xl space-y-6 relative rounded-3xl max-h-[90vh] overflow-y-auto text-[#152026]">
+          <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-4">
             <div>
               <span className="badge badge-warning text-xs font-bold uppercase tracking-wider mb-1">
                 Correction / Update
               </span>
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-cyan-400" /> Edit Registration Details
+              <h3 className="text-xl font-black text-[#152026] flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#1B3D59]" /> Edit Registration Details
               </h3>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-[#6A97C0] mt-1">
                 Correct any errors in your personal or branch enrollment records.
               </p>
             </div>
             <button
               type="button"
               onClick={() => setIsEditModalOpen(false)}
-              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/20 transition-colors text-sm font-bold"
+              className="w-8 h-8 rounded-full bg-[#D4EEF8]/40 flex items-center justify-center text-[#6A97C0] hover:text-[#152026] hover:bg-[#D4EEF8] transition-colors text-sm font-bold cursor-pointer"
             >
               ✕
             </button>
@@ -688,17 +913,17 @@ export default function StudentDashboard() {
           <form onSubmit={handleSaveDetails} className="space-y-4">
             {/* Full Name */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-200">
-                Full Name <span className="text-rose-400">*</span>
+              <label className="block text-xs font-bold text-[#152026]">
+                Full Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#94A3B8] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none"
                   placeholder="e.g. Kasun Perera"
                 />
               </div>
@@ -707,33 +932,33 @@ export default function StudentDashboard() {
             {/* Email & Phone Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-200">
-                  Email Address <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-[#152026]">
+                  Email Address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     value={editForm.email}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#94A3B8] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none"
                     placeholder="e.g. kasun@example.com"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-200">
+                <label className="block text-xs font-bold text-[#152026]">
                   Contact Phone
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Phone className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#94A3B8] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none"
                     placeholder="e.g. 077 123 4567"
                   />
                 </div>
@@ -742,16 +967,16 @@ export default function StudentDashboard() {
 
             {/* NIC */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-200">
+              <label className="block text-xs font-bold text-[#152026]">
                 National Identity Card (NIC) / Passport
               </label>
               <div className="relative">
-                <FileText className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <FileText className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={editForm.nic}
                   onChange={(e) => setEditForm({ ...editForm, nic: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none font-mono"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#94A3B8] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none font-mono"
                   placeholder="e.g. 200012345678 or 981234567V"
                 />
               </div>
@@ -760,13 +985,13 @@ export default function StudentDashboard() {
             {/* Branch & Category Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-200">
+                <label className="block text-xs font-bold text-[#152026]">
                   Registered Branch
                 </label>
                 <select
                   value={editForm.branch}
                   onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none"
                 >
                   <option value="Maharagama">Maharagama Branch</option>
                   <option value="Werahara">Werahara Branch</option>
@@ -775,7 +1000,7 @@ export default function StudentDashboard() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-200">
+                <label className="block text-xs font-bold text-[#152026]">
                   Learner Category
                 </label>
                 <select
@@ -785,7 +1010,7 @@ export default function StudentDashboard() {
                       : 'Type 1'
                   }
                   onChange={(e) => setEditForm({ ...editForm, studentType: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none"
                 >
                   <option value="Type 1">Category 1: New Learner</option>
                   <option value="Type 2">Category 2: Trial-Ready</option>
@@ -796,22 +1021,22 @@ export default function StudentDashboard() {
             {/* Course Training Package - Only for Type 2 (Trial-Ready) students at registration stage. Type 1 students do NOT select package at registration stage. */}
             {Boolean(editForm.studentType?.includes('Type2') || editForm.studentType === 'Type 2') && (
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-200 flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#152026] flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <PackageIcon className="w-3.5 h-3.5 text-cyan-400" /> Enrolled Training Package <span className="text-rose-400">*</span>
+                    <PackageIcon className="w-3.5 h-3.5 text-[#1B3D59]" /> Enrolled Training Package <span className="text-rose-500">*</span>
                   </span>
                   {editForm.packageId && availablePackages.find((p) => p._id === editForm.packageId) && (
-                    <span className="text-amber-400 font-extrabold text-xs">
+                    <span className="text-[#1B3D59] font-extrabold text-xs">
                       Rs. {Number(availablePackages.find((p) => p._id === editForm.packageId)?.price || 0).toLocaleString()}.00
                     </span>
                   )}
                 </label>
                 <div className="relative">
-                  <PackageIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <PackageIcon className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <select
                     value={editForm.packageId}
                     onChange={(e) => setEditForm({ ...editForm, packageId: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl text-sm focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] outline-none"
                   >
                     {availablePackages.length > 0 ? (
                       availablePackages.map((p) => (
@@ -829,20 +1054,20 @@ export default function StudentDashboard() {
                   const sel = availablePackages.find((p) => p._id === editForm.packageId);
                   if (!sel) return null;
                   return (
-                    <div className="text-xs text-slate-300 bg-white/5 rounded-xl p-3 border border-white/10 space-y-1">
+                    <div className="text-xs text-[#475569] bg-[#D4EEF8]/40 rounded-xl p-3 border border-[#D4EEF8] space-y-1">
                       <div className="flex items-center justify-between font-semibold">
-                        <span className="text-cyan-300">
+                        <span className="text-[#1B3D59]">
                           {sel.lessons} Practical Driving Lessons ({sel.vehicleCategory || 'Light'} Vehicle)
                         </span>
-                        <span className="text-amber-300 font-mono">
+                        <span className="text-[#152026] font-mono font-bold">
                           {sel.isPerLesson ? `Rs. ${sel.price}/lesson` : `Total Rs. ${Number(sel.price).toLocaleString()}`}
                         </span>
                       </div>
                       {sel.notes && (
-                        <p className="text-[11px] text-slate-400 leading-normal">{sel.notes}</p>
+                        <p className="text-[11px] text-[#6A97C0] leading-normal">{sel.notes}</p>
                       )}
                       {sel.bonusLessons?.bike > 0 && (
-                        <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 mt-1">
+                        <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 mt-1">
                           <Gift className="w-3 h-3" /> Includes {sel.bonusLessons.bike} Bike &amp; {sel.bonusLessons.threeWheeler} Three-Wheeler bonus lessons
                         </div>
                       )}
@@ -853,7 +1078,7 @@ export default function StudentDashboard() {
             )}
 
             {/* Modal Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#D4EEF8]">
               <button
                 type="button"
                 disabled={savingDetails}
@@ -865,7 +1090,7 @@ export default function StudentDashboard() {
               <button
                 type="submit"
                 disabled={savingDetails}
-                className="btn-accent text-xs py-2.5 px-5 font-extrabold flex items-center gap-2 shadow-lg disabled:opacity-50"
+                className="btn-primary text-xs py-2.5 px-5 font-extrabold flex items-center gap-2 shadow-xs disabled:opacity-50"
               >
                 {savingDetails ? (
                   <>
@@ -887,20 +1112,20 @@ export default function StudentDashboard() {
   const renderVerifiedCelebrationModal = () => {
     if (!showVerifiedCelebrationModal) return null;
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-        <div className="card max-w-lg w-full p-5 sm:p-8 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-emerald-400/50 shadow-[0_25px_80px_rgba(16,185,129,0.3)] space-y-6 relative rounded-3xl text-center max-h-[90vh] overflow-y-auto my-auto">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)] animate-bounce">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-300">
+        <div className="card max-w-lg w-full p-5 sm:p-8 bg-white border border-[#D4EEF8] shadow-2xl space-y-6 relative rounded-3xl text-center max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-emerald-50 border-2 border-emerald-300 flex items-center justify-center text-emerald-600 shadow-xs animate-bounce">
+            <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
 
           <div className="space-y-2">
             <span className="badge badge-success text-[11px] font-extrabold uppercase tracking-wider py-1 px-3">
               Account Verified Successfully
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#152026]">
               Now You Are a Verified User! 🎉
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-[#475569] leading-relaxed max-w-md mx-auto">
               Ayubowan, <strong>{user?.name}</strong>! Your Rs. 5,000 advance deposit has been approved by our branch officer.
               {isType1
                 ? ' You now have full access to your Type 1 DMT Milestone Schedule, Theory Exam practice, and student dashboard!'
@@ -908,16 +1133,16 @@ export default function StudentDashboard() {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-left grid grid-cols-2 gap-3">
+          <div className="p-4 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] text-xs text-left grid grid-cols-2 gap-3">
             <div>
-              <span className="text-slate-400 block text-[11px]">Enrolled Category</span>
-              <span className="font-bold text-white">
+              <span className="text-[#6A97C0] block text-[11px]">Enrolled Category</span>
+              <span className="font-bold text-[#152026]">
                 {isType1 ? 'Type 1: New Learner' : 'Type 2: Trial-Ready'}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 block text-[11px]">Registered Branch</span>
-              <span className="font-bold text-white">
+              <span className="text-[#6A97C0] block text-[11px]">Registered Branch</span>
+              <span className="font-bold text-[#152026]">
                 {profile?.branch || user?.branch} Branch
               </span>
             </div>
@@ -930,7 +1155,7 @@ export default function StudentDashboard() {
               if (stId) localStorage.setItem('seen_verified_modal_' + stId, 'true');
               setShowVerifiedCelebrationModal(false);
             }}
-            className="w-full btn-accent text-sm py-3.5 font-extrabold shadow-lg flex items-center justify-center gap-2"
+            className="w-full btn-primary text-sm py-3.5 font-extrabold shadow-xs flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Go to My DMT Milestones Dashboard</span>
             <ArrowRight className="w-4 h-4" />
@@ -943,44 +1168,115 @@ export default function StudentDashboard() {
   if (isCancelled) {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1280px] mx-auto w-full">
-        <div className="relative rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-rose-950/90 via-slate-900/95 to-slate-950/95 border-2 border-rose-500/60 p-6 sm:p-10 shadow-[0_15px_50px_rgba(244,63,94,0.3)] overflow-hidden space-y-6">
-          <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-rose-600 via-red-500 to-amber-600" />
+        <div className="relative rounded-3xl bg-white border-2 border-red-200 p-6 sm:p-10 shadow-sm overflow-hidden space-y-6">
+          <div className="absolute inset-x-0 top-0 h-1.5 bg-red-500" />
+          
           <div className="flex flex-col sm:flex-row items-start gap-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-rose-500/20 border-2 border-rose-400/50 flex items-center justify-center text-rose-400 flex-shrink-0 shadow-[0_0_30px_rgba(244,63,94,0.4)] animate-pulse">
-              <AlertTriangle className="w-10 h-10 text-rose-400" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-red-50 border-2 border-red-200 flex items-center justify-center text-red-600 flex-shrink-0 shadow-xs">
+              <AlertTriangle className="w-10 h-10 text-red-600" />
             </div>
+
             <div className="space-y-3 flex-1">
-              <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-400/40">
-                Registration Cancelled • 3 Attempts Exhausted
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-black text-white">
-                Learner Registration Auto-Cancelled (DMT Regulations)
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200">
+                  {isExpired ? 'License Status: Expired' : '3 Attempts Failed'}
+                </span>
+                <span className="text-xs text-[#6A97C0] font-mono">
+                  Cycle #{profile?.currentCycleNumber || 1} • {currentRegistrationCycle?.cycleId || 'CYCLE-1'}
+                </span>
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-black text-[#152026]">
+                {isExpired
+                  ? 'Registration Expired'
+                  : isTrial3AttemptsFailed
+                  ? 'All 3 Trial Exam Attempts Used'
+                  : 'All 3 Exam Attempts Used'}
               </h1>
-              <p className="text-xs sm:text-sm text-rose-200/90 leading-relaxed max-w-3xl">
-                According to Sri Lanka Department of Motor Traffic (DMT) regulations, candidate registrations are automatically cancelled upon exhausting three (3) unsuccessful attempts at the written learner theory examination.
+
+              <p className="text-xs sm:text-sm text-[#475569] leading-relaxed max-w-3xl">
+                {isExpired ? (
+                  <>
+                    <strong className="text-[#152026]">Please register again.</strong> According to Department of Motor Traffic (DMT) regulations, once registered, a learner has a maximum of <strong>1.5 years (18 months)</strong> to complete the required licensing process. Your validity period ended on{' '}
+                    <strong className="text-[#152026] underline">{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy', 'Expired') : 'Expired'}</strong>.
+                  </>
+                ) : isTrial3AttemptsFailed ? (
+                  <>
+                    <strong className="text-[#152026]">Registration Cancelled.</strong> All 3 Trial Exam attempts have been used and were unsuccessful. In accordance with DMT regulations, your current registration cycle has ended. Please start a new registration.
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-[#152026]">Registration Cancelled.</strong> In accordance with DMT regulations, candidates are allowed a maximum of <strong>3 attempts</strong> per registration cycle. All 3 attempts have been exhausted. Please start a new registration.
+                  </>
+                )}
               </p>
             </div>
           </div>
 
+          {/* Registration Cycle & Dates Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] text-xs">
+            <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] space-y-1">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">License Start Date</span>
+              <span className="font-bold text-[#152026] font-mono">
+                {licenseStartDate ? safeFormatDate(licenseStartDate, 'MMM dd, yyyy') : 'N/A'}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] space-y-1">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">18-Month Expiry Date</span>
+              <span className="font-bold text-red-600 font-mono">
+                {licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'MMM dd, yyyy') : 'Expired'}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] space-y-1">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">Exam Attempts Count</span>
+              <span className="font-bold text-[#152026] font-mono">
+                {attemptsCount} of 3 Attempts Recorded
+              </span>
+            </div>
+          </div>
+
           {/* Attempts History Table */}
-          <div className="rounded-2xl bg-black/40 border border-rose-400/30 p-5 space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-rose-400" /> Examination Attempts History (3 of 3 Failed)
-            </h3>
+          <div className="rounded-2xl bg-[#D4EEF8]/20 border border-[#D4EEF8] p-5 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-sm font-bold text-[#1B3D59] flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#1B3D59]" /> Examination Attempts History ({attemptsCount} of 3 Used)
+              </h3>
+              {profile?.registrationCycles && profile.registrationCycles.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setShowCycleHistoryModal(true)}
+                  className="text-xs text-[#1B3D59] hover:underline font-bold flex items-center gap-1"
+                >
+                  <History className="w-3.5 h-3.5" /> View Past Registration Cycles ({profile.registrationCycles.length})
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {(profile?.learnerExamAttempts && profile.learnerExamAttempts.length > 0 ? profile.learnerExamAttempts : [1, 2, 3]).map((att, idx) => {
-                const attemptNum = typeof att === 'object' ? att.attemptNumber : att;
-                const marks = typeof att === 'object' ? att.marks : null;
-                const date = typeof att === 'object' && att.date ? new Date(att.date).toLocaleDateString() : 'Recorded Attempt';
+              {[1, 2, 3].map((num) => {
+                const att = profile?.learnerExamAttempts?.find((a) => a.attemptNumber === num);
+                const hasAtt = Boolean(att);
+                const marks = att?.marks;
+                const date = att?.date || att?.attemptDate
+                  ? safeFormatDate(att.date || att.attemptDate, 'MMM dd, yyyy', 'Not Attempted')
+                  : 'Not Attempted';
                 return (
-                  <div key={idx} className="p-3.5 rounded-xl bg-white/5 border border-rose-400/20 space-y-1">
+                  <div key={num} className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] space-y-1 shadow-xs">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-300 font-bold">Attempt {attemptNum} of 3</span>
-                      <span className="badge bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px]">FAILED</span>
+                      <span className="text-[#152026] font-bold">Attempt {num} of 3</span>
+                      {hasAtt ? (
+                        <span className="badge bg-red-100 text-red-800 border border-red-200 text-[10px] font-bold">
+                          FAILED
+                        </span>
+                      ) : (
+                        <span className="badge bg-slate-100 text-slate-500 text-[10px]">
+                          UNUSED
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs text-slate-400">{date}</div>
-                    <div className="text-xs font-semibold text-rose-300">
-                      Score: {marks !== null && marks !== undefined ? `${marks} / 40` : 'Failed'}
+                    <div className="text-xs text-[#6A97C0]">{date}</div>
+                    <div className="text-xs font-semibold text-red-600">
+                      Score: {hasAtt && marks !== null && marks !== undefined ? `${marks} / 40` : (hasAtt ? 'Failed' : '—')}
                     </div>
                   </div>
                 );
@@ -989,21 +1285,23 @@ export default function StudentDashboard() {
           </div>
 
           {/* Action to Re-register */}
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-[#F3EED8] border border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h4 className="text-sm font-bold text-white">How to restart your training?</h4>
-              <p className="text-xs text-slate-300 max-w-xl">
-                You can re-register like a new user. To proceed, click below to initialize your new registration and complete the advance payment of Rs. 5,000.00.
+              <h4 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-[#1B3D59]" /> Action: Register Again
+              </h4>
+              <p className="text-xs text-[#152026]/80 max-w-xl">
+                Starting a new registration cycle resets your trial attempt count to <strong>Attempt 1 of 3</strong>, grants a brand new <strong>18-month validity period</strong>, and requires the Rs. 5,000 advance payment. All previous registration records and attempts remain securely stored.
               </p>
             </div>
             <button
               type="button"
               disabled={reRegistering}
               onClick={handleReRegister}
-              className="btn-accent text-xs sm:text-sm py-3 px-6 font-bold flex items-center gap-2 shadow-xl whitespace-nowrap hover:scale-105 transition-transform"
+              className="btn-primary text-xs sm:text-sm py-3 px-6 font-bold flex items-center gap-2 shadow-sm whitespace-nowrap cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${reRegistering ? 'animate-spin' : ''}`} />
-              {reRegistering ? 'Initializing...' : 'Re-Register as New Learner (Pay Rs. 5,000)'}
+              {reRegistering ? 'Initializing New Cycle...' : 'Register Again (New 18-Month Cycle)'}
             </button>
           </div>
         </div>
@@ -1015,66 +1313,80 @@ export default function StudentDashboard() {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1280px] mx-auto w-full">
         {/* Top Status Bar */}
-        <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-white/10">
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-[#D4EEF8]">
           <div className="flex items-center gap-2">
-            <span className="badge badge-warning text-xs font-bold py-1">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F3EED8] text-[#152026] border border-amber-300">
               {profile?.branch || user?.branch} Branch
             </span>
-            <span className="badge bg-white/10 text-cyan-300 text-xs border border-white/15">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30">
               {isType2 ? 'Category 2: Trial-Ready' : 'Category 1: New Learner'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => openEditModal()}
-              className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-sm"
+              className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
-              <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Registration Details
+              <Edit3 className="w-3.5 h-3.5 text-[#1B3D59]" /> Edit Registration Details
             </button>
             <button
               onClick={() => fetchProfile(true)}
               disabled={checkingStatus}
-              className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 hover:border-cyan-400 text-cyan-300 shadow-sm"
+              className="btn-secondary text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${checkingStatus ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-[#1B3D59] ${checkingStatus ? 'animate-spin' : ''}`} />
               {checkingStatus ? 'Checking...' : 'Refresh Status'}
             </button>
           </div>
         </div>
 
         {/* Primary Warning Hero Card */}
-        <div className="relative rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-amber-950/80 via-slate-900/95 to-slate-950/90 border-2 border-amber-400/60 p-6 sm:p-10 shadow-[0_15px_50px_rgba(245,158,11,0.25)] overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600" />
+        <div className={`relative rounded-3xl bg-white border-2 ${!hasSubmittedPayment ? 'border-rose-400' : 'border-amber-300'} p-6 sm:p-10 shadow-sm overflow-hidden`}>
+          <div className={`absolute inset-x-0 top-0 h-1.5 ${!hasSubmittedPayment ? 'bg-rose-500' : 'bg-amber-400'}`} />
 
           <div className="flex flex-col lg:flex-row items-start gap-6 relative z-10">
             {/* Glowing Icon Badge */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-amber-500/20 border-2 border-amber-400/50 flex items-center justify-center text-amber-400 flex-shrink-0 shadow-[0_0_30px_rgba(245,158,11,0.35)] animate-pulse">
-              <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-400" />
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl ${!hasSubmittedPayment ? 'bg-rose-50 border-2 border-rose-300 text-rose-700' : 'bg-[#F3EED8] border-2 border-amber-300 text-amber-700'} flex items-center justify-center flex-shrink-0 shadow-xs`}>
+              {!hasSubmittedPayment ? (
+                <CreditCard className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600" />
+              ) : (
+                <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-600" />
+              )}
             </div>
 
             <div className="space-y-4 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" /> Payment Verification In Progress
-                </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  Ref: {profile?.advancePaymentReference || 'ADV-PENDING'}
+                {!hasSubmittedPayment ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-800 border border-rose-300 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Advance Payment Required (Unpaid)
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" /> Payment Verification In Progress
+                  </span>
+                )}
+                <span className="text-xs text-[#6A97C0] font-mono">
+                  Ref: {profile?.advancePaymentReference || 'ADV-REQUIRED'}
                 </span>
               </div>
 
               <div className="space-y-3">
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  {isPhysicalCash
+                <h1 className="text-2xl sm:text-3xl font-black text-[#152026] tracking-tight">
+                  {!hasSubmittedPayment
+                    ? `Ayubowan, ${user?.name}! Complete Your Advance Payment`
+                    : isPhysicalCash
                     ? `Ayubowan, ${user?.name}! Branch Advance Payment Pending`
                     : `Ayubowan, ${user?.name}! Payment Verification In Progress`}
                 </h1>
 
                 {/* EXACT REQUIRED STATUS PROMPT */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/15 border-2 border-amber-400/50 shadow-lg">
+                <div className={`p-4 sm:p-5 rounded-2xl ${!hasSubmittedPayment ? 'bg-rose-50/70 border-2 border-rose-300' : 'bg-[#F3EED8] border-2 border-amber-300'} shadow-xs`}>
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm sm:text-base font-extrabold text-amber-100 leading-relaxed">
-                      {isPhysicalCash
+                    <AlertCircle className={`w-5 h-5 ${!hasSubmittedPayment ? 'text-rose-700' : 'text-amber-700'} flex-shrink-0 mt-0.5`} />
+                    <div className="text-sm sm:text-base font-extrabold text-[#152026] leading-relaxed">
+                      {!hasSubmittedPayment
+                        ? 'Your registration details have been saved, but no advance payment or bank deposit slip has been submitted yet. Please complete your advance payment of LKR 5,000 to submit your registration for branch verification.'
+                        : isPhysicalCash
                         ? 'Please visit your nearest branch to complete your advance payment of LKR 5,000. You will gain full system access once the payment is verified by our team.'
                         : 'Your payment is currently being verified by a Data Entry Officer. You cannot access the system until your account is verified.'}
                     </div>
@@ -1083,118 +1395,146 @@ export default function StudentDashboard() {
               </div>
 
               {/* Warning Notice Details Box */}
-              <div className="rounded-2xl bg-black/40 border border-amber-400/30 p-4 sm:p-5 space-y-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <div className="rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] p-4 sm:p-5 space-y-2 text-xs sm:text-sm text-[#152026] leading-relaxed">
                 <p>
-                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-amber-300">Rs. 5,000.00</strong> is verified by our branch Staff Officer or Data Entry Officer.
+                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-[#1B3D59]">Rs. 5,000.00</strong> is paid and verified by our branch Staff Officer or Data Entry Officer.
                 </p>
-                <p className="text-slate-400 text-xs">
-                  {isPhysicalCash
+                <p className="text-[#475569] text-xs">
+                  {!hasSubmittedPayment
+                    ? 'You can pay instantly online via card, upload a bank transfer slip (BOC, People\'s, Commercial, or HNB), or pay in cash at the counter.'
+                    : isPhysicalCash
                     ? 'Our staff will record your payment upon counter visit and immediately activate your account.'
                     : 'As soon as our Data Entry Officer approves your bank slip or gateway submission, your dashboard and practical lesson booking privileges will unlock automatically.'}
                 </p>
               </div>
 
-
               {/* Real-time Status Pills */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
-                  <span className="text-slate-400 block text-[11px]">Enrolled Category</span>
-                  <span className="font-bold text-white">
+                <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] text-xs shadow-xs">
+                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Enrolled Category</span>
+                  <span className="font-bold text-[#152026]">
                     {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
-                  <span className="text-slate-400 block text-[11px]">Advance Fee Amount</span>
-                  <span className="font-bold text-amber-300">
+                <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] text-xs shadow-xs">
+                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Advance Fee Amount</span>
+                  <span className="font-bold text-[#1B3D59]">
                     Rs. {Number(profile?.advancePaymentAmount || 5000).toLocaleString()}.00
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
-                  <span className="text-slate-400 block text-[11px]">Verification Status</span>
-                  <span className="font-bold text-amber-400 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 animate-pulse" /> Awaiting Officer Verification
-                  </span>
+                <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] text-xs shadow-xs">
+                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Payment Status</span>
+                  {!hasSubmittedPayment ? (
+                    <span className="font-bold text-rose-700 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Payment Required (Unpaid)
+                    </span>
+                  ) : (
+                    <span className="font-bold text-amber-700 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 animate-pulse text-amber-600" /> Awaiting Officer Verification
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => fetchProfile(true)}
-                  disabled={checkingStatus}
-                  className="btn-accent text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
-                >
-                  <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
-                  {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
-                </button>
+                {!hasSubmittedPayment ? (
+                  <Link
+                    to="/payment-gateway"
+                    state={{
+                      studentName: user?.name,
+                      studentId: profile?._id,
+                      userId: user?.id || user?._id,
+                      branch: profile?.branch || user?.branch,
+                      nic: profile?.nic || user?.nic,
+                      email: user?.email,
+                      advanceAmount: profile?.advancePaymentAmount || 5000,
+                      registrationReference: profile?.advancePaymentReference,
+                    }}
+                    className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4 text-white" /> Complete Advance Payment Now (Rs. 5,000)
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => fetchProfile(true)}
+                      disabled={checkingStatus}
+                      className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
+                      {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
+                    </button>
 
-                <Link
-                  to="/payment-gateway"
-                  state={{
-                    studentName: user?.name,
-                    studentId: profile?._id,
-                    userId: user?.id || user?._id,
-                    branch: profile?.branch || user?.branch,
-                    nic: profile?.nic || user?.nic,
-                    email: user?.email,
-                    advanceAmount: profile?.advancePaymentAmount || 5000,
-                    registrationReference: profile?.advancePaymentReference,
-                  }}
-                  className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 border-white/20 text-white hover:border-cyan-400"
-                >
-                  <CreditCard className="w-4 h-4 text-cyan-400" /> Re-upload / Change Payment Slip
-                </Link>
+                    <Link
+                      to="/payment-gateway"
+                      state={{
+                        studentName: user?.name,
+                        studentId: profile?._id,
+                        userId: user?.id || user?._id,
+                        branch: profile?.branch || user?.branch,
+                        nic: profile?.nic || user?.nic,
+                        email: user?.email,
+                        advanceAmount: profile?.advancePaymentAmount || 5000,
+                        registrationReference: profile?.advancePaymentReference,
+                      }}
+                      className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Re-upload / Change Payment Slip
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/* Summary of Submitted Details */}
-        <div className="rounded-3xl bg-slate-900/80 border border-white/10 p-6 space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <FileText className="w-4 h-4 text-cyan-400" /> Your Submitted Registration Profile
+        <div className="rounded-3xl bg-white border border-[#D4EEF8] p-6 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+            <h3 className="text-base font-bold text-[#1B3D59] flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#6A97C0]" /> Your Submitted Registration Profile
             </h3>
             <button
               onClick={openEditModal}
-              className="text-xs text-cyan-300 hover:text-cyan-200 underline font-semibold flex items-center gap-1"
+              className="text-xs text-[#1B3D59] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
             >
-              <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Correct Typo / Edit Details
+              <Edit3 className="w-3.5 h-3.5 text-[#1B3D59]" /> Correct Typo / Edit Details
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-              <span className="text-slate-400 block text-[11px]">Full Name</span>
-              <span className="font-bold text-white">{user?.name || profile?.name || 'N/A'}</span>
+            <div className="p-3 rounded-xl bg-[#D4EEF8]/30 border border-[#D4EEF8]">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">Full Name</span>
+              <span className="font-bold text-[#152026]">{user?.name || profile?.name || 'N/A'}</span>
             </div>
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-              <span className="text-slate-400 block text-[11px]">NIC Number</span>
-              <span className="font-bold text-white font-mono">{profile?.nic || user?.nic || 'N/A'}</span>
+            <div className="p-3 rounded-xl bg-[#D4EEF8]/30 border border-[#D4EEF8]">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">NIC Number</span>
+              <span className="font-bold text-[#152026] font-mono">{profile?.nic || user?.nic || 'N/A'}</span>
             </div>
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-              <span className="text-slate-400 block text-[11px]">Contact Phone</span>
-              <span className="font-bold text-white">{user?.phone || profile?.phone || 'N/A'}</span>
+            <div className="p-3 rounded-xl bg-[#D4EEF8]/30 border border-[#D4EEF8]">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">Contact Phone</span>
+              <span className="font-bold text-[#152026]">{user?.phone || profile?.phone || 'N/A'}</span>
             </div>
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-              <span className="text-slate-400 block text-[11px]">Registered Branch</span>
-              <span className="font-bold text-cyan-300">{profile?.branch || user?.branch} Branch</span>
+            <div className="p-3 rounded-xl bg-[#D4EEF8]/30 border border-[#D4EEF8]">
+              <span className="text-[#6A97C0] block text-[11px] font-semibold">Registered Branch</span>
+              <span className="font-bold text-[#1B3D59]">{profile?.branch || user?.branch} Branch</span>
             </div>
           </div>
         </div>
 
         {/* ─── CONTACT DETAILS SECTION (REQUIRED BY USER) ────────────────────────── */}
-        <div className="rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-blue-950/30 border border-white/15 p-6 sm:p-8 space-y-6 shadow-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div className="rounded-3xl bg-white border border-[#D4EEF8] p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4EEF8] pb-4">
             <div>
-              <span className="badge bg-cyan-500/15 text-cyan-300 text-[11px] font-bold uppercase tracking-wider mb-1">
+              <span className="px-3 py-1 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[11px] font-bold uppercase tracking-wider mb-1 inline-block">
                 Official Support &amp; Verification Helpdesk
               </span>
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <PhoneCall className="w-5 h-5 text-cyan-400" /> Contact Sithma Driving School
+              <h3 className="text-xl font-black text-[#152026] flex items-center gap-2">
+                <PhoneCall className="w-5 h-5 text-[#1B3D59]" /> Contact Sithma Driving School
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-[#475569] mt-1">
                 If your payment is urgent or if you have any questions regarding your verification, contact our branch officers directly.
               </p>
             </div>
@@ -1202,37 +1542,37 @@ export default function StudentDashboard() {
               href="https://wa.me/94772849201?text=Hello%20Sithma%20Driving%20School,%20I%20have%20submitted%20my%20advance%20payment%20and%20am%20waiting%20for%20verification."
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold flex items-center gap-2 transition-all self-start sm:self-center shadow-lg"
+              className="px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-extrabold flex items-center gap-2 transition-all self-start sm:self-center shadow-xs"
             >
-              <MessageCircle className="w-4 h-4 text-emerald-400" /> WhatsApp Verification Support
+              <MessageCircle className="w-4 h-4 text-emerald-600" /> WhatsApp Verification Support
             </a>
           </div>
 
           {/* 3 Branch Contact Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Maharagama Branch */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
+            <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] hover:border-[#6A97C0] transition-all space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
-                  <Building className="w-4 h-4 text-cyan-400" /> Maharagama Branch
+                <h4 className="font-extrabold text-[#152026] text-sm flex items-center gap-2">
+                  <Building className="w-4 h-4 text-[#1B3D59]" /> Maharagama Branch
                 </h4>
-                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold">
                   Main Office
                 </span>
               </div>
-              <div className="space-y-1.5 text-xs text-slate-300">
+              <div className="space-y-1.5 text-xs text-[#475569]">
                 <p className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0 mt-0.5" />
                   <span>High Level Road, Maharagama</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <a href="tel:0112849201" className="font-bold text-cyan-300 hover:underline">011-2849201</a>
-                  <span className="text-slate-500">/</span>
-                  <a href="tel:0772849201" className="font-bold text-cyan-300 hover:underline">077-2849201</a>
+                  <Phone className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0" />
+                  <a href="tel:0112849201" className="font-bold text-[#1B3D59] hover:underline">011-2849201</a>
+                  <span className="text-slate-400">/</span>
+                  <a href="tel:0772849201" className="font-bold text-[#1B3D59] hover:underline">077-2849201</a>
                 </p>
-                <p className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                <p className="flex items-center gap-2 text-[11px] text-[#6A97C0] pt-1">
+                  <Clock className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0" />
                   <span>Mon–Sat: 8:00 AM – 5:00 PM</span>
                 </p>
               </div>
@@ -1245,28 +1585,28 @@ export default function StudentDashboard() {
             </div>
 
             {/* Werahara Branch */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
+            <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] hover:border-[#6A97C0] transition-all space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
-                  <Building className="w-4 h-4 text-cyan-400" /> Werahara Branch
+                <h4 className="font-extrabold text-[#152026] text-sm flex items-center gap-2">
+                  <Building className="w-4 h-4 text-[#1B3D59]" /> Werahara Branch
                 </h4>
-                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold">
                   DMT Central
                 </span>
               </div>
-              <div className="space-y-1.5 text-xs text-slate-300">
+              <div className="space-y-1.5 text-xs text-[#475569]">
                 <p className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0 mt-0.5" />
                   <span>Near DMT Central Office, Werahara</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <a href="tel:0112518492" className="font-bold text-cyan-300 hover:underline">011-2518492</a>
-                  <span className="text-slate-500">/</span>
-                  <a href="tel:0772518492" className="font-bold text-cyan-300 hover:underline">077-2518492</a>
+                  <Phone className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0" />
+                  <a href="tel:0112518492" className="font-bold text-[#1B3D59] hover:underline">011-2518492</a>
+                  <span className="text-slate-400">/</span>
+                  <a href="tel:0772518492" className="font-bold text-[#1B3D59] hover:underline">077-2518492</a>
                 </p>
-                <p className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                <p className="flex items-center gap-2 text-[11px] text-[#6A97C0] pt-1">
+                  <Clock className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0" />
                   <span>Mon–Sat: 8:00 AM – 5:00 PM</span>
                 </p>
               </div>
@@ -1279,28 +1619,28 @@ export default function StudentDashboard() {
             </div>
 
             {/* Delgoda Branch */}
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
+            <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] hover:border-[#6A97C0] transition-all space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
-                  <Building className="w-4 h-4 text-cyan-400" /> Delgoda Branch
+                <h4 className="font-extrabold text-[#152026] text-sm flex items-center gap-2">
+                  <Building className="w-4 h-4 text-[#1B3D59]" /> Delgoda Branch
                 </h4>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[10px] font-bold">
                   Branch Office
                 </span>
               </div>
-              <div className="space-y-1.5 text-xs text-slate-300">
+              <div className="space-y-1.5 text-xs text-[#475569]">
                 <p className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0 mt-0.5" />
                   <span>Main Street, Delgoda</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <a href="tel:0112974820" className="font-bold text-cyan-300 hover:underline">011-2974820</a>
-                  <span className="text-slate-500">/</span>
-                  <a href="tel:0772974820" className="font-bold text-cyan-300 hover:underline">077-2974820</a>
+                  <Phone className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0" />
+                  <a href="tel:0112974820" className="font-bold text-[#1B3D59] hover:underline">011-2974820</a>
+                  <span className="text-slate-400">/</span>
+                  <a href="tel:0772974820" className="font-bold text-[#1B3D59] hover:underline">077-2974820</a>
                 </p>
-                <p className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                <p className="flex items-center gap-2 text-[11px] text-[#6A97C0] pt-1">
+                  <Clock className="w-3.5 h-3.5 text-[#6A97C0] flex-shrink-0" />
                   <span>Mon–Sat: 8:00 AM – 5:00 PM</span>
                 </p>
               </div>
@@ -1314,12 +1654,12 @@ export default function StudentDashboard() {
           </div>
 
           {/* Quick Support Footer Note */}
-          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+          <div className="p-4 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#475569]">
             <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-cyan-400" />
-              <span>General inquiries: <a href="mailto:info@sithmadrivingschool.lk" className="text-white font-semibold hover:underline">info@sithmadrivingschool.lk</a></span>
+              <Mail className="w-4 h-4 text-[#1B3D59]" />
+              <span>General inquiries: <a href="mailto:info@sithmadrivingschool.lk" className="text-[#1B3D59] font-bold hover:underline">info@sithmadrivingschool.lk</a></span>
             </div>
-            <p className="text-[11px] text-slate-400 text-center sm:text-right">
+            <p className="text-[11px] text-[#6A97C0] text-center sm:text-right">
               Branch officers verify payment slips between 8:00 AM – 5:00 PM daily.
             </p>
           </div>
@@ -1333,52 +1673,55 @@ export default function StudentDashboard() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Welcome Banner */}
-      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/80 to-slate-900/90 rounded-3xl p-6 sm:p-8 text-white border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
-        <div className="space-y-2 relative z-10">
+      <div className="relative bg-gradient-to-r from-[#0F2231] via-[#1B3D59] to-[#0F2231] rounded-3xl p-6 sm:p-8 text-white border border-[#6A97C0]/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-[#3F72AF]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-[#6A97C0]/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="space-y-3 relative z-10">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="badge badge-warning text-xs font-bold py-1">
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 text-white border border-white/30 shadow-xs backdrop-blur-xs">
               {profile?.branch} Branch
             </span>
-            <span className="badge bg-white/15 text-cyan-300 text-xs border border-white/20">
+            <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-[#B3D5F1] text-[#0B2447] border border-[#B3D5F1] shadow-xs">
               {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
             </span>
             {profile?.nic && (
-              <span className="badge bg-slate-950/60 text-slate-300 text-xs border border-white/10 font-mono">
+              <span className="px-3.5 py-1 rounded-full text-xs font-mono bg-white/15 text-white border border-white/25 shadow-xs">
                 NIC: {profile.nic}
               </span>
             )}
             {isAdvancePaymentPending ? (
-              <span className="badge bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
-                <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Status: Pending Verification
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#F3EED8] text-[#152026] border border-amber-300 shadow-xs">
+                <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" /> Status: Pending Verification
               </span>
             ) : (
-              <span className="badge bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-bold flex items-center gap-1.5 py-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Status: Active
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/30 text-emerald-100 border border-emerald-400/50 shadow-xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> Status: Active Learner
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-white drop-shadow">
-            Ayubowan, {user?.name}!
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black !text-white tracking-tight leading-tight" style={{ color: '#FFFFFF' }}>
+            <span className="text-[#F3EED8]" style={{ color: '#F3EED8' }}>Ayubowan</span>, <span className="text-white" style={{ color: '#FFFFFF' }}>{user?.name}</span>!
           </h1>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">
+          <p className="text-[#D4EEF8] text-xs sm:text-sm max-w-xl leading-relaxed font-normal">
             Welcome to your driving portal. Track official DMT milestones, review your course lesson balance, and book your practical driving sessions.
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 sm:self-center relative z-10">
+        <div className="flex flex-wrap gap-2.5 sm:self-center relative z-10">
           <button
             onClick={openEditModal}
-            className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 text-cyan-300 hover:border-cyan-400 shadow-md"
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer backdrop-blur-xs"
           >
-            <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Details
+            <Edit3 className="w-4 h-4 text-[#D4EEF8]" /> Edit Details
           </button>
           <button
             onClick={fetchProfile}
-            className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer backdrop-blur-xs"
           >
-            <RefreshCw className="w-4 h-4 text-cyan-300" /> Refresh
+            <RefreshCw className="w-4 h-4 text-[#D4EEF8]" /> Refresh
           </button>
 
           {isAdvancePaymentPending ? (
@@ -1388,10 +1731,10 @@ export default function StudentDashboard() {
                   '🔒 Advance Payment Pending: Practical lesson booking is restricted until your advance deposit is approved by your branch officer.'
                 )
               }
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-80 border border-amber-400/40 text-amber-300 cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-amber-500/25 border border-amber-300/40 text-amber-200 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Lesson booking locked until advance payment is verified"
             >
-              <Lock className="w-4 h-4 text-amber-400" /> Booking Locked (Payment Pending)
+              <Lock className="w-4 h-4 text-amber-300" /> Booking Locked (Payment Pending)
             </button>
           ) : isType1 && !isExamPassed ? (
             <button
@@ -1400,10 +1743,10 @@ export default function StudentDashboard() {
                   '🔒 DMT Requirement (US-09): Practical & trial lessons can only be booked after passing your Learner Written Exam (marked Passed by your branch officer).'
                 )
               }
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-75 border border-cyan-400/30"
+              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Practical lessons locked until Learner Written Exam is passed"
             >
-              <Lock className="w-4 h-4 text-amber-400" /> Lessons Locked (Exam Pending)
+              <Lock className="w-4 h-4 text-amber-300" /> Lessons Locked (Exam Pending)
             </button>
           ) : isType2 && !hasTrialDate ? (
             <button
@@ -1412,57 +1755,446 @@ export default function StudentDashboard() {
                   '🔒 Practical Trial Date Pending: Your branch Data Entry Officer must schedule your official trial date before practical lesson sessions can be booked.'
                 )
               }
-              className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 opacity-75 border border-purple-400/30 text-purple-300 cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 cursor-not-allowed shadow-xs"
               title="Lessons locked until practical trial date is scheduled"
             >
-              <Lock className="w-4 h-4 text-purple-400" /> Lessons Locked (Trial Date Pending)
+              <Lock className="w-4 h-4 text-[#D4EEF8]" /> Lessons Locked (Trial Date Pending)
             </button>
           ) : !isPackagePaymentConfirmed && (profile?.lessonsUnlocked || 0) <= 0 ? (
             <a
               href="#package-selection-payment"
-              className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-white text-[#1B3D59] hover:bg-[#D4EEF8] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <CreditCard className="w-4 h-4 text-slate-950" /> Select Package & Pay
+              <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Select Package & Pay
             </a>
           ) : (
             <Link
               to="/student/lessons/book"
-              className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-white text-[#1B3D59] hover:bg-[#D4EEF8] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <Calendar className="w-4 h-4 text-slate-950" /> Book a Lesson
+              <Calendar className="w-4 h-4 text-[#1B3D59]" /> Book a Lesson
             </Link>
           )}
         </div>
       </div>
 
-      {/* TYPE 2: AWAITING PRACTICAL TRIAL DATE SCHEDULING NOTICE */}
-      {isType2 && !hasTrialDate && (
-        <div className="card p-6 bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-slate-950/90 border-2 border-purple-400/40 space-y-4 shadow-[0_10px_35px_rgba(168,85,247,0.15)]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center text-purple-300 flex-shrink-0">
-                <Calendar className="w-6 h-6 text-purple-400 animate-pulse" />
+      {/* ─── DMT LEARNER LICENSE LIFECYCLE & COMPLETION CARD (US REQUIREMENTS 1, 2, 5, 6, 7, 8, 9) ─── */}
+      <div className={`card p-6 sm:p-7 rounded-3xl border-2 transition-all space-y-6 shadow-sm bg-white ${
+        isLicenseCompleted
+          ? 'border-emerald-300 shadow-[0_4px_20px_rgba(16,185,129,0.08)]'
+          : isFinalPassed
+          ? 'border-[#6A97C0] shadow-[0_4px_20px_rgba(106,151,192,0.1)]'
+          : isExpiringSoon
+          ? 'border-amber-300 shadow-[0_4px_20px_rgba(245,158,11,0.08)]'
+          : 'border-[#D4EEF8]'
+      }`}>
+        {/* Top cycle & validity bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4EEF8] pb-4">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border flex items-center gap-1.5 ${
+              isLicenseCompleted
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                : isFinalPassed
+                ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#6A97C0]/50'
+                : isExpiringSoon
+                ? 'bg-[#F3EED8] text-[#152026] border-amber-300'
+                : 'bg-[#D4EEF8] text-[#1B3D59] border-[#6A97C0]/30'
+            }`}>
+              {isLicenseCompleted
+                ? 'License Completed'
+                : isFinalPassed
+                ? 'Passed'
+                : isExpiringSoon
+                ? 'Expiring Soon'
+                : 'Active'}
+            </span>
+            <span className="text-xs text-[#6A97C0] font-mono">
+              Registration Cycle #{profile?.currentCycleNumber || 1} • {currentRegistrationCycle?.cycleId || 'CYCLE-1'}
+            </span>
+          </div>
+
+          {profile?.registrationCycles && profile.registrationCycles.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setShowCycleHistoryModal(true)}
+              className="text-xs text-[#1B3D59] hover:underline font-bold flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+            >
+              <History className="w-3.5 h-3.5 text-[#1B3D59]" /> View Past Cycles ({profile.registrationCycles.length})
+            </button>
+          )}
+        </div>
+
+        {/* Status Header Content */}
+        <div className="flex flex-col sm:flex-row items-start gap-5">
+          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 border-2 ${
+            isLicenseCompleted
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+              : isFinalPassed
+              ? 'bg-[#D4EEF8] border-[#6A97C0]/40 text-[#1B3D59]'
+              : isExpiringSoon
+              ? 'bg-[#F3EED8] border-amber-300 text-amber-700 animate-pulse'
+              : 'bg-[#D4EEF8] border-[#6A97C0]/30 text-[#1B3D59]'
+          }`}>
+            {isLicenseCompleted ? (
+              <Award className="w-8 h-8" />
+            ) : isFinalPassed ? (
+              <CheckCircle2 className="w-8 h-8" />
+            ) : isExpiringSoon ? (
+              <AlertTriangle className="w-8 h-8" />
+            ) : (
+              <ShieldCheck className="w-8 h-8" />
+            )}
+          </div>
+
+          <div className="space-y-2 flex-1">
+            <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
+              {isLicenseCompleted
+                ? 'License Completed'
+                : isFinalPassed
+                ? 'Passed'
+                : isExpiringSoon
+                ? 'Learner License Expiring Soon'
+                : 'Learner License Active'}
+            </h2>
+            <p className="text-xs sm:text-sm text-[#475569] leading-relaxed max-w-3xl">
+              {isLicenseCompleted
+                ? 'Your driving license information has been successfully completed.'
+                : isFinalPassed
+                ? 'Congratulations! You have passed the required process.'
+                : isExpiringSoon
+                ? `Remaining: ${remainingDays} Days`
+                : 'Learner License Active'}
+            </p>
+          </div>
+        </div>
+
+        {/* Recent Trial Result Banner (if failed/absent and still has attempts) */}
+        {latestTrialAttempt && latestTrialAttempt.result !== 'passed' && trialAttemptsRemaining > 0 && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-sm text-amber-950">
+                Trial Exam Attempt #{latestTrialAttempt.attemptNumber} – {latestTrialAttempt.result === 'failed' ? 'Failed' : 'Absent'}
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                You have <strong>{trialAttemptsRemaining} of 3 attempts remaining</strong>. Your registration remains active until{' '}
+                <strong>{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : '18 months'}</strong>. You may schedule a new trial date to re-take your practical trial exam.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 18-Month Validity Period & Attempt Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">18-Month Registration Validity</span>
+            <span className={`font-bold font-mono text-sm ${isExpiringSoon ? 'text-amber-700' : 'text-[#1B3D59]'}`}>
+              {licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy') : 'In 18 Months'}
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {remainingDays !== null ? `${remainingDays} Days Remaining` : 'Active'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Practical Trial Attempts</span>
+            <span className={`font-bold text-sm ${trialAttemptsRemaining === 1 ? 'text-amber-700' : trialAttemptsRemaining === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+              {trialAttemptsRemaining} of 3 Remaining
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {trialAttemptsUsed} / 3 Attempts Used
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Written Exam Attempts</span>
+            <span className="font-bold text-[#152026] text-sm">
+              {attemptsCount} of 3 Attempts Used
+            </span>
+            <span className="text-[10px] text-slate-500 block">
+              {isExamPassed ? '✓ Theory Exam Passed' : 'Pending Theory Pass'}
+            </span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-1">
+            <span className="text-[#6A97C0] block text-[11px] font-semibold">Registration Status</span>
+            <span className="font-bold text-emerald-700 text-sm flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Registration Active
+            </span>
+            <span className="text-[10px] text-slate-500 block font-mono">
+              Cycle #{profile?.currentCycleNumber || 1}
+            </span>
+          </div>
+        </div>
+
+        {/* ─── DRIVING LICENSE / FINAL LICENSE SECTION (US REQUIREMENTS 6 & 7) ─── */}
+        {(isFinalPassed || isLicenseCompleted || profile?.finalLicense?.licensePhotoUrl) && (
+          <div className="rounded-2xl bg-[#D4EEF8]/20 border border-[#D4EEF8] p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4EEF8] pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#1B3D59] flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-[#1B3D59]" /> Driving License / Final License
+                </h3>
+                <p className="text-xs text-[#475569] mt-0.5">
+                  Official physical driving license details and document verification.
+                </p>
               </div>
               <div>
-                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider mb-1">
+                {profile?.finalLicense?.licensePhotoUrl ? (
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                    isLicenseCompleted
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-[#D4EEF8] text-[#1B3D59] border-[#6A97C0]/40'
+                  }`}>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> License Photo: Uploaded ✓
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-700" /> License Photo: Not Uploaded
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* Photo Preview / Upload Form */}
+              <form onSubmit={handleUploadFinalLicense} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-[#152026] font-semibold mb-1">
+                    License Number (if applicable):
+                  </label>
+                  <input
+                    type="text"
+                    value={licenseNumberInput}
+                    onChange={(e) => setLicenseNumberInput(e.target.value)}
+                    placeholder="e.g. B1234567"
+                    disabled={isLicenseCompleted}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#D4EEF8] text-[#152026] font-mono focus:border-[#1B3D59] focus:outline-none disabled:opacity-70"
+                  />
+                </div>
+
+                {!isLicenseCompleted && (
+                  <div className="space-y-2">
+                    <label className="block text-[#152026] font-semibold">
+                      {profile?.finalLicense?.licensePhotoUrl ? 'Replace Driving License Photo:' : 'Upload Driving License Photo (JPG, PNG, WEBP — Max 10MB):'}
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      onChange={handleLicensePhotoSelect}
+                      className="w-full text-xs text-[#475569] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4EEF8] file:text-[#1B3D59] hover:file:bg-[#B3D5F1] cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {!isLicenseCompleted && (
+                  <button
+                    type="submit"
+                    disabled={uploadingLicensePhoto || (!licensePhotoFile && licenseNumberInput === (profile?.finalLicense?.licenseNumber || ''))}
+                    className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    <Upload className={`w-3.5 h-3.5 ${uploadingLicensePhoto ? 'animate-spin' : ''}`} />
+                    {uploadingLicensePhoto
+                      ? 'Uploading...'
+                      : profile?.finalLicense?.licensePhotoUrl
+                      ? 'Update License Information'
+                      : 'Upload License Photo'}
+                  </button>
+                )}
+              </form>
+
+              {/* Photo Display Card */}
+              <div className="p-4 rounded-2xl bg-white border border-[#D4EEF8] space-y-3 shadow-xs">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#152026] font-semibold">License Photo Preview:</span>
+                  <span className="text-[#6A97C0] font-mono text-[11px]">
+                    {profile?.finalLicense?.verificationStatus === 'verified'
+                      ? 'Verified by Admin ✓'
+                      : profile?.finalLicense?.licensePhotoUrl
+                      ? 'Pending Admin Verification'
+                      : 'Awaiting Upload'}
+                  </span>
+                </div>
+
+                {licensePhotoPreview || profile?.finalLicense?.licensePhotoUrl ? (
+                  <div className="relative rounded-xl overflow-hidden border border-[#D4EEF8] bg-slate-50 group">
+                    <img
+                      src={licensePhotoPreview || profile.finalLicense.licensePhotoUrl}
+                      alt="Driving License"
+                      className="w-full max-h-56 object-contain mx-auto"
+                    />
+                    <a
+                      href={licensePhotoPreview || profile.finalLicense.licensePhotoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-[#1B3D59]/90 hover:bg-[#152026] text-white text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-white" /> View Original
+                    </a>
+                  </div>
+                ) : (
+                  <div className="p-8 border-2 border-dashed border-[#D4EEF8] rounded-xl text-center space-y-2">
+                    <CreditCard className="w-10 h-10 text-[#6A97C0] mx-auto" />
+                    <p className="text-xs text-[#475569]">
+                      No driving license photo uploaded yet. Select a photo to preview and submit.
+                    </p>
+                  </div>
+                )}
+
+                {profile?.finalLicense?.uploadedAt && (
+                  <div className="text-[11px] text-[#6A97C0] flex items-center justify-between pt-1 border-t border-[#D4EEF8]">
+                    <span>Uploaded: {safeFormatDate(profile.finalLicense.uploadedAt, 'MMM dd, yyyy')}</span>
+                    {profile.finalLicense.licenseNumber && (
+                      <span className="font-mono text-[#1B3D59] font-bold">No: {profile.finalLicense.licenseNumber}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ─── PAST REGISTRATION CYCLES HISTORY MODAL (US REQUIREMENTS 2, 4, 10) ─── */}
+      {showCycleHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-[#1B3D59] flex items-center gap-2">
+                  <History className="w-5 h-5 text-[#1B3D59]" /> Registration Cycles &amp; Attempt History
+                </h3>
+                <p className="text-xs text-[#475569]">
+                  Complete historical records of all DMT enrollment cycles for this learner.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCycleHistoryModal(false)}
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {profile?.registrationCycles?.map((cycle, idx) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-2xl border space-y-3 ${
+                    cycle.cycleNumber === profile.currentCycleNumber
+                      ? 'bg-[#D4EEF8]/30 border-[#6A97C0]/60'
+                      : 'bg-white border-[#D4EEF8]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[#152026] text-sm">
+                        Cycle #{cycle.cycleNumber} ({cycle.cycleId || `CYCLE-${cycle.cycleNumber}`})
+                      </span>
+                      {cycle.cycleNumber === profile.currentCycleNumber && (
+                        <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/40 text-[10px] font-bold">
+                          Current Cycle
+                        </span>
+                      )}
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] uppercase font-bold">
+                      Status: {cycle.status || 'Archived'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#475569]">
+                    <div>
+                      <span className="text-[#6A97C0] block text-[10px] font-semibold">Start Date:</span>
+                      <span className="font-mono text-[#152026] font-bold">{safeFormatDate(cycle.startDate, 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#6A97C0] block text-[10px] font-semibold">18-Month Expiry:</span>
+                      <span className="font-mono text-[#152026] font-bold">{safeFormatDate(cycle.expiryDate, 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#6A97C0] block text-[10px] font-semibold">Exam Attempts:</span>
+                      <span className="font-mono text-[#152026] font-bold">{cycle.examAttempts?.length || 0} of 3</span>
+                    </div>
+                    <div>
+                      <span className="text-[#6A97C0] block text-[10px] font-semibold">Advance Deposit:</span>
+                      <span className="font-mono text-emerald-700 font-bold">{cycle.isAdvancePaid ? 'Paid ✓' : 'Pending'}</span>
+                    </div>
+                  </div>
+
+                  {cycle.examAttempts && cycle.examAttempts.length > 0 && (
+                    <div className="space-y-1.5 pt-1 border-t border-[#D4EEF8]">
+                      <span className="text-[10px] font-bold text-[#6A97C0] uppercase tracking-wider block">
+                        Cycle Exam Attempts:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {cycle.examAttempts.map((att, aIdx) => (
+                          <div key={aIdx} className="p-2.5 rounded-xl bg-white border border-[#D4EEF8] text-[11px] space-y-0.5 shadow-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-[#152026]">Attempt {att.attemptNumber}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                att.result === 'passed'
+                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                  : 'bg-red-50 text-red-800 border border-red-200'
+                              }`}>
+                                {att.result?.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="text-[#6A97C0] text-[10px]">
+                              {safeFormatDate(att.date, 'MMM dd, yyyy', 'No Date')}
+                            </div>
+                            {att.marks !== undefined && att.marks !== null && (
+                              <div className="font-mono text-[#1B3D59] font-bold text-[10px]">
+                                Score: {att.marks}/40
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#D4EEF8]">
+              <button
+                type="button"
+                onClick={() => setShowCycleHistoryModal(false)}
+                className="btn-secondary text-xs py-2 px-5 font-bold cursor-pointer"
+              >
+                Close History
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TYPE 2: AWAITING PRACTICAL TRIAL DATE SCHEDULING NOTICE */}
+      {isType2 && !hasTrialDate && (
+        <div className="card p-6 bg-white border-2 border-amber-300 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#F3EED8] border border-amber-300 flex items-center justify-center text-amber-700 flex-shrink-0">
+                <Calendar className="w-6 h-6 text-amber-700 animate-pulse" />
+              </div>
+              <div>
+                <span className="px-2.5 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-bold uppercase tracking-wider mb-1 inline-block">
                   Type 2: Trial-Ready Student • Step 1: Trial Date Assignment
                 </span>
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                <h3 className="text-lg font-extrabold text-[#152026] flex items-center gap-2">
                   Awaiting Official DMT Practical Trial Date
                 </h3>
-                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                <p className="text-xs text-[#475569] mt-1 max-w-2xl leading-relaxed">
                   As a <strong>Type 2 (Trial-Ready)</strong> student holding an existing learner permit, you are <strong>exempt from DMT Medical, Registration, and Written Theory Exam</strong>.
                   Your branch Data Entry Officer will schedule your official Practical Driving Trial Date. Once scheduled, your course package selection, payment plans (Monthly 3 Installments, Full Course, or Daily Pay-Per-Lesson), and lesson booking up to your trial date will unlock automatically.
                 </p>
               </div>
             </div>
-            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[190px]">
-              <span className="text-[10px] text-slate-400 font-semibold block">DMT Milestones:</span>
-              <span className="text-xs font-black text-emerald-400 flex items-center justify-start sm:justify-end gap-1 mt-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Exempt / Complete
+            <div className="p-3.5 bg-[#D4EEF8]/30 rounded-2xl border border-[#D4EEF8] text-left sm:text-right self-stretch sm:self-auto sm:min-w-[190px]">
+              <span className="text-[10px] text-[#6A97C0] font-semibold block">DMT Milestones:</span>
+              <span className="text-xs font-black text-emerald-700 flex items-center justify-start sm:justify-end gap-1 mt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Exempt / Complete
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold block mt-2">Trial Date Status:</span>
-              <span className="text-xs font-black text-amber-300">
+              <span className="text-[10px] text-[#6A97C0] font-semibold block mt-2">Trial Date Status:</span>
+              <span className="text-xs font-black text-amber-800">
                 Pending Branch Scheduling
               </span>
             </div>
@@ -1472,36 +2204,36 @@ export default function StudentDashboard() {
 
       {/* Shared Practical Trial Date & Reschedule Banner (Active for both Type 1 & Type 2) */}
       {hasTrialDate && (
-        <div className="card p-6 border border-purple-400/30 bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="card p-6 border-2 border-[#D4EEF8] bg-white rounded-3xl shadow-sm hover:border-[#6A97C0] transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
-              <Calendar className="w-6 h-6 text-purple-400" />
+            <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] shrink-0 shadow-inner">
+              <Calendar className="w-6 h-6 text-[#1B3D59]" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs uppercase tracking-wider font-bold text-purple-300">
+                <span className="text-xs uppercase tracking-wider font-extrabold text-[#1B3D59]">
                   {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
                 </span>
-                {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
-                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold">
+                {Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
                     Trial Date Passed (Booking Locked)
                   </span>
                 ) : (
-                  <span className="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
                     Booking Window Active
                   </span>
                 )}
                 {myRescheduleRequests.find((r) => r.status === 'Pending') && (
-                  <span className="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
-                    <Clock className="w-3 h-3 animate-pulse" /> Reschedule Pending DEO Review
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[11px] font-bold flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-700 animate-pulse" /> Reschedule Pending DEO Review
                   </span>
                 )}
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white">
-                Scheduled Trial Date: {safeFormatDate(currentTrialDate, 'EEEE, MMMM dd, yyyy')}
+              <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
+                Scheduled Trial Date: {formatTrialDateDisplay(currentTrialDate)}
               </h2>
-              <p className="text-xs text-slate-300 max-w-xl">
-                {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
+              <p className="text-xs sm:text-sm text-[#475569] max-w-xl leading-relaxed">
+                {Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
                   ? 'Your scheduled trial date has passed. Practical lesson booking is locked. Submit a reschedule request to have a Data Entry Officer assign a new trial date and reopen lesson booking.'
                   : 'You can book practical driving lessons up until your scheduled trial date. Need to change your trial date? Submit a reschedule request to your Data Entry Officer.'}
               </p>
@@ -1512,57 +2244,118 @@ export default function StudentDashboard() {
               setRescheduleMilestone('trial');
               setShowRescheduleModal(true);
             }}
-            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-lg shrink-0"
+            className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs shrink-0 cursor-pointer"
           >
-            <Clock className="w-4 h-4" /> Request Trial Reschedule
+            <Clock className="w-4 h-4 text-white" /> Request Trial Reschedule
           </button>
         </div>
       )}
 
-
-      {/* TYPE 1: US-09 DMT LEARNER EXAM GATE NOTICE BANNER */}
-      {isType1 && !isTrialEligible && (
-        <div className="card p-6 bg-gradient-to-r from-cyan-950/70 via-slate-900/90 to-blue-950/70 border-2 border-cyan-400/40 space-y-4 shadow-[0_10px_35px_rgba(6,182,212,0.15)]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 flex-shrink-0">
-                <ShieldAlert className="w-6 h-6 text-cyan-400 animate-pulse" />
+      {/* TYPE 1: US-09 DMT LEARNER EXAM GATE & STATUS SELECTOR BANNER */}
+      {isType1 && (
+        <div className="card p-6 bg-white border-2 border-[#DBE2EF] space-y-4 shadow-sm hover:border-[#3F72AF]/40 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="flex items-start gap-3.5">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner ${
+                isExamPassed
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                  : 'bg-[#DBE2EF]/70 border border-[#3F72AF]/30 text-[#112D4E]'
+              }`}>
+                {isExamPassed ? (
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                ) : (
+                  <ShieldAlert className="w-6 h-6 text-[#3F72AF] animate-pulse" />
+                )}
               </div>
-              <div>
-                <span className="badge badge-warning text-[10px] font-bold uppercase tracking-wider mb-1">
-                  US-09 DMT Regulation Active • Theory Exam Gate
+              <div className="space-y-1.5">
+                <span className={`badge text-[10px] font-bold uppercase tracking-wider ${
+                  isExamPassed ? 'badge-success' : 'badge-warning'
+                }`}>
+                  {isExamPassed ? '✓ DMT Theory Exam Cleared' : 'US-09 DMT Regulation Active • Theory Exam Gate'}
                 </span>
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  Practical Trial Lessons Locked Until Learner's Exam Passed
+                <h3 className="text-lg sm:text-xl font-black text-[#0B2447] flex items-center gap-2">
+                  {isExamPassed
+                    ? 'DMT Theory Exam Passed — Practical Trial Lessons Unlocked!'
+                    : 'Practical Trial Lessons Locked Until Learner\'s Exam Passed'}
                 </h3>
-                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                  As a <strong>Type 1 New Learner</strong>, you can manage your medical exam, learner registration, and written theory test on your dedicated DMT milestone dashboard. In accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is officially marked <strong>"Passed"</strong> by your branch officer.
+                <p className="text-xs sm:text-sm text-[#4B6584] max-w-2xl leading-relaxed">
+                  {isExamPassed
+                    ? 'Congratulations! You have successfully passed the DMT Written Theory Exam. You are eligible to book and schedule your practical trial training sessions.'
+                    : 'As a Type 1 New Learner, in accordance with DMT regulations, on-road practical driving and trial lessons can only be booked after your Learner Written Exam is completed and passed.'}
                 </p>
-                <div className="pt-2">
+                <div className="pt-1.5">
                   <Link
                     to="/student/milestones"
-                    className="btn-accent text-xs py-1.5 px-3.5 font-bold inline-flex items-center gap-1.5 shadow"
+                    className="btn-primary text-xs py-2 px-4 font-bold inline-flex items-center gap-2 shadow-xs cursor-pointer"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <ShieldCheck className="w-4 h-4 text-white" />
                     <span>Go to DMT Milestones Dashboard</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4 text-white" />
                   </Link>
                 </div>
               </div>
             </div>
-            <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[180px]">
-              <span className="text-[10px] text-slate-400 font-semibold block">Your Exam Status:</span>
+            <div className="p-4 bg-[#D4EEF8]/30 rounded-2xl border border-[#D4EEF8] text-left sm:text-right self-stretch sm:self-auto sm:min-w-[190px] shadow-xs">
+              <span className="text-xs text-[#6A97C0] font-bold block mb-1">Your Exam Status:</span>
               <span
-                className={`text-xs font-black ${
-                  profile?.learnerExamStatus === 'failed' ? 'text-rose-400' : 'text-amber-300'
+                className={`text-xs sm:text-sm font-black px-3 py-1 rounded-full inline-block ${
+                  isExamPassed
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : profile?.learnerExamStatus === 'failed'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : profile?.dmtDates?.learnerExamDate
+                    ? 'bg-[#F3EED8] text-[#152026] border border-amber-300'
+                    : 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
                 }`}
               >
-                {profile?.learnerExamStatus === 'failed'
-                  ? 'Failed (Retake Required)'
+                {isExamPassed
+                  ? '✓ PASSED'
+                  : profile?.learnerExamStatus === 'failed'
+                  ? '✕ FAILED (Retake Required)'
                   : profile?.dmtDates?.learnerExamDate
-                  ? 'Scheduled / Awaiting Result'
+                  ? '⏳ Scheduled / In Progress'
                   : 'Not Yet Faced'}
               </span>
+            </div>
+          </div>
+
+          {/* Interactive Exam Outcome Selector for Student */}
+          <div className="pt-3.5 border-t border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F8FAFD]/70 -mx-6 -mb-6 p-4 rounded-b-2xl">
+            <div>
+              <span className="text-xs font-bold text-[#0B2447] block flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[#3F72AF]" /> Faced your DMT Written Theory Exam?
+              </span>
+              <span className="text-[11px] text-[#4B6584]">
+                Select your official exam outcome below to update your status across the school system:
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleUpdateExamStatus('passed')}
+                disabled={updatingExamStatus}
+                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  isExamPassed
+                    ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-500'
+                    : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Passed</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateExamStatus('failed')}
+                disabled={updatingExamStatus}
+                className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  profile?.learnerExamStatus === 'failed'
+                    ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-500'
+                    : 'bg-white hover:bg-rose-50 text-rose-800 border border-rose-300'
+                }`}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Failed</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1570,10 +2363,10 @@ export default function StudentDashboard() {
 
       {/* COURSE PACKAGE SELECTION & PAYMENT BANNER (FOR TRIAL-READY STUDENTS) */}
       {showPackagePaymentBanner && (
-        <div id="package-selection-payment" className="card p-6 sm:p-8 bg-gradient-to-r from-amber-500/15 via-slate-900/90 to-purple-900/30 border border-amber-400/30 space-y-6 shadow-[0_10px_40px_rgba(245,158,11,0.15)]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div id="package-selection-payment" className="card p-6 sm:p-8 bg-white border-2 border-[#D4EEF8] space-y-6 shadow-sm rounded-3xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4EEF8] pb-4">
             <div>
-              <span className="badge badge-warning text-xs font-bold uppercase tracking-wider mb-1">
+              <span className="px-3 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-xs font-bold uppercase tracking-wider mb-1 inline-block">
                 {hasUnfinishedInstallments
                   ? `Installment #${(profile?.installmentsPaidCount || 0) + 1} Due • Unlock 5 More Lessons`
                   : hasCompletedSingleLesson
@@ -1582,13 +2375,13 @@ export default function StudentDashboard() {
                   ? 'Practical Trial Date Scheduled • Step 2: Course Package Selection & Payment'
                   : 'Theory Exam Passed • Step 2: Course Package Selection & Payment'}
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                <CreditCard className="w-6 h-6 text-amber-400" />
+              <h2 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-[#1B3D59]" />
                 {hasUnfinishedInstallments
                   ? `Pay Next Installment (Installment #${(profile?.installmentsPaidCount || 0) + 1} of 3)`
                   : 'Select Course Package & Choose Payment Plan'}
               </h2>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-[#475569] mt-1">
                 {hasUnfinishedInstallments
                   ? `You have unlocked ${profile?.lessonsUnlocked || 5} lessons. Pay your next installment to unlock 5 additional lessons.`
                   : isType2
@@ -1598,7 +2391,7 @@ export default function StudentDashboard() {
             </div>
             <div className="flex items-center gap-2 self-start sm:self-auto">
               {isPackagePaymentPending && (
-                <span className="badge badge-warning px-3 py-1 text-xs font-bold">
+                <span className="px-3 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-xs font-bold">
                   ⏳ Payment Slip Pending Verification
                 </span>
               )}
@@ -1606,7 +2399,7 @@ export default function StudentDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowPaymentFormOverride(false)}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-xs font-bold transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] text-xs font-bold transition-colors cursor-pointer"
                 >
                   ✕ Close
                 </button>
@@ -1616,13 +2409,13 @@ export default function StudentDashboard() {
 
           {/* Active Installment Progress Tracker (if currently on installments) */}
           {hasUnfinishedInstallments && (
-            <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 space-y-3">
+            <div className="p-4 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-white flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-cyan-400" /> Active 3-Installment Plan:
-                  <span className="text-cyan-300 font-mono ml-1">{profile?.package?.type?.replace('_', ' ') || 'Car Package'}</span>
+                <span className="font-bold text-[#152026] flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#1B3D59]" /> Active 3-Installment Plan:
+                  <span className="text-[#1B3D59] font-mono ml-1 font-bold">{profile?.package?.type?.replace('_', ' ') || 'Car Package'}</span>
                 </span>
-                <span className="badge badge-info text-[10px]">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
                   {profile?.installmentsPaidCount || 1}/3 Paid • {profile?.lessonsUnlocked || 5} Lessons Unlocked
                 </span>
               </div>
@@ -1635,23 +2428,23 @@ export default function StudentDashboard() {
                       key={inst.num}
                       className={`p-3 rounded-xl border ${
                         isPaid
-                          ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-200'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                           : isCurrentDue
-                          ? 'bg-amber-500/20 border-amber-400 text-amber-200 ring-1 ring-amber-400 shadow-md'
-                          : 'bg-white/5 border-white/10 text-slate-400'
+                          ? 'bg-[#F3EED8] border-amber-300 text-[#152026] ring-1 ring-amber-300 shadow-xs'
+                          : 'bg-white border-[#D4EEF8] text-[#6A97C0]'
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1 font-bold">
                         <span>Installment #{inst.num}</span>
                         {isPaid ? (
-                          <span className="text-emerald-400 text-[10px]">✓ Paid</span>
+                          <span className="text-emerald-700 text-[10px]">✓ Paid</span>
                         ) : isCurrentDue ? (
-                          <span className="text-amber-300 text-[10px]">Due Now</span>
+                          <span className="text-amber-800 text-[10px]">Due Now</span>
                         ) : (
-                          <span className="text-slate-500 text-[10px]">Upcoming</span>
+                          <span className="text-slate-400 text-[10px]">Upcoming</span>
                         )}
                       </div>
-                      <div className="font-black text-sm text-white">Rs. {inst.amount.toLocaleString()}</div>
+                      <div className="font-black text-sm text-[#152026]">Rs. {inst.amount.toLocaleString()}</div>
                       <div className="text-[10px] mt-0.5 opacity-80">Unlocks 5 Lessons</div>
                     </div>
                   );
@@ -1662,24 +2455,24 @@ export default function StudentDashboard() {
 
           {/* Pending Payment Notice */}
           {isPackagePaymentPending && !showPaymentFormOverride ? (
-            <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-xs text-amber-200 space-y-3">
+            <div className="p-5 rounded-2xl bg-[#F3EED8] border border-amber-300 text-xs text-[#152026] space-y-3">
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                <Clock className="w-5 h-5 text-amber-700 flex-shrink-0" />
                 <div>
-                  <strong className="text-white text-sm">Your course package payment slip is awaiting branch review.</strong>
-                  <p className="text-slate-300 mt-0.5 leading-relaxed">
+                  <strong className="text-[#152026] text-sm">Your course package payment slip is awaiting branch review.</strong>
+                  <p className="text-[#475569] mt-0.5 leading-relaxed">
                     Our Data Entry Officer is verifying your bank deposit. Your lesson balance will unlock automatically upon verification.
                   </p>
                 </div>
               </div>
-              <div className="pt-2 border-t border-amber-400/20 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] text-slate-300">
+              <div className="pt-2 border-t border-amber-300/60 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] text-[#475569]">
                   Want to switch to online card payment for instant unlock?
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowPaymentFormOverride(true)}
-                  className="btn-accent text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow"
+                  className="btn-primary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
                   <CreditCard className="w-3.5 h-3.5" />
                   <span>Pay Online via Card Now</span>
@@ -1692,18 +2485,18 @@ export default function StudentDashboard() {
               {!hasUnfinishedInstallments && (
                 <div className="space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <label className="block text-xs font-bold text-white uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-[#152026] uppercase tracking-wider">
                       1. Choose Vehicle Training Package Category:
                     </label>
                     {/* Category Selector Tabs */}
-                    <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-white/10 self-start sm:self-auto">
+                    <div className="flex items-center gap-1.5 p-1 bg-[#D4EEF8]/40 rounded-xl border border-[#D4EEF8] self-start sm:self-auto">
                       <button
                         type="button"
                         onClick={() => setSelectedCategoryGroup('C')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           selectedCategoryGroup === 'C'
-                            ? 'bg-amber-500 text-slate-950 shadow-md'
-                            : 'text-slate-300 hover:text-white'
+                            ? 'bg-[#1B3D59] text-white shadow-xs'
+                            : 'text-[#1B3D59] hover:bg-[#D4EEF8]'
                         }`}
                       >
                         ⭐ C. Full Course Packages (15 Lessons)
@@ -1714,10 +2507,10 @@ export default function StudentDashboard() {
                           setSelectedCategoryGroup('B');
                           setSelectedPlan('single');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           selectedCategoryGroup === 'B'
-                            ? 'bg-cyan-500 text-slate-950 shadow-md'
-                            : 'text-slate-300 hover:text-white'
+                            ? 'bg-[#1B3D59] text-white shadow-xs'
+                            : 'text-[#1B3D59] hover:bg-[#D4EEF8]'
                         }`}
                       >
                         B. Standard Single Lessons
@@ -1728,10 +2521,10 @@ export default function StudentDashboard() {
                           setSelectedCategoryGroup('A');
                           setSelectedPlan('single');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           selectedCategoryGroup === 'A'
-                            ? 'bg-purple-500 text-white shadow-md'
-                            : 'text-slate-300 hover:text-white'
+                            ? 'bg-[#1B3D59] text-white shadow-xs'
+                            : 'text-[#1B3D59] hover:bg-[#D4EEF8]'
                         }`}
                       >
                         A. Private / Individual Lessons
@@ -1763,30 +2556,30 @@ export default function StudentDashboard() {
                             }}
                             className={`p-4 rounded-2xl border cursor-pointer transition-all relative ${
                               isSelected
-                                ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
-                                : 'border-white/10 bg-slate-900/60 hover:border-white/30 hover:bg-white/5'
+                                ? 'border-[#1B3D59] bg-[#D4EEF8]/30 ring-2 ring-[#1B3D59] shadow-xs'
+                                : 'border-[#D4EEF8] bg-white hover:border-[#6A97C0] hover:shadow-xs'
                             }`}
                           >
                             <div className="flex justify-between items-start mb-2">
-                              <span className="font-bold text-white text-xs leading-snug">{pkgItem.name}</span>
+                              <span className="font-bold text-[#152026] text-xs leading-snug">{pkgItem.name}</span>
                               {isSelected ? (
-                                <CheckCircle2 className="w-4 h-4 text-amber-400 flex-shrink-0 ml-1" />
+                                <CheckCircle2 className="w-4 h-4 text-[#1B3D59] flex-shrink-0 ml-1" />
                               ) : (
-                                <span className="w-3.5 h-3.5 rounded-full border border-white/20 flex-shrink-0 ml-1" />
+                                <span className="w-3.5 h-3.5 rounded-full border border-slate-300 flex-shrink-0 ml-1" />
                               )}
                             </div>
-                            <div className="text-base font-black text-amber-300 mb-1">
+                            <div className="text-base font-black text-[#1B3D59] mb-1">
                               Rs. {pkgItem.price?.toLocaleString()}
                               {pkgItem.isPerLesson && (
-                                <span className="text-[10px] font-normal text-slate-400 ml-1">/ lesson</span>
+                                <span className="text-[10px] font-normal text-[#6A97C0] ml-1">/ lesson</span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-300 leading-relaxed mb-2">
+                            <p className="text-[11px] text-[#475569] leading-relaxed mb-2">
                               {pkgItem.lessons} {pkgItem.lessons === 1 ? 'Lesson' : 'Lessons'} • {pkgItem.notes || 'Curriculum compliant'}
                             </p>
                             {pkgItem.bonusLessons && (pkgItem.bonusLessons.bike > 0 || pkgItem.bonusLessons.threeWheeler > 0) && (
-                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-semibold">
-                                <Gift className="w-3 h-3" /> +{pkgItem.bonusLessons.bike} Bike & +{pkgItem.bonusLessons.threeWheeler} Three-Wheel Free
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-semibold">
+                                <Gift className="w-3 h-3 text-emerald-600" /> +{pkgItem.bonusLessons.bike} Bike & +{pkgItem.bonusLessons.threeWheeler} Three-Wheel Free
                               </div>
                             )}
                           </div>
@@ -1799,7 +2592,7 @@ export default function StudentDashboard() {
               {/* STEP 2: Choose Payment Plan (Full Payment vs 3 Installments vs Single Lesson) */}
               {!hasUnfinishedInstallments && (
                 <div>
-                  <label className="block text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-[#152026] uppercase tracking-wider mb-2">
                     2. Choose Payment Plan:
                   </label>
                   {(() => {
@@ -1815,23 +2608,23 @@ export default function StudentDashboard() {
                             onClick={() => setSelectedPlan('full')}
                             className={`p-5 rounded-2xl border cursor-pointer transition-all ${
                               selectedPlan === 'full'
-                                ? 'border-cyan-400 bg-cyan-500/15 ring-2 ring-cyan-400/80 shadow-[0_0_20px_rgba(6,182,212,0.25)] text-cyan-100'
-                                : 'border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/25'
+                                ? 'border-[#1B3D59] bg-[#D4EEF8]/30 ring-2 ring-[#1B3D59] shadow-xs'
+                                : 'border-[#D4EEF8] bg-white text-[#475569] hover:border-[#6A97C0]'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                                <Sparkles className="w-4 h-4 text-cyan-400" /> Option A: Full Upfront Payment
+                              <span className="font-bold text-sm text-[#152026] flex items-center gap-1.5">
+                                <Sparkles className="w-4 h-4 text-[#1B3D59]" /> Option A: Full Upfront Payment
                               </span>
-                              {selectedPlan === 'full' && <CheckCircle2 className="w-5 h-5 text-cyan-400" />}
+                              {selectedPlan === 'full' && <CheckCircle2 className="w-5 h-5 text-[#1B3D59]" />}
                             </div>
-                            <div className="text-lg font-black text-cyan-300 mb-1">
+                            <div className="text-lg font-black text-[#1B3D59] mb-1">
                               Rs. {(activePkg?.price || 40000).toLocaleString()}
                             </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              Pay the full course fee upfront. <strong>Immediately unlocks all 15 included lessons</strong> so you can book any available time slot.
+                            <p className="text-xs text-[#475569] leading-relaxed">
+                              Pay the full course fee upfront. <strong className="text-[#152026]">Immediately unlocks all 15 included lessons</strong> so you can book any available time slot.
                             </p>
-                            <div className="mt-3 text-[11px] text-cyan-300 font-bold flex items-center gap-1">
+                            <div className="mt-3 text-[11px] text-[#1B3D59] font-bold flex items-center gap-1">
                               ✓ Unlocks All 15 Lessons Instantly
                             </div>
                           </div>
@@ -1841,38 +2634,38 @@ export default function StudentDashboard() {
                             onClick={() => setSelectedPlan('installments')}
                             className={`p-5 rounded-2xl border cursor-pointer transition-all ${
                               selectedPlan === 'installments'
-                                ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.25)] text-amber-100'
-                                : 'border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/25'
+                                ? 'border-[#1B3D59] bg-[#D4EEF8]/30 ring-2 ring-[#1B3D59] shadow-xs'
+                                : 'border-[#D4EEF8] bg-white text-[#475569] hover:border-[#6A97C0]'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                                <Clock className="w-4 h-4 text-amber-400" /> Option B: Pay in 3 Installments
+                              <span className="font-bold text-sm text-[#152026] flex items-center gap-1.5">
+                                <Clock className="w-4 h-4 text-[#1B3D59]" /> Option B: Pay in 3 Installments
                               </span>
-                              {selectedPlan === 'installments' && <CheckCircle2 className="w-5 h-5 text-amber-400" />}
+                              {selectedPlan === 'installments' && <CheckCircle2 className="w-5 h-5 text-[#1B3D59]" />}
                             </div>
-                            <div className="text-lg font-black text-amber-300 mb-1">
+                            <div className="text-lg font-black text-[#1B3D59] mb-1">
                               1st Pay: Rs. {instSchedule[0].amount.toLocaleString()}
                             </div>
-                            <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                            <p className="text-xs text-[#475569] leading-relaxed mb-3">
                               First pay big amount, finally small amount. Each payment unlocks 5 lessons.
                             </p>
                             {/* Installment breakdown pills */}
-                            <div className="grid grid-cols-3 gap-1.5 text-[10px] text-slate-200">
-                              <div className="p-1.5 rounded-lg bg-amber-500/20 border border-amber-400/30 text-center">
-                                <div className="font-bold text-amber-300">1st Month</div>
-                                <div>Rs. {instSchedule[0].amount.toLocaleString()}</div>
-                                <div className="text-amber-400/80 font-mono">+5 Lessons</div>
+                            <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                              <div className="p-1.5 rounded-lg bg-[#D4EEF8]/50 border border-[#D4EEF8] text-center">
+                                <div className="font-bold text-[#1B3D59]">1st Month</div>
+                                <div className="text-[#152026] font-bold">Rs. {instSchedule[0].amount.toLocaleString()}</div>
+                                <div className="text-[#6A97C0] font-mono">+5 Lessons</div>
                               </div>
-                              <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-center">
-                                <div className="font-bold text-slate-300">2nd Month</div>
-                                <div>Rs. {instSchedule[1].amount.toLocaleString()}</div>
-                                <div className="text-slate-400 font-mono">+5 Lessons</div>
+                              <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-center">
+                                <div className="font-bold text-slate-700">2nd Month</div>
+                                <div className="text-[#152026] font-bold">Rs. {instSchedule[1].amount.toLocaleString()}</div>
+                                <div className="text-[#6A97C0] font-mono">+5 Lessons</div>
                               </div>
-                              <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-center">
-                                <div className="font-bold text-slate-300">3rd Month</div>
-                                <div>Rs. {instSchedule[2].amount.toLocaleString()}</div>
-                                <div className="text-slate-400 font-mono">+5 Lessons</div>
+                              <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-center">
+                                <div className="font-bold text-slate-700">3rd Month</div>
+                                <div className="text-[#152026] font-bold">Rs. {instSchedule[2].amount.toLocaleString()}</div>
+                                <div className="text-[#6A97C0] font-mono">+5 Lessons</div>
                               </div>
                             </div>
                           </div>
@@ -1882,17 +2675,17 @@ export default function StudentDashboard() {
 
                     // Single Lesson Selected (Groups A or B)
                     return (
-                      <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 text-xs text-cyan-200 flex items-center justify-between">
+                      <div className="p-4 rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] text-xs text-[#152026] flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                          <CheckCircle2 className="w-5 h-5 text-[#1B3D59] flex-shrink-0" />
                           <div>
-                            <strong className="text-white">Pay-Per-Lesson Plan Selected:</strong>
-                            <p className="text-slate-300 mt-0.5">
+                            <strong className="text-[#152026]">Pay-Per-Lesson Plan Selected:</strong>
+                            <p className="text-[#475569] mt-0.5">
                               Paying for a single lesson unlocks exactly <strong>1 lesson</strong> for booking. You can pay again for future lessons as needed.
                             </p>
                           </div>
                         </div>
-                        <span className="badge badge-info text-xs font-black">
+                        <span className="px-3 py-1 rounded-full bg-[#1B3D59] text-white text-xs font-black">
                           Rs. {(activePkg?.price || 2000).toLocaleString()} • 1 Lesson
                         </span>
                       </div>
@@ -1901,14 +2694,14 @@ export default function StudentDashboard() {
                 </div>
               )}
 
-              {/* STEP 3: Payment Method Selection & Form (Identical to Registration Payment Experience) */}
+              {/* STEP 3: Payment Method Selection & Form */}
               <div className="space-y-4 pt-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-white/10 pt-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-[#D4EEF8] pt-4">
                   <div>
-                    <label className="block text-xs font-bold text-white uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-[#152026] uppercase tracking-wider">
                       3. Select Payment Method:
                     </label>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-[#6A97C0]">
                       Transfer via official bank accounts, pay instantly with credit/debit card, or pay cash at branch.
                     </p>
                   </div>
@@ -1924,10 +2717,10 @@ export default function StudentDashboard() {
                       : activePkg?.price || 40000;
                     const lessonsToUnlock = isInst ? 5 : (isFullPackage ? (activePkg?.lessons || 15) : 1);
                     return (
-                      <div className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold self-start sm:self-auto flex items-center gap-2">
+                      <div className="px-3.5 py-1.5 rounded-xl bg-[#F3EED8] border border-amber-300 text-[#152026] text-xs font-bold self-start sm:self-auto flex items-center gap-2">
                         <span>Total To Pay Now:</span>
-                        <span className="text-sm font-black text-white">Rs. {amountDue.toLocaleString()}</span>
-                        <span className="text-[10px] text-amber-200">({lessonsToUnlock} Lesson{lessonsToUnlock > 1 ? 's' : ''} Unlocked)</span>
+                        <span className="text-sm font-black text-[#1B3D59]">Rs. {amountDue.toLocaleString()}</span>
+                        <span className="text-[10px] text-[#6A97C0]">({lessonsToUnlock} Lesson{lessonsToUnlock > 1 ? 's' : ''} Unlocked)</span>
                       </div>
                     );
                   })()}
@@ -1940,15 +2733,15 @@ export default function StudentDashboard() {
                     onClick={() => setActivePaymentMethod('slip')}
                     className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       activePaymentMethod === 'slip'
-                        ? 'bg-cyan-500/20 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400'
-                        : 'bg-slate-900/60 border-white/10 hover:border-white/30 text-slate-400'
+                        ? 'bg-[#D4EEF8]/40 border-2 border-[#1B3D59] text-[#1B3D59] ring-1 ring-[#1B3D59]'
+                        : 'bg-white border-[#D4EEF8] hover:border-[#6A97C0] text-[#475569]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 mb-1 font-bold text-white text-xs">
-                      <Upload className={`w-4 h-4 ${activePaymentMethod === 'slip' ? 'text-cyan-400' : 'text-slate-400'}`} />
+                    <div className="flex items-center gap-2.5 mb-1 font-bold text-[#152026] text-xs">
+                      <Upload className={`w-4 h-4 ${activePaymentMethod === 'slip' ? 'text-[#1B3D59]' : 'text-[#6A97C0]'}`} />
                       <span>Upload Bank Slip</span>
                     </div>
-                    <p className="text-[11px] text-slate-400">Deposit to official Sithma accounts & upload receipt</p>
+                    <p className="text-[11px] text-[#6A97C0]">Deposit to official Sithma accounts & upload receipt</p>
                   </button>
 
                   <button
@@ -1956,15 +2749,15 @@ export default function StudentDashboard() {
                     onClick={() => setActivePaymentMethod('online')}
                     className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       activePaymentMethod === 'online'
-                        ? 'bg-purple-500/20 border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.25)] ring-1 ring-purple-400'
-                        : 'bg-slate-900/60 border-white/10 hover:border-white/30 text-slate-400'
+                        ? 'bg-[#D4EEF8]/40 border-2 border-[#1B3D59] text-[#1B3D59] ring-1 ring-[#1B3D59]'
+                        : 'bg-white border-[#D4EEF8] hover:border-[#6A97C0] text-[#475569]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 mb-1 font-bold text-white text-xs">
-                      <CreditCard className={`w-4 h-4 ${activePaymentMethod === 'online' ? 'text-purple-400' : 'text-slate-400'}`} />
+                    <div className="flex items-center gap-2.5 mb-1 font-bold text-[#152026] text-xs">
+                      <CreditCard className={`w-4 h-4 ${activePaymentMethod === 'online' ? 'text-[#1B3D59]' : 'text-[#6A97C0]'}`} />
                       <span>Pay Online (Card)</span>
                     </div>
-                    <p className="text-[11px] text-slate-400">Visa / Mastercard instant approval & unlock</p>
+                    <p className="text-[11px] text-[#6A97C0]">Visa / Mastercard instant approval & unlock</p>
                   </button>
 
                   <button
@@ -1972,30 +2765,30 @@ export default function StudentDashboard() {
                     onClick={() => setActivePaymentMethod('physical')}
                     className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       activePaymentMethod === 'physical'
-                        ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)] ring-1 ring-amber-400'
-                        : 'bg-slate-900/60 border-white/10 hover:border-white/30 text-slate-400'
+                        ? 'bg-[#D4EEF8]/40 border-2 border-[#1B3D59] text-[#1B3D59] ring-1 ring-[#1B3D59]'
+                        : 'bg-white border-[#D4EEF8] hover:border-[#6A97C0] text-[#475569]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 mb-1 font-bold text-white text-xs">
-                      <Building2 className={`w-4 h-4 ${activePaymentMethod === 'physical' ? 'text-amber-400' : 'text-slate-400'}`} />
+                    <div className="flex items-center gap-2.5 mb-1 font-bold text-[#152026] text-xs">
+                      <Building2 className={`w-4 h-4 ${activePaymentMethod === 'physical' ? 'text-[#1B3D59]' : 'text-[#6A97C0]'}`} />
                       <span>Pay at Branch</span>
                     </div>
-                    <p className="text-[11px] text-slate-400">In-person cash payment at your registered branch</p>
+                    <p className="text-[11px] text-[#6A97C0]">In-person cash payment at your registered branch</p>
                   </button>
                 </div>
 
                 {/* Form Container */}
-                <div className="p-5 sm:p-6 rounded-2xl bg-slate-950/70 border border-white/10 space-y-5">
+                <div className="p-5 sm:p-6 rounded-2xl bg-[#D4EEF8]/15 border border-[#D4EEF8] space-y-5 shadow-xs">
                   {/* METHOD 1: BANK SLIP UPLOAD */}
                   {activePaymentMethod === 'slip' && (
                     <div className="space-y-4">
                       {/* Official 4 Bank Accounts Tabs */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5 uppercase tracking-wider">
-                            <Landmark className="w-3.5 h-3.5 text-cyan-400" /> Select Official Sithma Bank Account:
+                          <span className="text-xs font-bold text-[#1B3D59] flex items-center gap-1.5 uppercase tracking-wider">
+                            <Landmark className="w-3.5 h-3.5 text-[#1B3D59]" /> Select Official Sithma Bank Account:
                           </span>
-                          <span className="text-[11px] text-slate-400">Choose your preferred deposit bank</span>
+                          <span className="text-[11px] text-[#6A97C0]">Choose your preferred deposit bank</span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {SITHMA_OFFICIAL_BANKS.map((b) => {
@@ -2007,15 +2800,15 @@ export default function StudentDashboard() {
                                 onClick={() => handleSelectBank(b)}
                                 className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                                   isSelected
-                                    ? 'bg-cyan-500/20 border-cyan-400 text-white ring-1 ring-cyan-400'
-                                    : 'bg-slate-900/80 border-white/10 text-slate-300 hover:border-white/25'
+                                    ? 'bg-[#1B3D59] border-[#1B3D59] text-white shadow-xs'
+                                    : 'bg-white border-[#D4EEF8] text-[#152026] hover:border-[#6A97C0]'
                                 }`}
                               >
-                                <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                <div className={`flex items-center justify-between text-[10px] font-bold uppercase mb-1 ${isSelected ? 'text-[#D4EEF8]' : 'text-[#6A97C0]'}`}>
                                   <span>{b.id}</span>
-                                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />}
+                                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-[#D4EEF8]" />}
                                 </div>
-                                <div className="text-xs font-bold truncate text-white">{b.shortName}</div>
+                                <div className="text-xs font-bold truncate">{b.shortName}</div>
                               </button>
                             );
                           })}
@@ -2026,29 +2819,29 @@ export default function StudentDashboard() {
                       {(() => {
                         const b = SITHMA_OFFICIAL_BANKS.find((x) => x.id === selectedBankId) || SITHMA_OFFICIAL_BANKS[0];
                         return (
-                          <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="p-4 rounded-xl bg-white border border-[#D4EEF8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-white text-sm">{b.name}</span>
-                                <span className="badge badge-info text-[9px]">{b.badge}</span>
+                                <span className="font-bold text-[#152026] text-sm">{b.name}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] text-[9px] font-bold">{b.badge}</span>
                               </div>
-                              <div className="text-slate-300">
-                                Account Name: <strong className="text-white">{b.accountName}</strong>
+                              <div className="text-[#475569]">
+                                Account Name: <strong className="text-[#152026]">{b.accountName}</strong>
                               </div>
-                              <div className="text-slate-400 text-[11px]">Branch: {b.branch}</div>
+                              <div className="text-[#6A97C0] text-[11px]">Branch: {b.branch}</div>
                             </div>
-                            <div className="flex items-center gap-2 self-start sm:self-auto bg-slate-950 px-3 py-2 rounded-xl border border-white/10">
+                            <div className="flex items-center gap-2 self-start sm:self-auto bg-[#D4EEF8]/30 px-3 py-2 rounded-xl border border-[#D4EEF8]">
                               <div>
-                                <div className="text-[10px] text-slate-400">Account Number</div>
-                                <div className="font-mono font-bold text-cyan-300 text-sm">{b.accountNo}</div>
+                                <div className="text-[10px] text-[#6A97C0]">Account Number</div>
+                                <div className="font-mono font-bold text-[#1B3D59] text-sm">{b.accountNo}</div>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleCopyAcc(b.accountNo)}
-                                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+                                className="p-1.5 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] transition-colors border border-[#D4EEF8] cursor-pointer"
                                 title="Copy Account Number"
                               >
-                                {copiedBankAcc ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                                {copiedBankAcc ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                               </button>
                             </div>
                           </div>
@@ -2058,8 +2851,8 @@ export default function StudentDashboard() {
                       {/* Slip File Upload */}
                       <div className="pt-1">
                         <div>
-                          <label className="block text-xs font-semibold text-slate-300 mb-1">
-                            Upload Deposit Slip / Transfer Screenshot <span className="text-rose-400">*</span>
+                          <label className="block text-xs font-semibold text-[#152026] mb-1">
+                            Upload Deposit Slip / Transfer Screenshot <span className="text-red-500">*</span>
                           </label>
                           <div className="relative">
                             <input
@@ -2071,9 +2864,9 @@ export default function StudentDashboard() {
                             />
                             <label
                               htmlFor="package-slip-file-input"
-                              className="flex items-center justify-center gap-2 w-full px-4 py-3 border border-dashed border-white/25 rounded-xl text-xs text-slate-300 hover:text-white hover:border-cyan-400 cursor-pointer bg-slate-900/80 transition-colors"
+                              className="flex items-center justify-center gap-2 w-full px-4 py-3 border border-dashed border-[#6A97C0] rounded-xl text-xs text-[#1B3D59] hover:bg-[#D4EEF8]/20 cursor-pointer bg-white transition-colors"
                             >
-                              <Upload className="w-4 h-4 text-cyan-400" />
+                              <Upload className="w-4 h-4 text-[#1B3D59]" />
                               <span>{slipFile ? slipFile.name : 'Choose Slip Image / PDF'}</span>
                             </label>
                           </div>
@@ -2082,18 +2875,18 @@ export default function StudentDashboard() {
 
                       {/* Live Image Preview if File Chosen */}
                       {slipPreview && (
-                        <div className="p-3 rounded-xl bg-slate-900/90 border border-white/10 flex items-center justify-between">
+                        <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] flex items-center justify-between shadow-xs">
                           <div className="flex items-center gap-3">
-                            <img src={slipPreview} alt="Deposit Slip Preview" className="w-12 h-12 rounded-lg object-cover border border-white/20" />
+                            <img src={slipPreview} alt="Deposit Slip Preview" className="w-12 h-12 rounded-lg object-cover border border-[#D4EEF8]" />
                             <div className="text-xs">
-                              <p className="font-bold text-white truncate max-w-xs">{slipFile?.name}</p>
-                              <p className="text-[10px] text-slate-400">{(slipFile?.size / 1024).toFixed(1)} KB • Ready for upload</p>
+                              <p className="font-bold text-[#152026] truncate max-w-xs">{slipFile?.name}</p>
+                              <p className="text-[10px] text-[#6A97C0]">{(slipFile?.size / 1024).toFixed(1)} KB • Ready for upload</p>
                             </div>
                           </div>
                           <button
                             type="button"
                             onClick={handleRemoveSlip}
-                            className="p-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold"
+                            className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold border border-red-200 cursor-pointer"
                           >
                             Remove
                           </button>
@@ -2105,7 +2898,7 @@ export default function StudentDashboard() {
                           type="button"
                           onClick={handlePackagePaymentSubmit}
                           disabled={submittingPkgPayment}
-                          className="btn-accent py-3 px-6 text-xs font-bold shadow-lg flex items-center gap-2"
+                          className="btn-primary py-3 px-6 text-xs font-bold shadow-xs flex items-center gap-2 cursor-pointer"
                         >
                           {submittingPkgPayment ? 'Submitting Payment Slip...' : 'Submit Deposit Slip for Verification'}
                           <ArrowRight className="w-4 h-4" />
@@ -2120,26 +2913,26 @@ export default function StudentDashboard() {
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
                         {/* Live Credit Card Graphic */}
                         <div className="lg:col-span-5">
-                          <div className="w-full max-w-sm mx-auto aspect-[1.58/1] rounded-2xl bg-gradient-to-tr from-slate-950 via-purple-950 to-slate-900 p-5 border border-purple-500/40 shadow-2xl flex flex-col justify-between relative overflow-hidden text-white">
+                          <div className="w-full max-w-sm mx-auto aspect-[1.58/1] rounded-2xl bg-gradient-to-tr from-[#152026] via-[#1B3D59] to-[#152026] p-5 border border-[#6A97C0]/40 shadow-xl flex flex-col justify-between relative overflow-hidden text-white">
                             <div className="flex justify-between items-center">
-                              <span className="font-bold text-xs tracking-wider text-purple-300">SITHMA SECURE PAY</span>
-                              <Wifi className="w-4 h-4 text-purple-300 rotate-90" />
+                              <span className="font-bold text-xs tracking-wider text-[#D4EEF8]">SITHMA SECURE PAY</span>
+                              <Wifi className="w-4 h-4 text-[#D4EEF8] rotate-90" />
                             </div>
-                            <div className="w-8 h-6 rounded bg-amber-400/80 border border-amber-300 flex items-center justify-center text-[8px] font-mono text-slate-950 font-bold">
+                            <div className="w-8 h-6 rounded bg-[#F3EED8] border border-amber-300 flex items-center justify-center text-[8px] font-mono text-[#152026] font-bold">
                               CHIP
                             </div>
-                            <div className="font-mono text-base tracking-widest text-slate-100 font-bold">
+                            <div className="font-mono text-base tracking-widest text-white font-bold">
                               {cardForm.cardNumber || '•••• •••• •••• ••••'}
                             </div>
-                            <div className="flex justify-between items-end text-[10px] text-slate-300">
+                            <div className="flex justify-between items-end text-[10px] text-[#D4EEF8]">
                               <div>
-                                <span className="block text-[8px] uppercase tracking-wider text-slate-400">Cardholder</span>
+                                <span className="block text-[8px] uppercase tracking-wider text-[#6A97C0]">Cardholder</span>
                                 <span className="font-bold uppercase tracking-wider text-white">
                                   {cardForm.cardHolder || profile?.name || 'STUDENT NAME'}
                                 </span>
                               </div>
                               <div>
-                                <span className="block text-[8px] uppercase tracking-wider text-slate-400">Expires</span>
+                                <span className="block text-[8px] uppercase tracking-wider text-[#6A97C0]">Expires</span>
                                 <span className="font-bold text-white">{cardForm.expDate || 'MM/YY'}</span>
                               </div>
                             </div>
@@ -2149,8 +2942,8 @@ export default function StudentDashboard() {
                         {/* Card Inputs */}
                         <div className="lg:col-span-7 space-y-3">
                           <div>
-                            <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                              Cardholder Full Name <span className="text-rose-400">*</span>
+                            <label className="block text-[11px] font-semibold text-[#152026] mb-1">
+                              Cardholder Full Name <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="text"
@@ -2158,13 +2951,13 @@ export default function StudentDashboard() {
                               placeholder="Name on card"
                               value={cardForm.cardHolder || profile?.name || ''}
                               onChange={(e) => setCardForm({ ...cardForm, cardHolder: e.target.value })}
-                              className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950 text-white rounded-xl text-xs outline-none focus:border-purple-400"
+                              className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs outline-none focus:border-[#1B3D59]"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                              Card Number (Visa / Mastercard) <span className="text-rose-400">*</span>
+                            <label className="block text-[11px] font-semibold text-[#152026] mb-1">
+                              Card Number (Visa / Mastercard) <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="text"
@@ -2173,14 +2966,14 @@ export default function StudentDashboard() {
                               placeholder="4532 8921 4421 9012"
                               value={cardForm.cardNumber}
                               onChange={handleCardNumberChange}
-                              className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950 text-white rounded-xl text-xs font-mono outline-none focus:border-purple-400"
+                              className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs font-mono outline-none focus:border-[#1B3D59]"
                             />
                           </div>
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                                Expiry Date <span className="text-rose-400">*</span>
+                              <label className="block text-[11px] font-semibold text-[#152026] mb-1">
+                                Expiry Date <span className="text-red-500">*</span>
                               </label>
                               <input
                                 type="text"
@@ -2188,12 +2981,12 @@ export default function StudentDashboard() {
                                 placeholder="MM/YY"
                                 value={cardForm.expDate}
                                 onChange={(e) => setCardForm({ ...cardForm, expDate: e.target.value })}
-                                className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950 text-white rounded-xl text-xs font-mono outline-none focus:border-purple-400"
+                                className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs font-mono outline-none focus:border-[#1B3D59]"
                               />
                             </div>
                             <div>
-                              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                                CVV / CVC <span className="text-rose-400">*</span>
+                              <label className="block text-[11px] font-semibold text-[#152026] mb-1">
+                                CVV / CVC <span className="text-red-500">*</span>
                               </label>
                               <input
                                 type="password"
@@ -2201,23 +2994,23 @@ export default function StudentDashboard() {
                                 placeholder="882"
                                 value={cardForm.cvv}
                                 onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value })}
-                                className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950 text-white rounded-xl text-xs font-mono outline-none focus:border-purple-400"
+                                className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs font-mono outline-none focus:border-[#1B3D59]"
                               />
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/10">
-                        <div className="flex items-center gap-2 text-[11px] text-emerald-300">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#D4EEF8]">
+                        <div className="flex items-center gap-2 text-[11px] text-emerald-700">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
                           <span>256-Bit Bank-Grade SSL Encryption • Instant Lesson Unlock</span>
                         </div>
                         <button
                           type="button"
                           onClick={handlePackagePaymentSubmit}
                           disabled={submittingPkgPayment || cardProcessing}
-                          className="btn-accent py-3 px-6 text-xs font-bold shadow-lg flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+                          className="btn-primary py-3 px-6 text-xs font-bold shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                         >
                           {cardProcessing ? (
                             <>
@@ -2244,25 +3037,25 @@ export default function StudentDashboard() {
                         const cashCode = `CASH-PKG-${branchKey.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-6)}`;
                         return (
                           <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-slate-900/90 border border-amber-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="p-4 rounded-xl bg-white border border-[#D4EEF8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
                               <div className="space-y-1">
-                                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                                  <Building2 className="w-4 h-4 text-amber-400" />
+                                <div className="flex items-center gap-2 font-bold text-[#152026] text-sm">
+                                  <Building2 className="w-4 h-4 text-[#1B3D59]" />
                                   <span>{branchKey} Branch Cash Counter</span>
                                 </div>
-                                <div className="text-slate-300 flex items-center gap-1.5">
-                                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {branchInfo.address}
+                                <div className="text-[#475569] flex items-center gap-1.5">
+                                  <MapPin className="w-3.5 h-3.5 text-[#6A97C0]" /> {branchInfo.address}
                                 </div>
-                                <div className="text-slate-400 flex items-center gap-1.5">
-                                  <Phone className="w-3.5 h-3.5 text-slate-400" /> {branchInfo.phone} • {branchInfo.hours}
+                                <div className="text-[#6A97C0] flex items-center gap-1.5">
+                                  <Phone className="w-3.5 h-3.5 text-[#6A97C0]" /> {branchInfo.phone} • {branchInfo.hours}
                                 </div>
                               </div>
-                              <div className="bg-slate-950 p-3 rounded-xl border border-white/10 text-left sm:text-right self-stretch sm:self-auto sm:min-w-[200px]">
-                                <span className="text-[10px] text-slate-400 block">Payment Reference Code:</span>
-                                <span className="font-mono font-bold text-amber-300 text-sm">{cashCode}</span>
+                              <div className="bg-[#D4EEF8]/30 p-3 rounded-xl border border-[#D4EEF8] text-left sm:text-right self-stretch sm:self-auto sm:min-w-[200px]">
+                                <span className="text-[10px] text-[#6A97C0] block font-semibold">Payment Reference Code:</span>
+                                <span className="font-mono font-bold text-[#1B3D59] text-sm">{cashCode}</span>
                               </div>
                             </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">
+                            <p className="text-xs text-[#475569] leading-relaxed">
                               You can visit our <strong>{branchKey} Branch</strong> during operating hours ({branchInfo.hours}) to make your cash payment at the front counter. Our staff will look up your account with this reference code and verify your payment instantly.
                             </p>
                             <div className="flex justify-end pt-2">
@@ -2270,7 +3063,7 @@ export default function StudentDashboard() {
                                 type="button"
                                 onClick={handlePackagePaymentSubmit}
                                 disabled={submittingPkgPayment}
-                                className="btn-accent py-3 px-6 text-xs font-bold shadow-lg flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 w-full sm:w-auto"
+                                className="btn-primary py-3 px-6 text-xs font-bold shadow-xs flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer"
                               >
                                 {submittingPkgPayment ? 'Registering Cash Intent...' : 'Confirm In-Person Cash Payment Intent'}
                                 <ArrowRight className="w-4 h-4" />
@@ -2290,35 +3083,35 @@ export default function StudentDashboard() {
 
       {/* Type 1 Dedicated Milestones Hub Card */}
       {isType1 && (
-        <div className="card p-6 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 border border-cyan-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_10px_35px_rgba(6,182,212,0.15)]">
+        <div className="card p-6 bg-white border border-[#DBE2EF] flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm hover:border-[#3F72AF]/50 transition-all">
           <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 flex-shrink-0">
-              <ShieldCheck className="w-6 h-6 text-cyan-400" />
+            <div className="w-12 h-12 rounded-2xl bg-[#DBE2EF]/70 border border-[#3F72AF]/30 flex items-center justify-center text-[#112D4E] flex-shrink-0 shadow-inner">
+              <ShieldCheck className="w-6 h-6 text-[#3F72AF]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
                 <span className="badge badge-info text-[10px] font-bold uppercase">
                   Type 1 DMT Tracking
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-[#64748B] font-semibold">
                   {profile?.branch} Branch
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-white">
+              <h3 className="text-base sm:text-lg font-bold text-[#0B2447]">
                 Government DMT Milestone Schedule
               </h3>
-              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#4B6584] max-w-xl leading-relaxed">
                 Medical exam, DMT registration, written theory exam attempts, and practical trial readiness are organized in your dedicated DMT Milestones dashboard.
               </p>
             </div>
           </div>
           <Link
             to="/student/milestones"
-            className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-2 whitespace-nowrap shadow-lg self-start sm:self-auto"
+            className="btn-accent text-xs py-2.5 px-5 font-bold flex items-center justify-center gap-2 whitespace-nowrap shadow-md self-start sm:self-auto shrink-0"
           >
-            <ShieldCheck className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4 text-white" />
             <span>Open DMT Milestones</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </Link>
         </div>
       )}
@@ -2329,20 +3122,20 @@ export default function StudentDashboard() {
         <div className="space-y-6">
           {/* Course Package Card - Hidden for Type 1 until Written Theory Exam is Passed */}
           {((isType2 && pkg.priceTotal > 0) || (isType1 && isExamPassed && isPackagePaymentConfirmed) || isPackagePaymentConfirmed) ? (
-            <div className="card space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="card space-y-4 bg-white border border-[#D4EEF8] shadow-sm text-[#152026]">
+              <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
                 <div>
-                  <h3 className="text-base font-bold text-white">Course Package</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-base font-bold text-[#152026]">Course Package</h3>
+                  <p className="text-xs text-[#6A97C0]">
                     {pkg.type ? pkg.type.replace('_', ' ') : 'Full Driving Training Package'}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-base font-black text-accent">
+                  <span className="text-base font-black text-[#1B3D59]">
                     {pkg.priceTotal > 0 ? `Rs. ${pkg.priceTotal.toLocaleString()}` : 'Advance: Rs. 5,000'}
                   </span>
                   {profile?.paymentPlan && (
-                    <div className="text-[10px] text-slate-400 font-semibold uppercase">
+                    <div className="text-[10px] text-[#6A97C0] font-semibold uppercase">
                       Plan: {profile.paymentPlan}
                     </div>
                   )}
@@ -2351,20 +3144,20 @@ export default function StudentDashboard() {
 
               {/* Installment Plan Alert in Sidebar */}
               {hasUnfinishedInstallments && (
-                <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-400/30 text-xs text-amber-200 space-y-2">
+                <div className="p-3.5 rounded-xl bg-[#F3EED8] border border-[#E2D9B8] text-xs text-[#152026] space-y-2">
                   <div className="flex items-center justify-between font-bold">
-                    <span className="text-white flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[#152026] flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#1B3D59]" />
                       Installment #{(profile?.installmentsPaidCount || 0) + 1} Due
                     </span>
                     <span className="badge badge-warning text-[9px]">3-Month Plan</span>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <p className="text-[11px] text-[#475569] leading-relaxed">
                     You have unlocked {unlockedLessons} lessons. Pay your next installment to unlock 5 more lessons.
                   </p>
                   <a
                     href="#package-selection-payment"
-                    className="btn-accent text-xs py-2 px-3 font-bold flex items-center justify-center gap-1.5 w-full shadow"
+                    className="btn-primary text-xs py-2 px-3 font-bold flex items-center justify-center gap-1.5 w-full shadow-xs"
                   >
                     <span>Pay Installment #{(profile?.installmentsPaidCount || 0) + 1} Now</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -2374,19 +3167,19 @@ export default function StudentDashboard() {
 
               {/* Single Lesson Completion Notice in Sidebar */}
               {hasCompletedSingleLesson && (
-                <div className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-400/30 text-xs text-cyan-200 space-y-2">
+                <div className="p-3.5 rounded-xl bg-[#D4EEF8] border border-[#B3D5F1] text-xs text-[#1B3D59] space-y-2">
                   <div className="flex items-center justify-between font-bold">
-                    <span className="text-white flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" /> Single Lesson Used (1/1)
+                    <span className="text-[#152026] flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#1B3D59]" /> Single Lesson Used (1/1)
                     </span>
                     <span className="badge badge-info text-[9px]">Completed</span>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <p className="text-[11px] text-[#475569] leading-relaxed">
                     Ready for your next driving lesson? You can pay for another single lesson or upgrade to a 15-lesson full course package.
                   </p>
                   <a
                     href="#package-selection-payment"
-                    className="btn-accent text-xs py-2 px-3 font-bold flex items-center justify-center gap-1.5 w-full shadow"
+                    className="btn-primary text-xs py-2 px-3 font-bold flex items-center justify-center gap-1.5 w-full shadow-xs"
                   >
                     <span>Book Next Lesson / Upgrade</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -2396,7 +3189,7 @@ export default function StudentDashboard() {
 
               {/* Monthly Plan 4-Lesson Cap Banner */}
               {profile?.paymentPlan === 'monthly' && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-400/20 text-xs text-amber-200">
+                <div className="p-3 rounded-xl bg-[#F3EED8] border border-[#E2D9B8] text-xs text-[#152026]">
                   <strong>Monthly Plan Active:</strong> Max 4 lessons unlocked per billing month (Server-enforced cap). Total lessons used: {usedLessons}/{unlockedLessons}.
                 </div>
               )}
@@ -2404,43 +3197,43 @@ export default function StudentDashboard() {
               {/* Lessons Progress Bar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-400">Lessons Used vs Unlocked:</span>
-                  <span className="text-cyan-300 font-bold">
+                  <span className="text-[#6A97C0]">Lessons Used vs Unlocked:</span>
+                  <span className="text-[#1B3D59] font-bold">
                     {usedLessons} / {unlockedLessons} Lessons
                   </span>
                 </div>
-                <div className="w-full bg-slate-950/80 rounded-full h-3 overflow-hidden border border-white/15 p-0.5">
+                <div className="w-full bg-[#D4EEF8] rounded-full h-3 overflow-hidden border border-[#B3D5F1] p-0.5">
                   <div
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                    className="bg-[#1B3D59] h-2 rounded-full transition-all duration-500 shadow-xs"
                     style={{ width: `${progressPercent}%` }}
                   ></div>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <div className="flex items-center justify-between text-[11px] text-[#6A97C0]">
                   <span>{remainingLessons} lesson(s) available to book</span>
-                  <span className="font-mono text-cyan-300 font-bold">{progressPercent}% Completed</span>
+                  <span className="font-mono text-[#1B3D59] font-bold">{progressPercent}% Completed</span>
                 </div>
               </div>
 
               {/* Bonus Lessons (if applicable) */}
               {(pkg.bonusLessons?.bike > 0 || pkg.bonusLessons?.threeWheeler > 0) && (
-                <div className="p-3.5 bg-amber-500/10 border border-amber-400/20 rounded-xl space-y-1.5 backdrop-blur-md">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
-                    <Gift className="w-4 h-4 text-accent" /> Bonus Package Lessons Included:
+                <div className="p-3.5 bg-[#F3EED8] border border-[#E2D9B8] rounded-xl space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#152026]">
+                    <Gift className="w-4 h-4 text-[#1B3D59]" /> Bonus Package Lessons Included:
                   </div>
-                  <div className="text-xs text-slate-300 flex items-center justify-between">
+                  <div className="text-xs text-[#475569] flex items-center justify-between">
                     <span>🛵 Free Motorbike Lessons:</span>
-                    <span className="font-bold text-amber-300">{pkg.bonusLessons.bike} Lessons</span>
+                    <span className="font-bold text-[#152026]">{pkg.bonusLessons.bike} Lessons</span>
                   </div>
-                  <div className="text-xs text-slate-300 flex items-center justify-between">
+                  <div className="text-xs text-[#475569] flex items-center justify-between">
                     <span>🛺 Free Three-Wheeler Lessons:</span>
-                    <span className="font-bold text-amber-300">{pkg.bonusLessons.threeWheeler} Lessons</span>
+                    <span className="font-bold text-[#152026]">{pkg.bonusLessons.threeWheeler} Lessons</span>
                   </div>
                 </div>
               )}
 
               {/* Payment & Registration Status Pill */}
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                <span className="text-slate-400">Package Status:</span>
+              <div className="pt-2 border-t border-[#D4EEF8] flex items-center justify-between text-xs">
+                <span className="text-[#6A97C0]">Package Status:</span>
                 <span
                   className={`badge ${
                     isPackagePaymentConfirmed
@@ -2459,7 +3252,7 @@ export default function StudentDashboard() {
               </div>
 
               {/* Need More Practice? Buy Additional Lessons Quick Link */}
-              <div className="pt-2 border-t border-white/10">
+              <div className="pt-2 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => {
@@ -2468,70 +3261,86 @@ export default function StudentDashboard() {
                       document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 50);
                   }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/20 text-xs text-cyan-300 font-bold transition-all group text-left"
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#D4EEF8]/40 hover:bg-[#D4EEF8] border border-[#D4EEF8] text-xs text-[#1B3D59] font-bold transition-all group text-left cursor-pointer"
                 >
                   <span className="flex items-center gap-1.5">
-                    <PlusCircle className="w-4 h-4 text-cyan-400" /> Need more driving practice?
+                    <PlusCircle className="w-4 h-4 text-[#1B3D59]" /> Need more driving practice?
                   </span>
-                  <span className="text-[11px] text-white flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                  <span className="text-[11px] text-[#152026] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                     Buy Additional Lessons <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </button>
               </div>
             </div>
           ) : (!isPackagePaymentConfirmed && ((isType1 && isExamPassed) || (isType2 && hasTrialDate))) ? (
-            <div className="card p-5 bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-slate-950/90 border border-amber-400/30 space-y-3">
-              <div className="flex items-center gap-2.5 text-amber-300 font-bold text-sm">
-                <CreditCard className="w-5 h-5 text-amber-400" />
+            <div className="card p-5 bg-[#F3EED8] border border-[#E2D9B8] space-y-3 text-[#152026]">
+              <div className="flex items-center gap-2.5 text-[#152026] font-bold text-sm">
+                <CreditCard className="w-5 h-5 text-[#1B3D59]" />
                 <span>Next Step: Select Package & Pay</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-[#475569] leading-relaxed">
                 {isType1
                   ? '🎉 Congratulations on passing your Theory Exam! Please select your vehicle package and choose your payment plan below to unlock practical lessons.'
                   : '🎉 Your official practical trial date is scheduled! Please select your vehicle package and payment plan (Monthly Installments, Full Course, or Daily Pay-Per-Lesson) below to unlock practical lessons.'}
               </p>
               <a
                 href="#package-selection-payment"
-                className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 w-full shadow-md"
+                className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 w-full shadow-xs"
               >
                 <span>Choose Package & Pay Now</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
             </div>
           ) : isType2 && !hasTrialDate ? (
-            <div className="card p-5 bg-gradient-to-br from-purple-950/30 via-slate-900/80 to-slate-950/80 border border-purple-500/25 space-y-3">
-              <div className="flex items-center gap-2.5 text-purple-300 font-bold text-sm">
-                <Calendar className="w-5 h-5 text-purple-400" />
+            <div className="card p-5 bg-[#D4EEF8] border border-[#B3D5F1] space-y-3 text-[#152026]">
+              <div className="flex items-center gap-2.5 text-[#1B3D59] font-bold text-sm">
+                <Calendar className="w-5 h-5 text-[#1B3D59]" />
                 <span>Stage 1: Trial Date Assignment</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-[#475569] leading-relaxed">
                 As a Type 2 student with an existing learner permit, DMT Medical, Registration, and Theory Exam are exempt. Your branch Data Entry Officer will schedule your practical trial date shortly.
               </p>
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="pt-2 border-t border-[#B3D5F1] flex items-center justify-between text-[11px] text-[#6A97C0]">
                 <span>Current Status:</span>
-                <span className="text-amber-300 font-bold">Awaiting Trial Date</span>
+                <span className="text-[#152026] font-bold">Awaiting Trial Date</span>
               </div>
             </div>
           ) : isType1 && !isExamPassed ? (
-            <div className="card p-5 bg-gradient-to-br from-purple-950/30 via-slate-900/80 to-slate-950/80 border border-purple-500/25 space-y-3">
-              <div className="flex items-center gap-2.5 text-purple-300 font-bold text-sm">
-                <BookOpen className="w-5 h-5 text-purple-400" />
-                <span>Stage 1: Theory Exam Stage</span>
+            <div className="card p-6 bg-white border border-[#D4EEF8] space-y-4 shadow-sm hover:border-[#6A97C0] transition-all text-[#152026]">
+              <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+                <div className="flex items-center gap-2.5 text-[#152026] font-black text-base">
+                  <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59]">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <span>Stage 1: Theory Exam Stage</span>
+                </div>
+                <span className="badge badge-warning text-[10px] font-bold">In Progress</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#475569] leading-relaxed">
                 Practical vehicle packages and driving lesson bookings will unlock after you pass your official DMT Written Theory Examination.
               </p>
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Current Goal:</span>
-                <span className="text-cyan-300 font-bold">Pass DMT Written Exam</span>
+              <div className="p-3 bg-[#D4EEF8]/40 rounded-xl border border-[#D4EEF8] flex items-center justify-between text-xs">
+                <span className="text-[#6A97C0] font-bold">Current Milestone Goal:</span>
+                <span className="text-[#152026] font-black flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" /> Pass DMT Written Exam
+                </span>
               </div>
-              <Link
-                to="/student/quiz"
-                className="btn-accent text-xs py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 w-full shadow-md"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Practice DMT Exam Quizzes</span>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                <Link
+                  to="/student/quiz"
+                  className="btn-primary text-xs sm:text-sm py-2.5 px-4 font-bold flex-1 flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4 text-white" />
+                  <span>Take Practice Exam</span>
+                </Link>
+                <Link
+                  to="/student/quiz/history"
+                  className="btn-secondary text-xs sm:text-sm py-2.5 px-4 font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <History className="w-4 h-4 text-[#1B3D59]" />
+                  <span>My Exams History</span>
+                </Link>
+              </div>
             </div>
           ) : null}
         </div>
@@ -2539,24 +3348,30 @@ export default function StudentDashboard() {
         {/* Col 2: Student Quick Hub & Actions */}
         <div className="space-y-6">
           {/* Quick Actions Card (With Type 1 Scope Restriction Applied) */}
-          <div className="card space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent" /> Student Quick Hub
-            </h3>
-            <div className="space-y-2 text-xs">
+          <div className="card p-6 bg-white border border-[#D4EEF8] space-y-4 shadow-sm text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-black text-[#152026] flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#1B3D59]" /> Student Quick Hub
+              </h3>
+              <span className="text-xs text-[#6A97C0] font-semibold">Quick Actions</span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
               {/* Type 1 Exclusive Access: Dedicated DMT Milestones Dashboard */}
               {isType1 && (
                 <Link
                   to="/student/milestones"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 transition-all group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-cyan-300" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59] group-hover:bg-[#1B3D59] group-hover:text-white transition-colors">
+                      <ShieldCheck className="w-5 h-5 text-[#1B3D59] group-hover:text-white" />
+                    </div>
                     <div>
-                      <span className="font-semibold text-slate-200 group-hover:text-white block">
+                      <span className="font-bold text-[#152026] block text-sm">
                         DMT Milestone Dashboard
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-xs text-[#6A97C0]">
                         Medical, Registration & Theory Exam Tracking
                       </span>
                     </div>
@@ -2569,20 +3384,45 @@ export default function StudentDashboard() {
               {isType1 && (
                 <Link
                   to="/student/quiz"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-purple-500/15 via-cyan-500/10 to-transparent hover:from-purple-500/25 border border-purple-400/30 transition-all group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <BookOpen className="w-4 h-4 text-cyan-300" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59] group-hover:bg-[#1B3D59] group-hover:text-white transition-colors">
+                      <BookOpen className="w-5 h-5 text-[#1B3D59] group-hover:text-white" />
+                    </div>
                     <div>
-                      <span className="font-semibold text-slate-200 group-hover:text-white block">
+                      <span className="font-bold text-[#152026] block text-sm">
                         DMT Exam Practice Quiz
                       </span>
-                      <span className="text-[10px] text-slate-400">
-                        Sinhala, Tamil & English • Multilingual Quizzes
+                      <span className="text-xs text-[#6A97C0]">
+                        Sinhala, Tamil & English • Multiple Question Lists
                       </span>
                     </div>
                   </div>
                   <span className="badge badge-accent text-[10px] font-bold">Practice Now</span>
+                </Link>
+              )}
+
+              {/* Type 1 Exclusive Access: My Completed Practice Exams History */}
+              {isType1 && (
+                <Link
+                  to="/student/quiz/history"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59] group-hover:bg-[#1B3D59] group-hover:text-white transition-colors">
+                      <History className="w-5 h-5 text-[#1B3D59] group-hover:text-white" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#152026] block text-sm">
+                        My Practice Exams / History
+                      </span>
+                      <span className="text-xs text-[#6A97C0]">
+                        Review completed exams, answers & scores
+                      </span>
+                    </div>
+                  </div>
+                  <span className="badge badge-info text-[10px] font-bold">Review</span>
                 </Link>
               )}
 
@@ -2593,15 +3433,22 @@ export default function StudentDashboard() {
                       '🔒 DMT Requirement (US-09): Learner written exam must be marked Passed before booking practical trial lessons.'
                     )
                   }
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 opacity-60 border border-white/10 cursor-not-allowed"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] cursor-not-allowed opacity-85"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Lock className="w-4 h-4 text-amber-400" />
-                    <span className="font-semibold text-slate-400">
-                      Book Driving Lessons (Locked)
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                      <Lock className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#64748B] block text-sm">
+                        Book Driving Lessons (Locked)
+                      </span>
+                      <span className="text-xs text-[#94A3B8]">
+                        Unlocks after passing Written Exam
+                      </span>
+                    </div>
                   </div>
-                  <span className="badge badge-warning text-[10px]">Exam Required</span>
+                  <span className="badge badge-warning text-[10px] font-bold">Exam Required</span>
                 </div>
               ) : isType2 && !hasTrialDate ? (
                 <div
@@ -2610,28 +3457,42 @@ export default function StudentDashboard() {
                       '🔒 Practical Trial Date Pending: Your practical trial date must be scheduled by your branch officer before booking driving lessons.'
                     )
                   }
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 opacity-60 border border-white/10 cursor-not-allowed"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] cursor-not-allowed opacity-85"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Lock className="w-4 h-4 text-purple-400" />
-                    <span className="font-semibold text-slate-400">
-                      Book Driving Lessons (Locked)
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+                      <Lock className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#64748B] block text-sm">
+                        Book Driving Lessons (Locked)
+                      </span>
+                      <span className="text-xs text-[#94A3B8]">
+                        Unlocks when trial date is assigned
+                      </span>
+                    </div>
                   </div>
-                  <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px]">Trial Date Required</span>
+                  <span className="badge badge-warning text-[10px] font-bold">Trial Date Required</span>
                 </div>
               ) : (
                 <Link
                   to="/student/lessons"
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="w-4 h-4 text-emerald-400" />
-                    <span className="font-semibold text-slate-200 group-hover:text-white">
-                      Book Driving Lessons
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                      <Calendar className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[#152026] group-hover:text-[#1B3D59] block text-sm">
+                        Book Driving Lessons
+                      </span>
+                      <span className="text-xs text-[#6A97C0]">
+                        Schedule your on-road practical slots
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[11px] text-cyan-300 font-bold">{remainingLessons} Available</span>
+                  <span className="badge badge-success text-[10px] font-bold">{remainingLessons} Available</span>
                 </Link>
               )}
 
@@ -2643,28 +3504,42 @@ export default function StudentDashboard() {
                     document.getElementById('package-selection-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }, 50);
                 }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group text-left"
+                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group text-left cursor-pointer shadow-xs"
               >
-                <div className="flex items-center gap-2.5">
-                  <PlusCircle className="w-4 h-4 text-accent" />
-                  <span className="font-semibold text-slate-200 group-hover:text-white">
-                    Buy Additional Lessons
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#D4EEF8] flex items-center justify-center text-[#1B3D59] group-hover:bg-[#1B3D59] group-hover:text-white transition-colors">
+                    <PlusCircle className="w-5 h-5 text-[#1B3D59] group-hover:text-white" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#152026] group-hover:text-[#1B3D59] block text-sm">
+                      Need Additional Practice Lessons?
+                    </span>
+                    <span className="text-xs text-[#6A97C0]">
+                      Upgrade package or add single lessons
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[11px] text-accent font-bold">Choose Package</span>
+                <ArrowRight className="w-4 h-4 text-[#1B3D59] group-hover:translate-x-1 transition-transform" />
               </button>
 
               <Link
                 to="/student/payments"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-[#D4EEF8]/30 hover:bg-[#D4EEF8] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all group shadow-xs"
               >
-                <div className="flex items-center gap-2.5">
-                  <CreditCard className="w-4 h-4 text-amber-300" />
-                  <span className="font-semibold text-slate-200 group-hover:text-white">
-                    Payment History & Slips
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                    <CreditCard className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#152026] group-hover:text-[#1B3D59] block text-sm">
+                      Payment History & Slips
+                    </span>
+                    <span className="text-xs text-[#6A97C0]">
+                      Review verified bank deposit receipts
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[11px] text-slate-400 font-semibold">Bank Slips</span>
+                <span className="badge bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] text-[10px] font-bold">Bank Slips</span>
               </Link>
             </div>
           </div>
@@ -2676,17 +3551,17 @@ export default function StudentDashboard() {
 
       {/* Trial Date Reschedule Request Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-slate-900 border border-purple-500/30 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-white border border-[#D4EEF8] rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#D4EEF8]">
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-purple-400" />
-                <h3 className="font-bold text-white text-base">Request Date Reschedule</h3>
+                <Calendar className="w-5 h-5 text-[#1B3D59]" />
+                <h3 className="font-bold text-[#1B3D59] text-base">Request Date Reschedule</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowRescheduleModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-1 rounded-lg text-[#6A97C0] hover:text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2694,14 +3569,14 @@ export default function StudentDashboard() {
 
             <form onSubmit={handleSubmitReschedule} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-semibold text-[#152026] mb-1">
                   Select Milestone to Reschedule:
                 </label>
                 <select
                   value={rescheduleMilestone}
                   onChange={(e) => setRescheduleMilestone(e.target.value)}
                   disabled={isType2}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-cyan-300 rounded-xl outline-none focus:border-purple-400 text-xs font-bold disabled:opacity-80"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#1B3D59] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] text-xs font-bold disabled:opacity-80"
                 >
                   {isType1 && <option value="medical">🩺 DMT Medical Exam</option>}
                   {isType1 && <option value="registration">📄 DMT Registration</option>}
@@ -2711,10 +3586,10 @@ export default function StudentDashboard() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-semibold text-[#152026] mb-1">
                   Current Scheduled Date:
                 </label>
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 text-white font-bold text-sm font-mono">
+                <div className="p-3 rounded-xl bg-[#D4EEF8]/40 border border-[#D4EEF8] text-[#152026] font-bold text-sm font-mono">
                   {rescheduleMilestone === 'medical'
                     ? safeFormatDate(profile?.medical_date || profile?.dmtDates?.medicalExamDate, 'MMMM dd, yyyy')
                     : rescheduleMilestone === 'registration'
@@ -2726,8 +3601,8 @@ export default function StudentDashboard() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Reason for Reschedule Request: <span className="text-rose-400">*</span>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Reason for Reschedule Request: <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   required
@@ -2735,26 +3610,29 @@ export default function StudentDashboard() {
                   value={rescheduleReason}
                   onChange={(e) => setRescheduleReason(e.target.value)}
                   placeholder="e.g., Medical reasons, exam clash, or need more practical preparation..."
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs"
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-semibold text-[#152026] mb-1">
                   Preferred New Trial Date (Optional):
                 </label>
-                <input
-                  type="date"
-                  value={preferredRescheduleDate}
-                  onChange={(e) => setPreferredRescheduleDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs font-bold"
-                />
-                <span className="text-[10px] text-slate-400 block mt-1">
+                <div className="relative flex items-center">
+                  <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={preferredRescheduleDate}
+                    onChange={(e) => setPreferredRescheduleDate(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] text-xs font-bold cursor-pointer"
+                  />
+                </div>
+                <span className="text-[10px] text-[#6A97C0] block mt-1">
                   Final trial date assignment will be confirmed by DMT and your branch Data Entry Officer.
                 </span>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowRescheduleModal(false)}
@@ -2766,7 +3644,7 @@ export default function StudentDashboard() {
                 <button
                   type="submit"
                   disabled={submittingReschedule || !rescheduleReason.trim()}
-                  className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow"
+                  className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-xs"
                 >
                   {submittingReschedule ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   Submit Reschedule Request

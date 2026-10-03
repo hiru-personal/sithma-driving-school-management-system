@@ -441,3 +441,32 @@ exports.getInstructorSchedule = async (req, res) => {
     });
   }
 };
+
+// @desc    Get active instructors for slot assignment
+// @route   GET /api/slots/instructors
+// @access  Authenticated (Staff, Admin, Instructor)
+exports.getInstructors = async (req, res) => {
+  try {
+    const { branch } = req.query;
+    const query = { role: 'instructor', status: 'active' };
+    if (branch && branch !== 'All') {
+      query.$or = [{ branch }, { branch: 'All' }, { branch: { $exists: false } }];
+    }
+    const instructors = await User.find(query)
+      .select('_id name phone email branch teachingCategories')
+      .sort({ name: 1 });
+
+    return res.status(200).json({
+      success: true,
+      instructors,
+    });
+  } catch (error) {
+    console.error('Failed to fetch instructors:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch instructors',
+      error: error.message,
+    });
+  }
+};
+

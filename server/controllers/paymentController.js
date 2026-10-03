@@ -190,42 +190,28 @@ exports.submitPackagePayment = async (req, res) => {
     };
     student.paymentPlan = paymentPlan;
 
-    const isInstantCard = paymentMethod === 'online_gateway';
+    const isOnlineCard = paymentMethod === 'online_gateway';
     const isPhysicalCash = paymentMethod === 'physical_branch';
+    const resolvedTxRef = transactionReference || (isOnlineCard
+      ? `CARD-PKG-${Date.now().toString().slice(-8)}`
+      : (isPhysicalCash ? `CASH-PKG-${Date.now().toString().slice(-8)}` : `PKG-SLIP-${Date.now().toString().slice(-8)}`));
+
     const slip = req.file
       ? `/uploads/slips/${req.file.filename}`
-      : (slipImageUrl || (isInstantCard ? 'online_gateway_paid' : (isPhysicalCash ? 'physical_branch_cash' : `/uploads/slips/package-${Date.now()}.png`)));
+      : (slipImageUrl || (isOnlineCard ? `https://placehold.co/600x400/1B3D59/FFFFFF?text=Online+Card+Payment+****${req.body.cardLast4 || 'Card'}` : (isPhysicalCash ? 'physical_branch_cash' : `/uploads/slips/package-${Date.now()}.png`)));
 
-    if (isInstantCard) {
-      // Instant online payment
-      student.packagePaymentStatus = 'confirmed';
-      if (resolvedPaymentType === 'single_lesson') {
-        student.lessonsUnlocked = (student.lessonsUnlocked || 0) + 1;
-      } else if (resolvedPaymentType === 'installment') {
-        student.installmentsPaidCount = currentInstNum;
-        student.lessonsUnlocked = currentInstNum * 5;
-      } else {
-        student.lessonsUnlocked = pkgDoc.lessons || 15;
-        student.installmentsPaidCount = 3;
-      }
-    } else {
-      // If student was already confirmed from previous installment, keep confirmed so existing unlocked lessons remain bookable
-      if (!student.packagePaymentStatus || student.packagePaymentStatus === 'none') {
-        student.packagePaymentStatus = 'pending';
-      }
+    // Like Bank Deposit Slips, Online Gateway package payments are placed in pending verification
+    if (!student.packagePaymentStatus || student.packagePaymentStatus === 'none' || student.packagePaymentStatus === 'rejected') {
+      student.packagePaymentStatus = 'pending';
     }
 
     await student.save();
 
-    const resolvedBankName = isInstantCard
+    const resolvedBankName = isOnlineCard
       ? 'Online Payment Gateway (Visa/Mastercard)'
       : (isPhysicalCash
         ? `Physical Cash Deposit - ${student.branch || 'Maharagama'} Branch`
         : (bankName || 'Bank of Ceylon (BOC)'));
-
-    const resolvedTxRef = transactionReference || (isInstantCard
-      ? `CARD-PAY-${Date.now()}`
-      : (isPhysicalCash ? `CASH-PKG-${Date.now()}` : `PKG-SLIP-${Date.now()}`));
 
     const payment = await Payment.create({
       studentId: student._id,
@@ -236,23 +222,27 @@ exports.submitPackagePayment = async (req, res) => {
       installmentNumber: resolvedPaymentType === 'installment' ? currentInstNum : null,
       paymentMethod,
       payment_method: paymentMethod,
+      cardLast4: req.body.cardLast4 || (isOnlineCard ? '4242' : null),
+      cardBrand: req.body.cardBrand || 'Visa / Mastercard',
+      cardHolder: req.body.cardHolder || req.user.name,
       slipImageUrl: slip,
       amount: payAmount,
       bankName: resolvedBankName,
       transactionReference: resolvedTxRef,
-      status: isInstantCard ? 'verified' : 'pending',
-      payment_status: isInstantCard ? 'Verified' : 'Pending Verification',
-      paymentStatus: isInstantCard ? 'Verified' : 'Pending Verification',
+      gateway_transaction_reference: isOnlineCard ? resolvedTxRef : null,
+      status: 'pending',
+      payment_status: 'Pending Verification',
+      paymentStatus: 'Pending Verification',
       uploadedAt: new Date(),
     });
 
-    // Notify Data Entry Officers
+    // Notify Data Entry Officers and Admins
     const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
     const notifications = staffUsers.map((staff) => ({
       recipientId: staff._id,
       recipientRole: staff.role,
-      title: isInstantCard ? 'Online Package Payment Confirmed' : 'New Package Payment Uploaded',
-      message: `Student ${req.user.name} paid Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) via ${paymentMethod}.`,
+      title: isOnlineCard ? '💳 Online Package Payment (Pending Verification)' : 'New Package Payment Uploaded',
+      message: `Student ${req.user.name} submitted Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) via ${isOnlineCard ? 'Online Card Gateway' : paymentMethod}. Verification required before lessons unlock.`,
       type: 'payment',
       link: '/staff/payments',
     }));
@@ -262,8 +252,8 @@ exports.submitPackagePayment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: isInstantCard
-        ? 'Card payment processed successfully! Your driving lessons are now unlocked for booking.'
+      message: isOnlineCard
+        ? 'Card payment authorized successfully! Your lesson balance will unlock once verified by our branch officer.'
         : 'Package payment submitted successfully. Your lesson balance will unlock once verified by our branch officer.',
       payment,
       student,
@@ -282,7 +272,15 @@ exports.submitPackagePayment = async (req, res) => {
 // @access  Student
 exports.payAdvance = async (req, res) => {
   try {
-    const { amount = 5000, bankName = 'Sithma Direct Online Advance', transactionReference } = req.body;
+    const {
+      amount = 5000,
+      bankName = 'Sithma Direct Online Advance',
+      transactionReference,
+      paymentMethod = 'online_gateway',
+      cardLast4,
+      cardBrand,
+      cardHolder,
+    } = req.body;
 
     const student = await Student.findOne({ userId: req.user._id });
     if (!student) {
@@ -290,40 +288,54 @@ exports.payAdvance = async (req, res) => {
     }
 
     const payAmount = parseFloat(amount) || 5000;
+    const txRef = transactionReference || `ADV-${Date.now().toString().slice(-8)}`;
 
     const payment = await Payment.create({
       studentId: student._id,
       userId: req.user._id,
       packageId: student.package?.packageId || null,
       paymentType: 'advance',
-      slipImageUrl: '/uploads/slips/advance-payment-confirmed.png',
+      paymentMethod: paymentMethod || 'online_gateway',
+      payment_method: paymentMethod || 'online_gateway',
+      cardLast4: cardLast4 || '4242',
+      cardBrand: cardBrand || 'Visa / Mastercard',
+      cardHolder: cardHolder || req.user.name,
+      slipImageUrl: `/uploads/slips/advance-payment-pending.png`,
       amount: payAmount,
       bankName: bankName,
-      transactionReference: transactionReference || `ADV-${Date.now()}`,
-      status: 'confirmed',
-      verifiedAt: new Date(),
+      transactionReference: txRef,
+      gateway_transaction_reference: txRef,
+      status: 'pending',
+      payment_status: 'Pending Verification',
+      paymentStatus: 'Pending Verification',
       uploadedAt: new Date(),
     });
 
-    student.isAdvancePaid = true;
-    student.isPremium = true;
-    student.accountStatus = 'active';
-    student.advancePaymentStatus = 'verified';
-    student.registrationStatus = 'registered';
+    student.isAdvancePaid = false;
+    student.accountStatus = 'pending_verification';
+    student.account_status = 'Unverified / Pending Payment';
+    student.advancePaymentStatus = 'pending';
+    student.payment_method = paymentMethod || 'online_gateway';
+    student.payment_status = 'Pending Verification';
     await student.save();
 
-    await Notification.create({
-      recipientId: req.user._id,
-      recipientRole: 'student',
-      title: 'Advance Payment Verified!',
-      message: `Advance payment of Rs. ${payAmount.toLocaleString()} received. Your account is activated and ready for package selection!`,
-      type: 'payment',
-      link: '/student/dashboard',
-    });
+    const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
+    if (staffUsers.length > 0) {
+      await Notification.insertMany(
+        staffUsers.map((s) => ({
+          recipientId: s._id,
+          recipientRole: s.role,
+          title: '💳 Advance Payment Received (Pending Verification)',
+          message: `${req.user.name} submitted an advance payment of Rs. ${payAmount.toLocaleString()} via ${paymentMethod === 'online_gateway' ? 'Online Card Gateway' : paymentMethod}. Verification required before account activation.`,
+          type: 'payment',
+          link: '/staff/payments',
+        }))
+      );
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Advance payment confirmed! You now have active access to the portal.',
+      message: 'Advance payment submitted successfully! Your account will be activated once verified by our branch officer.',
       payment,
       student,
     });
@@ -807,7 +819,17 @@ exports.uploadPendingSlip = async (req, res) => {
 // @access  Public (simulated gateway — no real charges)
 exports.payAdvancePending = async (req, res) => {
   try {
-    const { pendingUserId, userId, studentId, amount, bankName, transactionReference, cardLast4 } = req.body;
+    const {
+      pendingUserId,
+      userId,
+      studentId,
+      amount,
+      bankName,
+      transactionReference,
+      cardLast4,
+      cardBrand,
+      cardHolder,
+    } = req.body;
     const targetRef = pendingUserId || userId || studentId;
 
     if (!targetRef) {
@@ -834,20 +856,24 @@ exports.payAdvancePending = async (req, res) => {
     const txRef = transactionReference || `ONPAY-${Date.now().toString().slice(-8)}`;
     const payAmount = parseFloat(amount) || ADVANCE_PAYMENT_AMOUNT;
 
-    // Online advance payment requires Data Entry Officer verification before activation
+    // Online advance payment requires Data Entry Officer / Admin verification before activation
     const payment = await Payment.create({
       studentId: student._id,
       userId: user._id,
       paymentType: 'advance',
       payment_method: 'online_gateway',
       paymentMethod: 'online_gateway',
-      slipImageUrl: `https://placehold.co/600x400/1e1035/FFFFFF?text=Online+Payment+Card+****${cardLast4 || '0000'}`,
+      cardLast4: cardLast4 || '4242',
+      cardBrand: cardBrand || 'Visa / Mastercard',
+      cardHolder: cardHolder || user.name,
+      slipImageUrl: `https://placehold.co/600x400/1B3D59/FFFFFF?text=Online+Gateway+Card+****${cardLast4 || '0000'}`,
       gateway_transaction_reference: txRef,
       amount: payAmount,
       bankName: bankName || 'Sithma Pay Online Gateway',
       transactionReference: txRef,
       status: 'pending',
       payment_status: 'Pending Verification',
+      paymentStatus: 'Pending Verification',
       uploadedAt: new Date(),
     });
 
@@ -986,50 +1012,50 @@ exports.buyAdditionalLessons = async (req, res) => {
     }
 
     if (paymentMethod === 'online') {
-      // Instant card/gateway payment: Automatically confirmed and unlocked immediately!
+      // Online card/gateway payment: Pending Officer Verification
+      const txRef = transactionReference || `ADDL-ONLINE-${Date.now().toString().slice(-8)}`;
       const payment = await Payment.create({
         studentId: student._id,
         userId: req.user._id,
         packageId: student.package?.packageId || null,
         paymentType: 'additional_lessons',
         additionalLessonsCount: qty,
-        slipImageUrl: '/uploads/slips/online-additional-lessons.png',
+        paymentMethod: 'online_gateway',
+        payment_method: 'online_gateway',
+        cardLast4: req.body.cardLast4 || '4242',
+        cardBrand: req.body.cardBrand || 'Visa / Mastercard',
+        cardHolder: req.body.cardHolder || req.user.name,
+        slipImageUrl: `/uploads/slips/online-additional-lessons.png`,
         amount: totalAmount,
         bankName: 'Sithma Online Payment Gateway',
-        transactionReference: transactionReference || `ADDL-ONLINE-${Date.now()}`,
-        status: 'confirmed',
-        verifiedAt: new Date(),
+        transactionReference: txRef,
+        gateway_transaction_reference: txRef,
+        status: 'pending',
+        payment_status: 'Pending Verification',
+        paymentStatus: 'Pending Verification',
         uploadedAt: new Date(),
       });
 
-      // Update student balance
-      student.package.additionalLessonsRequested =
-        (student.package.additionalLessonsRequested || 0) + qty;
-      const currentUnlocked =
-        student.lessonsUnlocked !== undefined && student.lessonsUnlocked !== null
-          ? student.lessonsUnlocked
-          : (student.package?.lessonsTotal || 15);
-      student.lessonsUnlocked = currentUnlocked + qty;
-      await student.save();
-
-      // Trigger In-App Notification
-      const remainingCount = Math.max(0, student.lessonsUnlocked - (student.lessonsUsed || 0));
-      await Notification.create({
-        recipientId: req.user._id,
-        recipientRole: 'student',
-        title: 'Additional Lessons Unlocked!',
-        message: `Payment of Rs. ${totalAmount.toLocaleString()} confirmed for ${qty} additional practical lesson(s). You now have ${remainingCount} total lessons available to book!`,
-        type: 'booking',
-        link: '/student/lessons/book',
-      });
+      // Notify Staff & Admin
+      const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
+      if (staffUsers.length > 0) {
+        await Notification.insertMany(
+          staffUsers.map((s) => ({
+            recipientId: s._id,
+            recipientRole: s.role,
+            title: '💳 Additional Lessons Payment (Pending Verification)',
+            message: `${req.user.name} submitted Rs. ${totalAmount.toLocaleString()} via Online Card Gateway for ${qty} additional lesson(s). Verification required before lessons unlock.`,
+            type: 'payment',
+            link: '/staff/payments',
+          }))
+        );
+      }
 
       return res.status(200).json({
         success: true,
-        message: `Successfully purchased ${qty} additional practical lesson(s)! They are ready to book now.`,
+        message: `Payment of Rs. ${totalAmount.toLocaleString()} submitted for ${qty} additional lesson(s). They will unlock once verified by our branch officer.`,
         payment,
         student,
-        lessonsUnlocked: student.lessonsUnlocked,
-        lessonsRemaining: remainingCount,
       });
     } else {
       // Bank Deposit Slip Upload: Pending Officer Verification

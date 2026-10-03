@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import {
@@ -9,16 +9,29 @@ import {
   Bus,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   MapPin,
   User,
   Sparkles,
   ArrowRight,
   ShieldAlert,
+  RefreshCw,
   X,
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
 
 export default function BookLessonPage() {
   const { student, updateStudentData } = useAuth();
@@ -118,15 +131,27 @@ export default function BookLessonPage() {
   const isPackagePaymentConfirmed = student?.packagePaymentStatus === 'confirmed';
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
 
-  // Shared Trial Date Tracking
-  const hasTrialDate = Boolean(student?.trial_date);
+  // Shared Trial Date Tracking & Cut-off enforcement (Rules 1 & 4)
+  const hasTrialDate = Boolean(student?.trial_date && !isNaN(new Date(student.trial_date).getTime()));
   const trialDateObj = hasTrialDate ? new Date(student.trial_date) : null;
   const isTrialDatePassed = Boolean(
-    trialDateObj && new Date().getTime() > new Date(trialDateObj).setHours(23, 59, 59, 999)
+    trialDateObj && new Date().setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0)
   );
   const daysUntilTrial = trialDateObj
-    ? Math.max(0, Math.ceil((new Date(trialDateObj).setHours(23, 59, 59, 999) - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((new Date(trialDateObj).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)))
     : null;
+
+  const maxBookingDate = useMemo(() => {
+    if (!trialDateObj) return undefined;
+    const maxD = new Date(trialDateObj);
+    maxD.setDate(maxD.getDate() - 1);
+    return maxD.toISOString().split('T')[0];
+  }, [trialDateObj]);
+
+  const isSelectedDateOnOrAfterTrial = useMemo(() => {
+    if (!trialDateObj || !selectedDate) return false;
+    return new Date(selectedDate).setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0);
+  }, [trialDateObj, selectedDate]);
 
   const unlockedCount =
     student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
@@ -157,12 +182,12 @@ export default function BookLessonPage() {
       return;
     }
 
-    // Gate 1d: Selected Slot after Trial Date Gate
+    // Gate 1d: Selected Slot on or after Trial Date Gate (Rules 1 & 4)
     if (trialDateObj && selectedSlot) {
       const slotTime = new Date(selectedSlot.date).setHours(0, 0, 0, 0);
       const trialLimit = new Date(trialDateObj).setHours(23, 59, 59, 999);
       if (slotTime > trialLimit) {
-        toast.error(`You can only book lessons up until your scheduled Trial Date (${trialDateObj.toISOString().split('T')[0]}). Please choose an earlier slot.`);
+        toast.error(`You can only book lessons up until your scheduled Trial Date (${safeFormatDate(trialDateObj, 'yyyy-MM-dd')}). Please choose an earlier slot.`);
         return;
       }
     }
@@ -234,64 +259,62 @@ export default function BookLessonPage() {
     return (
       <div className="py-10 px-4 sm:px-6 lg:px-10 max-w-4xl mx-auto w-full space-y-8">
         {/* US-09 DMT Gate Lock Card */}
-        <div className="backdrop-blur-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 rounded-3xl p-8 sm:p-10 border-2 border-cyan-400/40 shadow-[0_0_50px_rgba(6,182,212,0.18)] space-y-6 relative overflow-hidden text-center">
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-
-          <div className="w-20 h-20 rounded-3xl bg-cyan-500/15 border-2 border-cyan-400/40 flex items-center justify-center text-cyan-300 mx-auto shadow-inner">
-            <ShieldAlert className="w-10 h-10 text-cyan-400 animate-pulse" />
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-[#D4EEF8] shadow-xl space-y-6 relative overflow-hidden text-center">
+          <div className="w-20 h-20 rounded-3xl bg-[#D4EEF8] border-2 border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] mx-auto shadow-sm">
+            <ShieldAlert className="w-10 h-10 text-[#1B3D59]" />
           </div>
 
           <div className="space-y-2 max-w-xl mx-auto">
-            <span className="badge badge-warning text-xs font-bold uppercase tracking-wider">
+            <span className="inline-block px-3 py-1 rounded-full bg-[#F3EED8] border border-[#6A97C0]/30 text-[#152026] text-xs font-bold uppercase tracking-wider">
               DMT Regulation US-09 • Practical Training Locked
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026]">
               Learner Exam Pass Required
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-[#152026]/75 leading-relaxed">
               As a <strong>Type 1 (New Learner)</strong>, Department of Motor Traffic (DMT) regulations require you to officially <strong>face and pass your DMT Learner's Written Exam</strong> before practical driving or trial lessons can be scheduled.
             </p>
           </div>
 
           {/* Current Milestone Status Matrix */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left max-w-2xl mx-auto pt-2">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-[11px] text-slate-400 font-semibold block">1. Medical Exam</span>
-              <div className="text-xs font-bold text-white">
+            <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+              <span className="text-[11px] text-[#6A97C0] font-semibold block">1. Medical Exam</span>
+              <div className="text-xs font-bold text-[#152026]">
                 {student?.dmtDates?.medicalExamPassed ? '✓ Cleared' : 'Pending Clearance'}
               </div>
-              <span className={`badge text-[9px] ${student?.dmtDates?.medicalExamPassed ? 'badge-success' : 'badge-warning'}`}>
+              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${student?.dmtDates?.medicalExamPassed ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-[#F3EED8] text-[#152026] border border-[#D4EEF8]'}`}>
                 {student?.dmtDates?.medicalExamPassed ? 'Passed' : 'Pending'}
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-              <span className="text-[11px] text-slate-400 font-semibold block">2. DMT Registration</span>
-              <div className="text-xs font-bold text-white">
+            <div className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+              <span className="text-[11px] text-[#6A97C0] font-semibold block">2. DMT Registration</span>
+              <div className="text-xs font-bold text-[#152026]">
                 {student?.dmtDates?.learnerRegistrationDate ? '✓ Enrolled' : 'In Progress'}
               </div>
-              <span className="badge badge-info text-[9px]">
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-[#D4EEF8] text-[#1B3D59]">
                 {student?.dmtDates?.learnerRegistrationDate ? 'Registered' : 'Processing'}
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 space-y-1">
-              <span className="text-[11px] text-cyan-300 font-bold block">3. Learner Exam (US-09)</span>
-              <div className="text-xs font-bold text-white">
+            <div className="p-4 rounded-2xl bg-[#F3EED8]/40 border border-[#6A97C0]/30 space-y-1">
+              <span className="text-[11px] text-[#1B3D59] font-bold block">3. Learner Exam (US-09)</span>
+              <div className="text-xs font-bold text-[#152026]">
                 {examStatusText}
               </div>
-              <span className={`badge text-[9px] ${student?.learnerExamStatus === 'failed' ? 'badge-warning' : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'}`}>
+              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${student?.learnerExamStatus === 'failed' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
                 {student?.learnerExamStatus === 'failed' ? 'Failed' : 'Exam Not Passed'}
               </span>
             </div>
           </div>
 
           {/* Explanation banner */}
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-slate-300 max-w-2xl mx-auto text-left flex items-start gap-3">
-            <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-[#D4EEF8]/40 border border-[#D4EEF8] text-xs text-[#152026] max-w-2xl mx-auto text-left flex items-start gap-3">
+            <Clock className="w-5 h-5 text-[#1B3D59] flex-shrink-0 mt-0.5" />
             <div>
-              <strong className="text-white">What happens next?</strong>
-              <p className="mt-0.5">
+              <strong className="text-[#152026] font-bold">What happens next?</strong>
+              <p className="mt-0.5 text-[#152026]/80 leading-relaxed">
                 Once you sit for your exam and your branch Data Entry Officer records your result as <strong>"Passed"</strong>, this practical lesson booking dashboard will unlock automatically. You will then be able to choose your course package and start booking trial sessions.
               </p>
             </div>
@@ -301,7 +324,7 @@ export default function BookLessonPage() {
           <div className="pt-2 flex justify-center">
             <Link
               to="/student/dashboard"
-              className="btn-accent text-xs py-3 px-6 font-bold shadow-lg flex items-center gap-2"
+              className="btn-primary text-xs py-3 px-6 font-bold shadow-md flex items-center gap-2"
             >
               <ArrowRight className="w-4 h-4 rotate-180" /> Return to Student Dashboard & Track Milestones
             </Link>
@@ -314,28 +337,28 @@ export default function BookLessonPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> On-Road Practical & Trial Training
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> On-Road Practical & Trial Training
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <CalendarIcon className="w-6 h-6 text-cyan-400" /> Book a Practical Driving Lesson
+          <h1 className="text-2xl font-black text-[#152026] flex items-center gap-2">
+            <CalendarIcon className="w-6 h-6 text-[#1B3D59]" /> Book a Practical Driving Lesson
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5">
             Select your branch, date, vehicle type, and preferred 1-hour session time.
           </p>
         </div>
 
         {/* Balance badge */}
         <div className="flex items-center gap-2">
-          <div className="card p-3 flex items-center gap-3 bg-slate-900/80 border border-white/15">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300 font-black text-sm">
+          <div className="bg-white rounded-2xl p-3 flex items-center gap-3 border border-[#D4EEF8] shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] font-black text-sm">
               {lessonsRemaining}
             </div>
             <div className="text-xs">
-              <p className="font-bold text-white">Lessons Remaining</p>
-              <p className="text-slate-400 text-[11px]">
+              <p className="font-bold text-[#152026]">Lessons Remaining</p>
+              <p className="text-[#6A97C0] text-[11px]">
                 {isMonthlyPlan ? `Monthly quota: ${usedCount}/${unlockedCount} used` : 'in your active course package'}
               </p>
             </div>
@@ -345,39 +368,39 @@ export default function BookLessonPage() {
 
       {/* Shared Trial Date Tracking Banner (Visible to both Type 1 and Type 2) */}
       {hasTrialDate ? (
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 border border-purple-400/30 shadow-[0_0_25px_rgba(168,85,247,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 font-bold flex-shrink-0">
-              <CalendarIcon className="w-6 h-6 text-purple-400" />
+            <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] font-bold flex-shrink-0">
+              <CalendarIcon className="w-6 h-6 text-[#1B3D59]" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/40 text-[10px] font-extrabold uppercase">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#1B3D59] text-white text-[10px] font-extrabold uppercase tracking-wider">
                   Practical Trial Exam Scheduled
                 </span>
                 {isTrialDatePassed ? (
-                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">
                     Trial Date Passed
                   </span>
                 ) : (
-                  <span className="badge bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[10px] font-bold">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
                     {daysUntilTrial} Days Remaining
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-black text-white mt-1">
-                Trial Date: {format(new Date(student.trial_date), 'EEEE, MMMM dd, yyyy')}
+              <h3 className="text-base font-black text-[#152026] mt-1">
+                Trial Date: {safeFormatDate(student?.trial_date, 'EEEE, MMMM dd, yyyy')}
               </h3>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-[#152026]/75 mt-0.5">
                 {isTrialDatePassed
-                  ? 'Your scheduled trial date has passed and lesson booking is locked. Please request a trial date reschedule below.'
-                  : 'You can book practical driving lessons up until this scheduled trial date.'}
+                  ? 'Your scheduled trial date has arrived/passed and lesson booking is locked. Please request a trial date reschedule below.'
+                  : 'You can book practical driving lessons only for dates before your scheduled trial date.'}
               </p>
 
               {/* Pending Request Notice */}
               {myRescheduleRequests.find((r) => r.status === 'Pending') && (
-                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
-                  <Clock className="w-3.5 h-3.5 animate-pulse" />
+                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/30 text-[#152026] text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5 animate-pulse text-[#1B3D59]" />
                   <span>Trial Date Reschedule Request is currently pending DEO review</span>
                 </div>
               )}
@@ -387,64 +410,62 @@ export default function BookLessonPage() {
                 <button
                   type="button"
                   onClick={() => setShowRescheduleModal(true)}
-                  className={`btn-accent text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow ${
-                    isTrialDatePassed ? 'ring-2 ring-purple-400 animate-pulse' : ''
-                  }`}
+                  className="btn-secondary text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow-sm"
                 >
-                  <Clock className="w-3.5 h-3.5" />
+                  <Clock className="w-3.5 h-3.5 text-[#1B3D59]" />
                   {isTrialDatePassed ? 'Request Trial Date Reschedule' : 'Request Date Reschedule'}
                 </button>
               </div>
             </div>
           </div>
           {student.trial_date_set_by && (
-            <div className="text-xs text-slate-400 bg-white/5 px-3.5 py-2 rounded-xl border border-white/10 flex-shrink-0">
+            <div className="text-xs text-[#152026]/70 bg-[#FAFCFE] px-3.5 py-2 rounded-xl border border-[#D4EEF8] flex-shrink-0">
               Scheduled by:{' '}
-              <strong className="text-white">
+              <strong className="text-[#152026]">
                 {student.trial_date_set_by?.name || 'Branch Staff'}
               </strong>
             </div>
           )}
         </div>
       ) : isType2 ? (
-        <div className="p-5 rounded-2xl bg-amber-500/15 border border-amber-400/40 shadow-[0_0_25px_rgba(245,158,11,0.15)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="p-5 rounded-2xl bg-[#F3EED8] border border-[#6A97C0]/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 flex-shrink-0 mt-0.5">
-              <AlertCircle className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-xl bg-[#D4EEF8] border border-[#6A97C0]/40 flex items-center justify-center text-[#1B3D59] flex-shrink-0 mt-0.5">
+              <AlertCircle className="w-5 h-5 text-[#1B3D59]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="badge badge-warning text-[10px] font-extrabold uppercase">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#1B3D59] text-white text-[10px] font-extrabold uppercase">
                   Action Required
                 </span>
-                <span className="text-xs font-bold text-amber-300">
+                <span className="text-xs font-bold text-[#152026]">
                   Trial Date Not Scheduled Yet
                 </span>
               </div>
-              <h4 className="text-sm font-black text-white mt-1">
+              <h4 className="text-sm font-black text-[#152026] mt-1">
                 Branch Officer Scheduling Required
               </h4>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-[#152026]/80 mt-0.5">
                 Under DMT regulations, your branch Data Entry Officer must set your official practical trial exam date before practical lesson sessions can be reserved.
               </p>
             </div>
           </div>
-          <div className="bg-slate-950/70 border border-amber-400/20 rounded-xl p-3 text-xs text-amber-200 whitespace-nowrap">
-            Contact Branch: <strong className="text-white">011-2849201</strong>
+          <div className="bg-white border border-[#D4EEF8] rounded-xl p-3 text-xs text-[#152026] whitespace-nowrap shadow-sm">
+            Contact Branch: <strong className="text-[#1B3D59]">011-2849201</strong>
           </div>
         </div>
       ) : null}
 
       {/* Package Payment Pending or Required Warning (US-09 Payment Gate) */}
       {!isPackagePaymentConfirmed && lessonsRemaining <= 0 && (
-        <div className="p-4 bg-amber-500/15 border border-amber-400/30 rounded-2xl backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="p-4 bg-[#F3EED8] border border-[#6A97C0]/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-sm">
           <div className="flex items-start gap-2.5">
-            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#1B3D59] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-amber-300 text-sm">
+              <p className="font-bold text-[#152026] text-sm">
                 Course Package Payment Required Before Booking
               </p>
-              <p className="text-slate-300 mt-0.5">
+              <p className="text-[#152026]/80 mt-0.5">
                 {isPackagePaymentPending
                   ? 'Your course package payment slip is awaiting review by our branch officer. Lessons will unlock immediately once confirmed.'
                   : 'Please select and pay for your course package to unlock practical driving lessons.'}
@@ -453,7 +474,7 @@ export default function BookLessonPage() {
           </div>
           <Link
             to="/student/dashboard#package-selection-payment"
-            className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap"
+            className="btn-primary text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-sm"
           >
             {isPackagePaymentPending ? 'Check Payment Status' : 'Select Package & Pay'} <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -462,12 +483,12 @@ export default function BookLessonPage() {
 
       {/* Monthly Plan Quota Cap Warning */}
       {isMonthlyPlan && lessonsRemaining <= 0 && isPackagePaymentConfirmed && (
-        <div className="p-4 bg-amber-500/15 border border-amber-400/30 rounded-2xl backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200">
+        <div className="p-4 bg-[#F3EED8] border border-[#6A97C0]/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-sm">
           <div className="flex items-start gap-2.5">
-            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#1B3D59] flex-shrink-0 mt-0.5" />
             <div>
-              <strong className="text-white text-sm">Monthly Quota Reached ({unlockedCount} Lessons):</strong>
-              <p className="mt-0.5">
+              <strong className="text-[#152026] text-sm font-bold">Monthly Quota Reached ({unlockedCount} Lessons):</strong>
+              <p className="mt-0.5 text-[#152026]/80">
                 You have completed all {unlockedCount} lessons unlocked for this billing month under your monthly installment plan. Pay next month's installment or buy additional lessons to continue booking.
               </p>
             </div>
@@ -475,7 +496,7 @@ export default function BookLessonPage() {
           <Link
             to={{ pathname: '/student/dashboard', hash: '#package-selection-payment' }}
             state={{ openPaymentForm: true }}
-            className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5"
+            className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-sm"
           >
             Buy Additional Lessons <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -484,12 +505,12 @@ export default function BookLessonPage() {
 
       {/* Package Lessons Exhausted Banner */}
       {!isMonthlyPlan && lessonsRemaining <= 0 && isPackagePaymentConfirmed && (
-        <div className="p-4 bg-purple-500/15 border border-purple-400/30 rounded-2xl backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-purple-200">
+        <div className="p-4 bg-[#D4EEF8] border border-[#6A97C0]/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-sm">
           <div className="flex items-start gap-2.5">
-            <Sparkles className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+            <Sparkles className="w-5 h-5 text-[#1B3D59] flex-shrink-0 mt-0.5" />
             <div>
-              <strong className="text-white text-sm">All Course Package Lessons Completed!</strong>
-              <p className="mt-0.5">
+              <strong className="text-[#152026] text-sm font-bold">All Course Package Lessons Completed!</strong>
+              <p className="mt-0.5 text-[#152026]/80">
                 You have used all {unlockedCount} lessons in your package. Need extra on-road practice before your DMT practical trial? You can select additional lessons or packages anytime on your dashboard.
               </p>
             </div>
@@ -497,26 +518,25 @@ export default function BookLessonPage() {
           <Link
             to={{ pathname: '/student/dashboard', hash: '#package-selection-payment' }}
             state={{ openPaymentForm: true }}
-            className="btn-accent text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-md"
+            className="btn-primary text-xs py-2 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-sm"
           >
             Buy Additional Lessons <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       )}
 
-
       {/* Control Filters (Branch, Date, Vehicle) */}
-      <div className="card p-5 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-3xl p-6 border border-[#D4EEF8] shadow-sm space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Branch Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#152026] mb-1.5">
               Select Training Branch:
             </label>
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 text-cyan-300 font-bold outline-none"
+              className="w-full px-3.5 py-2.5 border border-[#D4EEF8] rounded-xl text-xs bg-[#FAFCFE] text-[#1B3D59] font-bold outline-none focus:border-[#1B3D59]"
             >
               <option value="Maharagama">Maharagama Branch</option>
               <option value="Werahara">Werahara Branch</option>
@@ -526,21 +546,42 @@ export default function BookLessonPage() {
 
           {/* Date Picker */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#152026] mb-1.5">
               Select Lesson Date:
             </label>
-            <input
-              type="date"
-              min={new Date().toISOString().split('T')[0]}
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-xs font-medium outline-none"
-            />
+            <div className="relative flex items-center">
+              <CalendarIcon className="w-4 h-4 text-[#6A97C0] absolute left-3.5 pointer-events-none" />
+              <input
+                type="date"
+                min={new Date().toISOString().split('T')[0]}
+                max={maxBookingDate}
+                value={selectedDate}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  if (trialDateObj && newDate) {
+                    const chosen = new Date(newDate).setHours(0, 0, 0, 0);
+                    const trialLimit = new Date(trialDateObj).setHours(0, 0, 0, 0);
+                    if (chosen >= trialLimit) {
+                      toast.error('Lessons cannot be booked on or after your Trial Exam Date.');
+                      return;
+                    }
+                  }
+                  setSelectedDate(newDate);
+                }}
+                className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] rounded-xl text-xs font-bold outline-none cursor-pointer focus:border-[#1B3D59]"
+              />
+            </div>
+            {isSelectedDateOnOrAfterTrial && (
+              <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                Lessons cannot be booked on or after your Trial Exam Date.
+              </p>
+            )}
           </div>
 
           {/* Vehicle Type Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#152026] mb-1.5">
               Vehicle Type:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -554,10 +595,10 @@ export default function BookLessonPage() {
                   key={v.id}
                   type="button"
                   onClick={() => setSelectedVehicle(v.id)}
-                  className={`p-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                  className={`p-2.5 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all ${
                     selectedVehicle === v.id
-                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] border border-cyan-300'
-                      : 'bg-white/5 text-slate-300 hover:bg-white/15 border border-white/10'
+                      ? 'bg-[#1B3D59] text-white shadow-sm border border-[#1B3D59]'
+                      : 'bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 border border-[#D4EEF8]'
                   }`}
                 >
                   <v.icon className="w-3.5 h-3.5" />
@@ -570,23 +611,23 @@ export default function BookLessonPage() {
       </div>
 
       {/* Time Slots Grid */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Clock className="w-4 h-4 text-cyan-400" /> Available Session Slots for {selectedDate}
+          <h2 className="text-base font-bold text-[#152026] flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#1B3D59]" /> Available Session Slots for {selectedDate}
           </h2>
-          <span className="text-xs text-slate-400">Standard session: 1 hour (2 x 30-min units)</span>
+          <span className="text-xs text-[#6A97C0]">Standard session: 1 hour (2 x 30-min units)</span>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <Clock className="w-4 h-4 animate-spin text-cyan-400" /> Loading branch schedule...
+          <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+            <Clock className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading branch schedule...
           </div>
         ) : slots.length === 0 ? (
-          <div className="card text-center py-10 space-y-2">
-            <Clock className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-white">No time slots scheduled for this date</p>
-            <p className="text-xs text-slate-400">Please choose another date or contact the branch.</p>
+          <div className="bg-white rounded-3xl p-10 text-center space-y-2 border border-[#D4EEF8] shadow-sm">
+            <Clock className="w-8 h-8 text-[#6A97C0] mx-auto" />
+            <p className="text-sm font-bold text-[#152026]">No time slots scheduled for this date</p>
+            <p className="text-xs text-[#6A97C0]">Please choose another date or contact the branch.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
@@ -599,10 +640,10 @@ export default function BookLessonPage() {
               const isStudentAlreadyBooked = Boolean(slot.isStudentBooked);
               const hasInstructor = !!slot.instructorId;
 
-              const isSlotPastTrial = Boolean(
-                trialDateObj && new Date(slot.date).setHours(0, 0, 0, 0) > new Date(trialDateObj).setHours(23, 59, 59, 999)
+              const isSlotOnOrPastTrial = Boolean(
+                trialDateObj && new Date(slot.date).setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0)
               );
-              const isLockedByTrial = (isType2 && !hasTrialDate) || isTrialDatePassed || isSlotPastTrial;
+              const isLockedByTrial = (isType2 && !hasTrialDate) || isTrialDatePassed || isSlotOnOrPastTrial;
               const isLockedByExam = isType1 && !isTrialEligible;
               const isLockedByPackage = (!isPackagePaymentConfirmed && lessonsRemaining <= 0) || isPackagePaymentPending;
               const isLockedByQuota = lessonsRemaining <= 0;
@@ -618,29 +659,29 @@ export default function BookLessonPage() {
               return (
                 <div
                   key={slot._id}
-                  className={`card p-5 flex flex-col justify-between space-y-4 border transition-all ${
+                  className={`bg-white rounded-3xl p-5 flex flex-col justify-between space-y-4 border transition-all shadow-sm ${
                     isStudentAlreadyBooked
-                      ? 'bg-emerald-950/25 border-emerald-400/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                      ? 'border-emerald-300 ring-1 ring-emerald-300 bg-emerald-50/20'
                       : isFull
-                      ? 'bg-slate-950/50 border-white/5 opacity-60'
-                      : 'border-white/15 hover:border-cyan-400/40 card-hover bg-slate-900/80'
+                      ? 'border-[#D4EEF8] opacity-60 bg-[#FAFCFE]'
+                      : 'border-[#D4EEF8] hover:border-[#6A97C0] hover:shadow-md'
                   }`}
                 >
                   <div className="space-y-3">
                     {/* Header with Time & Capacity Badge */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-black text-white">
+                      <span className="text-sm font-black text-[#152026]">
                         {slot.startTime} – {slot.endTime}
                       </span>
                       <span
-                        className={`badge text-[10px] font-bold ${
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           isStudentAlreadyBooked
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                             : isFull
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
                             : bookedCount > 0
-                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
-                            : 'badge-success'
+                            ? 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}
                       >
                         {isStudentAlreadyBooked
@@ -653,26 +694,26 @@ export default function BookLessonPage() {
 
                     {/* Lesson Title & Topic */}
                     <div>
-                      <h4 className="text-xs font-bold text-white leading-snug">
+                      <h4 className="text-xs font-bold text-[#152026] leading-snug">
                         {slot.lessonTitle || `${slot.vehicleType || selectedVehicle} Practical Session`}
                       </h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-[#152026]/70 mt-0.5 line-clamp-2 leading-relaxed">
                         {slot.lessonTopic || 'Dual-control road training, clutch control, and maneuvers.'}
                       </p>
                     </div>
 
                     {/* Branch & Instructor */}
-                    <div className="p-2.5 bg-slate-950/60 rounded-xl border border-white/5 space-y-1 text-xs text-slate-300">
-                      <p className="flex items-center gap-1.5 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 text-cyan-400" /> {slot.branch} Branch
+                    <div className="p-3 bg-[#FAFCFE] rounded-2xl border border-[#D4EEF8] space-y-1.5 text-xs text-[#152026]">
+                      <p className="flex items-center gap-1.5 text-[11px] font-medium">
+                        <MapPin className="w-3.5 h-3.5 text-[#1B3D59]" /> {slot.branch} Branch
                       </p>
-                      <p className="flex items-center gap-1.5 text-[11px]">
-                        <User className="w-3.5 h-3.5 text-amber-400" />
+                      <p className="flex items-center gap-1.5 text-[11px] font-medium">
+                        <User className="w-3.5 h-3.5 text-[#6A97C0]" />
                         Instructor:{' '}
                         {hasInstructor ? (
-                          <strong className="text-white">{slot.instructorId?.name}</strong>
+                          <strong className="text-[#152026] font-bold">{slot.instructorId?.name}</strong>
                         ) : (
-                          <span className="text-amber-300 font-medium">To be assigned</span>
+                          <span className="text-amber-800 font-medium">To be assigned</span>
                         )}
                       </p>
                     </div>
@@ -680,19 +721,19 @@ export default function BookLessonPage() {
                     {/* 10-Student Capacity Meter */}
                     <div className="space-y-1 pt-1">
                       <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-400">Class Attendance:</span>
-                        <strong className="text-slate-200">
+                        <span className="text-[#6A97C0] font-medium">Class Attendance:</span>
+                        <strong className="text-[#152026] font-bold">
                           {bookedCount} / {capacity} Students
                         </strong>
                       </div>
-                      <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden border border-white/10">
+                      <div className="w-full h-2 rounded-full bg-[#D4EEF8] overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
                             isFull
                               ? 'bg-rose-500'
                               : fillPercentage >= 70
                               ? 'bg-amber-400'
-                              : 'bg-cyan-400'
+                              : 'bg-[#1B3D59]'
                           }`}
                           style={{ width: `${fillPercentage}%` }}
                         />
@@ -703,27 +744,33 @@ export default function BookLessonPage() {
                   {/* Action Button */}
                   <button
                     disabled={isDisabled}
-                    onClick={() => setSelectedSlot(slot)}
+                    onClick={() => {
+                      if (isSlotOnOrPastTrial) {
+                        toast.error('Lessons cannot be booked on or after your Trial Exam Date.');
+                        return;
+                      }
+                      setSelectedSlot(slot);
+                    }}
                     className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       isStudentAlreadyBooked
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
                         : isFull
-                        ? 'bg-rose-500/10 text-rose-400/60 border border-rose-500/20 cursor-not-allowed'
+                        ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
                         : isType2 && !hasTrialDate
-                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 cursor-not-allowed'
+                        ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30 cursor-not-allowed'
                         : isTrialDatePassed
-                        ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 cursor-not-allowed'
-                        : isSlotPastTrial
-                        ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 cursor-not-allowed'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200 cursor-not-allowed'
+                        : isSlotOnOrPastTrial
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200 cursor-not-allowed'
                         : isLockedByExam
-                        ? 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
+                        ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
                         : isPackagePaymentPending
-                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 cursor-not-allowed'
+                        ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30 cursor-not-allowed'
                         : isLockedByPackage
-                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20 cursor-not-allowed'
+                        ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30 cursor-not-allowed'
                         : isLockedByQuota
-                        ? 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
-                        : 'btn-accent text-slate-950 hover:scale-105 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                        ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                        : 'btn-primary shadow-sm hover:scale-[1.02]'
                     }`}
                   >
                     {isStudentAlreadyBooked
@@ -734,8 +781,8 @@ export default function BookLessonPage() {
                       ? 'Trial Date Required to Book'
                       : isTrialDatePassed
                       ? 'Trial Date Has Passed'
-                      : isSlotPastTrial
-                      ? 'Slot is After Trial Date'
+                      : isSlotOnOrPastTrial
+                      ? 'Lessons Restricted: On or After Trial Exam'
                       : isLockedByExam
                       ? 'DMT Theory Exam Pass Required'
                       : isPackagePaymentPending
@@ -757,44 +804,44 @@ export default function BookLessonPage() {
 
       {/* Booking Confirmation Modal */}
       {selectedSlot && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-cyan-400" /> Confirm Lesson Booking
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#D4EEF8] rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#1B3D59]" /> Confirm Lesson Booking
               </h3>
               <button
                 onClick={() => setSelectedSlot(null)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#152026] flex items-center justify-center transition-colors border border-[#D4EEF8]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs bg-white/5 p-4 rounded-2xl border border-white/10">
+            <div className="space-y-3 text-xs bg-[#FAFCFE] p-4 rounded-2xl border border-[#D4EEF8]">
               <div className="flex justify-between">
-                <span className="text-slate-400">Date:</span>
-                <span className="font-bold text-white">
-                  {format(new Date(selectedSlot.date), 'EEEE, MMMM dd, yyyy')}
+                <span className="text-[#6A97C0] font-medium">Date:</span>
+                <span className="font-bold text-[#152026]">
+                  {safeFormatDate(selectedSlot?.date, 'EEEE, MMMM dd, yyyy')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Time:</span>
-                <span className="font-bold text-cyan-300">
+                <span className="text-[#6A97C0] font-medium">Time:</span>
+                <span className="font-bold text-[#1B3D59]">
                   {selectedSlot.startTime} – {selectedSlot.endTime} (1 Hour)
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Branch:</span>
-                <span className="font-bold text-white">{selectedSlot.branch} Branch</span>
+                <span className="text-[#6A97C0] font-medium">Branch:</span>
+                <span className="font-bold text-[#152026]">{selectedSlot.branch} Branch</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Vehicle Type:</span>
-                <span className="font-bold text-accent">{selectedVehicle}</span>
+                <span className="text-[#6A97C0] font-medium">Vehicle Type:</span>
+                <span className="font-bold text-[#1B3D59]">{selectedVehicle}</span>
               </div>
-              <div className="flex justify-between border-t border-white/10 pt-2">
-                <span className="text-slate-400">Assigned Instructor:</span>
-                <span className="font-bold text-white">
+              <div className="flex justify-between border-t border-[#D4EEF8] pt-2">
+                <span className="text-[#6A97C0] font-medium">Assigned Instructor:</span>
+                <span className="font-bold text-[#152026]">
                   {selectedSlot.instructorId?.name || 'Will be assigned by branch'}
                 </span>
               </div>
@@ -802,7 +849,7 @@ export default function BookLessonPage() {
 
             {/* Lesson Category Selector (Regular vs Trial - US-09) */}
             <div className="space-y-1.5 text-xs">
-              <label className="block font-semibold text-slate-300">
+              <label className="block font-bold text-[#152026]">
                 Lesson Type:
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -811,8 +858,8 @@ export default function BookLessonPage() {
                   onClick={() => setLessonType('regular')}
                   className={`p-2.5 rounded-xl border font-bold text-xs transition-all ${
                     lessonType === 'regular'
-                      ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300'
-                      : 'border-white/10 bg-white/5 text-slate-300'
+                      ? 'border-[#1B3D59] bg-[#1B3D59] text-white shadow-sm'
+                      : 'border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40'
                   }`}
                 >
                   Regular Lesson
@@ -822,8 +869,8 @@ export default function BookLessonPage() {
                   onClick={() => setLessonType('trial')}
                   className={`p-2.5 rounded-xl border font-bold text-xs transition-all ${
                     lessonType === 'trial'
-                      ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                      : 'border-white/10 bg-white/5 text-slate-300'
+                      ? 'border-[#1B3D59] bg-[#F3EED8] text-[#152026] shadow-sm font-black'
+                      : 'border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40'
                   }`}
                 >
                   Trial Lesson (US-09)
@@ -833,8 +880,8 @@ export default function BookLessonPage() {
 
             {/* Trial Gate Warning for Type 1 (US-09) */}
             {lessonType === 'trial' && isType1 && !isTrialEligible && (
-              <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                 <p>
                   <strong>US-09 Gate Restricted:</strong> Trial lessons can only be booked after your Learner Written Exam is officially marked <strong>Passed</strong> by the branch Data Entry Officer.
                 </p>
@@ -842,23 +889,23 @@ export default function BookLessonPage() {
             )}
 
             {/* Package Impact Summary */}
-            <div className="p-3.5 bg-cyan-500/10 border border-cyan-400/20 rounded-xl text-xs text-slate-200 space-y-1">
-              <p className="font-bold text-cyan-300">Lesson Balance Impact:</p>
+            <div className="p-3.5 bg-[#D4EEF8]/50 border border-[#D4EEF8] rounded-xl text-xs text-[#152026] space-y-1">
+              <p className="font-bold text-[#1B3D59]">Lesson Balance Impact:</p>
               <div className="flex justify-between">
-                <span>Available Lessons Unlocked:</span>
-                <span className="font-bold">{lessonsRemaining}</span>
+                <span className="text-[#152026]/75">Available Lessons Unlocked:</span>
+                <span className="font-bold text-[#152026]">{lessonsRemaining}</span>
               </div>
               <div className="flex justify-between">
-                <span>Remaining After Booking:</span>
-                <span className="font-bold text-cyan-300">{Math.max(0, lessonsRemaining - 1)} Remaining</span>
+                <span className="text-[#152026]/75">Remaining After Booking:</span>
+                <span className="font-bold text-[#1B3D59]">{Math.max(0, lessonsRemaining - 1)} Remaining</span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+            <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
               <button
                 type="button"
                 onClick={() => setSelectedSlot(null)}
-                className="btn-secondary text-xs py-2 px-4"
+                className="btn-secondary text-xs py-2 px-4 font-bold"
               >
                 Cancel
               </button>
@@ -866,7 +913,7 @@ export default function BookLessonPage() {
                 type="button"
                 disabled={bookingLoading || (lessonType === 'trial' && isType1 && !isTrialEligible)}
                 onClick={handleConfirmBooking}
-                className="btn-primary text-xs py-2 px-5 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary text-xs py-2 px-5 font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 {bookingLoading ? 'Confirming...' : 'Confirm & Reserve Slot'}
               </button>
@@ -877,38 +924,38 @@ export default function BookLessonPage() {
 
       {/* Reschedule Request Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-purple-400/30 rounded-3xl w-full max-w-lg p-5 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-50 bg-[#152026]/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border-2 border-[#D4EEF8] rounded-3xl w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowRescheduleModal(false)}
-              className="absolute right-5 top-5 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10"
+              className="absolute right-5 top-5 p-2 text-[#6A97C0] hover:text-[#152026] rounded-xl hover:bg-[#D4EEF8]"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 font-semibold text-xs mb-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-1">
                 <Clock className="w-3.5 h-3.5" /> DMT Exam Scheduling
               </div>
-              <h3 className="text-xl font-black text-white">Request Trial Date Reschedule</h3>
-              <p className="text-xs text-slate-300">
+              <h3 className="text-xl font-black text-[#152026]">Request Trial Date Reschedule</h3>
+              <p className="text-xs text-[#152026]/75">
                 Submit a reschedule request to your branch Data Entry Officer. Upon approval, your practical trial date will be updated and lesson booking access will reopen automatically.
               </p>
             </div>
 
             <form onSubmit={handleSubmitReschedule} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-bold text-[#152026] mb-1">
                   Current Scheduled Trial Date:
                 </label>
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-white/10 text-white font-bold text-sm">
-                  {student?.trial_date ? format(new Date(student.trial_date), 'MMMM dd, yyyy') : 'None'}
+                <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-bold text-sm">
+                  {safeFormatDate(student?.trial_date, 'MMMM dd, yyyy', 'None')}
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Reason for Reschedule Request: <span className="text-rose-400">*</span>
+                <label className="block font-bold text-[#152026] mb-1">
+                  Reason for Reschedule Request: <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   required
@@ -916,38 +963,41 @@ export default function BookLessonPage() {
                   value={rescheduleReason}
                   onChange={(e) => setRescheduleReason(e.target.value)}
                   placeholder="e.g., Medical reasons, exam clash, or need more preparation..."
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs"
+                  className="w-full px-3.5 py-2.5 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] text-xs font-medium placeholder:text-[#6A97C0]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-bold text-[#152026] mb-1">
                   Preferred New Trial Date (Optional):
                 </label>
-                <input
-                  type="date"
-                  value={preferredRescheduleDate}
-                  onChange={(e) => setPreferredRescheduleDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/15 text-white rounded-xl outline-none focus:border-purple-400 text-xs font-bold"
-                />
-                <span className="text-[10px] text-slate-400 block mt-1">
+                <div className="relative flex items-center">
+                  <CalendarIcon className="w-4 h-4 text-[#6A97C0] absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={preferredRescheduleDate}
+                    onChange={(e) => setPreferredRescheduleDate(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] text-xs font-bold cursor-pointer"
+                  />
+                </div>
+                <span className="text-[10px] text-[#6A97C0] block mt-1">
                   Final trial date assignment will be confirmed by DMT and your branch Data Entry Officer.
                 </span>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setShowRescheduleModal(false)}
                   disabled={submittingReschedule}
-                  className="btn-secondary text-xs py-2 px-4"
+                  className="btn-secondary text-xs py-2 px-4 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingReschedule || !rescheduleReason.trim()}
-                  className="btn-accent text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow"
+                  className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-sm"
                 >
                   {submittingReschedule ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   Submit Reschedule Request
@@ -960,4 +1010,3 @@ export default function BookLessonPage() {
     </div>
   );
 }
-
