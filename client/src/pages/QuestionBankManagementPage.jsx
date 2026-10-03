@@ -162,6 +162,10 @@ export default function QuestionBankManagementPage() {
       toast.error('Please enter a Question List name');
       return;
     }
+    if (!listFormData.language || !['English', 'Sinhala', 'Tamil'].includes(listFormData.language)) {
+      toast.error('Please select a valid language: English, Sinhala, or Tamil');
+      return;
+    }
 
     try {
       if (editingList) {
@@ -309,6 +313,30 @@ export default function QuestionBankManagementPage() {
 
   // Total stats
   const totalQuestionsAllLists = lists.reduce((acc, l) => acc + (l.totalQuestions || 0), 0);
+
+  const renderListLanguageBadge = (lang) => {
+    switch (lang) {
+      case 'Sinhala':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 font-bold text-[10px]">
+            [Sinhala]
+          </span>
+        );
+      case 'Tamil':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-900 border border-purple-300 font-bold text-[10px]">
+            [Tamil]
+          </span>
+        );
+      case 'English':
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-900 border border-sky-300 font-bold text-[10px]">
+            [English]
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
@@ -459,9 +487,7 @@ export default function QuestionBankManagementPage() {
                     {/* Top Badges */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/30 border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-[10px]">
-                          {list.language}
-                        </span>
+                        {renderListLanguageBadge(list.language)}
                         <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#FAFCFE] text-[#152026] border border-[#D4EEF8] text-[10px] font-semibold">
                           {list.vehicleCategory}
                         </span>
@@ -535,8 +561,14 @@ export default function QuestionBankManagementPage() {
                   <ArrowLeft className="w-4 h-4" /> Back to All Question Lists
                 </button>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/20 border border-[#B3D5F1]/30 text-[#D4EEF8] font-bold text-[10px]">
-                    {selectedList.language}
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                    selectedList.language === 'Sinhala'
+                      ? 'bg-amber-400/20 text-amber-200 border border-amber-400/40'
+                      : selectedList.language === 'Tamil'
+                      ? 'bg-purple-400/20 text-purple-200 border border-purple-400/40'
+                      : 'bg-sky-400/20 text-sky-200 border border-sky-400/40'
+                  }`}>
+                    [{selectedList.language}]
                   </span>
                   <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/20 text-[10px] font-semibold">
                     {selectedList.vehicleCategory} Vehicle
@@ -757,8 +789,11 @@ export default function QuestionBankManagementPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#152026] mb-1">Language Track:</label>
+                  <label className="block font-bold text-[#152026] mb-1">
+                    Language Track: <span className="text-rose-500">*</span>
+                  </label>
                   <select
+                    required
                     value={listFormData.language}
                     onChange={(e) =>
                       setListFormData({ ...listFormData, language: e.target.value })
@@ -768,7 +803,6 @@ export default function QuestionBankManagementPage() {
                     <option value="English">English</option>
                     <option value="Sinhala">සිංහල (Sinhala)</option>
                     <option value="Tamil">தமிழ் (Tamil)</option>
-                    <option value="All">All / Multilingual</option>
                   </select>
                 </div>
 
