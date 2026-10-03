@@ -101,6 +101,129 @@ const initialQuestions = [
     language: 'English',
     vehicleCategory: 'Heavy',
   },
+];
+
+const sinhalaSeedQuestions = [
+  {
+    questionText: 'නාගරික මාර්ගයක සැහැල්ලු මෝටර් රථයක් ධාවනය කළ හැකි උපරිම වේග සීමාව කොපමණද?',
+    options: ['පැයට කිලෝමීටර් 50', 'පැයට කිලෝමීටර් 70', 'පැයට කිලෝමීටර් 40', 'පැයට කිලෝමීටර් 60'],
+    correctAnswerIndex: 0,
+    explanation: 'ශ්‍රී ලංකාවේ නීතියට අනුව නාගරික ප්‍රදේශ වල සැහැල්ලු වාහන උපරිම වේගය පැ.කි.මී. 50 කි.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'කහ පැහැයෙන් නිවෙමින් දැල්වෙන (Flashing Amber) රථවාහන සංඥා එළියකින් අදහස් වන්නේ කුමක්ද?',
+    options: ['වහාම වාහනය නවතින්න', 'දෙපස විමසිලිමත්ව බලා ප්‍රවේශමෙන් ඉදිරියට යන්න', 'වේගය වැඩිකර ඉදිරියට යන්න', 'මාර්ගය සම්පූර්ණයෙන්ම වසා ඇත'],
+    correctAnswerIndex: 1,
+    explanation: 'කහ පැහැයෙන් නිවෙමින් දැල්වෙන සංඥාවෙන් රියදුරාට අනතුරු අඟවන්නේ ප්‍රවේශමෙන් ඉදිරියට යන ලෙසයි.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'පදික මාරුවක් (Zebra Crossing) අසල පදිකයෙකු පාර මාරු වීමට සූදානම්ව සිටින විට රියදුරෙකු කළ යුත්තේ කුමක්ද?',
+    options: ['නලා ශබ්ද කර වේගයෙන් යෑම', 'වාහනය නවත්වා පදිකයාට පාර මාරුවීමට ප්‍රමුඛතාව දීම', 'ප්‍රධාන ලාම්පු දල්වා අනතුරු ඇඟවීම', 'වම් පසින් ඉස්සර කර යාම'],
+    correctAnswerIndex: 1,
+    explanation: 'පදික මාරුවකදී නීත්‍යානුකූලව පදිකයින්ට පූර්ණ ප්‍රමුඛතාවය හිමිවේ.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'මාර්ගය මධ්‍යයේ ඇති තනි අඛණ්ඩ සුදු හෝ කහ ඉරකින් (Single Continuous Line) අදහස් වන්නේ කුමක්ද?',
+    options: ['ඕනෑම වේලාවක ඉස්සර කළ හැක', 'එම ඉර මතින් ධාවනය කිරීම හෝ ඉස්සර කිරීම තහනම්ය', 'වාහන නැවැත්වීම සඳහා වෙන්කළ තීරුවකි', 'වේගය වැඩි කළ හැකි සීමාවකි'],
+    correctAnswerIndex: 1,
+    explanation: 'අඛණ්ඩ ඉරක් මතින් ගමන් කිරීම, කැපීම හෝ ඉස්සර කිරීම නීතියෙන් තහනම් වේ.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'වටරවුමකට (Roundabout) ඇතුළු වීමේදී ප්‍රමුඛතාවය ලබාදිය යුත්තේ කාටද?',
+    options: ['වම් පසින් පැමිණෙන වාහන වලට', 'තමන්ගේ දකුණු පසින් වටරවුම තුළ ධාවනය වන වාහන වලට', 'වටරවුමට පිටතින් සිටින වාහන වලට', 'ප්‍රමාණයෙන් විශාල වාහන වලට පමණි'],
+    correctAnswerIndex: 1,
+    explanation: 'ශ්‍රී ලංකාවේ රථවාහන නීතියට අනුව වටරවුමකදී සැමවිටම දකුණෙන් එන වාහන වලට ප්‍රමුඛතාව දිය යුතුය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'සාමාන්‍ය වියළි කාලගුණික තත්ත්වයකදී ඉදිරියෙන් ධාවනය වන වාහනය හා තබාගත යුතු අවම ආරක්ෂිත කාල පරතරය කුමක්ද?',
+    options: ['තත්පර 1ක පරතරය', 'තත්පර 2ක පරතරය (2-Second Rule)', 'තත්පර 5ක පරතරය', 'මීටර් 2ක පරතරය'],
+    correctAnswerIndex: 1,
+    explanation: 'සාමාන්‍ය තත්ත්ව යටතේ ආරක්ෂිත නැවැත්වීමේ පරතරය සඳහා "තත්පර දෙකේ නීතිය" අනුගමනය කළ යුතුය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'හදිසි ආපදා සේවා රථයක් (ගිලන් රථයක් හෝ ගිනි නිවන රථයක්) සයිරන් නලා හඬවමින් පැමිණෙන විට කළ යුත්තේ කුමක්ද?',
+    options: ['එම රථයට ඉදිරියෙන් වේගයෙන් ධාවනය කිරීම', 'වාහනය වම්පසට කර මාර්ගය සම්පූර්ණයෙන්ම නිදහස් කර දීම', 'නලා ශබ්ද කරමින් සාමාන්‍ය පරිදි ගමන් කිරීම', 'ක්ෂණිකව මාර්ගය මැද නැවතීම'],
+    correctAnswerIndex: 1,
+    explanation: 'හදිසි සේවා රථ සඳහා වහාම වම් පසට වාහනය ගෙන මාර්ගය නිදහස් කර දිය යුතුය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'කහ කොටු හන්දියක (Yellow Box Junction) වාහනයක් නැවැත්විය හැක්කේ කුමන අවස්ථාවේදීද?',
+    options: ['ඕනෑම රථවාහන තදබදයකදී', 'දකුණට හැරවීමට බලාපොරොත්තුවෙන් සිටින විට ඉදිරියෙන් එන වාහන නිසා බාධා වී ඇති විට පමණි', 'පදිකයින් සිටින විට පමණි', 'කිසිම අවස්ථාවක නතර කළ නොහැක'],
+    correctAnswerIndex: 1,
+    explanation: 'කහ කොටු හන්දියක නැවැත්විය හැක්කේ දකුණට හැරවීමට බලා සිටින විට ඉදිරියෙන් එන වාහන වලට ඉඩදීමට පමණි.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'වංගුවක්, කඳු මුදුනක් හෝ පදික මාරුවක් අසලදී වෙනත් වාහනයක් ඉස්සර කිරීම (Overtaking):',
+    options: ['ඉදිරියෙන් වාහන නොඑන්නේ නම් කළ හැක', 'සම්පූර්ණයෙන්ම නීති විරෝධී හා අනතුරුදායක වේ', 'රාත්‍රී කාලයේදී පමණක් කළ හැක', 'අඩු වේගයකින් කළ හැක'],
+    correctAnswerIndex: 1,
+    explanation: 'දෘශ්‍යතාව අවහිර වන ස්ථාන වල සහ පදික මාරු අසල ඉස්සර කිරීම සම්පූර්ණයෙන්ම තහනම්ය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'ශ්‍රී ලංකාවේ සැහැල්ලු වාහන රියදුරු බලපත්‍රයක් ලබාගැනීම සඳහා තිබිය යුතු අවම වයස් සීමාව කුමක්ද?',
+    options: ['අවුරුදු 16', 'අවුරුදු 17', 'අවුරුදු 18', 'අවුරුදු 21'],
+    correctAnswerIndex: 2,
+    explanation: 'සැහැල්ලු වාහන (Class B / A1) රියදුරු බලපත්‍රයක් සඳහා අවම වයස අවුරුදු 18 සම්පූර්ණ විය යුතුය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'රාත්‍රී කාලයේදී ඉදිරියෙන් වෙනත් වාහනයක් පැමිණෙන විට ඔබේ වාහනයේ ප්‍රධාන ලාම්පු (Headlights):',
+    options: ['අධි ආලෝකයෙන් (High Beam) තබාගත යුතුය', 'අව ආලෝකයට (Low/Dim Beam) මාරු කළ යුතුය', 'සම්පූර්ණයෙන්ම නිවා දැමිය යුතුය', 'අනතුරු හැඟවීමේ ලාම්පු දැල්විය යුතුය'],
+    correctAnswerIndex: 1,
+    explanation: 'ඉදිරියෙන් එන රියදුරුගේ දෑස් නිලංකාර වීම වැළැක්වීම සඳහා ඩිම් එළියට (Low Beam) මාරු කළ යුතුය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'මාර්ගයක වාහනයක් කාර්මික දෝෂයකට ලක්ව නතර වුවහොත්, අනතුරු ඇඟවීමේ ත්‍රිකෝණය (Warning Triangle) තැබිය යුතු අවම දුර කොපමණද?',
+    options: ['මීටර් 10ක් පිටුපසින්', 'මීටර් 25ක් පිටුපසින්', 'මීටර් 50ක් පිටුපසින්', 'මීටර් 100ක් පිටුපසින්'],
+    correctAnswerIndex: 2,
+    explanation: 'පසුපසින් එන වාහන වලට කලින් අනතුරු ඇඟවීම සඳහා අවම වශයෙන් මීටර් 50ක් පිටුපසින් ත්‍රිකෝණය තැබිය යුතුය.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'රියදුරෙකුගේ රුධිරයේ තිබිය හැකි උපරිම නීත්‍යානුකූල මධ්‍යසාර (Alcohol) ප්‍රමාණය කොපමණද?',
+    options: ['රුධිර මිලිලීටර් 100 කට මිලිග්‍රෑම් 30 (0.03g/100ml)', 'රුධිර මිලිලීටර් 100 කට මිලිග්‍රෑම් 80 (0.08g/100ml)', 'කිසිදු සීමාවක් නැත', 'රුධිර මිලිලීටර් 100 කට මිලිග්‍රෑම් 100'],
+    correctAnswerIndex: 0,
+    explanation: 'ශ්‍රී ලංකාවේ නීතිය අනුව රුධිර මිලිලීටර් 100 කට මිලිග්‍රෑම් 30 ට වැඩි මධ්‍යසාර තිබීම නීති විරෝධී වේ.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'රථවාහන සංඥා පුවරු අතරින් ත්‍රිකෝණාකාර හැඩයෙන් යුත් පුවරු වලින් දැක්වෙන්නේ මොනවාද?',
+    options: ['විධාන සංඥා (Mandatory Signs)', 'අන්තරාය ඇඟවීමේ සංඥා (Warning Signs)', 'තොරතුරු සංඥා (Informative Signs)', 'දිශා පෙන්වන සංඥා'],
+    correctAnswerIndex: 1,
+    explanation: 'ත්‍රිකෝණාකාර රතු දාර සහිත පුවරු වලින් ඉදිරියෙන් ඇති අන්තරායන් පිළිබඳව අවවාද කරනු ලබයි.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'රවුම් හැඩැති රතු දාරයක් සහිත සංඥා පුවරු වලින් ප්‍රකාශ වන්නේ කුමක්ද?',
+    options: ['අවවාදාත්මක සංඥා', 'තහනම් හෝ නියෝගාත්මක විධාන (Prohibitory / Mandatory Orders)', 'තොරතුරු දැනුම්දීම්', 'නවාතැන් පොළවල්'],
+    correctAnswerIndex: 1,
+    explanation: 'රවුම් රතු දාර සහිත පුවරු මගින් යම් ක්‍රියාවක් කිරීම තහනම් බව හෝ විධානයක් නිකුත් කරයි.',
+    language: 'Sinhala',
+    vehicleCategory: 'Light',
+  },
   {
     questionText: 'ශ්‍රී ලංකාවේ බර වාහන (බස්/ලොරි) රියදුරු බලපත්‍රයක් ලබාගැනීමට සැහැල්ලු වාහන බලපත්‍රය කොපමණ කාලයක් සතුව තිබිය යුතුද?',
     options: ['මාස 6ක්', 'වසර 1ක්', 'වසර 2ක්', 'වසර 3ක්'],
@@ -109,6 +232,89 @@ const initialQuestions = [
     language: 'Sinhala',
     vehicleCategory: 'Heavy',
   },
+];
+
+const tamilSeedQuestions = [
+  {
+    questionText: 'நகர வீதிகளில் மோட்டார் கார்களுக்கான அதிகபட்ச வேக வரம்பு யாது?',
+    options: ['மணிக்கு 50 கி.மீ', 'மணிக்கு 70 கி.மீ', 'மணிக்கு 40 கி.மீ', 'மணிக்கு 60 கி.மீ'],
+    correctAnswerIndex: 0,
+    explanation: 'இலங்கையில் நகர்ப்புற வீதிகளில் மோட்டார் வாகனங்களுக்கு 50 கி.மீ/மணி வேக வரம்பு உள்ளது.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'மஞ்சள் நிறத்தில் விட்டு விட்டு ஒளிரும் போக்குவரத்து சைகை வெளிச்சம் எதனைக் குறிக்கிறது?',
+    options: ['உடனே நிறுத்துக', 'இருபுறமும் அவதானித்து எச்சரிக்கையுடன் முன்னேறுக', 'வேகத்தை கூட்டுக', 'வீதி மூடப்பட்டுள்ளது'],
+    correctAnswerIndex: 1,
+    explanation: 'எச்சரிக்கையுடன் வாகனத்தைச் செலுத்த வேண்டும் என்பதைக் குறிக்கிறது.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'பாதசாரி கடவையில் (Zebra Crossing) பாதசாரி ஒருவர் கடக்கத் தயாராகும்போது செய்ய வேண்டியது யாது?',
+    options: ['ஒலிப்பான் எழுப்பி தொடர்ந்து செல்லுதல்', 'வாகனத்தை நிறுத்தி பாதசாரிக்கு முதலிடம் கொடுத்தல்', 'முகப்பு விளக்குகளை ஒளிரச் செய்தல்', 'வலதுபுறமாக முந்துதல்'],
+    correctAnswerIndex: 1,
+    explanation: 'பாதசாரி கடவைகளில் பாதசாரிகளுக்கே முழு முன்னுரிமை உண்டு.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'வீதியின் நடுவே உள்ள தொடர்ச்சியான வெள்ளைக் கோடு எதனை உணர்த்துகிறது?',
+    options: ['முந்திச் செல்லலாம்', 'கோட்டைத் தாண்டி முந்துவது தடைசெய்யப்பட்டுள்ளது', 'வாகனங்கள் நிறுத்தலாம்', 'வேகத்தை அதிகரிக்கலாம்'],
+    correctAnswerIndex: 1,
+    explanation: 'தொடர்ச்சியான கோட்டைத் தாண்டுவது அல்லது அதன் மேல் வாகனம் செலுத்துவது சட்டப்படி குற்றமாகும்.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'வட்டச்சுற்றில் (Roundabout) நுழையும் போது யாருக்கு முன்னுரிமை அளிக்க வேண்டும்?',
+    options: ['இடதுபுறத்தில் வரும் வாகனங்களுக்கு', 'வட்டச்சுற்றினுள் வலதுபுறத்தில் இருந்து வரும் வாகனங்களுக்கு', 'வெளியேறும் வாகனங்களுக்கு', 'பெரிய வாகனங்களுக்கு மட்டும்'],
+    correctAnswerIndex: 1,
+    explanation: 'இலங்கையின் போக்குவரத்து விதிகளின்படி வட்டச்சுற்றில் வலதுபுற வாகனங்களுக்கே முன்னுரிமை உண்டு.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'சாதாரண உலர் காலநிலையின் போது முன்னால் செல்லும் வாகனத்துடன் பேண வேண்டிய குறைந்தபட்ச இடைவெளி என்ன?',
+    options: ['1 வினாடி இடைவெளி', '2 வினாடிகள் விதி (2-Second Rule)', '5 வினாடிகள் விதி', '10 மீட்டர்கள்'],
+    correctAnswerIndex: 1,
+    explanation: 'பாதுகாப்பான நிறுத்த இடைவெளிக்கு 2 வினாடிகள் விதியைப் பின்பற்ற வேண்டும்.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'அவசர ஊர்தி (ஆம்புலன்ஸ் அல்லது தீயணைப்பு வாகனம்) வரும்போது சாரதி செய்ய வேண்டியது யாது?',
+    options: ['அதற்கு முன்னால் வேகமாக ஓட்டுதல்', 'வாகனத்தை இடதுபுறமாக ஒதுக்கி வழியமைத்தல்', 'ஒலிப்பான் எழுப்பி தொடர்ந்து செல்லுதல்', 'வீதியின் நடுவே நிறுத்துதல்'],
+    correctAnswerIndex: 1,
+    explanation: 'அவசர ஊர்திகளுக்கு உடனடியாக இடதுபுறமாக ஒதுங்கி பாதையை விட்டுக்கொடுக்க வேண்டும்.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'மஞ்சள் பெட்டி சந்திப்பில் (Yellow Box Junction) வாகனத்தை எப்போது நிறுத்தலாம்?',
+    options: ['எந்த போக்குவரத்து நெரிசலிலும்', 'வலதுபுறம் திரும்ப காத்திருக்கும் போது எதிரே வரும் வாகனங்களுக்காக மட்டும்', 'பாதசாரிகள் இருக்கும் போது', 'எப்போதும் நிறுத்த முடியாது'],
+    correctAnswerIndex: 1,
+    explanation: 'வலதுபுறம் திரும்பக் காத்திருக்கும்போது மட்டுமே மஞ்சள் பெட்டியில் நிற்க அனுமதிக்கப்படுகிறது.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'இலங்கையில் இலகுரக வாகன ஓட்டுநர் உரிமம் பெறுவதற்கான குறைந்தபட்ச வயது என்ன?',
+    options: ['16 வயது', '17 வயது', '18 வயது', '21 வயது'],
+    correctAnswerIndex: 2,
+    explanation: 'இலகுரக வாகன ஓட்டுநர் உரிமத்திற்கு குறைந்தபட்சம் 18 வயது பூர்த்தியடைந்திருக்க வேண்டும்.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  },
+  {
+    questionText: 'முக்கோண வடிவ போக்குவரத்து அடையாள பலகைகள் எதனைக் குறிக்கின்றன?',
+    options: ['கட்டாய உத்தரவுகள்', 'எச்சரிக்கை அடையாளங்கள் (Warning Signs)', 'தகவல் பலகைகள்', 'திசை அடையாளங்கள்'],
+    correctAnswerIndex: 1,
+    explanation: 'சிவப்பு எல்லை கொண்ட முக்கோண பலகைகள் முன்னுள்ள ஆபத்துக்களை எச்சரிக்கின்றன.',
+    language: 'Tamil',
+    vehicleCategory: 'Light',
+  }
 ];
 
 // Helper to ensure default QuestionLists exist and unassigned questions are linked
@@ -126,7 +332,6 @@ async function ensureQuestionLists() {
       isActive: true,
     });
 
-    // Also create a second question list to immediately demonstrate multiple question lists
     await QuestionList.create({
       name: 'Road Signs, Signals & Road Markings Master Set',
       description: 'Comprehensive practice covering mandatory signs, warning signals, road lane markings, and police hand gestures.',
@@ -145,31 +350,34 @@ async function ensureQuestionLists() {
       isActive: true,
     });
   } else {
-    defaultList = await QuestionList.findOne({});
+    defaultList = await QuestionList.findOne({ language: 'English' });
   }
 
-  // Ensure Sinhala and Tamil question lists exist (Rules 1 & 7)
-  const sinhalaCount = await QuestionList.countDocuments({ language: 'Sinhala' });
-  if (sinhalaCount === 0) {
-    const sinhalaList = await QuestionList.create({
+  // Ensure Sinhala question list with Sinhala questions exists
+  let sinhalaList = await QuestionList.findOne({ language: 'Sinhala' });
+  if (!sinhalaList) {
+    sinhalaList = await QuestionList.create({
       name: 'Sinhala DMT Theory Paper - Set 1 (සිංහල මාර්ග නීති)',
-      description: 'ශ්‍රී ලංකා මෝටර් රථ ප්‍රවාහන දෙපාර්තමේන්තුවේ නිල මාර්ග නීති හා සංඥා ප්‍රශ්න පත්‍රය.',
+      description: 'ශ්‍රී ලංකා මෝටර් රථ ප්‍රවාහන දෙපාර්තමේන්තුවේ නිල මාර්ග නීති, සංඥා හා රියදුරු විභාග ප්‍රශ්න පත්‍රය.',
       language: 'Sinhala',
       vehicleCategory: 'Light',
       passingScore: 80,
       isActive: true,
     });
-    const sinhalaQuestions = initialQuestions.map((q) => ({
+  }
+  const sinhalaQCount = await QuizQuestion.countDocuments({ questionListId: sinhalaList._id });
+  if (sinhalaQCount === 0) {
+    const sinhalaQuestions = sinhalaSeedQuestions.map((q) => ({
       ...q,
-      language: 'Sinhala',
       questionListId: sinhalaList._id,
     }));
     await QuizQuestion.insertMany(sinhalaQuestions);
   }
 
-  const tamilCount = await QuestionList.countDocuments({ language: 'Tamil' });
-  if (tamilCount === 0) {
-    const tamilList = await QuestionList.create({
+  // Ensure Tamil question list with Tamil questions exists
+  let tamilList = await QuestionList.findOne({ language: 'Tamil' });
+  if (!tamilList) {
+    tamilList = await QuestionList.create({
       name: 'Tamil DMT Theory Paper - Set 1 (தமிழ் வீதி விதிகள்)',
       description: 'இலங்கை மோட்டார் போக்குவரத்து திணைக்களத்தின் உத்தியோகபூர்வ வீதி விதிகள் வினாத்தாள்.',
       language: 'Tamil',
@@ -177,28 +385,24 @@ async function ensureQuestionLists() {
       passingScore: 80,
       isActive: true,
     });
-    const tamilQuestions = initialQuestions.map((q) => ({
+  }
+  const tamilQCount = await QuizQuestion.countDocuments({ questionListId: tamilList._id });
+  if (tamilQCount === 0) {
+    const tamilQuestions = tamilSeedQuestions.map((q) => ({
       ...q,
-      language: 'Tamil',
       questionListId: tamilList._id,
     }));
     await QuizQuestion.insertMany(tamilQuestions);
   }
 
-  // Ensure questions exist in DB
-  const qCount = await QuizQuestion.countDocuments({});
-  if (qCount === 0) {
-    const questionsToInsert = initialQuestions.map((q) => ({
+  // Ensure English questions exist in DB
+  const englishQCount = await QuizQuestion.countDocuments({ language: 'English' });
+  if (englishQCount === 0 && defaultList) {
+    const englishQuestions = initialQuestions.filter(q => q.language === 'English').map((q) => ({
       ...q,
-      questionListId: defaultList ? defaultList._id : null,
+      questionListId: defaultList._id,
     }));
-    await QuizQuestion.insertMany(questionsToInsert);
-  } else if (defaultList) {
-    // If questions exist without questionListId, associate them with the default list
-    await QuizQuestion.updateMany(
-      { $or: [{ questionListId: null }, { questionListId: { $exists: false } }] },
-      { $set: { questionListId: defaultList._id } }
-    );
+    await QuizQuestion.insertMany(englishQuestions);
   }
 
   return defaultList;
