@@ -441,6 +441,31 @@ export default function StudentDashboard() {
             st?.account_status === 'Verified'
           );
 
+          const hasSubmitted = Boolean(
+            st?.hasSubmittedPayment ||
+            st?.latestPayment ||
+            (st?.advancePaymentStatus && st.advancePaymentStatus !== 'none') ||
+            st?.isAdvancePaid
+          );
+
+          if (!isNowVerified && !hasSubmitted) {
+            navigate('/payment-gateway', {
+              replace: true,
+              state: {
+                studentName: user?.name || st.name,
+                studentId: st._id,
+                userId: user?._id || user?.id,
+                branch: st.branch || user?.branch,
+                nic: st.nic || user?.nic,
+                email: user?.email,
+                studentType: st.student_type || st.studentType || user?.student_type,
+                advanceAmount: st.advancePaymentAmount || 5000,
+                registrationReference: st.advancePaymentReference,
+              },
+            });
+            return;
+          }
+
           if (isNowVerified && !localStorage.getItem('seen_verified_modal_' + st._id)) {
             setShowVerifiedCelebrationModal(true);
           } else if (showToast) {
@@ -778,6 +803,17 @@ export default function StudentDashboard() {
       user?.account_status === 'Verified' ||
       user?.status === 'active'
     )
+  );
+
+  const hasSubmittedPayment = Boolean(
+    profile?.hasSubmittedPayment ||
+    profile?.latestPayment ||
+    student?.hasSubmittedPayment ||
+    student?.latestPayment ||
+    (profile?.advancePaymentStatus && profile.advancePaymentStatus !== 'none') ||
+    (student?.advancePaymentStatus && student.advancePaymentStatus !== 'none') ||
+    profile?.isAdvancePaid ||
+    student?.isAdvancePaid
   );
 
   const isAdvancePaymentPending = Boolean(!isCancelled && !isVerifiedAccount);
@@ -1261,38 +1297,52 @@ export default function StudentDashboard() {
         </div>
 
         {/* Primary Warning Hero Card */}
-        <div className="relative rounded-3xl bg-white border-2 border-amber-300 p-6 sm:p-10 shadow-sm overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-amber-400" />
+        <div className={`relative rounded-3xl bg-white border-2 ${!hasSubmittedPayment ? 'border-rose-400' : 'border-amber-300'} p-6 sm:p-10 shadow-sm overflow-hidden`}>
+          <div className={`absolute inset-x-0 top-0 h-1.5 ${!hasSubmittedPayment ? 'bg-rose-500' : 'bg-amber-400'}`} />
 
           <div className="flex flex-col lg:flex-row items-start gap-6 relative z-10">
             {/* Glowing Icon Badge */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-[#F3EED8] border-2 border-amber-300 flex items-center justify-center text-amber-700 flex-shrink-0 shadow-xs">
-              <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-600" />
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl ${!hasSubmittedPayment ? 'bg-rose-50 border-2 border-rose-300 text-rose-700' : 'bg-[#F3EED8] border-2 border-amber-300 text-amber-700'} flex items-center justify-center flex-shrink-0 shadow-xs`}>
+              {!hasSubmittedPayment ? (
+                <CreditCard className="w-9 h-9 sm:w-11 sm:h-11 text-rose-600" />
+              ) : (
+                <ShieldAlert className="w-9 h-9 sm:w-11 sm:h-11 text-amber-600" />
+              )}
             </div>
 
             <div className="space-y-4 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" /> Payment Verification In Progress
-                </span>
+                {!hasSubmittedPayment ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-800 border border-rose-300 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Advance Payment Required (Unpaid)
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" /> Payment Verification In Progress
+                  </span>
+                )}
                 <span className="text-xs text-[#6A97C0] font-mono">
-                  Ref: {profile?.advancePaymentReference || 'ADV-PENDING'}
+                  Ref: {profile?.advancePaymentReference || 'ADV-REQUIRED'}
                 </span>
               </div>
 
               <div className="space-y-3">
                 <h1 className="text-2xl sm:text-3xl font-black text-[#152026] tracking-tight">
-                  {isPhysicalCash
+                  {!hasSubmittedPayment
+                    ? `Ayubowan, ${user?.name}! Complete Your Advance Payment`
+                    : isPhysicalCash
                     ? `Ayubowan, ${user?.name}! Branch Advance Payment Pending`
                     : `Ayubowan, ${user?.name}! Payment Verification In Progress`}
                 </h1>
 
                 {/* EXACT REQUIRED STATUS PROMPT */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#F3EED8] border-2 border-amber-300 shadow-xs">
+                <div className={`p-4 sm:p-5 rounded-2xl ${!hasSubmittedPayment ? 'bg-rose-50/70 border-2 border-rose-300' : 'bg-[#F3EED8] border-2 border-amber-300'} shadow-xs`}>
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className={`w-5 h-5 ${!hasSubmittedPayment ? 'text-rose-700' : 'text-amber-700'} flex-shrink-0 mt-0.5`} />
                     <div className="text-sm sm:text-base font-extrabold text-[#152026] leading-relaxed">
-                      {isPhysicalCash
+                      {!hasSubmittedPayment
+                        ? 'Your registration details have been saved, but no advance payment or bank deposit slip has been submitted yet. Please complete your advance payment of LKR 5,000 to submit your registration for branch verification.'
+                        : isPhysicalCash
                         ? 'Please visit your nearest branch to complete your advance payment of LKR 5,000. You will gain full system access once the payment is verified by our team.'
                         : 'Your payment is currently being verified by a Data Entry Officer. You cannot access the system until your account is verified.'}
                     </div>
@@ -1303,10 +1353,12 @@ export default function StudentDashboard() {
               {/* Warning Notice Details Box */}
               <div className="rounded-2xl bg-[#D4EEF8]/30 border border-[#D4EEF8] p-4 sm:p-5 space-y-2 text-xs sm:text-sm text-[#152026] leading-relaxed">
                 <p>
-                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-[#1B3D59]">Rs. 5,000.00</strong> is verified by our branch Staff Officer or Data Entry Officer.
+                  You have successfully logged in, but your <strong>Student Dashboard, Practical Lesson Bookings, and Course Package Scheduling</strong> are locked until your advance deposit of <strong className="text-[#1B3D59]">Rs. 5,000.00</strong> is paid and verified by our branch Staff Officer or Data Entry Officer.
                 </p>
                 <p className="text-[#475569] text-xs">
-                  {isPhysicalCash
+                  {!hasSubmittedPayment
+                    ? 'You can pay instantly online via card, upload a bank transfer slip (BOC, People\'s, Commercial, or HNB), or pay in cash at the counter.'
+                    : isPhysicalCash
                     ? 'Our staff will record your payment upon counter visit and immediately activate your account.'
                     : 'As soon as our Data Entry Officer approves your bank slip or gateway submission, your dashboard and practical lesson booking privileges will unlock automatically.'}
                 </p>
@@ -1327,41 +1379,68 @@ export default function StudentDashboard() {
                   </span>
                 </div>
                 <div className="p-3 rounded-xl bg-white border border-[#D4EEF8] text-xs shadow-xs">
-                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Verification Status</span>
-                  <span className="font-bold text-amber-700 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 animate-pulse text-amber-600" /> Awaiting Officer Verification
-                  </span>
+                  <span className="text-[#6A97C0] block text-[11px] font-semibold">Payment Status</span>
+                  {!hasSubmittedPayment ? (
+                    <span className="font-bold text-rose-700 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Payment Required (Unpaid)
+                    </span>
+                  ) : (
+                    <span className="font-bold text-amber-700 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 animate-pulse text-amber-600" /> Awaiting Officer Verification
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => fetchProfile(true)}
-                  disabled={checkingStatus}
-                  className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
-                >
-                  <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
-                  {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
-                </button>
+                {!hasSubmittedPayment ? (
+                  <Link
+                    to="/payment-gateway"
+                    state={{
+                      studentName: user?.name,
+                      studentId: profile?._id,
+                      userId: user?.id || user?._id,
+                      branch: profile?.branch || user?.branch,
+                      nic: profile?.nic || user?.nic,
+                      email: user?.email,
+                      advanceAmount: profile?.advancePaymentAmount || 5000,
+                      registrationReference: profile?.advancePaymentReference,
+                    }}
+                    className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4 text-white" /> Complete Advance Payment Now (Rs. 5,000)
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => fetchProfile(true)}
+                      disabled={checkingStatus}
+                      className="btn-primary text-xs sm:text-sm py-3 px-6 font-extrabold flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />
+                      {checkingStatus ? 'Checking Status...' : 'Check / Refresh Verification Status'}
+                    </button>
 
-                <Link
-                  to="/payment-gateway"
-                  state={{
-                    studentName: user?.name,
-                    studentId: profile?._id,
-                    userId: user?.id || user?._id,
-                    branch: profile?.branch || user?.branch,
-                    nic: profile?.nic || user?.nic,
-                    email: user?.email,
-                    advanceAmount: profile?.advancePaymentAmount || 5000,
-                    registrationReference: profile?.advancePaymentReference,
-                  }}
-                  className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 cursor-pointer shadow-xs"
-                >
-                  <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Re-upload / Change Payment Slip
-                </Link>
+                    <Link
+                      to="/payment-gateway"
+                      state={{
+                        studentName: user?.name,
+                        studentId: profile?._id,
+                        userId: user?.id || user?._id,
+                        branch: profile?.branch || user?.branch,
+                        nic: profile?.nic || user?.nic,
+                        email: user?.email,
+                        advanceAmount: profile?.advancePaymentAmount || 5000,
+                        registrationReference: profile?.advancePaymentReference,
+                      }}
+                      className="btn-secondary text-xs sm:text-sm py-3 px-5 font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Re-upload / Change Payment Slip
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

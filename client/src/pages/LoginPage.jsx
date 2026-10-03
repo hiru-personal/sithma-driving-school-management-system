@@ -48,7 +48,7 @@ export default function LoginPage() {
       if (res.mustChangePassword) {
         setShowForcePasswordModal(true);
       } else {
-        redirectBasedOnRole(res.user.role, res.user, res.student);
+        redirectBasedOnRole(res.user.role, res.user, res.student, res);
       }
     } else {
       if (res?.pendingVerification) {
@@ -62,8 +62,43 @@ export default function LoginPage() {
     }
   };
 
-  const redirectBasedOnRole = (role) => {
+  const redirectBasedOnRole = (role, user, student, authRes = {}) => {
     if (role === 'student') {
+      const isVerified = Boolean(
+        user?.status === 'active' ||
+        user?.account_status === 'Verified' ||
+        student?.isAdvancePaid ||
+        student?.advancePaymentStatus === 'verified'
+      );
+
+      const hasSubmittedPayment = Boolean(
+        authRes?.hasSubmittedPayment ||
+        authRes?.latestPayment ||
+        student?.hasSubmittedPayment ||
+        student?.latestPayment ||
+        (student?.advancePaymentStatus && student.advancePaymentStatus !== 'none') ||
+        student?.isAdvancePaid
+      );
+
+      // If student has not submitted any payment yet, send them straight to complete payment
+      if (!isVerified && !hasSubmittedPayment) {
+        navigate('/payment-gateway', {
+          replace: true,
+          state: {
+            studentName: user?.name,
+            studentId: student?._id,
+            userId: user?._id || user?.id,
+            branch: student?.branch || user?.branch,
+            nic: student?.nic || user?.nic,
+            email: user?.email,
+            studentType: student?.student_type || student?.studentType || user?.student_type,
+            advanceAmount: student?.advancePaymentAmount || 5000,
+            registrationReference: student?.advancePaymentReference,
+          },
+        });
+        return;
+      }
+
       navigate('/student/dashboard');
     } else if (role === 'admin') {
       navigate('/admin/dashboard');
@@ -87,9 +122,11 @@ export default function LoginPage() {
           onComplete={() => {
             setShowForcePasswordModal(false);
             const userJson = localStorage.getItem('sithma_user');
+            const studentJson = localStorage.getItem('sithma_student');
             if (userJson) {
               const u = JSON.parse(userJson);
-              redirectBasedOnRole(u.role);
+              const s = studentJson ? JSON.parse(studentJson) : null;
+              redirectBasedOnRole(u.role, u, s);
             }
           }}
         />

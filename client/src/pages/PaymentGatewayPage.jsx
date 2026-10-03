@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import {
   CreditCard,
@@ -111,6 +112,7 @@ export default function PaymentGatewayPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const fileRef = useRef(null);
+  const { user, student, updateStudentData } = useAuth();
 
   // ── State passed from RegisterPage OR storage fallback ──────────────
   const savedPending = (() => {
@@ -126,16 +128,24 @@ export default function PaymentGatewayPage() {
   })();
 
   const regData = location.state || savedPending || {};
-  const {
-    studentName = regData.name || 'Student',
-    studentId = null,
-    userId = regData.pendingUserId || null,
-    branch = 'Maharagama',
-    nic = '',
-    email = '',
-    advanceAmount = 5000,
-    registrationReference = `REG-${Date.now().toString().slice(-6)}`,
-  } = regData;
+  const studentName = regData.studentName || regData.name || user?.name || 'Student';
+  const studentId = regData.studentId || student?._id || null;
+  const userId = regData.userId || regData.pendingUserId || user?._id || user?.id || null;
+  const branch = regData.branch || student?.branch || user?.branch || 'Maharagama';
+  const nic = regData.nic || student?.nic || user?.nic || '';
+  const email = regData.email || user?.email || '';
+  const studentType =
+    regData.studentType ||
+    regData.student_type ||
+    student?.student_type ||
+    student?.studentType ||
+    user?.student_type ||
+    'Type 1';
+  const advanceAmount = regData.advanceAmount || student?.advancePaymentAmount || 5000;
+  const registrationReference =
+    regData.registrationReference ||
+    student?.advancePaymentReference ||
+    `REG-${Date.now().toString().slice(-6)}`;
 
   React.useEffect(() => {
     if (location.state?.studentName || location.state?.name) {
@@ -222,13 +232,23 @@ export default function PaymentGatewayPage() {
       fd.append('bankName', slipForm.bankName);
       fd.append('transactionReference', slipForm.reference || `BOC-ADV-${Date.now().toString().slice(-6)}`);
       fd.append('paymentType', 'advance');
-      fd.append('pendingUserId', userId || '');
+      fd.append('pendingUserId', userId || user?._id || '');
+      fd.append('userId', userId || user?._id || '');
+      fd.append('studentId', studentId || student?._id || '');
 
       const res = await api.post('/payments/upload-pending', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (res.data.success) {
+        if (updateStudentData && student) {
+          updateStudentData({
+            ...student,
+            advancePaymentStatus: 'pending',
+            hasSubmittedPayment: true,
+            latestPayment: res.data.payment,
+          });
+        }
         setDoneData({
           method: 'slip',
           reference: slipForm.reference || res.data.payment?.transactionReference || 'N/A',
@@ -265,11 +285,21 @@ export default function PaymentGatewayPage() {
         amount: advanceAmount,
         bankName: 'Online Payment Gateway (Sithma Pay)',
         transactionReference: `ONPAY-${Date.now().toString().slice(-8)}`,
-        pendingUserId: userId || '',
+        pendingUserId: userId || user?._id || '',
+        userId: userId || user?._id || '',
+        studentId: studentId || student?._id || '',
         cardLast4: cleaned.slice(-4),
       });
 
       if (res.data.success) {
+        if (updateStudentData && student) {
+          updateStudentData({
+            ...student,
+            advancePaymentStatus: 'pending',
+            hasSubmittedPayment: true,
+            latestPayment: res.data.payment,
+          });
+        }
         setCardStep('done');
         setDoneData({
           method: 'online',
@@ -291,11 +321,22 @@ export default function PaymentGatewayPage() {
   const handlePhysicalChoice = async () => {
     setLoading(true);
     try {
-      await api.post('/payments/register-physical-intent', {
-        pendingUserId: userId || '',
+      const res = await api.post('/payments/register-physical-intent', {
+        pendingUserId: userId || user?._id || '',
+        userId: userId || user?._id || '',
+        studentId: studentId || student?._id || '',
         branch,
         amount: advanceAmount,
-      }).catch(() => {});
+      }).catch(() => null);
+
+      if (updateStudentData && student) {
+        updateStudentData({
+          ...student,
+          advancePaymentStatus: 'pending',
+          hasSubmittedPayment: true,
+          payment_method: 'physical_branch',
+        });
+      }
     } finally {
       setLoading(false);
       setDoneData({ method: 'physical', branch, amount: advanceAmount });
@@ -303,8 +344,8 @@ export default function PaymentGatewayPage() {
     }
   };
 
-  // ─── If no state (direct URL access), show helpful status notice ───────────
-  if (!regData.studentName && !studentId) {
+  // ─── If no state and no logged-in user, show helpful status notice ─────────
+  if (!regData.studentName && !studentId && !user) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center gap-5 px-4 text-center max-w-md mx-auto">
         <div className="card p-8 bg-white border border-[#D4EEF8] rounded-3xl shadow-xl space-y-4">
@@ -442,15 +483,24 @@ export default function PaymentGatewayPage() {
               )}
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Link
-                  to="/login"
-                  className="flex-1 bg-[#1B3D59] hover:bg-[#152026] text-white py-3 text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-all"
-                >
-                  Go to Sign In Portal <ArrowRight className="w-4 h-4" />
-                </Link>
+                {user ? (
+                  <Link
+                    to="/student/dashboard"
+                    className="flex-1 bg-[#1B3D59] hover:bg-[#152026] text-white py-3 text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                  >
+                    Go to Student Dashboard <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="flex-1 bg-[#1B3D59] hover:bg-[#152026] text-white py-3 text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                  >
+                    Go to Sign In Portal <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
                 <Link
                   to="/"
-                  className="py-3 px-5 text-sm font-semibold rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors flex items-center justify-center gap-2"
+                  className="py-3 px-5 text-sm font-semibold rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   Back to Home
                 </Link>

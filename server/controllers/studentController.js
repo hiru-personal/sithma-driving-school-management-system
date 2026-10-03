@@ -204,9 +204,27 @@ exports.getStudentById = async (req, res) => {
       });
     }
 
+    const Payment = require('../models/Payment');
+    const latestPayment = await Payment.findOne({
+      studentId: student._id,
+      paymentType: 'advance',
+    }).sort({ createdAt: -1 });
+
+    const studentObj = sanitizeStudentForType(student.toObject());
+    const hasSubmittedPayment = Boolean(
+      latestPayment ||
+      ['pending', 'verified'].includes(student.advancePaymentStatus) ||
+      student.isAdvancePaid
+    );
+    studentObj.latestPayment = latestPayment;
+    studentObj.hasSubmittedPayment = hasSubmittedPayment;
+    if (latestPayment && latestPayment.transactionReference) {
+      studentObj.advancePaymentReference = latestPayment.transactionReference;
+    }
+
     return res.status(200).json({
       success: true,
-      student: sanitizeStudentForType(student),
+      student: studentObj,
     });
   } catch (error) {
     return res.status(500).json({
