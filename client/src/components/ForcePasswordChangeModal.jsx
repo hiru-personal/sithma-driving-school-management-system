@@ -42,40 +42,40 @@ export default function ForcePasswordChangeModal({ onComplete }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-      <div className="w-full max-w-md p-6 sm:p-8 rounded-3xl bg-slate-900 border border-amber-400/40 shadow-[0_20px_60px_rgba(245,158,11,0.25)] space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm">
+      <div className="w-full max-w-md p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#D4EEF8] shadow-2xl space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] flex-shrink-0">
             <Lock className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-white font-heading">
+            <h3 className="text-lg font-black text-[#152026]">
               Password Change Required
             </h3>
-            <p className="text-xs text-amber-300">
+            <p className="text-xs text-[#6A97C0] font-bold">
               First-time login security verification
             </p>
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-slate-300 leading-relaxed space-y-1">
+        <div className="p-3.5 rounded-2xl bg-[#F3EED8] border border-[#6A97C0]/30 text-xs text-[#152026] leading-relaxed space-y-1">
           <p>
-            Hello <strong className="text-white">{user?.name}</strong>. As a newly provisioned{' '}
-            <strong className="text-amber-300 uppercase">{user?.role}</strong> account, system security policies require you to change your initial password before accessing your workspace.
+            Hello <strong className="text-[#152026]">{user?.name}</strong>. As a newly provisioned{' '}
+            <strong className="text-[#1B3D59] uppercase">{user?.role}</strong> account, system security policies require you to change your initial password before accessing your workspace.
           </p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 flex-shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold text-slate-300 mb-1">
-              Current / Initial Password <span className="text-rose-400">*</span>
+            <label className="block font-bold text-[#152026] mb-1">
+              Current / Initial Password <span className="text-rose-500">*</span>
             </label>
             <input
               type="password"
@@ -83,13 +83,13 @@ export default function ForcePasswordChangeModal({ onComplete }) {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Enter the initial temporary password"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-white/15 text-white text-sm outline-none focus:border-amber-400"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] text-sm outline-none focus:border-[#1B3D59]"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-300 mb-1">
-              New Password <span className="text-rose-400">*</span>
+            <label className="block font-bold text-[#152026] mb-1">
+              New Password <span className="text-rose-500">*</span>
             </label>
             <input
               type="password"
@@ -97,16 +97,16 @@ export default function ForcePasswordChangeModal({ onComplete }) {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Min 8 chars, 1 upper, 1 lower, 1 digit"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-white/15 text-white text-sm outline-none focus:border-amber-400"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] text-sm outline-none focus:border-[#1B3D59]"
             />
-            <p className="text-[10px] text-slate-400 mt-1">
+            <p className="text-[10px] text-[#6A97C0] mt-1">
               Must be at least 8 characters with upper, lower, and numeric characters.
             </p>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-300 mb-1">
-              Confirm New Password <span className="text-rose-400">*</span>
+            <label className="block font-bold text-[#152026] mb-1">
+              Confirm New Password <span className="text-rose-500">*</span>
             </label>
             <input
               type="password"
@@ -114,7 +114,7 @@ export default function ForcePasswordChangeModal({ onComplete }) {
               value={confirmNewPassword}
               onChange={(e) => setConfirmNewPassword(e.target.value)}
               placeholder="Re-enter your new password"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-white/15 text-white text-sm outline-none focus:border-amber-400"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] text-sm outline-none focus:border-[#1B3D59]"
             />
           </div>
 
@@ -122,14 +122,14 @@ export default function ForcePasswordChangeModal({ onComplete }) {
             <button
               type="button"
               onClick={logout}
-              className="btn-secondary text-xs py-2.5 px-4 font-semibold"
+              className="btn-secondary text-xs py-2.5 px-4 font-bold"
             >
               Sign Out
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-1.5 shadow-lg"
+              className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-1.5 shadow-sm"
             >
               {loading ? 'Updating...' : 'Set New Password'} <ArrowRight className="w-4 h-4" />
             </button>

@@ -102,23 +102,26 @@ export default function UploadPaymentPage() {
   const latestPayment = payments[0];
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-7xl mx-auto w-full">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-8 max-w-7xl mx-auto w-full text-[#152026]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] font-bold text-xs mb-2">
             <Sparkles className="w-3.5 h-3.5" /> Fees & Invoicing
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <CreditCard className="w-6 h-6 text-amber-400" /> Bank Payment Slip Upload & Verification
+          <h1 className="text-2xl font-extrabold text-[#152026] flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-[#1B3D59]" /> Bank Payment Slip Upload & Verification
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5">
             Upload your bank transfer slip or deposit receipt for administrative verification.
           </p>
         </div>
 
-        <button onClick={fetchPayments} className="btn-secondary text-xs py-2 px-3.5 self-start sm:self-auto flex items-center gap-1.5 font-bold">
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh Status
+        <button
+          onClick={fetchPayments}
+          className="py-2 px-3.5 self-start sm:self-auto flex items-center gap-1.5 font-bold text-xs rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] transition-colors shadow-xs"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-[#1B3D59] ${loading ? 'animate-spin' : ''}`} /> Refresh Status
         </button>
       </div>
 
@@ -127,28 +130,27 @@ export default function UploadPaymentPage() {
         {/* Left 2 Cols: Bank Info & Upload Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Official Bank Account Details */}
-          <div className="backdrop-blur-2xl bg-gradient-to-r from-slate-900/90 via-primary/70 to-slate-900/90 text-white rounded-3xl p-6 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] space-y-3 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent pointer-events-none" />
+          <div className="bg-gradient-to-r from-[#152026] via-[#1B3D59] to-[#152026] text-white rounded-3xl p-6 border border-[#1B3D59]/30 shadow-md space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="badge bg-white/15 text-cyan-300 border border-white/20 text-[10px]">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#B3D5F1]/20 text-[#D4EEF8] border border-[#B3D5F1]/30 text-[10px] font-bold uppercase tracking-wider">
                 Official Driving School Account
               </span>
-              <Building2 className="w-5 h-5 text-accent" />
+              <Building2 className="w-5 h-5 text-[#B3D5F1]" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 text-xs">
               <div>
-                <p className="text-slate-400">Bank & Branch:</p>
+                <p className="text-[#D4EEF8]/70">Bank & Branch:</p>
                 <p className="font-bold text-sm text-white">Bank of Ceylon (BOC)</p>
-                <p className="text-[11px] text-cyan-300">Maharagama Branch</p>
+                <p className="text-[11px] text-[#B3D5F1]">Maharagama Branch</p>
               </div>
               <div>
-                <p className="text-slate-400">Account Name:</p>
+                <p className="text-[#D4EEF8]/70">Account Name:</p>
                 <p className="font-bold text-sm text-white">Sithma Driving School (Pvt) Ltd</p>
               </div>
               <div>
-                <p className="text-slate-400">Account Number:</p>
-                <p className="font-mono font-black text-sm text-accent tracking-wider">
+                <p className="text-[#D4EEF8]/70">Account Number:</p>
+                <p className="font-mono font-black text-sm text-[#B3D5F1] tracking-wider">
                   8472910394
                 </p>
               </div>
@@ -156,12 +158,12 @@ export default function UploadPaymentPage() {
           </div>
 
           {/* Upload Form */}
-          <div className="card space-y-5">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Upload className="w-4 h-4 text-cyan-400" /> Upload New Payment Slip
+          <div className="card p-6 bg-white border border-[#D4EEF8] rounded-3xl shadow-sm space-y-5">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h2 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <Upload className="w-4 h-4 text-[#1B3D59]" /> Upload New Payment Slip
               </h2>
-              <span className="text-xs font-bold text-accent">
+              <span className="text-xs font-bold text-[#1B3D59]">
                 Package Due: Rs. {student?.package?.priceTotal?.toLocaleString() || '45,000'}
               </span>
             </div>
@@ -169,8 +171,8 @@ export default function UploadPaymentPage() {
             <form onSubmit={handleUploadSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
-                    Amount Paid (LKR) <span className="text-rose-400">*</span>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Amount Paid (LKR) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -178,28 +180,28 @@ export default function UploadPaymentPage() {
                     min="0"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 rounded-xl font-bold text-accent text-sm outline-none"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-bold text-sm outline-none focus:border-[#1B3D59]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Paying Bank Name:
                   </label>
                   <select
                     value={formData.bankName}
                     onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl outline-none font-medium cursor-pointer"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl outline-none font-medium cursor-pointer focus:border-[#1B3D59]"
                   >
-                    <option value="Bank of Ceylon (BOC)" className="bg-slate-900 text-white">Bank of Ceylon (BOC)</option>
-                    <option value="Commercial Bank of Ceylon" className="bg-slate-900 text-white">Commercial Bank of Ceylon</option>
-                    <option value="People's Bank" className="bg-slate-900 text-white">People's Bank</option>
-                    <option value="Sampath Bank" className="bg-slate-900 text-white">Sampath Bank</option>
+                    <option value="Bank of Ceylon (BOC)">Bank of Ceylon (BOC)</option>
+                    <option value="Commercial Bank of Ceylon">Commercial Bank of Ceylon</option>
+                    <option value="People's Bank">People's Bank</option>
+                    <option value="Sampath Bank">Sampath Bank</option>
                   </select>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-300 mb-1">
+                  <label className="block font-semibold text-[#152026] mb-1">
                     Bank Reference / Transaction ID (Optional):
                   </label>
                   <input
@@ -209,17 +211,17 @@ export default function UploadPaymentPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, transactionReference: e.target.value })
                     }
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl outline-none"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   />
                 </div>
               </div>
 
               {/* File Drop Area */}
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Upload Slip Image or PDF <span className="text-rose-400">*</span>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Upload Slip Image or PDF <span className="text-rose-500">*</span>
                 </label>
-                <div className="border-2 border-dashed border-white/20 hover:border-cyan-400/60 rounded-2xl p-6 text-center transition-colors bg-white/5 cursor-pointer">
+                <div className="border-2 border-dashed border-[#D4EEF8] hover:border-[#1B3D59] rounded-2xl p-6 text-center transition-colors bg-[#FAFCFE] cursor-pointer">
                   <input
                     type="file"
                     id="slipFile"
@@ -228,39 +230,39 @@ export default function UploadPaymentPage() {
                     className="hidden"
                   />
                   <label htmlFor="slipFile" className="cursor-pointer block space-y-2">
-                    <Upload className="w-8 h-8 text-cyan-400 mx-auto" />
-                    <p className="font-semibold text-white text-xs">
+                    <Upload className="w-8 h-8 text-[#1B3D59] mx-auto" />
+                    <p className="font-semibold text-[#152026] text-xs">
                       {selectedFile ? selectedFile.name : 'Click to select bank payment slip file'}
                     </p>
-                    <p className="text-[11px] text-slate-400">JPG, PNG, WEBP, or PDF up to 5MB</p>
+                    <p className="text-[11px] text-[#6A97C0]">JPG, PNG, WEBP, or PDF up to 5MB</p>
                   </label>
                 </div>
               </div>
 
               {/* Preview Thumbnail */}
               {previewUrl && (
-                <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+                <div className="p-3.5 bg-[#FAFCFE] border border-[#D4EEF8] rounded-2xl flex items-center gap-3">
                   {selectedFile?.type === 'application/pdf' || selectedFile?.name?.toLowerCase().endsWith('.pdf') ? (
-                    <div className="w-14 h-14 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 flex-shrink-0">
+                    <div className="w-14 h-14 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 flex-shrink-0">
                       <FileText className="w-7 h-7" />
                     </div>
                   ) : (
                     <img
                       src={previewUrl}
                       alt="Slip Preview"
-                      className="w-14 h-14 object-cover rounded-xl border border-white/10"
+                      className="w-14 h-14 object-cover rounded-xl border border-[#D4EEF8]"
                     />
                   )}
                   <div className="text-xs flex-1 min-w-0">
-                    <p className="font-bold text-white truncate">{selectedFile?.name}</p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="font-bold text-[#152026] truncate">{selectedFile?.name}</p>
+                    <p className="text-[11px] text-[#6A97C0]">
                       {selectedFile?.size ? `${(selectedFile.size / 1024).toFixed(1)} KB` : 'Ready to upload'}
                     </p>
                     <a
                       href={previewUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-cyan-300 hover:text-cyan-200 inline-flex items-center gap-1 font-bold mt-1 text-[11px]"
+                      className="text-[#1B3D59] hover:underline inline-flex items-center gap-1 font-bold mt-1 text-[11px]"
                     >
                       <ExternalLink className="w-3 h-3" /> View Selected Document
                     </a>
@@ -271,7 +273,7 @@ export default function UploadPaymentPage() {
               <button
                 type="submit"
                 disabled={uploading || !selectedFile}
-                className="btn-accent w-full py-3 font-bold text-sm shadow-lg disabled:opacity-50"
+                className="w-full bg-[#1B3D59] hover:bg-[#152026] text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50"
               >
                 {uploading ? 'Uploading Slip...' : 'Submit Payment Slip for Verification'}
               </button>
@@ -282,71 +284,71 @@ export default function UploadPaymentPage() {
         {/* Right 1 Col: Status & Payment Log */}
         <div className="space-y-6">
           {/* Latest Status Pill Card */}
-          <div className="card space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-cyan-400" /> Current Verification Status
+          <div className="card p-5 bg-white border border-[#D4EEF8] rounded-3xl shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#1B3D59]" /> Current Verification Status
             </h3>
 
             {latestPayment ? (
-              <div className="p-4 rounded-2xl border bg-white/5 border-white/10 space-y-2 text-xs">
+              <div className="p-4 rounded-2xl border border-[#D4EEF8] bg-[#FAFCFE] space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white">Latest Submission:</span>
+                  <span className="font-bold text-[#152026]">Latest Submission:</span>
                   <span
-                    className={`badge ${
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border capitalize ${
                       latestPayment.status === 'confirmed'
-                        ? 'badge-success'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                         : latestPayment.status === 'rejected'
-                        ? 'badge-danger'
-                        : 'badge-warning'
+                        ? 'bg-rose-50 text-rose-700 border-rose-300'
+                        : 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
                     }`}
                   >
                     {latestPayment.status}
                   </span>
                 </div>
-                <p className="text-slate-400">
-                  Amount: <strong className="text-accent">Rs. {latestPayment.amount?.toLocaleString()}</strong>
+                <p className="text-[#6A97C0]">
+                  Amount: <strong className="text-[#152026]">Rs. {latestPayment.amount?.toLocaleString()}</strong>
                 </p>
-                <p className="text-slate-400">
+                <p className="text-[#6A97C0]">
                   Date: {latestPayment.uploadedAt ? format(new Date(latestPayment.uploadedAt), 'MMM dd, yyyy') : 'N/A'}
                 </p>
                 {latestPayment.rejectionReason && (
-                  <p className="text-rose-400 font-semibold mt-1">
+                  <p className="text-rose-600 font-semibold mt-1">
                     Note: {latestPayment.rejectionReason}
                   </p>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">No payment slips uploaded yet.</p>
+              <p className="text-xs text-[#6A97C0] italic">No payment slips uploaded yet.</p>
             )}
           </div>
 
           {/* Payment History List */}
-          <div className="card space-y-3">
-            <h3 className="text-sm font-bold text-white">Payment Submission Log</h3>
+          <div className="card p-5 bg-white border border-[#D4EEF8] rounded-3xl shadow-sm space-y-3">
+            <h3 className="text-sm font-bold text-[#152026]">Payment Submission Log</h3>
             {loading ? (
-              <p className="text-xs text-slate-400">Loading history...</p>
+              <p className="text-xs text-[#6A97C0]">Loading history...</p>
             ) : payments.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No previous payments.</p>
+              <p className="text-xs text-[#6A97C0] italic">No previous payments.</p>
             ) : (
-              <div className="divide-y divide-white/10 text-xs">
+              <div className="divide-y divide-[#D4EEF8] text-xs">
                 {payments.map((p) => (
                   <div key={p._id} className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-white">{p.bankName}</p>
-                      <p className="text-[10px] text-slate-400">
+                      <p className="font-bold text-[#152026]">{p.bankName}</p>
+                      <p className="text-[10px] text-[#6A97C0]">
                         {p.uploadedAt ? format(new Date(p.uploadedAt), 'MMM dd, yyyy') : ''}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-accent">Rs. {p.amount?.toLocaleString()}</span>
+                      <span className="font-bold text-[#152026]">Rs. {p.amount?.toLocaleString()}</span>
                       <div>
                         <span
-                          className={`badge text-[9px] py-0 px-2 mt-0.5 ${
+                          className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 border capitalize ${
                             p.status === 'confirmed'
-                              ? 'badge-success'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                               : p.status === 'rejected'
-                              ? 'badge-danger'
-                              : 'badge-warning'
+                              ? 'bg-rose-50 text-rose-700 border-rose-300'
+                              : 'bg-[#F3EED8] text-[#152026] border-[#6A97C0]/40'
                           }`}
                         >
                           {p.status}

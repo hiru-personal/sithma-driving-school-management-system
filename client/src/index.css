@@ -2,43 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Sithma Enterprise Design System
+   Primary Palette (Reference Image Specification):
+   - Black Pine:  #152026 (Structure, Headings, High-Priority)
+   - Deep Ocean:  #1B3D59 (Brand Primary, Main Actions, Navigation Active)
+   - Windstorm:   #6A97C0 (Secondary Blue, Supporting UI, Borders, Icons)
+   - Melting Ice: #B3D5F1 (Light Emphasis, Card Highlights, Focus Rings)
+   - Avalanche:   #D4EEF8 (Subtle Backgrounds, Informational Sections, Hovers)
+   - Sun Beam:    #F3EED8 (Warm Accent, Warnings, Attention, Pending States)
+   - White:       #FFFFFF (Clean Content Surfaces, Cards, Modals, Forms)
+   ========================================================================== */
+
+:root {
+  --color-black-pine: #152026;
+  --color-deep-ocean: #1B3D59;
+  --color-windstorm: #6A97C0;
+  --color-melting-ice: #B3D5F1;
+  --color-avalanche: #D4EEF8;
+  --color-sun-beam: #F3EED8;
+  --color-white: #FFFFFF;
+}
+
 @layer base {
   html, body {
-    @apply bg-[#FAFBFC] text-[#1E293B] min-h-screen font-sans antialiased text-base selection:bg-primary selection:text-white;
+    @apply bg-white text-[#152026] min-h-screen font-sans antialiased text-base selection:bg-[#1B3D59] selection:text-white;
     overflow-x: hidden;
     max-width: 100vw;
     -webkit-tap-highlight-color: transparent;
   }
 
   h1 {
-    @apply text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0B2447] leading-tight;
+    @apply text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#152026] leading-tight;
   }
 
   h2 {
-    @apply text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-[#112D4E] leading-tight;
+    @apply text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-[#152026] leading-tight;
   }
 
   h3 {
-    @apply text-base sm:text-lg md:text-xl font-bold text-[#112D4E];
+    @apply text-base sm:text-lg md:text-xl font-bold text-[#1B3D59];
   }
 
   h4, h5, h6 {
-    @apply font-heading font-semibold text-[#112D4E] tracking-tight;
+    @apply font-heading font-semibold text-[#1B3D59] tracking-tight;
   }
 
   p {
-    @apply text-[#4B6584] text-xs sm:text-sm md:text-base;
+    @apply text-[#475569] text-xs sm:text-sm md:text-base;
   }
 
   input, select, textarea {
-    @apply bg-white border border-[#DBE2EF] text-[#112D4E] placeholder-[#94A3B8] text-[16px] sm:text-sm px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl focus:border-[#3F72AF] focus:ring-2 focus:ring-[#3F72AF]/20 outline-none transition-all w-full shadow-sm;
+    @apply bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#94A3B8] text-[16px] sm:text-sm px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1]/60 outline-none transition-all w-full shadow-xs;
   }
 }
 
 @layer components {
-  /* Crisp Light Status Badges */
+  /* Status Badges */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider max-w-full truncate shadow-sm;
+    @apply inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider max-w-full truncate shadow-xs;
   }
 
   .badge-success {
@@ -46,7 +68,7 @@
   }
 
   .badge-warning {
-    @apply bg-amber-50 text-amber-800 border border-amber-200/90;
+    @apply bg-[#F3EED8] text-[#152026] border border-[#E2D9B8];
   }
 
   .badge-danger {
@@ -54,33 +76,62 @@
   }
 
   .badge-info {
-    @apply bg-[#DBE2EF] text-[#112D4E] border border-[#A5D7E8];
+    @apply bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1];
   }
 
   .badge-accent {
-    @apply bg-[#F9F7F7] text-[#3F72AF] border border-[#DBE2EF];
+    @apply bg-[#B3D5F1]/50 text-[#1B3D59] border border-[#6A97C0]/40;
   }
 
-  /* Clean Crisp Elevated White Cards with Soft Ice-Blue Borders */
+  /* Cards */
   .card {
-    @apply bg-white rounded-2xl sm:rounded-3xl border border-[#DBE2EF] shadow-[0_4px_24px_-4px_rgba(17,45,78,0.06)] text-[#1E293B] p-4 sm:p-6 md:p-8 transition-all duration-300 relative;
+    @apply bg-white rounded-2xl sm:rounded-3xl border border-[#D4EEF8] shadow-[0_4px_24px_-4px_rgba(21,32,38,0.06)] text-[#152026] p-4 sm:p-6 md:p-8 transition-all duration-300 relative;
   }
 
   .card-hover {
-    @apply hover:border-[#3F72AF]/60 hover:shadow-[0_12px_32px_-4px_rgba(63,114,175,0.18)] hover:-translate-y-0.5;
+    @apply hover:border-[#6A97C0] hover:shadow-[0_10px_28px_-4px_rgba(27,61,89,0.12)] hover:-translate-y-0.5;
+  }
+
+  .card-avalanche {
+    @apply bg-[#D4EEF8] border border-[#B3D5F1] text-[#152026];
+  }
+
+  .card-melting-ice {
+    @apply bg-[#B3D5F1] border border-[#6A97C0] text-[#152026];
+  }
+
+  .card-deep-ocean {
+    @apply bg-[#1B3D59] border border-[#152026] text-white;
+  }
+
+  .card-sun-beam {
+    @apply bg-[#F3EED8] border border-[#E2D9B8] text-[#152026];
   }
 
   /* Buttons */
+  /* Primary Button: Deep Ocean background + White text */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#19376D] via-[#205295] to-[#3F72AF] text-white text-xs sm:text-sm md:text-base font-bold shadow-md hover:shadow-[0_4px_20px_rgba(63,114,175,0.35)] active:scale-95 transition-all border border-[#19376D]/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#1B3D59] hover:bg-[#152026] text-white text-xs sm:text-sm md:text-base font-bold shadow-sm hover:shadow-[0_4px_16px_rgba(27,61,89,0.28)] active:scale-95 transition-all border border-[#1B3D59] disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
   }
 
+  /* Accent Button: Black Pine background + White text */
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#112D4E] hover:bg-[#0B2447] text-white text-xs sm:text-sm md:text-base font-extrabold shadow-md hover:shadow-[0_4px_20px_rgba(17,45,78,0.35)] active:scale-95 transition-all border border-[#19376D] disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#152026] hover:bg-[#1B3D59] text-white text-xs sm:text-sm md:text-base font-extrabold shadow-sm hover:shadow-[0_4px_16px_rgba(21,32,38,0.28)] active:scale-95 transition-all border border-[#152026] disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] cursor-pointer;
   }
 
+  /* Secondary Button: White background + Deep Ocean border and text */
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#DBE2EF]/70 hover:bg-[#DBE2EF] border border-[#DBE2EF] text-[#112D4E] text-xs sm:text-sm md:text-base font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] cursor-pointer shadow-sm;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-white hover:bg-[#D4EEF8] border-2 border-[#1B3D59] text-[#1B3D59] text-xs sm:text-sm md:text-base font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] cursor-pointer shadow-xs;
+  }
+
+  /* Light Button: Avalanche background + Deep Ocean text */
+  .btn-light {
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#D4EEF8] hover:bg-[#B3D5F1] border border-[#B3D5F1] text-[#1B3D59] text-xs sm:text-sm md:text-base font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] cursor-pointer shadow-xs;
+  }
+
+  /* Warning / Pending Button: Sun Beam background + Black Pine text */
+  .btn-warning, .btn-pending {
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-[#F3EED8] hover:bg-[#EAE4CA] border border-[#E2D9B8] text-[#152026] text-xs sm:text-sm md:text-base font-extrabold transition-all disabled:opacity-40 disabled:cursor-not-allowed min-h-[42px] cursor-pointer shadow-xs;
   }
 }
 
@@ -95,88 +146,61 @@
 }
 
 /* ==========================================================================
-   Executive Navy & Royal Blue Design System Overrides
-   Global High-Contrast Palette Enforcement for Light Theme
-   Palettes: [#FAFBFC, #DBE2EF, #3F72AF, #112D4E] & [#0B2447, #19376D, #576CBC, #A5D7E8]
+   Global Color Mapping & Palette Enforcement
    ========================================================================== */
 
-/* 1. Universal High-Contrast Headings across all pages & cards */
-h1, h2, h3, h4, h5, h6,
+/* 1. Universal Headings: Black Pine for main, Deep Ocean for section */
+h1, h2,
+.font-heading.text-2xl,
+.font-heading.text-3xl {
+  color: #152026 !important;
+}
+
+h3, h4, h5, h6,
 .font-heading {
-  color: #0B2447 !important;
+  color: #1B3D59 !important;
 }
 
-/* Remove fuzzy drop-shadow on light canvas for razor-sharp typography */
-h1.drop-shadow, h2.drop-shadow, h3.drop-shadow {
-  filter: none !important;
-}
-
-/* Page Headers & Main Titles on light canvas */
+/* Page titles */
 main h1,
 header + div h1,
 header + main h1,
 .space-y-6 > div > h1,
 .space-y-8 > div > h1 {
-  color: #0B2447 !important;
+  color: #152026 !important;
 }
 
-/* 2. Global High-Contrast Color Mapping for Faint Tailwind Classes */
-/* Text that was faint slate/grey on white */
-.text-slate-400 {
-  color: #4B6584 !important; /* Deep, readable slate-navy (WCAG AAA compliant) */
-}
-
-.text-slate-300 {
-  color: #334E68 !important; /* High-contrast body text */
-}
-
-.text-slate-200 {
-  color: #1E293B !important;
-}
-
-.text-slate-100 {
-  color: #0F172A !important;
-}
-
+/* 2. Text Hierarchy */
+/* Secondary / muted information: Windstorm */
+.text-slate-400,
 .text-slate-500 {
-  color: #334E68 !important;
+  color: #6A97C0 !important;
 }
 
-/* Text that was washed-out neon cyan on white */
+/* Body / readable dark neutral: Black Pine / slate */
+.text-slate-300,
+.text-slate-600,
+.text-slate-700,
+.text-slate-800 {
+  color: #152026 !important;
+}
+
+/* Cyan / Blue highlights map to Deep Ocean or Windstorm */
 .text-cyan-300,
 .text-cyan-400 {
-  color: #0284C7 !important; /* Rich sky/cyan blue with strong contrast on white */
+  color: #1B3D59 !important;
 }
 
-.text-cyan-200 {
-  color: #0369A1 !important;
+.text-cyan-500,
+.text-cyan-600 {
+  color: #1B3D59 !important;
 }
 
-.text-cyan-500 {
-  color: #0369A1 !important;
-}
-
-/* Text that was washed-out yellow on white */
+/* Amber highlights map to Sun Beam / Black Pine */
 .text-amber-300,
-.text-amber-400 {
-  color: #B45309 !important; /* Rich warm amber/bronze with strong contrast */
-}
-
-/* Text that was washed-out light green on white */
-.text-emerald-300,
-.text-emerald-400 {
-  color: #059669 !important; /* Emerald 600 - rich dark green */
-}
-
-/* Text that was washed-out pink/rose on white */
-.text-rose-300,
-.text-rose-400 {
-  color: #E11D48 !important; /* Deep rose */
-}
-
-.text-purple-300,
-.text-purple-400 {
-  color: #7E22CE !important; /* Rich purple */
+.text-amber-400,
+.text-amber-500 {
+  color: #8C6D1F !important;
 }
 
 /* 3. Form Labels */
@@ -184,94 +208,85 @@ label,
 label.text-slate-300,
 label.text-slate-400,
 label.text-slate-500 {
-  color: #112D4E !important;
-  font-weight: 600 !important;
+  color: #152026 !important;
+  font-weight: 700 !important;
 }
 
-/* 4. Top Category & Section Badges (Fleet Operations, Curriculum, etc.) */
+/* 4. Category Badges & Micro-Pills */
 div[class*="bg-cyan-500/10"],
 div[class*="bg-primary/10"],
 span[class*="bg-cyan-500/10"] {
-  background-color: #E8F1FD !important;
-  border-color: #DBE2EF !important;
-  color: #19376D !important;
+  background-color: #D4EEF8 !important; /* Avalanche */
+  border-color: #B3D5F1 !important;     /* Melting Ice */
+  color: #1B3D59 !important;            /* Deep Ocean */
 }
 
 div[class*="bg-cyan-500/10"] svg,
 div[class*="bg-primary/10"] svg {
-  color: #3F72AF !important;
+  color: #6A97C0 !important;            /* Windstorm */
 }
 
-/* 5. Legacy text-white on light canvas & cards converts to deep navy */
-.card .text-white,
-.card strong.text-white,
-.card div.text-white,
-.card p.text-white,
-.card span.text-white,
-table .text-white,
-div[class*="bg-slate"] .text-white,
-div[class*="bg-slate"] strong.text-white,
-div[class*="bg-white/"] .text-white {
-  color: #0B2447 !important;
-}
-
-/* 6. Legacy dark containers converted to soft elevated cards */
+/* 5. Legacy Dark Containers converted to clean White surfaces with Avalanche borders */
 div[class*="bg-slate-950/60"],
 div[class*="bg-slate-950/70"],
 div[class*="bg-slate-950/80"],
+div[class*="bg-slate-950/90"],
 div[class*="bg-slate-900/60"],
 div[class*="bg-slate-900/70"],
 div[class*="bg-slate-900/80"],
 div[class*="bg-slate-900/90"],
 div[class*="bg-white/5"],
 div[class*="bg-white/10"] {
-  background-color: #F8FAFD !important;
-  border-color: #DBE2EF !important;
-  color: #112D4E !important;
+  background-color: #FFFFFF !important;
+  border-color: #D4EEF8 !important;
+  color: #152026 !important;
 }
 
-/* 7. Card Content Contrast */
-.card h1, .card h2, .card h3, .card h4, .card h5, .card h6 {
-  color: #0B2447 !important;
+/* Text inside cards that was white becomes Black Pine */
+.card .text-white:not([class*="bg-"]):not(.btn-primary):not(.btn-accent):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+.card strong.text-white,
+.card div.text-white:not([class*="bg-"]):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+.card p.text-white,
+.card span.text-white:not([class*="bg-"]):not(.badge):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]),
+table .text-white:not([class*="bg-"]):not(button):not(a):not(th),
+div[class*="bg-slate"]:not(header *):not([class*="bg-[#1B3D59]"]):not([class*="bg-[#152026]"]) .text-white:not([class*="bg-"]) {
+  color: #152026 !important;
 }
 
-.card p {
-  color: #4B6584;
-}
-
-/* 8. Strictly protect pure white text where intended */
-button[type="submit"], button[type="submit"] *,
+/* 6. Active Navigation and Pure White Text Enforcement */
+.nav-pill-active,
+.nav-pill-active *,
+.nav-pill-active span,
+.nav-pill-active svg,
+header nav a.nav-pill-active,
+header nav a.nav-pill-active *,
+header nav a[class*="bg-[#1B3D59]"],
+header nav a[class*="bg-[#1B3D59]"] *,
+header nav a[class*="bg-[#152026]"],
+header nav a[class*="bg-[#152026]"] *,
+button[type="submit"]:not(.btn-secondary):not(.btn-warning):not(.btn-light),
+button[type="submit"]:not(.btn-secondary):not(.btn-warning):not(.btn-light) *,
 .btn-primary, .btn-primary *,
 .btn-accent, .btn-accent *,
 a.btn-primary, a.btn-primary *,
 a.btn-accent, a.btn-accent *,
 .card .btn-primary, .card .btn-primary *,
 .card .btn-accent, .card .btn-accent *,
-.card button[type="submit"], .card button[type="submit"] *,
-.card button[class*="from-"], .card button[class*="from-"] *,
-.card button[class*="bg-gradient"], .card button[class*="bg-gradient"] *,
-.card button[class*="bg-primary"], .card button[class*="bg-primary"] *,
-.card button[class*="bg-[#3F72AF]"], .card button[class*="bg-[#3F72AF]"] *,
-.card button[class*="bg-[#19376D]"], .card button[class*="bg-[#19376D]"] *,
-button[class*="from-"], button[class*="from-"] *,
-button[class*="bg-gradient"], button[class*="bg-gradient"] *,
-button[class*="bg-primary"], button[class*="bg-primary"] *,
-button[class*="bg-[#3F72AF]"], button[class*="bg-[#3F72AF]"] *,
-button[class*="bg-[#19376D]"], button[class*="bg-[#19376D]"] *,
-.dark-surface, .dark-surface *,
-.hero-dark, .hero-dark *,
-[class*="bg-[#0B2447]"] .text-white,
-[class*="bg-[#0B2447]"] h1, [class*="bg-[#0B2447]"] h2, [class*="bg-[#0B2447]"] h3,
-[class*="bg-[#0B2447]"] .text-slate-100,
-[class*="bg-gradient-to-r from-[#0B2447]"] .text-white,
-[class*="bg-gradient-to-r from-[#0B2447]"] h1,
-[class*="bg-gradient-to-r from-[#0B2447]"] h2,
-[class*="bg-gradient-to-r from-slate-900"] .text-white,
-span.badge-primary, span.badge-primary * {
-  color: #ffffff !important;
+span.badge-primary, span.badge-primary *,
+th.text-white,
+table thead th {
+  color: #FFFFFF !important;
 }
 
-/* 9. Card and Table Borders & Dividers */
+header nav a.nav-pill-active svg,
+header nav a[class*="bg-[#1B3D59]"] svg,
+header nav a[class*="bg-[#152026]"] svg,
+.nav-pill-active svg {
+  color: #B3D5F1 !important; /* Melting Ice icon accent */
+  stroke: #B3D5F1 !important;
+}
+
+/* 7. Borders & Dividers */
 .card .border-white\/5,
 .card .border-white\/10,
 .card .border-white\/15,
@@ -283,57 +298,61 @@ span.badge-primary, span.badge-primary * {
 .border-white\/20,
 [class*="border-purple-300"],
 [class*="border-purple-400"],
-[class*="border-slate-200"] {
-  border-color: #DBE2EF !important; /* Soft Ice-Blue Border */
+[class*="border-slate-200"],
+[class*="border-[#DBE2EF]"] {
+  border-color: #D4EEF8 !important; /* Avalanche Border */
 }
 
 .card .divide-white\/10 > :not([hidden]) ~ :not([hidden]),
 .divide-white\/10 > :not([hidden]) ~ :not([hidden]),
 [class*="divide-purple"] > :not([hidden]) ~ :not([hidden]),
 [class*="divide-slate"] > :not([hidden]) ~ :not([hidden]) {
-  border-color: #DBE2EF !important;
+  border-color: #D4EEF8 !important;
 }
 
-/* 10. Table Light Styles */
+/* 8. Table Styling */
 table thead,
 thead,
 thead.bg-slate-950\/90,
 thead.bg-slate-950\/60,
 thead.bg-slate-900,
 thead[class*="bg-slate"] {
-  background-color: #F0F4F8 !important;
-  color: #112D4E !important;
-  border-bottom: 1px solid #DBE2EF !important;
+  background-color: #1B3D59 !important; /* Deep Ocean Header */
+  color: #FFFFFF !important;
+  border-bottom: 2px solid #152026 !important;
 }
 
 table thead th {
-  color: #112D4E !important;
-  background-color: #F0F4F8 !important;
-  border-bottom: 1px solid #DBE2EF !important;
+  color: #FFFFFF !important;
+  background-color: #1B3D59 !important;
   font-weight: 700 !important;
 }
 
 table tbody tr {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #F0F4F8 !important;
+  background-color: #FFFFFF !important;
+  border-bottom: 1px solid #D4EEF8 !important;
 }
 
-table tbody tr.hover\:bg-white\/5:hover,
+table tbody tr:nth-child(even) {
+  background-color: #FAFDFF !important;
+}
+
 table tbody tr:hover,
+table tbody tr.hover\:bg-white\/5:hover,
 div.hover\:bg-white\/5:hover {
-  background-color: #F9F7F7 !important;
+  background-color: #D4EEF8 !important; /* Avalanche Hover */
 }
 
 table tbody td {
-  color: #1E293B !important;
+  color: #152026 !important;
 }
 
 table tbody td .text-white,
 table tbody td div.text-white {
-  color: #0B2447 !important;
+  color: #152026 !important;
 }
 
-/* 11. Form Controls Everywhere (Inputs, Selects, Textareas) */
+/* 9. Form Controls */
 input,
 select,
 textarea,
@@ -343,16 +362,16 @@ textarea,
 input[class*="bg-slate"],
 select[class*="bg-slate"],
 textarea[class*="bg-slate"] {
-  background-color: #ffffff !important;
-  border-color: #DBE2EF !important;
-  color: #0B2447 !important;
+  background-color: #FFFFFF !important;
+  border-color: #D4EEF8 !important;
+  color: #152026 !important;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #3F72AF !important;
-  box-shadow: 0 0 0 3px rgba(63, 114, 175, 0.18) !important;
+  border-color: #1B3D59 !important;
+  box-shadow: 0 0 0 3px rgba(179, 213, 241, 0.55) !important; /* Melting Ice Focus */
 }
 
 input::placeholder,
@@ -361,41 +380,43 @@ input[class*="placeholder-slate"]::placeholder {
   color: #94A3B8 !important;
 }
 
-/* 12. Modals & Dialogs Light Background */
+/* 10. Modals & Dialogs */
 .fixed .bg-slate-900\/95,
 .fixed .bg-slate-950\/95,
 .fixed [class*="bg-slate-950"],
 .fixed [class*="bg-slate-900"],
 div[role="dialog"] {
-  background-color: #ffffff !important;
-  border-color: #DBE2EF !important;
-  color: #112D4E !important;
-  box-shadow: 0 25px 60px -15px rgba(17, 45, 78, 0.18) !important;
+  background-color: #FFFFFF !important;
+  border-color: #D4EEF8 !important;
+  color: #152026 !important;
+  box-shadow: 0 25px 60px -15px rgba(21, 32, 38, 0.2) !important;
 }
 
 .fixed [class*="bg-slate-9"] .text-white,
 div[role="dialog"] .text-white {
-  color: #0B2447 !important;
+  color: #152026 !important;
 }
 
 .fixed [class*="bg-slate-9"] .text-slate-300,
 div[role="dialog"] .text-slate-300 {
-  color: #334E68 !important;
+  color: #152026 !important;
 }
 
 .fixed [class*="bg-slate-9"] .text-slate-400,
 div[role="dialog"] .text-slate-400 {
-  color: #4B6584 !important;
+  color: #6A97C0 !important; /* Windstorm */
 }
 
-/* Soft Backdrop for Modals */
+/* Backdrop for Modals */
 .fixed.bg-slate-950\/80,
 div.fixed.inset-0.bg-black\/80,
-div.fixed.inset-0.bg-slate-950\/80 {
-  background-color: rgba(11, 36, 71, 0.45) !important;
+div.fixed.inset-0.bg-slate-950\/80,
+div.fixed.inset-0.bg-black\/75 {
+  background-color: rgba(21, 32, 38, 0.65) !important; /* Black Pine Backdrop */
+  backdrop-filter: blur(8px) !important;
 }
 
-/* 13. Global Date Inputs & Interactive Calendar Picker Styling */
+/* 11. Date Inputs & Calendar Picker Indicator */
 input[type="date"] {
   position: relative;
   cursor: pointer !important;
@@ -403,12 +424,11 @@ input[type="date"] {
   font-family: inherit !important;
 }
 
-/* Ensure the calendar icon inside all date inputs is vibrant, clickable, and prominent */
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer !important;
   background-color: transparent !important;
   opacity: 0.9 !important;
-  filter: invert(37%) sepia(55%) saturate(836%) hue-rotate(182deg) brightness(93%) contrast(92%) !important; /* Royal Blue (#3F72AF) */
+  filter: invert(20%) sepia(45%) saturate(800%) hue-rotate(175deg) brightness(95%) contrast(90%) !important; /* Deep Ocean (#1B3D59) */
   width: 22px !important;
   height: 22px !important;
   padding: 3px !important;
@@ -418,6 +438,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1 !important;
-  background-color: #DBE2EF !important;
+  background-color: #D4EEF8 !important;
   transform: scale(1.15) !important;
+}
+
+/* 12. Solid, Non-Transparent Operations Dropdown Menu */
+.operations-dropdown {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  opacity: 1 !important;
+  isolation: isolate !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid #D4EEF8 !important;
+  box-shadow: 0 20px 45px -10px rgba(21, 32, 38, 0.18), 0 0 0 1px rgba(27, 61, 89, 0.08) !important;
 }

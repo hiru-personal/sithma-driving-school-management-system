@@ -160,80 +160,80 @@ export default function MyLessonsPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Training Management
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-semibold text-xs mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Training Management
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <Calendar className="w-6 h-6 text-cyan-400" /> My Lesson Schedule & History
+          <h1 className="text-2xl font-black text-[#152026] flex items-center gap-2">
+            <Calendar className="w-6 h-6 text-[#1B3D59]" /> My Lesson Schedule & History
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5">
             Track your upcoming on-road lessons, free weekly theory sessions, and completed driving history.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
+          <Link to="/student/lessons/book" className="btn-primary text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
             <Calendar className="w-4 h-4" /> Book New Lesson
           </Link>
-          <button onClick={openFreeClassModal} className="btn-accent text-xs py-2 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
-            <Gift className="w-4 h-4 text-slate-950" /> Book Free Weekly Class
+          <button onClick={openFreeClassModal} className="btn-secondary text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
+            <Gift className="w-4 h-4 text-[#1B3D59]" /> Book Free Weekly Class
           </button>
-          <button onClick={() => setIsExtraModalOpen(true)} className="btn-secondary text-xs py-2 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
-            <PlusCircle className="w-4 h-4 text-cyan-300" /> Request Extra Lessons
+          <button onClick={() => setIsExtraModalOpen(true)} className="btn-light text-xs py-2.5 px-4 font-bold shadow-sm flex items-center justify-center gap-1.5 w-full sm:w-auto">
+            <PlusCircle className="w-4 h-4 text-[#1B3D59]" /> Request Extra Lessons
           </button>
         </div>
       </div>
 
       {/* Shared Trial Date Tracking Banner */}
       {hasTrialDate ? (
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 border border-purple-400/30 shadow-[0_0_25px_rgba(168,85,247,0.15)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="p-5 rounded-2xl bg-white border border-[#D4EEF8] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 font-bold flex-shrink-0">
-              <Calendar className="w-6 h-6 text-purple-400" />
+            <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] font-bold flex-shrink-0">
+              <Calendar className="w-6 h-6 text-[#1B3D59]" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="badge bg-purple-500/20 text-purple-300 border border-purple-400/40 text-[10px] font-extrabold uppercase">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#1B3D59] text-white text-[10px] font-extrabold uppercase tracking-wider">
                   Practical Trial Exam Scheduled
                 </span>
                 {isTrialDatePassed ? (
-                  <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">
                     Trial Date Passed
                   </span>
                 ) : (
-                  <span className="badge bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[10px] font-bold">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
                     {daysUntilTrial} Days Remaining
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-black text-white mt-1">
+              <h3 className="text-base font-black text-[#152026] mt-1">
                 Trial Date: {format(new Date(student.trial_date), 'EEEE, MMMM dd, yyyy')}
               </h3>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-[#152026]/75 mt-0.5">
                 {isTrialDatePassed
                   ? 'Your scheduled trial date has passed. Please contact the branch officer to reschedule.'
                   : 'Practical lesson bookings are permitted on or before your scheduled trial date.'}
               </p>
             </div>
           </div>
-          <Link to="/student/lessons/book" className="btn-accent text-xs py-2.5 px-4 font-bold whitespace-nowrap flex items-center gap-1.5">
+          <Link to="/student/lessons/book" className="btn-primary text-xs py-2.5 px-4 font-bold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
             Book Next Lesson <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       ) : isType2 ? (
-        <div className="p-4 bg-amber-500/15 border border-amber-400/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+        <div className="p-4 bg-[#F3EED8] border border-[#6A97C0]/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-sm">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <ShieldAlert className="w-5 h-5 text-[#1B3D59] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-amber-300 text-sm">Practical Trial Date Not Scheduled Yet</p>
-              <p className="text-slate-300 mt-0.5">
+              <p className="font-bold text-[#152026] text-sm">Practical Trial Date Not Scheduled Yet</p>
+              <p className="text-[#152026]/80 mt-0.5">
                 As a Type 2 Trial-Only student, your practical trial date must be assigned by the branch Data Entry Officer before slots can be booked.
               </p>
             </div>
           </div>
-          <div className="text-xs font-bold text-amber-200 bg-slate-950/60 px-3 py-2 rounded-xl border border-amber-400/20 whitespace-nowrap">
+          <div className="text-xs font-bold text-[#152026] bg-white px-3 py-2 rounded-xl border border-[#D4EEF8] whitespace-nowrap shadow-sm">
             Contact Branch Staff
           </div>
         </div>
@@ -241,17 +241,17 @@ export default function MyLessonsPage() {
 
       {/* Type 1 US-09 DMT Lock Banner */}
       {isType1 && !isTrialEligible && (
-        <div className="p-4 bg-cyan-500/10 border border-cyan-400/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+        <div className="p-4 bg-[#D4EEF8]/60 border border-[#6A97C0]/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-sm">
           <div className="flex items-start sm:items-center gap-3">
-            <ShieldAlert className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <ShieldAlert className="w-5 h-5 text-[#1B3D59] flex-shrink-0 mt-0.5 sm:mt-0" />
             <div>
-              <p className="font-bold text-white text-sm">DMT Learner Exam Required for Practical Lessons (US-09)</p>
-              <p className="text-slate-300 mt-0.5">
+              <p className="font-bold text-[#152026] text-sm">DMT Learner Exam Required for Practical Lessons (US-09)</p>
+              <p className="text-[#152026]/80 mt-0.5">
                 Government DMT regulations require Type 1 New Learners to pass the DMT Written Theory Examination before booking on-road practical/trial sessions.
               </p>
             </div>
           </div>
-          <Link to="/student/milestones" className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap">
+          <Link to="/student/milestones" className="btn-secondary text-xs py-2 px-4 font-bold whitespace-nowrap shadow-sm">
             View DMT Milestone Schedule →
           </Link>
         </div>
@@ -259,46 +259,46 @@ export default function MyLessonsPage() {
 
       {/* Upcoming Lessons */}
       <div className="space-y-4">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <Clock className="w-4 h-4 text-cyan-400" /> Upcoming Practical Lessons
+        <h2 className="text-base font-bold text-[#152026] flex items-center gap-2">
+          <Clock className="w-4 h-4 text-[#1B3D59]" /> Upcoming Practical Lessons
         </h2>
 
         {loading ? (
-          <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading lesson schedule...
+          <div className="py-8 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading lesson schedule...
           </div>
         ) : upcomingBookings.length === 0 ? (
-          <div className="card text-center py-8 space-y-3">
-            <Calendar className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-white">You have no upcoming lessons booked</p>
-            <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold">
+          <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-[#D4EEF8] shadow-sm">
+            <Calendar className="w-8 h-8 text-[#6A97C0] mx-auto" />
+            <p className="text-sm font-bold text-[#152026]">You have no upcoming lessons booked</p>
+            <Link to="/student/lessons/book" className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold shadow-sm">
               Book a Lesson Now <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {upcomingBookings.map((b) => (
-              <div key={b._id} className="card card-hover p-5 space-y-3 border-l-4 border-l-cyan-400">
+              <div key={b._id} className="bg-white rounded-3xl p-5 space-y-3 border border-[#D4EEF8] shadow-sm border-l-4 border-l-[#1B3D59]">
                 <div className="flex items-center justify-between">
-                  <span className="badge badge-info">{b.vehicleType}</span>
-                  <span className={`badge ${b.lessonType === 'free-weekly-class' ? 'badge-accent' : 'badge-success'}`}>
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] font-bold text-xs">{b.vehicleType}</span>
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${b.lessonType === 'free-weekly-class' ? 'bg-[#F3EED8] text-[#152026]' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
                     {b.lessonType === 'free-weekly-class' ? 'Free Class' : 'Confirmed'}
                   </span>
                 </div>
 
-                <div className="space-y-1 text-xs">
-                  <p className="text-sm font-bold text-white">
+                <div className="space-y-1.5 text-xs">
+                  <p className="text-sm font-black text-[#152026]">
                     {b.timeSlotId?.date ? format(new Date(b.timeSlotId.date), 'EEEE, MMM dd, yyyy') : 'Scheduled'}
                   </p>
-                  <p className="font-semibold text-cyan-300">
+                  <p className="font-bold text-[#1B3D59]">
                     {b.timeSlotId?.startTime} – {b.timeSlotId?.endTime}
                   </p>
-                  <p className="text-slate-400 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" /> {b.branch} Branch
+                  <p className="text-[#152026]/70 flex items-center gap-1 font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-[#6A97C0]" /> {b.branch} Branch
                   </p>
-                  <p className="text-slate-400 flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-slate-400" /> Instructor:{' '}
-                    <strong className="text-white">{b.timeSlotId?.instructorId?.name || 'Will be assigned'}</strong>
+                  <p className="text-[#152026]/70 flex items-center gap-1 font-medium">
+                    <User className="w-3.5 h-3.5 text-[#6A97C0]" /> Instructor:{' '}
+                    <strong className="text-[#152026]">{b.timeSlotId?.instructorId?.name || 'Will be assigned'}</strong>
                   </p>
                 </div>
               </div>
@@ -309,37 +309,37 @@ export default function MyLessonsPage() {
 
       {/* Free Weekly Class Modal */}
       {isFreeModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Gift className="w-4 h-4 text-accent" /> Book Free Weekly Theory & Practical Class
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#D4EEF8] rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <Gift className="w-4 h-4 text-[#1B3D59]" /> Book Free Weekly Theory & Practical Class
               </h3>
               <button
                 onClick={() => setIsFreeModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#152026] flex items-center justify-center transition-colors border border-[#D4EEF8]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#152026]/75 leading-relaxed">
               Each week, Sithma Driving School conducts free group classes on road signs and vehicle mechanics. No deduction from your package balance.
             </p>
 
             <form onSubmit={handleBookFreeClass} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-bold text-[#152026] mb-1">
                   Choose Available Class Slot ({student?.branch} Branch):
                 </label>
                 {freeSlotLoading ? (
-                  <p className="text-slate-400">Loading slots...</p>
+                  <p className="text-[#6A97C0]">Loading slots...</p>
                 ) : (
                   <select
                     value={selectedFreeSlot}
                     onChange={(e) => setSelectedFreeSlot(e.target.value)}
                     required
-                    className="w-full px-3.5 py-2.5 border border-white/15 rounded-xl bg-slate-900/90 text-white font-medium outline-none"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] rounded-xl bg-[#FAFCFE] text-[#152026] font-bold outline-none focus:border-[#1B3D59]"
                   >
                     <option value="">-- Select an available session --</option>
                     {freeSlots.map((s) => (
@@ -351,15 +351,15 @@ export default function MyLessonsPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setIsFreeModalOpen(false)}
-                  className="btn-secondary py-2 px-4 text-xs"
+                  className="btn-secondary py-2 px-4 text-xs font-bold"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-accent py-2 px-5 text-xs font-bold">
+                <button type="submit" className="btn-primary py-2 px-5 text-xs font-bold shadow-sm">
                   Reserve Free Class
                 </button>
               </div>
@@ -370,27 +370,27 @@ export default function MyLessonsPage() {
 
       {/* Request Extra Lessons Modal */}
       {isExtraModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <PlusCircle className="w-4 h-4 text-cyan-400" /> Request Extra Practical Lessons
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#D4EEF8] rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-[#1B3D59]" /> Request Extra Practical Lessons
               </h3>
               <button
                 onClick={() => setIsExtraModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#152026] flex items-center justify-center transition-colors border border-[#D4EEF8]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#152026]/75 leading-relaxed">
               Need extra driving practice before your practical DMT trial? Request supplementary lessons at Rs. {getStudentHourlyRate().toLocaleString()} per hourly session.
             </p>
 
             <form onSubmit={handleRequestExtra} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label className="block font-bold text-[#152026] mb-1.5">
                   Number of Additional Sessions:
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -401,8 +401,8 @@ export default function MyLessonsPage() {
                       onClick={() => setExtraCount(num)}
                       className={`p-3 rounded-xl border text-center font-bold text-xs transition-all ${
                         extraCount === num
-                          ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.4)]'
-                          : 'border-white/15 bg-white/5 text-slate-300 hover:bg-white/10'
+                          ? 'border-[#1B3D59] bg-[#1B3D59] text-white shadow-sm'
+                          : 'border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40'
                       }`}
                     >
                       {num} Lessons
@@ -411,25 +411,25 @@ export default function MyLessonsPage() {
                 </div>
               </div>
 
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center text-xs">
-                <span className="text-slate-400">Estimated Additional Cost:</span>
-                <span className="font-black text-accent text-sm">
+              <div className="p-3.5 bg-[#FAFCFE] rounded-2xl border border-[#D4EEF8] flex justify-between items-center text-xs">
+                <span className="text-[#6A97C0] font-medium">Estimated Additional Cost:</span>
+                <span className="font-black text-[#1B3D59] text-sm">
                   Rs. {(extraCount * getStudentHourlyRate()).toLocaleString()}
                 </span>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setIsExtraModalOpen(false)}
-                  className="btn-secondary py-2 px-4 text-xs"
+                  className="btn-secondary py-2 px-4 text-xs font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={extraLoading}
-                  className="btn-primary py-2 px-5 text-xs font-bold"
+                  className="btn-primary py-2 px-5 text-xs font-bold shadow-sm"
                 >
                   {extraLoading ? 'Submitting...' : 'Submit Request'}
                 </button>

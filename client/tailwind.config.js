@@ -7,34 +7,51 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Primary Design System Palette (from Reference Image)
+        blackPine: '#152026',
+        deepOcean: '#1B3D59',
+        windstorm: '#6A97C0',
+        meltingIce: '#B3D5F1',
+        avalanche: '#D4EEF8',
+        sunBeam: '#F3EED8',
+
+        // Semantic Role Aliases
         primary: {
-          DEFAULT: '#3F72AF',
-          dark: '#112D4E',
-          deep: '#0B2447',
-          hover: '#19376D',
-          light: '#DBE2EF'
+          DEFAULT: '#1B3D59', // Deep Ocean
+          dark: '#152026',    // Black Pine
+          deep: '#152026',    // Black Pine
+          hover: '#152026',   // Black Pine
+          light: '#D4EEF8',   // Avalanche
+          ice: '#B3D5F1',     // Melting Ice
+        },
+        secondary: {
+          DEFAULT: '#6A97C0', // Windstorm
+          hover: '#1B3D59',   // Deep Ocean
+          light: '#B3D5F1',   // Melting Ice
         },
         navy: {
-          50: '#FAFBFC',
-          100: '#DBE2EF',
-          200: '#A5D7E8',
-          300: '#A9B5DF',
-          400: '#7886C7',
-          500: '#576CBC',
-          600: '#3F72AF',
-          700: '#205295',
-          800: '#19376D',
-          900: '#112D4E',
-          950: '#0B2447'
+          50: '#F8FCFE',
+          100: '#D4EEF8',     // Avalanche
+          200: '#B3D5F1',     // Melting Ice
+          300: '#6A97C0',     // Windstorm
+          400: '#4F7FA8',
+          500: '#356891',
+          600: '#235177',
+          700: '#1B3D59',     // Deep Ocean
+          800: '#18344B',
+          900: '#152026',     // Black Pine
+          950: '#0E171C'
         },
         accent: {
-          DEFAULT: '#112D4E',
-          dark: '#0B2447',
-          blue: '#2C74B3',
-          royal: '#3F72AF',
-          indigo: '#576CBC',
-          ice: '#A5D7E8',
-          light: '#DBE2EF'
+          DEFAULT: '#1B3D59', // Deep Ocean
+          dark: '#152026',    // Black Pine
+          blue: '#6A97C0',    // Windstorm
+          royal: '#1B3D59',   // Deep Ocean
+          indigo: '#1B3D59',  // Deep Ocean
+          ice: '#B3D5F1',     // Melting Ice
+          soft: '#D4EEF8',    // Avalanche
+          warm: '#F3EED8',    // Sun Beam
+          light: '#D4EEF8'    // Avalanche
         },
         success: {
           DEFAULT: '#10B981',
@@ -42,29 +59,31 @@ export default {
           light: '#ECFDF5'
         },
         warning: {
-          DEFAULT: '#F59E0B',
-          dark: '#D97706',
-          light: '#FFFBEB'
+          DEFAULT: '#F3EED8', // Sun Beam
+          dark: '#152026',
+          light: '#F3EED8',
+          text: '#152026',
         },
         danger: {
           DEFAULT: '#EF4444',
           dark: '#DC2626',
           light: '#FEF2F2'
         },
-        neutralBg: '#FAFBFC',
+        neutralBg: '#FFFFFF',
         cardBg: '#FFFFFF',
-        textMain: '#112D4E',
-        textMuted: '#4A5568',
-        borderColor: '#E2E8F0'
+        textMain: '#152026', // Black Pine
+        textMuted: '#6A97C0', // Windstorm
+        borderColor: '#D4EEF8' // Avalanche
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'Inter', '"Noto Sans Sinhala"', '"Noto Sans Tamil"', 'system-ui', 'sans-serif'],
         heading: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif']
       },
       boxShadow: {
-        card: '0 2px 8px rgba(0, 0, 0, 0.06)',
-        cardHover: '0 8px 20px rgba(0, 0, 0, 0.08)',
-        modal: '0 20px 40px rgba(0, 0, 0, 0.12)'
+        xs: '0 1px 2px 0 rgba(21, 32, 38, 0.05)',
+        card: '0 2px 8px rgba(21, 32, 38, 0.06)',
+        cardHover: '0 8px 20px rgba(27, 61, 89, 0.08)',
+        modal: '0 20px 40px rgba(21, 32, 38, 0.12)'
       },
       borderRadius: {
         card: '12px'

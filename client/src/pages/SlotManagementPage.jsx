@@ -88,28 +88,31 @@ export default function SlotManagementPage() {
   };
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
+    <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full text-[#152026]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] font-bold text-xs mb-2">
             <Sparkles className="w-3.5 h-3.5" /> Fleet & Instructor Operations
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading flex items-center gap-2 drop-shadow">
-            <Clock className="w-6 h-6 text-cyan-400" /> Branch Slot & Instructor Scheduling
+          <h1 className="text-2xl font-extrabold text-[#152026] flex items-center gap-2">
+            <Clock className="w-6 h-6 text-[#1B3D59]" /> Branch Slot & Instructor Scheduling
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#6A97C0] mt-0.5">
             Configure daily training sessions, assign instructors, and monitor booking capacities per branch.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={fetchSlots} className="btn-secondary text-xs py-2 px-3.5 flex items-center gap-1.5 font-bold">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          <button
+            onClick={fetchSlots}
+            className="py-2 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#1B3D59] ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="btn-accent text-xs py-2 px-4 font-bold shadow-md flex items-center gap-1.5"
+            className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2 px-4 rounded-xl font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Session Slot
           </button>
@@ -117,13 +120,13 @@ export default function SlotManagementPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="card p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="card p-4 bg-white border border-[#D4EEF8] rounded-2xl shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Branch:</label>
+          <label className="block text-xs font-semibold text-[#152026] mb-1">Branch:</label>
           <select
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
-            className="w-full px-3.5 py-2.5 border border-white/15 rounded-xl text-xs bg-slate-950/80 font-bold text-cyan-300 outline-none"
+            className="w-full px-3.5 py-2.5 border border-[#D4EEF8] rounded-xl text-xs bg-white font-bold text-[#152026] outline-none focus:border-[#1B3D59] cursor-pointer"
           >
             <option value="Maharagama">Maharagama Branch</option>
             <option value="Werahara">Werahara Branch</option>
@@ -132,35 +135,35 @@ export default function SlotManagementPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Date:</label>
+          <label className="block text-xs font-semibold text-[#152026] mb-1">Date:</label>
           <div className="relative flex items-center">
-            <Calendar className="w-4 h-4 text-[#3F72AF] absolute left-3.5 pointer-events-none" />
+            <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 border border-white/15 bg-slate-950/80 text-white rounded-xl text-xs outline-none cursor-pointer"
+              className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs outline-none focus:border-[#1B3D59] cursor-pointer font-mono"
             />
           </div>
         </div>
       </div>
 
       {/* Slots Table */}
-      <div className="card p-0 overflow-hidden shadow-2xl border border-white/10">
+      <div className="card p-0 overflow-hidden shadow-sm border border-[#D4EEF8] bg-white rounded-3xl">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" /> Loading branch slots...
+          <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading branch slots...
           </div>
         ) : slots.length === 0 ? (
           <div className="py-12 text-center space-y-2">
-            <Clock className="w-10 h-10 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-white">No slots found for this date</p>
-            <p className="text-xs text-slate-400">Click "Add Session Slot" to schedule a session.</p>
+            <Clock className="w-10 h-10 text-[#6A97C0] mx-auto" />
+            <p className="text-sm font-bold text-[#152026]">No slots found for this date</p>
+            <p className="text-xs text-[#6A97C0]">Click "Add Session Slot" to schedule a session.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-xs">
-              <thead className="bg-slate-950/90 border-b border-white/10 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+              <thead className="bg-[#1B3D59] text-white uppercase text-[10px] font-bold tracking-wider">
                 <tr>
                   <th className="px-4 py-3.5">Session Time & Title</th>
                   <th className="px-4 py-3.5">Vehicle</th>
@@ -170,7 +173,7 @@ export default function SlotManagementPage() {
                   <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10">
+              <tbody className="divide-y divide-[#D4EEF8]">
                 {slots.map((slot) => {
                   const bookedCount = slot.bookedCount || 0;
                   const capacity = slot.capacity || 10;
@@ -178,46 +181,46 @@ export default function SlotManagementPage() {
                   const remaining = Math.max(0, capacity - bookedCount);
 
                   return (
-                    <tr key={slot._id} className="hover:bg-white/5 transition-colors">
+                    <tr key={slot._id} className="hover:bg-[#D4EEF8]/30 transition-colors">
                       <td className="px-4 py-3.5">
-                        <div className="font-extrabold text-white text-sm">
+                        <div className="font-extrabold text-[#152026] text-sm">
                           {slot.startTime} – {slot.endTime}
                         </div>
-                        <div className="text-[11px] text-cyan-300 font-semibold mt-0.5">
+                        <div className="text-[11px] text-[#1B3D59] font-semibold mt-0.5">
                           {slot.lessonTitle || 'Practical Driving Session'}
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="badge badge-info text-[10px] font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1]">
                           {slot.vehicleType || slot.vehicleCategory}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="font-semibold text-white">
+                        <div className="font-semibold text-[#152026]">
                           {slot.instructorId?.name || (
-                            <span className="text-amber-300 font-normal">Unassigned</span>
+                            <span className="text-amber-700 font-normal">Unassigned</span>
                           )}
                         </div>
                         {slot.instructorId?.phone && (
-                          <div className="text-[11px] text-slate-400">{slot.instructorId.phone}</div>
+                          <div className="text-[11px] text-[#6A97C0]">{slot.instructorId.phone}</div>
                         )}
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="font-extrabold text-white text-xs">
+                        <div className="font-extrabold text-[#152026] text-xs">
                           {bookedCount} / {capacity} Students
                         </div>
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-[10px] text-[#6A97C0]">
                           {isFull ? 'Capacity Full' : `${remaining} seat(s) open`}
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className={`badge text-[10px] font-bold ${
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                             isFull
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              ? 'bg-rose-50 text-rose-700 border-rose-300'
                               : bookedCount > 0
-                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
-                              : 'badge-success'
+                              ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#B3D5F1]'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-300'
                           }`}
                         >
                           {isFull ? 'FULL (10/10)' : `${remaining} Available`}
@@ -227,7 +230,7 @@ export default function SlotManagementPage() {
                         <button
                           disabled={bookedCount > 0}
                           onClick={() => handleDeleteSlot(slot._id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                           title={bookedCount > 0 ? 'Cannot delete slot with active booked students' : 'Delete slot'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -244,15 +247,15 @@ export default function SlotManagementPage() {
 
       {/* Add Slot Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-3xl bg-slate-950/95 border border-white/20 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-cyan-400" /> Schedule New Session Slot
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto my-auto text-[#152026] animate-fade-in">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#1B3D59]" /> Schedule New Session Slot
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#6A97C0] hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -261,50 +264,53 @@ export default function SlotManagementPage() {
             <form onSubmit={handleCreateSlot} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Start Time:</label>
+                  <label className="block font-semibold text-[#152026] mb-1">Start Time:</label>
                   <input
                     type="time"
                     required
                     value={newSlotForm.startTime}
                     onChange={(e) => setNewSlotForm({ ...newSlotForm, startTime: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">End Time:</label>
+                  <label className="block font-semibold text-[#152026] mb-1">End Time:</label>
                   <input
                     type="time"
                     required
                     value={newSlotForm.endTime}
                     onChange={(e) => setNewSlotForm({ ...newSlotForm, endTime: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl"
+                    className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:border-[#1B3D59] outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Vehicle Category:</label>
+                <label className="block font-semibold text-[#152026] mb-1">Vehicle Category:</label>
                 <select
                   value={newSlotForm.vehicleCategory}
                   onChange={(e) =>
                     setNewSlotForm({ ...newSlotForm, vehicleCategory: e.target.value })
                   }
-                  className="w-full px-3.5 py-2.5 border border-white/15 bg-slate-900/90 text-white rounded-xl font-medium"
+                  className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl font-medium focus:border-[#1B3D59] outline-none cursor-pointer"
                 >
                   <option value="Light">Light Vehicle (Car / Bike / 3-Wheel)</option>
                   <option value="Heavy">Heavy Vehicle (Bus / Lorry)</option>
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="btn-secondary text-xs py-2 px-4"
+                  className="py-2 px-4 rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] hover:bg-[#D4EEF8]/40 text-xs font-bold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-accent text-xs py-2 px-5 font-bold">
+                <button
+                  type="submit"
+                  className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2 px-5 rounded-xl font-bold cursor-pointer shadow-md transition-all"
+                >
                   Create Slot
                 </button>
               </div>
