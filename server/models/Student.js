@@ -251,6 +251,26 @@ const studentSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    name: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    studentName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    email: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     nic: {
       type: String,
       trim: true,
@@ -563,6 +583,25 @@ const studentSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Pre-save hook to ensure student's name, email, and phone are synced from User
+studentSchema.pre('save', async function (next) {
+  if ((!this.name || !this.studentName || !this.email || !this.phone) && this.userId) {
+    try {
+      const User = mongoose.model('User');
+      const u = await User.findById(this.userId).select('name email phone');
+      if (u) {
+        if (!this.name && u.name) this.name = u.name;
+        if (!this.studentName && u.name) this.studentName = u.name;
+        if (!this.email && u.email) this.email = u.email;
+        if (!this.phone && u.phone) this.phone = u.phone;
+      }
+    } catch (e) {
+      // Ignore sync lookup error
+    }
+  }
+  if (typeof next === 'function') next();
+});
 
 // Pre-save hook to compute DMT deadlines and enforce rules
 studentSchema.pre('save', function (next) {

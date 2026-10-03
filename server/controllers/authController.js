@@ -286,6 +286,10 @@ exports.registerStudent = async (req, res) => {
     const chosenPlan = paymentPlan || 'full';
     const student = await Student.create({
       userId: user._id,
+      name: user.name,
+      studentName: user.name,
+      email: user.email,
+      phone: user.phone,
       nic: (nic || '').trim(),
       dob: birthDate,
       dateOfBirth: birthDate,
@@ -1083,6 +1087,10 @@ exports.registerType2Student = async (req, res) => {
       // - dmt_clearance_verified = false
       student = await Student.create({
         userId: user._id,
+        name: user.name,
+        studentName: user.name,
+        email: user.email,
+        phone: user.phone,
         nic: cleanNic,
         dateOfBirth: parsedDob,
         student_type: 'Type 2',

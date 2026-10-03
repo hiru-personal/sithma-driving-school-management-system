@@ -1315,6 +1315,10 @@ exports.registerWalkInStudent = async (req, res) => {
 
     const student = await Student.create({
       userId: user._id,
+      name: user.name || name.trim(),
+      studentName: user.name || name.trim(),
+      email: cleanEmail,
+      phone: phone.trim(),
       nic: nic.trim(),
       dob: dob ? new Date(dob) : undefined,
       studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
