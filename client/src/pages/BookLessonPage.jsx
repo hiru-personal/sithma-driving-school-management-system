@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import {
@@ -9,6 +9,7 @@ import {
   Bus,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   MapPin,
   User,
   Sparkles,
@@ -119,15 +120,27 @@ export default function BookLessonPage() {
   const isPackagePaymentConfirmed = student?.packagePaymentStatus === 'confirmed';
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
 
-  // Shared Trial Date Tracking
+  // Shared Trial Date Tracking & Cut-off enforcement (Rules 1 & 4)
   const hasTrialDate = Boolean(student?.trial_date);
   const trialDateObj = hasTrialDate ? new Date(student.trial_date) : null;
   const isTrialDatePassed = Boolean(
-    trialDateObj && new Date().getTime() > new Date(trialDateObj).setHours(23, 59, 59, 999)
+    trialDateObj && new Date().setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0)
   );
   const daysUntilTrial = trialDateObj
-    ? Math.max(0, Math.ceil((new Date(trialDateObj).setHours(23, 59, 59, 999) - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((new Date(trialDateObj).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)))
     : null;
+
+  const maxBookingDate = useMemo(() => {
+    if (!trialDateObj) return undefined;
+    const maxD = new Date(trialDateObj);
+    maxD.setDate(maxD.getDate() - 1);
+    return maxD.toISOString().split('T')[0];
+  }, [trialDateObj]);
+
+  const isSelectedDateOnOrAfterTrial = useMemo(() => {
+    if (!trialDateObj || !selectedDate) return false;
+    return new Date(selectedDate).setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0);
+  }, [trialDateObj, selectedDate]);
 
   const unlockedCount =
     student?.lessonsUnlocked !== undefined && student?.lessonsUnlocked !== null
@@ -158,12 +171,12 @@ export default function BookLessonPage() {
       return;
     }
 
-    // Gate 1d: Selected Slot after Trial Date Gate
+    // Gate 1d: Selected Slot on or after Trial Date Gate (Rules 1 & 4)
     if (trialDateObj && selectedSlot) {
       const slotTime = new Date(selectedSlot.date).setHours(0, 0, 0, 0);
-      const trialLimit = new Date(trialDateObj).setHours(23, 59, 59, 999);
-      if (slotTime > trialLimit) {
-        toast.error(`You can only book lessons up until your scheduled Trial Date (${trialDateObj.toISOString().split('T')[0]}). Please choose an earlier slot.`);
+      const trialLimit = new Date(trialDateObj).setHours(0, 0, 0, 0);
+      if (slotTime >= trialLimit) {
+        toast.error('Lessons cannot be booked on or after your Trial Exam Date.');
         return;
       }
     }
@@ -369,8 +382,8 @@ export default function BookLessonPage() {
               </h3>
               <p className="text-xs text-[#152026]/75 mt-0.5">
                 {isTrialDatePassed
-                  ? 'Your scheduled trial date has passed and lesson booking is locked. Please request a trial date reschedule below.'
-                  : 'You can book practical driving lessons up until this scheduled trial date.'}
+                  ? 'Your scheduled trial date has arrived/passed and lesson booking is locked. Please request a trial date reschedule below.'
+                  : 'You can book practical driving lessons only for dates before your scheduled trial date.'}
               </p>
 
               {/* Pending Request Notice */}
@@ -530,11 +543,29 @@ export default function BookLessonPage() {
               <input
                 type="date"
                 min={new Date().toISOString().split('T')[0]}
+                max={maxBookingDate}
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  if (trialDateObj && newDate) {
+                    const chosen = new Date(newDate).setHours(0, 0, 0, 0);
+                    const trialLimit = new Date(trialDateObj).setHours(0, 0, 0, 0);
+                    if (chosen >= trialLimit) {
+                      toast.error('Lessons cannot be booked on or after your Trial Exam Date.');
+                      return;
+                    }
+                  }
+                  setSelectedDate(newDate);
+                }}
                 className="w-full pl-10 pr-3.5 py-2.5 border border-[#D4EEF8] bg-[#FAFCFE] text-[#152026] rounded-xl text-xs font-bold outline-none cursor-pointer focus:border-[#1B3D59]"
               />
             </div>
+            {isSelectedDateOnOrAfterTrial && (
+              <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                Lessons cannot be booked on or after your Trial Exam Date.
+              </p>
+            )}
           </div>
 
           {/* Vehicle Type Selector */}
@@ -598,10 +629,10 @@ export default function BookLessonPage() {
               const isStudentAlreadyBooked = Boolean(slot.isStudentBooked);
               const hasInstructor = !!slot.instructorId;
 
-              const isSlotPastTrial = Boolean(
-                trialDateObj && new Date(slot.date).setHours(0, 0, 0, 0) > new Date(trialDateObj).setHours(23, 59, 59, 999)
+              const isSlotOnOrPastTrial = Boolean(
+                trialDateObj && new Date(slot.date).setHours(0, 0, 0, 0) >= new Date(trialDateObj).setHours(0, 0, 0, 0)
               );
-              const isLockedByTrial = (isType2 && !hasTrialDate) || isTrialDatePassed || isSlotPastTrial;
+              const isLockedByTrial = (isType2 && !hasTrialDate) || isTrialDatePassed || isSlotOnOrPastTrial;
               const isLockedByExam = isType1 && !isTrialEligible;
               const isLockedByPackage = (!isPackagePaymentConfirmed && lessonsRemaining <= 0) || isPackagePaymentPending;
               const isLockedByQuota = lessonsRemaining <= 0;
@@ -702,7 +733,13 @@ export default function BookLessonPage() {
                   {/* Action Button */}
                   <button
                     disabled={isDisabled}
-                    onClick={() => setSelectedSlot(slot)}
+                    onClick={() => {
+                      if (isSlotOnOrPastTrial) {
+                        toast.error('Lessons cannot be booked on or after your Trial Exam Date.');
+                        return;
+                      }
+                      setSelectedSlot(slot);
+                    }}
                     className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       isStudentAlreadyBooked
                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
@@ -712,7 +749,7 @@ export default function BookLessonPage() {
                         ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/30 cursor-not-allowed'
                         : isTrialDatePassed
                         ? 'bg-rose-50 text-rose-700 border border-rose-200 cursor-not-allowed'
-                        : isSlotPastTrial
+                        : isSlotOnOrPastTrial
                         ? 'bg-rose-50 text-rose-700 border border-rose-200 cursor-not-allowed'
                         : isLockedByExam
                         ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
@@ -733,8 +770,8 @@ export default function BookLessonPage() {
                       ? 'Trial Date Required to Book'
                       : isTrialDatePassed
                       ? 'Trial Date Has Passed'
-                      : isSlotPastTrial
-                      ? 'Slot is After Trial Date'
+                      : isSlotOnOrPastTrial
+                      ? 'Lessons Restricted: On or After Trial Exam'
                       : isLockedByExam
                       ? 'DMT Theory Exam Pass Required'
                       : isPackagePaymentPending

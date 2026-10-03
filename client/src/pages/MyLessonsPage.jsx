@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ArrowRight,
   ShieldAlert,
+  AlertTriangle,
   X,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -300,6 +301,80 @@ export default function MyLessonsPage() {
                     <User className="w-3.5 h-3.5 text-[#6A97C0]" /> Instructor:{' '}
                     <strong className="text-[#152026]">{b.timeSlotId?.instructorId?.name || 'Will be assigned'}</strong>
                   </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Lesson History & Cancelled Lessons (Rules 2 & 3) */}
+      <div className="space-y-4 pt-6 border-t border-[#D4EEF8]">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-[#152026] flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#1B3D59]" /> Lesson History & Status
+          </h2>
+          <span className="text-xs text-[#6A97C0] font-bold">
+            {pastBookings.length} Recorded / Cancelled
+          </span>
+        </div>
+
+        {pastBookings.length === 0 ? (
+          <div className="bg-white rounded-3xl p-6 text-center text-xs font-semibold text-slate-500 border border-[#D4EEF8]">
+            No completed or cancelled lessons in your record.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {pastBookings.map((b) => (
+              <div
+                key={b._id}
+                className={`bg-white rounded-3xl p-5 space-y-3 border shadow-sm ${
+                  b.status === 'cancelled'
+                    ? 'border-rose-300 border-l-4 border-l-rose-500 bg-rose-50/20'
+                    : 'border-[#D4EEF8] border-l-4 border-l-emerald-600'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] font-bold text-xs">
+                    {b.vehicleType}
+                  </span>
+                  <span
+                    className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      b.status === 'cancelled'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    }`}
+                  >
+                    {b.status === 'cancelled' ? 'Cancelled' : 'Completed'}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="text-sm font-black text-[#152026]">
+                    {b.timeSlotId?.date ? format(new Date(b.timeSlotId.date), 'EEEE, MMM dd, yyyy') : 'Scheduled'}
+                  </p>
+                  <p className="font-bold text-[#1B3D59]">
+                    {b.timeSlotId?.startTime} – {b.timeSlotId?.endTime}
+                  </p>
+                  <p className="text-[#152026]/70 flex items-center gap-1 font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-[#6A97C0]" /> {b.branch} Branch
+                  </p>
+                  {b.timeSlotId?.instructorId?.name && (
+                    <p className="text-[#152026]/70 flex items-center gap-1 font-medium">
+                      <User className="w-3.5 h-3.5 text-[#6A97C0]" /> Instructor:{' '}
+                      <strong className="text-[#152026]">{b.timeSlotId.instructorId.name}</strong>
+                    </p>
+                  )}
+
+                  {b.status === 'cancelled' && b.cancellationReason && (
+                    <div className="mt-3 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-rose-900">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>Cancellation Reason</span>
+                      </div>
+                      <p className="text-rose-700 pl-5">{b.cancellationReason}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

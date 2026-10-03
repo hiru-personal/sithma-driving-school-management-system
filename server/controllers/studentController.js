@@ -4,6 +4,8 @@ const Package = require('../models/Package');
 const Notification = require('../models/Notification');
 const Payment = require('../models/Payment');
 const RescheduleRequest = require('../models/RescheduleRequest');
+const Booking = require('../models/Booking');
+const TimeSlot = require('../models/TimeSlot');
 
 // @desc    Get all students with filtering, searching, and pagination (Staff/Admin only)
 // @route   GET /api/students
@@ -2210,6 +2212,74 @@ exports.getRegistrationCycles = async (req, res) => {
   }
 };
 
+// Helper to cancel any bookings scheduled on or after Trial Exam Date (Rules 2 & 3)
+const cancelBookingsOnOrAfterTrialDate = async (student, trialDate, staffUser) => {
+  try {
+    const cutoffDate = new Date(trialDate);
+    cutoffDate.setHours(0, 0, 0, 0);
+
+    const activeBookings = await Booking.find({
+      studentId: student._id,
+      status: { $in: ['confirmed', 'pending'] },
+    }).populate('timeSlotId');
+
+    const conflictingBookings = activeBookings.filter((b) => {
+      if (!b.timeSlotId || !b.timeSlotId.date) return false;
+      const slotDate = new Date(b.timeSlotId.date);
+      slotDate.setHours(0, 0, 0, 0);
+      return slotDate.getTime() >= cutoffDate.getTime();
+    });
+
+    let cancelledCount = 0;
+    for (const b of conflictingBookings) {
+      b.status = 'cancelled';
+      b.cancellationReason = 'Cancelled – Trial Exam Date Restriction';
+      await b.save();
+
+      if (b.timeSlotId && b.timeSlotId._id) {
+        const slot = await TimeSlot.findById(b.timeSlotId._id);
+        if (slot) {
+          slot.bookedCount = Math.max(0, (slot.bookedCount || 1) - 1);
+          if (slot.status === 'full') {
+            slot.status = 'available';
+          }
+          await slot.save();
+        }
+      }
+      cancelledCount++;
+    }
+
+    if (cancelledCount > 0) {
+      student.lessonsUsed = Math.max(0, (student.lessonsUsed || 0) - cancelledCount);
+      if (student.package) {
+        student.package.lessonsUsed = student.lessonsUsed;
+      }
+      await student.save();
+
+      const dateFormatted = new Date(trialDate).toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+
+      await Notification.create({
+        recipientId: student.userId?._id || student.userId,
+        recipientRole: 'student',
+        title: '⚠️ Lesson Bookings Cancelled – Trial Exam Cut-Off',
+        message: `${cancelledCount} lesson booking(s) scheduled on or after your newly scheduled Trial Exam Date (${dateFormatted}) have been automatically cancelled. Lessons cannot be taken on or after the trial date. Your package lesson balance has been restored.`,
+        type: 'booking',
+        link: '/student/lessons',
+      });
+    }
+
+    return cancelledCount;
+  } catch (err) {
+    console.error('Error auto-cancelling bookings after trial date:', err);
+    return 0;
+  }
+};
+
 // @desc    Set or update Practical Trial Date for a student (Staff / Admin only)
 // @route   PATCH /api/students/:id/trial-date
 // @access  Staff, Admin
@@ -2246,6 +2316,9 @@ exports.setTrialDate = async (req, res) => {
 
     await student.save();
 
+    // Cancel any existing lesson bookings on or after the newly assigned Trial Exam Date (Rules 2 & 3)
+    const cancelledCount = await cancelBookingsOnOrAfterTrialDate(student, parsedDate, req.user);
+
     // Trigger in-app notification for student
     const dateFormatted = parsedDate.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -2258,7 +2331,7 @@ exports.setTrialDate = async (req, res) => {
       recipientId: student.userId._id || student.userId,
       recipientRole: 'student',
       title: '📅 Practical Trial Date Scheduled',
-      message: `Your practical trial exam has been scheduled for ${dateFormatted} by ${req.user.name || 'Branch Staff'}. You may book practical lessons up until this date.`,
+      message: `Your practical trial exam has been scheduled for ${dateFormatted} by ${req.user.name || 'Branch Staff'}. In accordance with DMT regulations, lessons can only be booked before this date.${cancelledCount > 0 ? ` ${cancelledCount} conflicting lesson(s) on or after this date have been automatically cancelled and your package balance restored.` : ''}`,
       type: 'trial',
       link: '/student/dashboard',
     });
@@ -2268,9 +2341,14 @@ exports.setTrialDate = async (req, res) => {
       .populate('package.packageId')
       .populate('trial_date_set_by', 'name role');
 
+    const message = cancelledCount > 0
+      ? `Practical trial date scheduled for ${dateFormatted}. ${cancelledCount} lesson booking(s) on or after this date were automatically cancelled.`
+      : 'Trial date scheduled successfully';
+
     return res.status(200).json({
       success: true,
-      message: 'Trial date scheduled successfully',
+      message,
+      cancelledCount,
       trialDate: student.trial_date,
       student: sanitizeStudentForType(populatedStudent),
     });
@@ -2584,6 +2662,7 @@ exports.reviewRescheduleRequest = async (req, res) => {
           student.trialEligible = true;
           if (!student.trial) student.trial = {};
           student.trial.trialDate = parsedNewDate;
+          await cancelBookingsOnOrAfterTrialDate(student, parsedNewDate, req.user);
         }
 
         student.lastActivityDate = new Date();
