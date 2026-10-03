@@ -321,6 +321,11 @@ async function seed() {
 
     const studentDoc = await Student.create({
       userId: studentUser._id,
+      name: studentUser.name,
+      studentName: studentUser.name,
+      email: studentUser.email,
+      phone: studentUser.phone,
+      nic: studentUser.nic,
       studentType: 'Type1_NewLearner',
       branch: 'Maharagama',
       accountStatus: 'active',
@@ -372,6 +377,10 @@ async function seed() {
 
     await Student.create({
       userId: pendingStudentUser._id,
+      name: pendingStudentUser.name,
+      studentName: pendingStudentUser.name,
+      email: pendingStudentUser.email,
+      phone: pendingStudentUser.phone,
       nic: '200199887766',
       studentType: 'Type1_NewLearner',
       branch: 'Maharagama',
