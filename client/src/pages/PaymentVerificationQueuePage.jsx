@@ -166,7 +166,7 @@ export default function PaymentVerificationQueuePage() {
           <h1 className="text-2xl font-extrabold text-[#152026] flex items-center gap-2">
             <CreditCard className="w-6 h-6 text-[#1B3D59]" /> Advance Payment Verification Queue
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5">
+          <p className="text-xs text-slate-700 font-semibold mt-0.5">
             Review submitted bank deposit slips, online gateway payments, and record on-the-spot physical branch cash payments.
           </p>
         </div>
@@ -209,13 +209,13 @@ export default function PaymentVerificationQueuePage() {
 
           {/* Search Input */}
           <div className="relative flex-1 sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#6A97C0]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder="Search name, phone, ref..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl text-xs text-[#152026] placeholder-[#6A97C0] focus:outline-none focus:border-[#1B3D59]"
+              className="w-full pl-9 pr-3 py-1.5 bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl text-xs text-[#152026] placeholder-slate-400 focus:outline-none focus:border-[#1B3D59]"
             />
           </div>
         </div>
@@ -228,14 +228,14 @@ export default function PaymentVerificationQueuePage() {
       {/* Slips & Payments Table */}
       <div className="card p-0 overflow-hidden shadow-sm border border-[#D4EEF8] bg-white rounded-3xl">
         {loading ? (
-          <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+          <div className="py-12 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
             <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading pending verification queue...
           </div>
         ) : filteredPayments.length === 0 ? (
           <div className="py-12 text-center space-y-2">
             <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
             <p className="text-sm font-bold text-[#152026]">All payments are up to date!</p>
-            <p className="text-xs text-[#6A97C0]">There are no unverified advance payments in the queue.</p>
+            <p className="text-xs text-slate-600 font-medium">There are no unverified advance payments in the queue.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -268,10 +268,10 @@ export default function PaymentVerificationQueuePage() {
                       {/* Student Details */}
                       <td className="px-4 py-3.5 font-semibold text-[#152026]">
                         <div className="text-sm font-bold">{user?.name || 'Unknown Student'}</div>
-                        <div className="text-[11px] text-[#6A97C0] font-normal">
+                        <div className="text-[11px] text-slate-600 font-medium">
                           {user?.phone || 'No phone'} • {user?.email}
                         </div>
-                        <div className="text-[10px] text-[#1B3D59] font-semibold mt-0.5">
+                        <div className="text-[10px] text-[#1B3D59] font-bold mt-0.5">
                           {student?.branch || user?.branch || 'Maharagama'} Branch
                         </div>
                       </td>
@@ -323,13 +323,13 @@ export default function PaymentVerificationQueuePage() {
                         <div className="font-mono text-[11px] font-bold text-[#152026]">
                           {p.transactionReference || p.gateway_transaction_reference || 'N/A'}
                         </div>
-                        <div className="text-[10px] text-[#6A97C0]">
+                        <div className="text-[10px] text-slate-600 font-medium">
                           Status: {p.payment_status || p.status}
                         </div>
                       </td>
 
                       {/* Date */}
-                      <td className="px-4 py-3.5 text-[#6A97C0] text-[11px]">
+                      <td className="px-4 py-3.5 text-slate-600 font-medium text-[11px]">
                         {p.createdAt || p.uploadedAt
                           ? format(new Date(p.createdAt || p.uploadedAt), 'MMM dd, yyyy • hh:mm a')
                           : 'N/A'}
@@ -365,14 +365,14 @@ export default function PaymentVerificationQueuePage() {
                   <CreditCard className="w-5 h-5 text-[#1B3D59]" />
                   Review Payment: {selectedPayment.userId?.name || 'Student'}
                 </h3>
-                <p className="text-xs text-[#6A97C0]">
+                <p className="text-xs text-slate-600 font-medium">
                   {selectedPayment.studentId?.branch || selectedPayment.userId?.branch || '—'} Branch •{' '}
                   {selectedPayment.userId?.phone || selectedPayment.userId?.email}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedPayment(null)}
-                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#6A97C0] hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-slate-600 hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -381,7 +381,7 @@ export default function PaymentVerificationQueuePage() {
             {/* Details Summary */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-[#FAFCFE] rounded-2xl border border-[#D4EEF8] text-xs">
               <div>
-                <span className="text-[#6A97C0]">Student Type:</span>
+                <span className="text-slate-700 font-bold">Student Type:</span>
                 <p className="font-extrabold text-[#1B3D59] mt-0.5">
                   {selectedPayment.studentId?.student_type ||
                     selectedPayment.studentId?.studentType ||
@@ -390,19 +390,19 @@ export default function PaymentVerificationQueuePage() {
                 </p>
               </div>
               <div>
-                <span className="text-[#6A97C0]">Method:</span>
+                <span className="text-slate-700 font-bold">Method:</span>
                 <p className="font-bold text-[#152026] mt-0.5 capitalize">
                   {(selectedPayment.payment_method || selectedPayment.paymentMethod || 'bank_slip').replace('_', ' ')}
                 </p>
               </div>
               <div>
-                <span className="text-[#6A97C0]">Advance Amount:</span>
+                <span className="text-slate-700 font-bold">Advance Amount:</span>
                 <p className="font-black text-emerald-700 text-sm mt-0.5">
                   Rs. {Number(selectedPayment.amount || 5000).toLocaleString()}
                 </p>
               </div>
               <div>
-                <span className="text-[#6A97C0]">Reference:</span>
+                <span className="text-slate-700 font-bold">Reference:</span>
                 <p className="font-mono text-[#152026] font-bold mt-0.5 truncate">
                   {selectedPayment.transactionReference || 'N/A'}
                 </p>
@@ -525,13 +525,13 @@ export default function PaymentVerificationQueuePage() {
                 <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-[#1B3D59]" /> Record On-The-Spot Cash Payment
                 </h3>
-                <p className="text-xs text-[#6A97C0]">
+                <p className="text-xs text-slate-600 font-medium">
                   Approve LKR 5,000 physical cash and instantly activate student account
                 </p>
               </div>
               <button
                 onClick={() => setCashModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#6A97C0] hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-slate-600 hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -555,7 +555,7 @@ export default function PaymentVerificationQueuePage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-[#6A97C0] mt-1">
+                <p className="text-[11px] text-slate-600 font-medium mt-1">
                   Lists students currently in Unverified / Pending Payment status.
                 </p>
               </div>

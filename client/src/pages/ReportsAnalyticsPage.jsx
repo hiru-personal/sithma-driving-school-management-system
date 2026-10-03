@@ -124,7 +124,7 @@ export default function ReportsAnalyticsPage() {
           <h1 className="text-2xl sm:text-3xl font-black text-[#152026] flex items-center gap-2">
             <BarChart3 className="w-7 h-7 text-[#1B3D59]" /> Sithma Performance Reports & Analytics
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5">
+          <p className="text-xs text-slate-700 font-semibold mt-0.5">
             Operational summaries across Maharagama, Werahara, and Delgoda branches.
           </p>
         </div>
@@ -143,7 +143,7 @@ export default function ReportsAnalyticsPage() {
       </div>
 
       {loading ? (
-        <div className="py-24 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+        <div className="py-24 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
           <RefreshCw className="w-6 h-6 animate-spin text-[#1B3D59]" /> Generating executive analytics...
         </div>
       ) : (
@@ -152,54 +152,54 @@ export default function ReportsAnalyticsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Total Revenue */}
             <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#1B3D59]">
-              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
+              <div className="flex items-center justify-between text-slate-700 text-xs font-bold">
                 <span>Verified Revenue</span>
                 <CreditCard className="w-4 h-4 text-[#1B3D59]" />
               </div>
               <div className="text-2xl font-black text-[#152026]">
                 Rs. {(reportData?.financials?.totalRevenue || 0).toLocaleString()}
               </div>
-              <p className="text-[11px] text-[#152026]/70 font-medium">
+              <p className="text-[11px] text-slate-600 font-medium">
                 +Rs. {(reportData?.financials?.pendingVerificationAmount || 0).toLocaleString()} pending in queue
               </p>
             </div>
 
             {/* Total Students */}
-            <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#6A97C0]">
-              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
+            <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#1B3D59]">
+              <div className="flex items-center justify-between text-slate-700 text-xs font-bold">
                 <span>Total Active Learners</span>
-                <Users className="w-4 h-4 text-[#6A97C0]" />
+                <Users className="w-4 h-4 text-[#1B3D59]" />
               </div>
               <div className="text-2xl font-black text-[#152026]">{reportData?.totalStudents || 0}</div>
-              <p className="text-[11px] text-[#6A97C0] font-medium">
+              <p className="text-[11px] text-slate-600 font-medium">
                 {reportData?.type1Count} Type 1 (New) • {reportData?.type2Count} Type 2 (Trial-Ready)
               </p>
             </div>
 
             {/* Trial Pass Rate */}
             <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-emerald-600">
-              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
+              <div className="flex items-center justify-between text-slate-700 text-xs font-bold">
                 <span>Trial Success Rate</span>
                 <Award className="w-4 h-4 text-emerald-600" />
               </div>
               <div className="text-2xl font-black text-emerald-700">
                 {reportData?.trialStats?.passRate || 92}%
               </div>
-              <p className="text-[11px] text-[#6A97C0] font-medium">
+              <p className="text-[11px] text-slate-600 font-medium">
                 {reportData?.trialStats?.passed || 0} passed of {reportData?.trialStats?.totalAttempts || 0} exam attempts
               </p>
             </div>
 
             {/* Slot Utilization */}
             <div className="bg-white rounded-3xl p-5 space-y-2 border border-[#D4EEF8] shadow-sm border-t-4 border-t-[#152026]">
-              <div className="flex items-center justify-between text-[#6A97C0] text-xs font-bold">
+              <div className="flex items-center justify-between text-slate-700 text-xs font-bold">
                 <span>Session Utilization</span>
                 <Calendar className="w-4 h-4 text-[#152026]" />
               </div>
               <div className="text-2xl font-black text-[#152026]">
                 {reportData?.slotsUtilization?.utilizationRate || 80}%
               </div>
-              <p className="text-[11px] text-[#6A97C0] font-medium">
+              <p className="text-[11px] text-slate-600 font-medium">
                 {reportData?.slotsUtilization?.bookedSlots || 0} of {reportData?.slotsUtilization?.totalSlots || 0} slots booked
               </p>
             </div>
@@ -213,7 +213,7 @@ export default function ReportsAnalyticsPage() {
                 <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-[#1B3D59]" /> Student Enrollments by Branch
                 </h3>
-                <span className="text-[11px] text-[#6A97C0] font-medium">3 Active Locations</span>
+                <span className="text-[11px] text-slate-600 font-semibold">3 Active Locations</span>
               </div>
               <div className="h-64 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
@@ -242,7 +242,7 @@ export default function ReportsAnalyticsPage() {
                 <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
                   <PieChartIcon className="w-4 h-4 text-[#1B3D59]" /> Popular Course Packages
                 </h3>
-                <span className="text-[11px] text-[#6A97C0] font-medium">By Enrollment Volume</span>
+                <span className="text-[11px] text-slate-600 font-semibold">By Enrollment Volume</span>
               </div>
               <div className="h-64 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
@@ -279,7 +279,7 @@ export default function ReportsAnalyticsPage() {
             <h3 className="text-sm font-bold text-[#152026] flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#1B3D59]" /> DMT Regulatory Milestone Conversion Funnel
             </h3>
-            <p className="text-xs text-[#6A97C0]">
+            <p className="text-xs text-slate-700 font-medium">
               Progression of Sithma students through official Ministry & Department of Motor Traffic milestones.
             </p>
 
@@ -289,9 +289,9 @@ export default function ReportsAnalyticsPage() {
                   key={f.stage}
                   className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] text-center space-y-1 relative overflow-hidden"
                 >
-                  <div className="text-xs font-bold text-[#6A97C0]">{f.stage}</div>
-                  <div className="text-2xl font-black text-[#1B3D59]">{f.count}</div>
-                  <span className="text-[10px] text-[#152026]/60 font-medium">Students Completed</span>
+                  <div className="text-xs font-bold text-[#1B3D59]">{f.stage}</div>
+                  <div className="text-2xl font-black text-[#152026]">{f.count}</div>
+                  <span className="text-[10px] text-slate-600 font-semibold">Students Completed</span>
                 </div>
               ))}
             </div>

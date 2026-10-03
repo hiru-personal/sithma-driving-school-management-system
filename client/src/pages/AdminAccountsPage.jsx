@@ -197,7 +197,7 @@ export default function AdminAccountsPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] font-heading flex items-center gap-2.5">
             Staff & Instructor Account Management
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
+          <p className="text-xs text-slate-700 mt-0.5 font-semibold">
             Admin provisioning: Create Data Entry Officer and Instructor accounts, enforce password policies, and manage lifecycle.
           </p>
         </div>
@@ -311,7 +311,7 @@ export default function AdminAccountsPage() {
                       <div className="text-[11px] text-[#1B3D59] font-mono font-semibold">
                         @{user.username || user.email.split('@')[0]}
                       </div>
-                      <div className="text-[10px] text-[#6A97C0]">{user.email}</div>
+                      <div className="text-[10px] text-slate-600 font-medium">{user.email}</div>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -329,7 +329,7 @@ export default function AdminAccountsPage() {
                         {user.role === 'staff' ? 'Data Entry Officer' : user.role}
                       </span>
                       {user.role === 'instructor' && (
-                        <div className="text-[10px] text-[#6A97C0] mt-1 font-medium">
+                        <div className="text-[10px] text-slate-600 mt-1 font-medium">
                           Teaches: <strong className="text-[#152026]">{user.teachingCategories || 'Light'}</strong>
                         </div>
                       )}
@@ -341,7 +341,7 @@ export default function AdminAccountsPage() {
 
                     <td className="py-3.5 px-4">
                       <div className="font-mono font-medium text-[#152026]">{user.nic || '—'}</div>
-                      <div className="text-[11px] text-[#6A97C0]">{user.phone}</div>
+                      <div className="text-[11px] text-slate-700 font-medium">{user.phone}</div>
                     </td>
 
                     <td className="py-3.5 px-4">

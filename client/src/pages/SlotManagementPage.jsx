@@ -98,7 +98,7 @@ export default function SlotManagementPage() {
           <h1 className="text-2xl font-extrabold text-[#152026] flex items-center gap-2">
             <Clock className="w-6 h-6 text-[#1B3D59]" /> Branch Slot & Instructor Scheduling
           </h1>
-          <p className="text-xs text-[#6A97C0] mt-0.5">
+          <p className="text-xs text-slate-700 font-semibold mt-0.5">
             Configure daily training sessions, assign instructors, and monitor booking capacities per branch.
           </p>
         </div>
@@ -151,14 +151,14 @@ export default function SlotManagementPage() {
       {/* Slots Table */}
       <div className="card p-0 overflow-hidden shadow-sm border border-[#D4EEF8] bg-white rounded-3xl">
         {loading ? (
-          <div className="py-12 text-center text-xs text-[#6A97C0] flex items-center justify-center gap-2">
+          <div className="py-12 text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-2">
             <RefreshCw className="w-4 h-4 animate-spin text-[#1B3D59]" /> Loading branch slots...
           </div>
         ) : slots.length === 0 ? (
           <div className="py-12 text-center space-y-2">
-            <Clock className="w-10 h-10 text-[#6A97C0] mx-auto" />
+            <Clock className="w-10 h-10 text-slate-400 mx-auto" />
             <p className="text-sm font-bold text-[#152026]">No slots found for this date</p>
-            <p className="text-xs text-[#6A97C0]">Click "Add Session Slot" to schedule a session.</p>
+            <p className="text-xs text-slate-600 font-medium">Click "Add Session Slot" to schedule a session.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -202,14 +202,14 @@ export default function SlotManagementPage() {
                           )}
                         </div>
                         {slot.instructorId?.phone && (
-                          <div className="text-[11px] text-[#6A97C0]">{slot.instructorId.phone}</div>
+                          <div className="text-[11px] text-slate-600 font-medium">{slot.instructorId.phone}</div>
                         )}
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="font-extrabold text-[#152026] text-xs">
                           {bookedCount} / {capacity} Students
                         </div>
-                        <div className="text-[10px] text-[#6A97C0]">
+                        <div className="text-[10px] text-slate-600 font-medium">
                           {isFull ? 'Capacity Full' : `${remaining} seat(s) open`}
                         </div>
                       </td>
@@ -255,7 +255,7 @@ export default function SlotManagementPage() {
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-[#6A97C0] hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FAFCFE] hover:bg-[#D4EEF8] text-slate-600 hover:text-[#152026] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>

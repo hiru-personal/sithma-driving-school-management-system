@@ -957,13 +957,13 @@ export default function StaffStudentListPage() {
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-5 h-5 text-[#6A97C0] absolute left-4 top-3.5" />
+            <Search className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
             <input
               type="text"
               placeholder="Search name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-[#6A97C0] rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-slate-400 rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
             />
           </div>
 
@@ -1013,7 +1013,7 @@ export default function StaffStudentListPage() {
           </div>
         ) : students.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <Users className="w-12 h-12 text-[#6A97C0] mx-auto" />
+            <Users className="w-12 h-12 text-slate-400 mx-auto" />
             <p className="text-lg font-bold text-[#152026]">No students found matching your filters</p>
             <p className="text-sm text-[#475569]">Try adjusting your search query or branch filters.</p>
           </div>
@@ -1110,7 +1110,7 @@ export default function StaffStudentListPage() {
                         ) : (
                           <>
                             <div className="font-bold text-xs text-[#1B3D59]">Pending Theory Exam</div>
-                            <div className="text-[11px] text-[#6A97C0] font-medium mt-0.5">Selected at Step 5</div>
+                            <div className="text-[11px] text-slate-600 font-medium mt-0.5">Selected at Step 5</div>
                           </>
                         )}
                       </td>
@@ -1367,7 +1367,7 @@ export default function StaffStudentListPage() {
                     </>
                   )}
                 </h3>
-                <p className="text-xs text-[#6A97C0]">
+                <p className="text-xs text-slate-600 font-medium">
                   {selectedStudent.branch} Branch • {selectedStudent.studentType}
                 </p>
               </div>
@@ -1670,7 +1670,7 @@ export default function StaffStudentListPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-[#152026]">
-                      2. DMT Medical Examination Date (US-04) <span className="text-[#6A97C0] font-mono text-[11px]">(Can be same date as Registration)</span>:
+                      2. DMT Medical Examination Date (US-04) <span className="text-slate-600 font-mono text-[11px] font-medium">(Can be same date as Registration)</span>:
                     </label>
                     {selectedStudent.dmtDates?.medicalDone && (
                       <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -1693,7 +1693,7 @@ export default function StaffStudentListPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-[#152026]">
-                      3. DMT Learner Written Theory Exam Date <span className="text-[#6A97C0] font-mono text-[11px]">(&gt; Registration &amp; Medical Dates)</span>:
+                      3. DMT Learner Written Theory Exam Date <span className="text-slate-600 font-mono text-[11px] font-medium">(&gt; Registration &amp; Medical Dates)</span>:
                     </label>
                     <span className="text-[10px] text-[#1B3D59] font-mono font-bold">
                       {selectedStudent.learnerExamAttempts?.length || 0}/3 Attempts Used
@@ -2009,7 +2009,7 @@ export default function StaffStudentListPage() {
                         <Calendar className="w-4 h-4 text-[#1B3D59]" />
                         1.5-Year Learner License Validity Period
                       </div>
-                      <span className="text-[11px] text-[#6A97C0] font-mono">
+                      <span className="text-[11px] text-slate-600 font-mono font-medium">
                         Rule: Start Date + 18 Months
                       </span>
                     </div>
@@ -2604,7 +2604,7 @@ export default function StaffStudentListPage() {
                 <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
                   <PlusCircle className="w-5 h-5 text-[#1B3D59]" /> Register Walk-In Student (US-03)
                 </h3>
-                <p className="text-xs text-[#6A97C0]">
+                <p className="text-xs text-slate-600 font-medium">
                   Direct branch office intake for in-person applicants.
                 </p>
               </div>
@@ -3026,7 +3026,7 @@ export default function StaffStudentListPage() {
                     <FileText className="w-4 h-4 text-[#1B3D59]" /> Submitted Payment Slip &amp; Bank Transfer
                   </div>
                   {loadingStudentPayments && (
-                    <span className="text-[11px] text-[#6A97C0] flex items-center gap-1 font-bold">
+                    <span className="text-[11px] text-slate-600 flex items-center gap-1 font-bold">
                       <RefreshCw className="w-3 h-3 animate-spin" /> Fetching latest slips...
                     </span>
                   )}

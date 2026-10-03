@@ -82,7 +82,7 @@ export default function AdminDashboardPage() {
           <h1 className="text-2xl sm:text-3xl font-black text-[#152026] flex items-center gap-2.5">
             Executive Administrative Dashboard
           </h1>
-          <p className="text-xs text-[#475569] mt-0.5">
+          <p className="text-xs text-slate-700 mt-0.5 font-semibold">
             Cross-branch operational performance, DMT milestone outcomes, and financial overview.
           </p>
         </div>
@@ -114,24 +114,24 @@ export default function AdminDashboardPage() {
         {/* Card 1: Active Learners */}
         <div className="card p-5 space-y-2 border-l-4 border-l-[#1B3D59] border-[#D4EEF8] bg-white rounded-2xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#6A97C0]">Active Enrolled Learners</span>
+            <span className="text-xs font-bold text-slate-800">Active Enrolled Learners</span>
             <div className="w-8 h-8 rounded-xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59]">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-black text-[#152026]">{metrics.totalStudents}</div>
-          <p className="text-[11px] text-[#475569]">{metrics.activeStudents} active in training</p>
+          <p className="text-[11px] text-slate-600 font-medium">{metrics.activeStudents} active in training</p>
         </div>
 
         {/* Card 2: Pending Payments */}
-        <div className="card p-5 space-y-2 border-l-4 border-l-amber-400 border-amber-200 bg-white rounded-2xl shadow-xs">
+        <div className="card p-5 space-y-2 border-l-4 border-l-amber-500 border-amber-200 bg-white rounded-2xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-800">Pending Payment Slips</span>
-            <div className="w-8 h-8 rounded-xl bg-[#F3EED8] border border-amber-300 flex items-center justify-center text-amber-700">
+            <span className="text-xs font-bold text-amber-900">Pending Payment Slips</span>
+            <div className="w-8 h-8 rounded-xl bg-[#F3EED8] border border-amber-300 flex items-center justify-center text-amber-800">
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-amber-700">{metrics.pendingPaymentsCount}</div>
+          <div className="text-3xl font-black text-amber-800">{metrics.pendingPaymentsCount}</div>
           <Link
             to="/staff/payments"
             className="text-[11px] font-bold text-[#1B3D59] hover:underline flex items-center gap-1 transition-colors"
@@ -141,21 +141,21 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Card 3: Upcoming DMT Trials */}
-        <div className="card p-5 space-y-2 border-l-4 border-l-[#6A97C0] border-[#D4EEF8] bg-white rounded-2xl shadow-xs">
+        <div className="card p-5 space-y-2 border-l-4 border-l-[#1B3D59] border-[#D4EEF8] bg-white rounded-2xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#6A97C0]">Upcoming DMT Trials</span>
+            <span className="text-xs font-bold text-slate-800">Upcoming DMT Trials</span>
             <div className="w-8 h-8 rounded-xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59]">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-black text-[#152026]">{metrics.upcomingTrialsCount}</div>
-          <p className="text-[11px] text-[#475569]">Scheduled in the next 30 days</p>
+          <p className="text-[11px] text-slate-600 font-medium">Scheduled in the next 30 days</p>
         </div>
 
         {/* Card 4: Confirmed Revenue */}
-        <div className="card p-5 space-y-2 border-l-4 border-l-[#152026] border-[#D4EEF8] bg-white rounded-2xl shadow-xs">
+        <div className="card p-5 space-y-2 border-l-4 border-l-emerald-600 border-[#D4EEF8] bg-white rounded-2xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#6A97C0]">Confirmed Revenue (LKR)</span>
+            <span className="text-xs font-bold text-slate-800">Confirmed Revenue (LKR)</span>
             <div className="w-8 h-8 rounded-xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59]">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
           <div className="text-2xl sm:text-3xl font-black text-[#1B3D59]">
             Rs. {metrics.totalRevenue?.toLocaleString()}
           </div>
-          <p className="text-[11px] text-[#475569]">Across verified packages</p>
+          <p className="text-[11px] text-slate-600 font-medium">Across verified packages</p>
         </div>
       </div>
 
