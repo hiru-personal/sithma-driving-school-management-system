@@ -21,6 +21,17 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function BookLessonPage() {
   const { student, updateStudentData } = useAuth();
 
@@ -120,7 +131,7 @@ export default function BookLessonPage() {
   const isPackagePaymentPending = student?.packagePaymentStatus === 'pending';
 
   // Shared Trial Date Tracking
-  const hasTrialDate = Boolean(student?.trial_date);
+  const hasTrialDate = Boolean(student?.trial_date && !isNaN(new Date(student.trial_date).getTime()));
   const trialDateObj = hasTrialDate ? new Date(student.trial_date) : null;
   const isTrialDatePassed = Boolean(
     trialDateObj && new Date().getTime() > new Date(trialDateObj).setHours(23, 59, 59, 999)
@@ -163,7 +174,7 @@ export default function BookLessonPage() {
       const slotTime = new Date(selectedSlot.date).setHours(0, 0, 0, 0);
       const trialLimit = new Date(trialDateObj).setHours(23, 59, 59, 999);
       if (slotTime > trialLimit) {
-        toast.error(`You can only book lessons up until your scheduled Trial Date (${trialDateObj.toISOString().split('T')[0]}). Please choose an earlier slot.`);
+        toast.error(`You can only book lessons up until your scheduled Trial Date (${safeFormatDate(trialDateObj, 'yyyy-MM-dd')}). Please choose an earlier slot.`);
         return;
       }
     }
@@ -365,7 +376,7 @@ export default function BookLessonPage() {
                 )}
               </div>
               <h3 className="text-base font-black text-[#152026] mt-1">
-                Trial Date: {format(new Date(student.trial_date), 'EEEE, MMMM dd, yyyy')}
+                Trial Date: {safeFormatDate(student?.trial_date, 'EEEE, MMMM dd, yyyy')}
               </h3>
               <p className="text-xs text-[#152026]/75 mt-0.5">
                 {isTrialDatePassed
@@ -774,7 +785,7 @@ export default function BookLessonPage() {
               <div className="flex justify-between">
                 <span className="text-[#6A97C0] font-medium">Date:</span>
                 <span className="font-bold text-[#152026]">
-                  {format(new Date(selectedSlot.date), 'EEEE, MMMM dd, yyyy')}
+                  {safeFormatDate(selectedSlot?.date, 'EEEE, MMMM dd, yyyy')}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -901,7 +912,7 @@ export default function BookLessonPage() {
                   Current Scheduled Trial Date:
                 </label>
                 <div className="p-3 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-bold text-sm">
-                  {student?.trial_date ? format(new Date(student.trial_date), 'MMMM dd, yyyy') : 'None'}
+                  {safeFormatDate(student?.trial_date, 'MMMM dd, yyyy', 'None')}
                 </div>
               </div>
 

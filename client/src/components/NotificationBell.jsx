@@ -14,6 +14,17 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 
+const safeDistanceToNow = (dateVal) => {
+  if (!dateVal) return 'Just now';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'Just now';
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return 'Just now';
+  }
+};
+
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -164,9 +175,7 @@ export default function NotificationBell() {
                     <div className="flex items-center justify-between gap-1 mb-0.5">
                       <p className="font-bold text-[#152026] truncate">{n.title}</p>
                       <span className="text-[10px] text-[#6A97C0] flex-shrink-0 font-medium">
-                        {n.createdAt
-                          ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })
-                          : 'Just now'}
+                        {safeDistanceToNow(n.createdAt)}
                       </span>
                     </div>
                     <p className="text-[#152026]/75 text-[11px] leading-snug line-clamp-2">{n.message}</p>

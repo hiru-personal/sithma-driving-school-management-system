@@ -49,14 +49,26 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { SITHMA_OFFICIAL_BANKS } from './PaymentGatewayPage';
 
-const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy') => {
-  if (!dateVal) return 'None';
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
+  if (!dateVal) return fallback;
   try {
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return 'None';
+    if (isNaN(d.getTime())) return fallback;
     return format(d, formatStr);
   } catch {
-    return 'None';
+    return fallback;
+  }
+};
+
+const formatTrialDateDisplay = (dateVal, fallback = 'None') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+    return format(d, hasTime ? 'EEEE, MMMM dd, yyyy • hh:mm a' : 'EEEE, MMMM dd, yyyy');
+  } catch {
+    return fallback;
   }
 };
 
@@ -569,6 +581,7 @@ export default function StudentDashboard() {
       try {
         await new Promise((r) => setTimeout(r, 1200));
 
+        const cardDigits = (cardForm.cardNum || '').replace(/\s/g, '');
         const res = await api.post('/payments/package-payment', {
           packageId: selectedPkg._id,
           packageType: selectedPkg.type,
@@ -576,15 +589,21 @@ export default function StudentDashboard() {
           installmentNumber: finalPlan === 'installments' ? currentInstDue : undefined,
           amount: payAmount,
           paymentMethod: 'online_gateway',
+          cardLast4: cardDigits.slice(-4) || '4242',
+          cardBrand: cardDigits.startsWith('4') ? 'Visa' : (cardDigits.startsWith('5') ? 'Mastercard' : 'Visa / Mastercard'),
+          cardHolder: cardForm.holderName || user?.name,
           bankName: 'Online Payment Gateway (Visa/Mastercard)',
-          transactionReference: `CARD-PKG-${Date.now()}`,
+          transactionReference: `CARD-PKG-${Date.now().toString().slice(-8)}`,
         });
 
         if (res.data?.success) {
-          toast.success('🎉 Card payment approved! Your lessons are unlocked for booking immediately!');
-          setProfile(res.data.student);
-          updateStudentData(res.data.student);
+          toast.success('🎉 Online card payment submitted! Your payment is pending verification by the branch officer. Lessons will unlock once approved.');
+          if (res.data.student) {
+            setProfile(res.data.student);
+            updateStudentData(res.data.student);
+          }
           setShowPaymentFormOverride(false);
+          if (fetchProfile) fetchProfile();
         }
       } catch (err) {
         toast.error(err.response?.data?.message || 'Card payment processing failed');
@@ -683,17 +702,22 @@ export default function StudentDashboard() {
     null;
 
   const licenseExpiryDate = useMemo(() => {
-    if (profile?.learnerLicenseExpiryDate) return new Date(profile.learnerLicenseExpiryDate);
+    if (profile?.learnerLicenseExpiryDate) {
+      const d = new Date(profile.learnerLicenseExpiryDate);
+      if (!isNaN(d.getTime())) return d;
+    }
     if (licenseStartDate) {
       const d = new Date(licenseStartDate);
-      d.setMonth(d.getMonth() + 18);
-      return d;
+      if (!isNaN(d.getTime())) {
+        d.setMonth(d.getMonth() + 18);
+        return d;
+      }
     }
     return null;
   }, [profile?.learnerLicenseExpiryDate, licenseStartDate]);
 
   const remainingDays = useMemo(() => {
-    if (!licenseExpiryDate) return null;
+    if (!licenseExpiryDate || isNaN(licenseExpiryDate.getTime())) return null;
     const diff = licenseExpiryDate.getTime() - new Date().getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }, [licenseExpiryDate]);
@@ -1099,7 +1123,7 @@ export default function StudentDashboard() {
                 {isExpired ? (
                   <>
                     <strong className="text-[#152026]">Please register again.</strong> According to Department of Motor Traffic (DMT) regulations, once registered, a learner has a maximum of <strong>1.5 years (18 months)</strong> to complete the required licensing process. Your validity period ended on{' '}
-                    <strong className="text-[#152026] underline">{licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired'}</strong>.
+                    <strong className="text-[#152026] underline">{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy', 'Expired') : 'Expired'}</strong>.
                   </>
                 ) : (
                   <>
@@ -1154,7 +1178,9 @@ export default function StudentDashboard() {
                 const att = profile?.learnerExamAttempts?.find((a) => a.attemptNumber === num);
                 const hasAtt = Boolean(att);
                 const marks = att?.marks;
-                const date = att?.date ? new Date(att.date).toLocaleDateString() : 'Not Attempted';
+                const date = att?.date || att?.attemptDate
+                  ? safeFormatDate(att.date || att.attemptDate, 'MMM dd, yyyy', 'Not Attempted')
+                  : 'Not Attempted';
                 return (
                   <div key={num} className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] space-y-1 shadow-xs">
                     <div className="flex items-center justify-between text-xs">
@@ -1549,8 +1575,8 @@ export default function StudentDashboard() {
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-            Ayubowan, {user?.name}!
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black !text-white tracking-tight leading-tight" style={{ color: '#FFFFFF' }}>
+            <span className="text-[#F3EED8]" style={{ color: '#F3EED8' }}>Ayubowan</span>, <span className="text-white" style={{ color: '#FFFFFF' }}>{user?.name}</span>!
           </h1>
           <p className="text-[#D4EEF8] text-xs sm:text-sm max-w-xl leading-relaxed font-normal">
             Welcome to your driving portal. Track official DMT milestones, review your course lesson balance, and book your practical driving sessions.
@@ -1958,7 +1984,7 @@ export default function StudentDashboard() {
                               </span>
                             </div>
                             <div className="text-[#6A97C0] text-[10px]">
-                              {att.date ? format(new Date(att.date), 'MMM dd, yyyy') : 'No Date'}
+                              {safeFormatDate(att.date, 'MMM dd, yyyy', 'No Date')}
                             </div>
                             {att.marks !== undefined && att.marks !== null && (
                               <div className="font-mono text-[#1B3D59] font-bold text-[10px]">
@@ -2034,7 +2060,7 @@ export default function StudentDashboard() {
                 <span className="text-xs uppercase tracking-wider font-extrabold text-[#1B3D59]">
                   {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
                 </span>
-                {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
+                {Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
                   <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
                     Trial Date Passed (Booking Locked)
                   </span>
@@ -2050,10 +2076,10 @@ export default function StudentDashboard() {
                 )}
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
-                Scheduled Trial Date: {safeFormatDate(currentTrialDate, 'EEEE, MMMM dd, yyyy')}
+                Scheduled Trial Date: {formatTrialDateDisplay(currentTrialDate)}
               </h2>
               <p className="text-xs sm:text-sm text-[#475569] max-w-xl leading-relaxed">
-                {Boolean(currentTrialDate && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
+                {Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
                   ? 'Your scheduled trial date has passed. Practical lesson booking is locked. Submit a reschedule request to have a Data Entry Officer assign a new trial date and reopen lesson booking.'
                   : 'You can book practical driving lessons up until your scheduled trial date. Need to change your trial date? Submit a reschedule request to your Data Entry Officer.'}
               </p>

@@ -39,6 +39,41 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy', fallback = '') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
+const formatTrialDateDisplay = (dateVal, fallback = 'Not Scheduled') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+    return format(d, hasTime ? 'EEEE, MMMM dd, yyyy • hh:mm a' : 'EEEE, MMMM dd, yyyy');
+  } catch {
+    return fallback;
+  }
+};
+
+const formatShortTrialDate = (dateVal) => {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+    return format(d, hasTime ? 'MMM dd • hh:mm a' : 'MMM dd');
+  } catch {
+    return '';
+  }
+};
+
 export default function StaffStudentListPage() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +130,7 @@ export default function StaffStudentListPage() {
 
   // Form State for Setting Practical Trial Date (Shared for Type 1 & Type 2)
   const [trialDateInput, setTrialDateInput] = useState('');
+  const [trialTimeInput, setTrialTimeInput] = useState('09:00');
   const [savingTrialDate, setSavingTrialDate] = useState(false);
 
   // Form State for Updating DMT Dates (US-04, US-05, US-09)
@@ -211,9 +247,24 @@ export default function StaffStudentListPage() {
       });
     }
     if (student.trial_date) {
-      setTrialDateInput(student.trial_date.split('T')[0]);
+      try {
+        const d = new Date(student.trial_date);
+        if (!isNaN(d.getTime())) {
+          setTrialDateInput(d.toLocaleDateString('en-CA'));
+          const hrs = String(d.getHours()).padStart(2, '0');
+          const mins = String(d.getMinutes()).padStart(2, '0');
+          setTrialTimeInput(`${hrs}:${mins}`);
+        } else {
+          setTrialDateInput(new Date().toLocaleDateString('en-CA'));
+          setTrialTimeInput('09:00');
+        }
+      } catch {
+        setTrialDateInput(new Date().toLocaleDateString('en-CA'));
+        setTrialTimeInput('09:00');
+      }
     } else {
-      setTrialDateInput('');
+      setTrialDateInput(new Date().toLocaleDateString('en-CA'));
+      setTrialTimeInput('09:00');
     }
     setTrialForm({
       attemptDate: new Date().toISOString().split('T')[0],
@@ -248,11 +299,14 @@ export default function StaffStudentListPage() {
     }
     setSavingTrialDate(true);
     try {
+      const combinedTrialDate = trialTimeInput
+        ? `${trialDateInput}T${trialTimeInput}:00`
+        : trialDateInput;
       const res = await api.patch(`/students/${selectedStudent._id}/trial-date`, {
-        trialDate: trialDateInput,
+        trialDate: combinedTrialDate,
       });
       if (res.data.success) {
-        toast.success('Practical trial date scheduled successfully!');
+        toast.success('Practical trial date & time scheduled successfully!');
         setSelectedStudent(null);
         fetchStudents();
       }
@@ -595,8 +649,8 @@ export default function StaffStudentListPage() {
                   {getMilestoneLabel(rescheduleRequests.find((r) => r.status === 'Pending')?.milestone_type || 'trial')}
                 </strong>
                 {rescheduleRequests.find((r) => r.status === 'Pending')?.preferred_date
-                  ? ` (Preferred Date: ${format(
-                      new Date(rescheduleRequests.find((r) => r.status === 'Pending').preferred_date),
+                  ? ` (Preferred Date: ${safeFormatDate(
+                      rescheduleRequests.find((r) => r.status === 'Pending').preferred_date,
                       'MMM dd, yyyy'
                     )})`
                   : ''}
@@ -814,7 +868,7 @@ export default function StaffStudentListPage() {
                         <div className="text-xs text-slate-400 text-right">
                           <span className="block text-[11px] text-slate-500">Submitted:</span>
                           <span className="font-bold text-slate-200">
-                            {req.requested_at ? format(new Date(req.requested_at), 'MMM dd, yyyy HH:mm') : 'N/A'}
+                            {safeFormatDate(req.requested_at, 'MMM dd, yyyy HH:mm', 'N/A')}
                           </span>
                         </div>
                       </div>
@@ -823,22 +877,20 @@ export default function StaffStudentListPage() {
                         <div className="p-3 bg-slate-950/70 rounded-2xl border border-white/5">
                           <span className="text-[11px] text-slate-400 block font-semibold">Previous Scheduled Date:</span>
                           <span className="font-bold text-rose-300 font-mono text-sm">
-                            {req.previous_date || req.previous_trial_date
-                              ? format(new Date(req.previous_date || req.previous_trial_date), 'MMM dd, yyyy')
-                              : 'None Assigned'}
+                            {safeFormatDate(req.previous_date || req.previous_trial_date, 'MMM dd, yyyy', 'None Assigned')}
                           </span>
                         </div>
                         <div className="p-3 bg-slate-950/70 rounded-2xl border border-white/5">
                           <span className="text-[11px] text-slate-400 block font-semibold">Requested / Preferred Date:</span>
                           <span className="font-bold text-cyan-300 font-mono text-sm">
-                            {req.preferred_date ? format(new Date(req.preferred_date), 'MMM dd, yyyy') : 'No date preference'}
+                            {safeFormatDate(req.preferred_date, 'MMM dd, yyyy', 'No date preference')}
                           </span>
                         </div>
                         {(req.new_date || req.new_trial_date) && (
                           <div className="p-3 bg-slate-950/70 rounded-2xl border border-emerald-500/30">
                             <span className="text-[11px] text-emerald-400 block font-semibold">Approved New Date:</span>
                             <span className="font-black text-emerald-300 font-mono text-sm">
-                              {format(new Date(req.new_date || req.new_trial_date), 'MMM dd, yyyy')}
+                              {safeFormatDate(req.new_date || req.new_trial_date, 'MMM dd, yyyy')}
                             </span>
                           </div>
                         )}
@@ -854,7 +906,7 @@ export default function StaffStudentListPage() {
                       {!isPending && (
                         <div className="text-xs text-slate-400 flex items-center justify-between border-t border-white/5 pt-2.5">
                           <span>Reviewed by: <strong className="text-white">{req.reviewed_by?.name || 'Officer'}</strong></span>
-                          <span>Date: {req.reviewed_at ? format(new Date(req.reviewed_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                          <span>Date: {safeFormatDate(req.reviewed_at, 'MMM dd, yyyy', 'N/A')}</span>
                           {req.review_notes && <span className="text-slate-300">Notes: {req.review_notes}</span>}
                         </div>
                       )}
@@ -1092,7 +1144,7 @@ export default function StaffStudentListPage() {
                         {st.trial_date && (
                           <div className="mt-1">
                             <span className="inline-block px-2 py-0.5 rounded-full bg-[#D4EEF8]/60 text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
-                              📅 Trial: {format(new Date(st.trial_date), 'MMM dd')}
+                              📅 Trial: {formatShortTrialDate(st.trial_date)}
                             </span>
                           </div>
                         )}
@@ -1130,13 +1182,13 @@ export default function StaffStudentListPage() {
                             <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed ({st.learnerExamAttemptsCount}/3)</span>
                             {st.dmtDates?.learnerExamDate && (
                               <span className="text-[10px] text-amber-700 font-bold">
-                                Next: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
+                                Next: {safeFormatDate(st.dmtDates.learnerExamDate, 'MMM dd')}
                               </span>
                             )}
                           </div>
                         ) : st.dmtDates?.learnerExamDate ? (
                           <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-xs font-bold">
-                            Exam: {format(new Date(st.dmtDates.learnerExamDate), 'MMM dd')}
+                            Exam: {safeFormatDate(st.dmtDates.learnerExamDate, 'MMM dd')}
                           </span>
                         ) : (
                           <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 text-xs font-bold">Exam Pending</span>
@@ -1162,9 +1214,10 @@ export default function StaffStudentListPage() {
                                 className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-extrabold transition-transform hover:scale-105 ${bg}`}
                                 title={
                                   att
-                                    ? `Attempt ${num}: ${att.result.toUpperCase()} on ${format(
-                                        new Date(att.attemptDate),
-                                        'MMM dd, yyyy'
+                                    ? `Attempt ${num}: ${att.result?.toUpperCase()} on ${safeFormatDate(
+                                        att.attemptDate || att.date || att.createdAt,
+                                        'MMM dd, yyyy',
+                                        'Recorded'
                                       )}`
                                     : `Attempt ${num}: Available`
                                 }
@@ -1403,24 +1456,16 @@ export default function StaffStudentListPage() {
                       <div className="text-xs text-[#152026]">
                         Preferred Date:{' '}
                         <strong className="text-[#1B3D59] font-mono">
-                          {rescheduleRequests.find(
-                            (r) =>
-                              (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                              (r.milestone_type === 'trial' || !r.milestone_type) &&
-                              r.status === 'Pending'
-                          )?.preferred_date
-                            ? format(
-                                new Date(
-                                  rescheduleRequests.find(
-                                    (r) =>
-                                      (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                                      (r.milestone_type === 'trial' || !r.milestone_type) &&
-                                      r.status === 'Pending'
-                                  ).preferred_date
-                                ),
-                                'MMM dd, yyyy'
-                              )
-                            : 'No date preference'}
+                          {safeFormatDate(
+                            rescheduleRequests.find(
+                              (r) =>
+                                (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                (r.milestone_type === 'trial' || !r.milestone_type) &&
+                                r.status === 'Pending'
+                            )?.preferred_date,
+                            'MMM dd, yyyy',
+                            'No date preference'
+                          )}
                         </strong>
                       </div>
                       {rescheduleRequests.find(
@@ -1476,26 +1521,43 @@ export default function StaffStudentListPage() {
                   </p>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-[#152026] mb-1">
-                    Select Practical Trial Date:
-                  </label>
-                  <div className="relative flex items-center">
-                    <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
-                    <input
-                      type="date"
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      value={trialDateInput}
-                      onChange={(e) => setTrialDateInput(e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] rounded-xl text-[#152026] font-bold outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] cursor-pointer"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[#152026] text-xs mb-1">
+                      Practical Trial Date: <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
+                      <input
+                        type="date"
+                        required
+                        min={new Date().toLocaleDateString('en-CA')}
+                        value={trialDateInput}
+                        onChange={(e) => setTrialDateInput(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] rounded-xl text-[#152026] font-bold outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] cursor-pointer text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-[#152026] text-xs mb-1">
+                      Practical Trial Time:
+                    </label>
+                    <div className="relative flex items-center">
+                      <Clock className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
+                      <input
+                        type="time"
+                        value={trialTimeInput}
+                        onChange={(e) => setTrialTimeInput(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] rounded-xl text-[#152026] font-bold outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] cursor-pointer text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {selectedStudent.trial_date && (
                   <div className="text-[11px] text-slate-600 p-2.5 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
-                    Currently Assigned: <strong className="text-[#152026]">{format(new Date(selectedStudent.trial_date), 'EEEE, MMMM dd, yyyy')}</strong>
+                    Currently Assigned: <strong className="text-[#152026]">{formatTrialDateDisplay(selectedStudent.trial_date)}</strong>
                   </div>
                 )}
 
@@ -1550,24 +1612,16 @@ export default function StaffStudentListPage() {
                       <div className="text-[#152026]">
                         Preferred Date:{' '}
                         <strong className="text-[#1B3D59] font-mono">
-                          {rescheduleRequests.find(
-                            (r) =>
-                              (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                              r.status === 'Pending' &&
-                              ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
-                          )?.preferred_date
-                            ? format(
-                                new Date(
-                                  rescheduleRequests.find(
-                                    (r) =>
-                                      (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                                      r.status === 'Pending' &&
-                                      ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
-                                  ).preferred_date
-                                ),
-                                'MMM dd, yyyy'
-                              )
-                            : 'No date preference'}
+                          {safeFormatDate(
+                            rescheduleRequests.find(
+                              (r) =>
+                                (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                r.status === 'Pending' &&
+                                ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
+                            )?.preferred_date,
+                            'MMM dd, yyyy',
+                            'No date preference'
+                          )}
                         </strong>
                       </div>
                       {rescheduleRequests.find(
@@ -1749,7 +1803,7 @@ export default function StaffStudentListPage() {
                           className="flex items-center justify-between text-[11px] p-2 bg-white rounded-xl border border-[#D4EEF8]"
                         >
                           <span className="font-semibold text-[#152026]">
-                            Attempt #{att.attemptNumber} ({att.date ? format(new Date(att.date), 'MMM dd, yyyy') : 'No date'})
+                            Attempt #{att.attemptNumber} ({safeFormatDate(att.date || att.attemptDate, 'MMM dd, yyyy', 'No date')})
                           </span>
                           <div className="flex items-center gap-2">
                             {att.marks !== undefined && att.marks !== null && (
@@ -1875,9 +1929,15 @@ export default function StaffStudentListPage() {
                 selectedStudent.createdAt;
               let expiryDate = selectedStudent.learnerLicenseExpiryDate;
               if (!expiryDate && startDate) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + 18);
-                expiryDate = d.toISOString();
+                try {
+                  const d = new Date(startDate);
+                  if (!isNaN(d.getTime())) {
+                    d.setMonth(d.getMonth() + 18);
+                    expiryDate = d.toISOString();
+                  }
+                } catch {
+                  expiryDate = null;
+                }
               }
 
               const now = new Date();
@@ -1958,14 +2018,14 @@ export default function StaffStudentListPage() {
                       <div className="p-3 rounded-xl bg-white border border-[#D4EEF8]">
                         <span className="text-[11px] text-slate-500 block font-medium">License Start / Reg Date</span>
                         <span className="text-sm font-bold text-[#152026] font-mono mt-0.5 block">
-                          {startDate ? format(new Date(startDate), 'yyyy-MM-dd') : 'Not Set'}
+                          {safeFormatDate(startDate, 'yyyy-MM-dd', 'Not Set')}
                         </span>
                       </div>
 
                       <div className="p-3 rounded-xl bg-white border border-[#D4EEF8]">
                         <span className="text-[11px] text-slate-500 block font-medium">Auto-Calculated Expiry (18M)</span>
                         <span className="text-sm font-bold text-[#1B3D59] font-mono mt-0.5 block">
-                          {expiryDate ? format(new Date(expiryDate), 'yyyy-MM-dd') : 'Not Calculated'}
+                          {safeFormatDate(expiryDate, 'yyyy-MM-dd', 'Not Calculated')}
                         </span>
                       </div>
 
@@ -2061,7 +2121,7 @@ export default function StaffStudentListPage() {
                                 <div>
                                   Date:{' '}
                                   <strong className="text-[#152026]">
-                                    {att.attemptDate ? format(new Date(att.attemptDate), 'yyyy-MM-dd') : 'N/A'}
+                                    {safeFormatDate(att.attemptDate || att.date, 'yyyy-MM-dd', 'N/A')}
                                   </strong>
                                 </div>
                                 <div>
@@ -2127,9 +2187,7 @@ export default function StaffStudentListPage() {
                           <p className="text-[11px] text-slate-600">
                             Passed On:{' '}
                             <strong className="text-[#152026]">
-                              {selectedStudent.passedAt
-                                ? format(new Date(selectedStudent.passedAt), 'MMM dd, yyyy hh:mm a')
-                                : 'Verified'}
+                              {safeFormatDate(selectedStudent.passedAt, 'MMM dd, yyyy hh:mm a', 'Verified')}
                             </strong>
                             {' '}• Please ensure the final driving license photo is uploaded below.
                           </p>
@@ -2249,9 +2307,7 @@ export default function StaffStudentListPage() {
                             <div>
                               <span className="text-slate-500 block">Upload Date:</span>
                               <strong className="text-[#152026]">
-                                {selectedStudent.finalLicense.uploadedAt
-                                  ? format(new Date(selectedStudent.finalLicense.uploadedAt), 'MMM dd, yyyy')
-                                  : 'N/A'}
+                                {safeFormatDate(selectedStudent.finalLicense?.uploadedAt, 'MMM dd, yyyy', 'N/A')}
                               </strong>
                             </div>
                             <div>
@@ -2460,19 +2516,19 @@ export default function StaffStudentListPage() {
                               <div>
                                 <span className="text-slate-400 block text-[10px]">Start Date:</span>
                                 <span className="font-mono text-[#152026]">
-                                  {cycle.startDate ? format(new Date(cycle.startDate), 'yyyy-MM-dd') : 'N/A'}
+                                  {safeFormatDate(cycle.startDate, 'yyyy-MM-dd', 'N/A')}
                                 </span>
                               </div>
                               <div>
                                 <span className="text-slate-400 block text-[10px]">18M Expiry:</span>
                                 <span className="font-mono text-[#1B3D59]">
-                                  {cycle.expiryDate ? format(new Date(cycle.expiryDate), 'yyyy-MM-dd') : 'N/A'}
+                                  {safeFormatDate(cycle.expiryDate, 'yyyy-MM-dd', 'N/A')}
                                 </span>
                               </div>
                               <div>
                                 <span className="text-slate-400 block text-[10px]">Closed Date:</span>
                                 <span className="font-mono text-[#152026]">
-                                  {cycle.cycleEndedAt ? format(new Date(cycle.cycleEndedAt), 'yyyy-MM-dd') : 'N/A'}
+                                  {safeFormatDate(cycle.cycleEndedAt, 'yyyy-MM-dd', 'N/A')}
                                 </span>
                               </div>
                               <div>
@@ -2502,7 +2558,7 @@ export default function StaffStudentListPage() {
                                       <strong>Attempt {att.attemptNumber || aIdx + 1}:</strong>{' '}
                                       {att.result?.toUpperCase()}
                                       {att.score !== undefined && ` (${att.score}/40)`}
-                                      {att.attemptDate && ` on ${format(new Date(att.attemptDate), 'MMM dd')}`}
+                                      {(att.attemptDate || att.date) && ` on ${safeFormatDate(att.attemptDate || att.date, 'MMM dd')}`}
                                     </span>
                                   ))}
                                 </div>
@@ -3304,7 +3360,7 @@ export default function StaffStudentListPage() {
                           <div className="text-xs text-slate-500 text-right">
                             <span className="block text-[11px]">Submitted:</span>
                             <span className="font-medium text-[#152026]">
-                              {req.requested_at ? format(new Date(req.requested_at), 'MMM dd, yyyy HH:mm') : 'N/A'}
+                              {safeFormatDate(req.requested_at, 'MMM dd, yyyy HH:mm', 'N/A')}
                             </span>
                           </div>
                         </div>
@@ -3314,20 +3370,20 @@ export default function StaffStudentListPage() {
                           <div className="p-3 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
                             <span className="text-[11px] text-slate-500 block font-semibold">Previous Scheduled Date:</span>
                             <span className="font-bold text-rose-600 font-mono">
-                              {req.previous_date || req.previous_trial_date ? format(new Date(req.previous_date || req.previous_trial_date), 'MMM dd, yyyy') : 'None Assigned'}
+                              {safeFormatDate(req.previous_date || req.previous_trial_date, 'MMM dd, yyyy', 'None Assigned')}
                             </span>
                           </div>
                           <div className="p-3 bg-[#FAFCFE] rounded-xl border border-[#D4EEF8]">
                             <span className="text-[11px] text-slate-500 block font-semibold">Requested / Preferred Date:</span>
                             <span className="font-bold text-[#1B3D59] font-mono">
-                              {req.preferred_date ? format(new Date(req.preferred_date), 'MMM dd, yyyy') : 'No preference'}
+                              {safeFormatDate(req.preferred_date, 'MMM dd, yyyy', 'No preference')}
                             </span>
                           </div>
                           {(req.new_date || req.new_trial_date) && (
                             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                               <span className="text-[11px] text-emerald-800 block font-semibold">Approved New Date:</span>
                               <span className="font-black text-emerald-700 font-mono">
-                                {format(new Date(req.new_date || req.new_trial_date), 'MMM dd, yyyy')}
+                                {safeFormatDate(req.new_date || req.new_trial_date, 'MMM dd, yyyy')}
                               </span>
                             </div>
                           )}
@@ -3344,7 +3400,7 @@ export default function StaffStudentListPage() {
                         {!isPending && (
                           <div className="text-[11px] text-slate-500 flex items-center justify-between border-t border-[#D4EEF8] pt-2">
                             <span>Reviewed by: <strong className="text-[#152026]">{req.reviewed_by?.name || 'Officer'}</strong></span>
-                            <span>Date: {req.reviewed_at ? format(new Date(req.reviewed_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                            <span>Date: {safeFormatDate(req.reviewed_at, 'MMM dd, yyyy', 'N/A')}</span>
                             {req.review_notes && <span className="text-slate-700">Notes: {req.review_notes}</span>}
                           </div>
                         )}

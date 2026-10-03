@@ -12,6 +12,17 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays, isPast } from 'date-fns';
 
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy', fallback = '') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function DmtMilestoneTimeline({ student }) {
   if (!student) return null;
 
@@ -20,9 +31,10 @@ export default function DmtMilestoneTimeline({ student }) {
 
   // Calculate Trial deadline status
   let deadlineWarning = null;
-  if (trial.deadlineDate) {
-    const daysLeft = differenceInDays(new Date(trial.deadlineDate), new Date());
-    const isOverdue = isPast(new Date(trial.deadlineDate)) && !trial.licenseObtained;
+  if (trial?.deadlineDate && !isNaN(new Date(trial.deadlineDate).getTime())) {
+    const deadlineObj = new Date(trial.deadlineDate);
+    const daysLeft = differenceInDays(deadlineObj, new Date());
+    const isOverdue = isPast(deadlineObj) && !trial.licenseObtained;
 
     if (isOverdue) {
       deadlineWarning = {
@@ -42,7 +54,7 @@ export default function DmtMilestoneTimeline({ student }) {
       id: 'reg',
       title: 'Registration with Sithma',
       desc: isType2 ? 'Type 2: Trial-Ready Student' : 'Type 1: New Learner Student',
-      date: student.createdAt ? format(new Date(student.createdAt), 'MMM dd, yyyy') : 'Completed',
+      date: student.createdAt ? safeFormatDate(student.createdAt, 'MMM dd, yyyy', 'Completed') : 'Completed',
       status: 'completed',
       icon: FileText,
     },
@@ -54,10 +66,10 @@ export default function DmtMilestoneTimeline({ student }) {
             desc: dmtDates.medicalExamPassed
               ? 'Passed medical examination'
               : dmtDates.medicalExamDate
-              ? `Scheduled for: ${format(new Date(dmtDates.medicalExamDate), 'MMM dd, yyyy')}`
+              ? `Scheduled for: ${safeFormatDate(dmtDates.medicalExamDate, 'MMM dd, yyyy', 'Pending')}`
               : 'Awaiting DMT Medical Date',
             date: dmtDates.medicalExamDate
-              ? format(new Date(dmtDates.medicalExamDate), 'MMM dd, yyyy')
+              ? safeFormatDate(dmtDates.medicalExamDate, 'MMM dd, yyyy', 'Pending')
               : 'Pending',
             status: dmtDates.medicalExamPassed ? 'completed' : dmtDates.medicalExamDate ? 'in_progress' : 'pending',
             icon: Stethoscope,
@@ -66,14 +78,14 @@ export default function DmtMilestoneTimeline({ student }) {
             id: 'learner_exam',
             title: 'DMT Learner Written Exam',
             desc: dmtDates.learnerExamPassed
-              ? `Passed on ${format(new Date(dmtDates.learnerExamPassedDate || dmtDates.learnerExamDate), 'MMM dd, yyyy')}`
+              ? `Passed on ${safeFormatDate(dmtDates.learnerExamPassedDate || dmtDates.learnerExamDate, 'MMM dd, yyyy', 'Passed')}`
               : dmtDates.learnerExamDate
-              ? `Scheduled for: ${format(new Date(dmtDates.learnerExamDate), 'MMM dd, yyyy')}`
+              ? `Scheduled for: ${safeFormatDate(dmtDates.learnerExamDate, 'MMM dd, yyyy', 'Pending')}`
               : 'Awaiting DMT Written Exam Date',
             date: dmtDates.learnerExamPassedDate
-              ? format(new Date(dmtDates.learnerExamPassedDate), 'MMM dd, yyyy')
+              ? safeFormatDate(dmtDates.learnerExamPassedDate, 'MMM dd, yyyy', 'Passed')
               : dmtDates.learnerExamDate
-              ? format(new Date(dmtDates.learnerExamDate), 'MMM dd, yyyy')
+              ? safeFormatDate(dmtDates.learnerExamDate, 'MMM dd, yyyy', 'Pending')
               : 'Pending',
             status: dmtDates.learnerExamPassed ? 'completed' : dmtDates.learnerExamDate ? 'in_progress' : 'pending',
             icon: BookOpen,
@@ -85,11 +97,11 @@ export default function DmtMilestoneTimeline({ student }) {
       title: 'Practical Driving Trial',
       desc: trial.licenseObtained
         ? 'Passed Trial Exam successfully!'
-        : trial.eligibleFromDate && new Date() < new Date(trial.eligibleFromDate)
-        ? `Eligible for Trial from: ${format(new Date(trial.eligibleFromDate), 'MMM dd, yyyy')} (3-month DMT waiting period)`
+        : trial.eligibleFromDate && !isNaN(new Date(trial.eligibleFromDate).getTime()) && new Date() < new Date(trial.eligibleFromDate)
+        ? `Eligible for Trial from: ${safeFormatDate(trial.eligibleFromDate, 'MMM dd, yyyy')} (3-month DMT waiting period)`
         : `Attempts Used: ${trial.attemptsUsed || 0} of 3 maximum attempts`,
       date: trial.deadlineDate
-        ? `Deadline: ${format(new Date(trial.deadlineDate), 'MMM dd, yyyy')}`
+        ? `Deadline: ${safeFormatDate(trial.deadlineDate, 'MMM dd, yyyy', 'Pending')}`
         : 'Pending Learner Exam',
       status: trial.licenseObtained
         ? 'completed'
@@ -104,7 +116,7 @@ export default function DmtMilestoneTimeline({ student }) {
       id: 'license',
       title: 'Driving License Issued',
       desc: trial.licenseObtained
-        ? `Issued on ${format(new Date(trial.licenseIssuedDate || new Date()), 'MMM dd, yyyy')}`
+        ? `Issued on ${safeFormatDate(trial.licenseIssuedDate || new Date(), 'MMM dd, yyyy', 'Finalized')}`
         : 'Awarded upon passing the Practical Trial',
       date: trial.licenseObtained ? 'Finalized' : 'Pending Trial Pass',
       status: trial.licenseObtained ? 'completed' : 'pending',

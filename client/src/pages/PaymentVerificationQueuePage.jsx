@@ -25,10 +25,22 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy • hh:mm a', fallback = 'N/A') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function PaymentVerificationQueuePage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState('All');
+  const [selectedMethod, setSelectedMethod] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Preview & Verification Modal State
@@ -139,7 +151,7 @@ export default function PaymentVerificationQueuePage() {
     }
   };
 
-  // Filter payments by search
+  // Filter payments by search & method
   const filteredPayments = payments.filter((p) => {
     const studentName = p.userId?.name || p.studentId?.userId?.name || '';
     const email = p.userId?.email || '';
@@ -147,12 +159,16 @@ export default function PaymentVerificationQueuePage() {
     const ref = p.transactionReference || p.gateway_transaction_reference || '';
     const term = searchTerm.toLowerCase();
 
-    return (
+    const matchesSearch =
       studentName.toLowerCase().includes(term) ||
       email.toLowerCase().includes(term) ||
       phone.toLowerCase().includes(term) ||
-      ref.toLowerCase().includes(term)
-    );
+      ref.toLowerCase().includes(term);
+
+    const method = p.payment_method || p.paymentMethod || 'bank_slip';
+    const matchesMethod = selectedMethod === 'All' || method === selectedMethod;
+
+    return matchesSearch && matchesMethod;
   });
 
   return (
@@ -204,6 +220,21 @@ export default function PaymentVerificationQueuePage() {
               <option value="Maharagama">Maharagama Branch</option>
               <option value="Werahara">Werahara Branch</option>
               <option value="Delgoda">Delgoda Branch</option>
+            </select>
+          </div>
+
+          {/* Payment Method Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-[#152026]">Method:</label>
+            <select
+              value={selectedMethod}
+              onChange={(e) => setSelectedMethod(e.target.value)}
+              className="px-3.5 py-2 border border-[#D4EEF8] rounded-xl text-xs bg-white font-bold text-[#152026] outline-none focus:border-[#1B3D59] cursor-pointer"
+            >
+              <option value="All">All Methods</option>
+              <option value="online_gateway">Online Gateway (Card)</option>
+              <option value="bank_slip">Bank Deposit Slip</option>
+              <option value="physical_branch">Physical Cash</option>
             </select>
           </div>
 
@@ -330,9 +361,7 @@ export default function PaymentVerificationQueuePage() {
 
                       {/* Date */}
                       <td className="px-4 py-3.5 text-[#6A97C0] text-[11px]">
-                        {p.createdAt || p.uploadedAt
-                          ? format(new Date(p.createdAt || p.uploadedAt), 'MMM dd, yyyy • hh:mm a')
-                          : 'N/A'}
+                        {safeFormatDate(p.createdAt || p.uploadedAt, 'MMM dd, yyyy • hh:mm a', 'N/A')}
                       </td>
 
                       {/* Actions */}
@@ -423,10 +452,81 @@ export default function PaymentVerificationQueuePage() {
               </div>
             )}
 
+            {/* If Online Card Gateway Payment */}
+            {(selectedPayment.payment_method === 'online_gateway' ||
+              selectedPayment.paymentMethod === 'online_gateway') && (
+              <div className="border border-[#D4EEF8] rounded-2xl p-4 bg-[#FAFCFE] space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-[#152026] border-b border-[#D4EEF8] pb-2.5">
+                  <span className="flex items-center gap-1.5 text-[#1B3D59]">
+                    <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Online Gateway Payment Details
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-300">
+                    Authorized & Captured
+                  </span>
+                </div>
+
+                {/* Virtual Card & Gateway Snapshot */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#1B3D59] to-[#152026] text-white shadow-sm space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-[#D4EEF8] tracking-wider text-[11px]">Sithma Pay Gateway</span>
+                      <span className="font-bold text-[11px] px-2 py-0.5 rounded bg-white/15 text-white border border-white/20">
+                        {selectedPayment.cardBrand || 'Visa / Mastercard'}
+                      </span>
+                    </div>
+                    <div className="font-mono text-base font-black tracking-widest text-[#F3EED8]">
+                      •••• •••• •••• {selectedPayment.cardLast4 || selectedPayment.slipImageUrl?.match(/\*\*\*\*(\d{4})/)?.[1] || '4242'}
+                    </div>
+                    <div className="flex justify-between items-end text-[11px] text-[#D4EEF8]">
+                      <div>
+                        <span className="text-[9px] uppercase text-[#6A97C0] block">Cardholder</span>
+                        <span className="font-bold text-white uppercase">{selectedPayment.cardHolder || selectedPayment.userId?.name || 'Student'}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] uppercase text-[#6A97C0] block">Gateway Status</span>
+                        <span className="font-bold text-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Paid Online
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-white border border-[#D4EEF8] flex flex-col justify-between space-y-2 text-xs">
+                    <div>
+                      <span className="text-[#6A97C0] block text-[11px]">Gateway Transaction Ref</span>
+                      <span className="font-mono font-bold text-[#1B3D59] text-xs break-all">
+                        {selectedPayment.gateway_transaction_reference || selectedPayment.transactionReference || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[#6A97C0] block text-[11px]">Gateway Provider</span>
+                      <span className="font-bold text-[#152026]">
+                        {selectedPayment.bankName || 'Sithma Pay Online Gateway'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[#6A97C0] block text-[11px]">Submission Time</span>
+                      <span className="font-medium text-[#152026]">
+                        {safeFormatDate(selectedPayment.uploadedAt || selectedPayment.createdAt, 'PPP • pp', 'Just now')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin Action Notice */}
+                <div className="p-3 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-xs text-[#152026] flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#1B3D59] shrink-0 mt-0.5" />
+                  <p className="font-medium leading-relaxed">
+                    This online card payment of <strong className="text-[#1B3D59]">Rs. {Number(selectedPayment.amount || 5000).toLocaleString()}</strong> was captured via online gateway. Click <strong>"Confirm & Verify Account"</strong> below to complete verification and activate the student's account.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* If Bank Slip: Slip Preview */}
             {(selectedPayment.payment_method === 'bank_slip' ||
               selectedPayment.paymentMethod === 'bank_slip' ||
-              !selectedPayment.payment_method) && (
+              (!selectedPayment.payment_method && !selectedPayment.paymentMethod)) && (
               (() => {
                 const rawUrl = selectedPayment.slipImageUrl || selectedPayment.slip_file_reference;
                 const fullUrl = rawUrl?.startsWith('http')

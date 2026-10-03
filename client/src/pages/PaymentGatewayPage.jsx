@@ -261,12 +261,18 @@ export default function PaymentGatewayPage() {
     await new Promise((r) => setTimeout(r, 2500));
 
     try {
+      const cardType = selectedDummy !== null
+        ? DUMMY_CARDS[selectedDummy].type
+        : (cleaned.startsWith('4') ? 'Visa' : (cleaned.startsWith('5') ? 'Mastercard' : 'Visa / Mastercard'));
+
       const res = await api.post('/payments/pay-advance-pending', {
         amount: advanceAmount,
         bankName: 'Online Payment Gateway (Sithma Pay)',
         transactionReference: `ONPAY-${Date.now().toString().slice(-8)}`,
         pendingUserId: userId || '',
         cardLast4: cleaned.slice(-4),
+        cardBrand: cardType,
+        cardHolder: cardForm.cardHolder || studentName,
       });
 
       if (res.data.success) {
@@ -276,6 +282,8 @@ export default function PaymentGatewayPage() {
           reference: res.data.payment?.transactionReference || `ONPAY-${Date.now()}`,
           amount: advanceAmount,
           cardLast4: cleaned.slice(-4),
+          cardBrand: cardType,
+          cardHolder: cardForm.cardHolder || studentName,
         });
         setDone(true);
       }
@@ -378,13 +386,15 @@ export default function PaymentGatewayPage() {
                   {doneData.method === 'physical'
                     ? 'Please Visit Your Branch'
                     : doneData.method === 'online'
-                    ? 'Payment Submitted!'
+                    ? 'Online Card Payment Submitted!'
                     : 'Bank Slip Uploaded!'}
                 </h2>
                 <p className="text-sm text-[#6A97C0] mt-2 leading-relaxed max-w-sm mx-auto font-medium">
                   {doneData.method === 'physical'
                     ? `Please visit the ${doneData.branch} branch to complete your advance payment. Bring your NIC and registration reference.`
-                    : 'Our Data Entry Officer will review and verify your payment. You will receive login access once verified.'}
+                    : doneData.method === 'online'
+                    ? 'Your online card payment has been captured. Our branch Data Entry Officer will review and verify your transaction before activating your account.'
+                    : 'Our Data Entry Officer will review and verify your bank deposit slip. You will receive login access once verified.'}
                 </p>
               </div>
 
@@ -398,6 +408,14 @@ export default function PaymentGatewayPage() {
                   <span className="text-[#6A97C0]">Branch:</span>
                   <span className="font-bold text-[#152026]">{branch}</span>
                 </div>
+                {doneData.method === 'online' && (
+                  <div className="flex justify-between">
+                    <span className="text-[#6A97C0]">Payment Method:</span>
+                    <span className="font-bold text-[#1B3D59]">
+                      Online Gateway ({doneData.cardBrand || 'Card'} •••• {doneData.cardLast4 || 'Card'})
+                    </span>
+                  </div>
+                )}
                 {doneData.method !== 'physical' && (
                   <div className="flex justify-between">
                     <span className="text-[#6A97C0]">Reference:</span>
@@ -436,7 +454,7 @@ export default function PaymentGatewayPage() {
                 <div className="p-4 rounded-xl bg-[#D4EEF8]/40 border border-[#B3D5F1] text-xs text-[#152026] text-left flex gap-2.5">
                   <Info className="w-4 h-4 text-[#1B3D59] flex-shrink-0 mt-0.5" />
                   <span>
-                    <strong className="text-[#152026] font-bold">What happens next?</strong> Our branch Data Entry Officer will verify your payment slip within 1–2 business hours. Once verified, you will gain full access to your student dashboard.
+                    <strong className="text-[#152026] font-bold">What happens next?</strong> Our branch Data Entry Officer will verify your {doneData.method === 'online' ? 'online card gateway transaction' : 'payment slip'} within 1–2 business hours. Once verified, you will gain full access to your student dashboard.
                   </span>
                 </div>
               )}
@@ -635,12 +653,12 @@ export default function PaymentGatewayPage() {
             }`}>
               <CreditCard className="w-6 h-6" />
             </div>
-            <h3 className="font-extrabold text-[#152026] text-sm mb-1.5">Pay Online</h3>
+            <h3 className="font-extrabold text-[#152026] text-sm mb-1.5">Online Gateway</h3>
             <p className="text-xs text-[#6A97C0] leading-relaxed font-medium">
-              Use credit/debit card via secure Sithma Pay gateway. Instant activation after payment.
+              Visa / Master card. Verification by our branch officer is required before account activation.
             </p>
             <div className="mt-3 text-[11px] font-bold text-[#1B3D59] flex items-center gap-1">
-              Instant activation <ChevronRight className="w-3 h-3" />
+              Officer Verification Required <ChevronRight className="w-3 h-3" />
             </div>
             {activeMethod === 'online' && (
               <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#1B3D59] flex items-center justify-center text-white">
@@ -1041,6 +1059,14 @@ export default function PaymentGatewayPage() {
                   <div className="rounded-2xl bg-[#D4EEF8]/60 border border-[#B3D5F1] p-4.5 flex items-center justify-between">
                     <div className="text-xs text-[#1B3D59] font-bold">Advance Payment Due</div>
                     <div className="text-2xl font-black text-[#152026]">Rs. {Number(advanceAmount).toLocaleString()}<span className="text-sm font-semibold text-[#6A97C0]">.00</span></div>
+                  </div>
+
+                  {/* Verification Notice */}
+                  <div className="p-3.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-xs text-[#152026] flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-[#1B3D59] flex-shrink-0 mt-0.5" />
+                    <p className="font-medium leading-relaxed">
+                      <strong className="text-[#152026] font-bold">Officer Verification Required:</strong> Like Bank Deposit Slips, online card transactions are verified by our branch Data Entry Officer before full account activation.
+                    </p>
                   </div>
 
                   {cardStep === 'processing' ? (

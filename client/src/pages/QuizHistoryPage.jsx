@@ -23,6 +23,17 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy • hh:mm a', fallback = '') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
 import {
   LineChart,
   Line,
@@ -112,7 +123,7 @@ export default function QuizHistoryPage() {
     .map((att, idx) => ({
       attempt: `Exam ${idx + 1}`,
       percentage: att.percentage,
-      date: att.takenAt ? format(new Date(att.takenAt), 'MM/dd') : '',
+      date: safeFormatDate(att?.takenAt, 'MM/dd', ''),
     }));
 
   return (
@@ -282,9 +293,7 @@ export default function QuizHistoryPage() {
 
                       {/* Date Completed */}
                       <td className="px-4 py-4 text-[#6A97C0] text-xs whitespace-nowrap font-medium">
-                        {att.takenAt
-                          ? format(new Date(att.takenAt), 'MMM dd, yyyy • hh:mm a')
-                          : 'Completed'}
+                        {safeFormatDate(att?.takenAt, 'MMM dd, yyyy • hh:mm a', 'Completed')}
                       </td>
 
                       {/* Score / Result */}
@@ -357,9 +366,7 @@ export default function QuizHistoryPage() {
                     </h2>
                     <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
                       Completed on{' '}
-                      {reviewAttempt.takenAt
-                        ? format(new Date(reviewAttempt.takenAt), 'MMMM dd, yyyy • hh:mm a')
-                        : 'Completed'}
+                      {safeFormatDate(reviewAttempt?.takenAt, 'MMMM dd, yyyy • hh:mm a', 'Completed')}
                     </p>
                   </div>
 

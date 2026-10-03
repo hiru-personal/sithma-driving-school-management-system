@@ -14,6 +14,17 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy • hh:mm a', fallback = 'N/A') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [filterType, setFilterType] = useState('all');
@@ -160,7 +171,7 @@ export default function NotificationsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
                   <h3 className="font-bold text-sm text-[#152026]">{n.title}</h3>
                   <span className="text-[11px] text-[#6A97C0] font-medium">
-                    {n.createdAt ? format(new Date(n.createdAt), 'MMM dd, yyyy • hh:mm a') : 'N/A'}
+                    {safeFormatDate(n?.createdAt, 'MMM dd, yyyy • hh:mm a', 'N/A')}
                   </span>
                 </div>
                 <p className="text-[#152026]/75 leading-relaxed text-xs">{n.message}</p>

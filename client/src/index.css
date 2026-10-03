@@ -149,25 +149,41 @@
    Global Color Mapping & Palette Enforcement
    ========================================================================== */
 
-/* 1. Universal Headings: Black Pine for main, Deep Ocean for section */
-h1, h2,
-.font-heading.text-2xl,
-.font-heading.text-3xl {
-  color: #152026 !important;
+/* 1. Universal Headings: Black Pine for main, Deep Ocean for section (on light surfaces) */
+h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
+h2:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
+.font-heading.text-2xl:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *),
+.font-heading.text-3xl:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *) {
+  color: #152026;
 }
 
-h3, h4, h5, h6,
-.font-heading {
-  color: #1B3D59 !important;
+h3:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
+h4:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
+h5:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
+h6:not([class*="text-white"]):not([class*="!text-white"]):not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *):not(header *),
+.font-heading:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *) {
+  color: #1B3D59;
 }
 
-/* Page titles */
-main h1,
-header + div h1,
-header + main h1,
-.space-y-6 > div > h1,
-.space-y-8 > div > h1 {
-  color: #152026 !important;
+/* Page titles on light surfaces */
+main > h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *),
+header + div > h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *),
+header + main > h1:not([class*="text-white"]):not([class*="!text-white"]):not([class*="bg-[#1B3D59]"] *):not([class*="bg-[#152026]"] *) {
+  color: #152026;
+}
+
+/* Headings and text on dark backgrounds: ensure crisp white readability */
+[class*="bg-[#1B3D59]"] h1:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#1B3D59]"] h2:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#1B3D59]"] h3:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#1B3D59]"] h4:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#152026]"] h1:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#152026]"] h2:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#152026]"] h3:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#152026]"] h4:not([class*="text-[#"]):not([class*="text-amber-"]):not([class*="text-emerald-"]),
+[class*="bg-[#1B3D59]"] .text-white,
+[class*="bg-[#152026]"] .text-white {
+  color: #FFFFFF !important;
 }
 
 /* 2. Text Hierarchy */

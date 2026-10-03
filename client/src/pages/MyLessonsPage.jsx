@@ -20,6 +20,17 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function MyLessonsPage() {
   const { student, updateStudentData } = useAuth();
   const [bookings, setBookings] = useState([]);
@@ -39,7 +50,7 @@ export default function MyLessonsPage() {
   );
 
   // Shared Trial Date Tracking
-  const hasTrialDate = Boolean(student?.trial_date);
+  const hasTrialDate = Boolean(student?.trial_date && !isNaN(new Date(student.trial_date).getTime()));
   const trialDateObj = hasTrialDate ? new Date(student.trial_date) : null;
   const isTrialDatePassed = Boolean(
     trialDateObj && new Date().getTime() > new Date(trialDateObj).setHours(23, 59, 59, 999)
@@ -209,7 +220,7 @@ export default function MyLessonsPage() {
                 )}
               </div>
               <h3 className="text-base font-black text-[#152026] mt-1">
-                Trial Date: {format(new Date(student.trial_date), 'EEEE, MMMM dd, yyyy')}
+                Trial Date: {safeFormatDate(student?.trial_date, 'EEEE, MMMM dd, yyyy')}
               </h3>
               <p className="text-xs text-[#152026]/75 mt-0.5">
                 {isTrialDatePassed
@@ -288,7 +299,7 @@ export default function MyLessonsPage() {
 
                 <div className="space-y-1.5 text-xs">
                   <p className="text-sm font-black text-[#152026]">
-                    {b.timeSlotId?.date ? format(new Date(b.timeSlotId.date), 'EEEE, MMM dd, yyyy') : 'Scheduled'}
+                    {safeFormatDate(b.timeSlotId?.date, 'EEEE, MMM dd, yyyy', 'Scheduled')}
                   </p>
                   <p className="font-bold text-[#1B3D59]">
                     {b.timeSlotId?.startTime} – {b.timeSlotId?.endTime}

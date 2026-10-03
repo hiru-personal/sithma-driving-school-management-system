@@ -2199,6 +2199,8 @@ exports.setTrialDate = async (req, res) => {
     }
 
     student.trial_date = parsedDate;
+    if (!student.trial) student.trial = {};
+    student.trial.trialDate = parsedDate;
     student.trial_date_set_by = req.user._id;
     student.trial_date_set_at = new Date();
     student.lastActivityDate = new Date();
@@ -2206,11 +2208,13 @@ exports.setTrialDate = async (req, res) => {
     await student.save();
 
     // Trigger in-app notification for student
+    const hasTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
     const dateFormatted = parsedDate.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
     });
 
     await Notification.create({

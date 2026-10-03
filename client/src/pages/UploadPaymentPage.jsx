@@ -18,6 +18,17 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy', fallback = '') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function UploadPaymentPage() {
   const { student, updateStudentData } = useAuth();
   const [payments, setPayments] = useState([]);
@@ -309,7 +320,7 @@ export default function UploadPaymentPage() {
                   Amount: <strong className="text-[#152026]">Rs. {latestPayment.amount?.toLocaleString()}</strong>
                 </p>
                 <p className="text-[#6A97C0]">
-                  Date: {latestPayment.uploadedAt ? format(new Date(latestPayment.uploadedAt), 'MMM dd, yyyy') : 'N/A'}
+                  Date: {safeFormatDate(latestPayment?.uploadedAt, 'MMM dd, yyyy', 'N/A')}
                 </p>
                 {latestPayment.rejectionReason && (
                   <p className="text-rose-600 font-semibold mt-1">
@@ -336,7 +347,7 @@ export default function UploadPaymentPage() {
                     <div>
                       <p className="font-bold text-[#152026]">{p.bankName}</p>
                       <p className="text-[10px] text-[#6A97C0]">
-                        {p.uploadedAt ? format(new Date(p.uploadedAt), 'MMM dd, yyyy') : ''}
+                        {safeFormatDate(p?.uploadedAt, 'MMM dd, yyyy', '')}
                       </p>
                     </div>
                     <div className="text-right">

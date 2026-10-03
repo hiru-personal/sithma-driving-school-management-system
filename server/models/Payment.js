@@ -72,6 +72,18 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    cardLast4: {
+      type: String,
+      default: null,
+    },
+    cardBrand: {
+      type: String,
+      default: 'Visa / Mastercard',
+    },
+    cardHolder: {
+      type: String,
+      default: null,
+    },
     amount: {
       type: Number,
       default: 5000,

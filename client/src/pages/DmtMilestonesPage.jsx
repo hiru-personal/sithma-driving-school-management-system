@@ -33,6 +33,17 @@ import {
 import { format } from 'date-fns';
 import DmtMilestoneTimeline from '../components/DmtMilestoneTimeline';
 
+const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function DmtMilestonesPage() {
   const { user, student, updateStudentData } = useAuth();
   const navigate = useNavigate();
@@ -404,17 +415,22 @@ export default function DmtMilestonesPage() {
     null;
 
   const licenseExpiryDate = React.useMemo(() => {
-    if (profile?.learnerLicenseExpiryDate) return new Date(profile.learnerLicenseExpiryDate);
+    if (profile?.learnerLicenseExpiryDate) {
+      const d = new Date(profile.learnerLicenseExpiryDate);
+      if (!isNaN(d.getTime())) return d;
+    }
     if (licenseStartDate) {
       const d = new Date(licenseStartDate);
-      d.setMonth(d.getMonth() + 18);
-      return d;
+      if (!isNaN(d.getTime())) {
+        d.setMonth(d.getMonth() + 18);
+        return d;
+      }
     }
     return null;
   }, [profile?.learnerLicenseExpiryDate, licenseStartDate]);
 
   const remainingDays = React.useMemo(() => {
-    if (!licenseExpiryDate) return null;
+    if (!licenseExpiryDate || isNaN(licenseExpiryDate.getTime())) return null;
     const diff = licenseExpiryDate.getTime() - new Date().getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }, [licenseExpiryDate]);
@@ -655,7 +671,7 @@ export default function DmtMilestonesPage() {
               </h3>
               <p className="text-[#152026]/90 max-w-2xl leading-relaxed text-xs">
                 {isExpired
-                  ? 'Please register again. As per DMT regulations, a candidate has a maximum of 1.5 years (18 months) to complete the process. Your license validity ended on ' + (licenseExpiryDate ? format(licenseExpiryDate, 'dd MMMM yyyy') : 'Expired') + '.'
+                  ? 'Please register again. As per DMT regulations, a candidate has a maximum of 1.5 years (18 months) to complete the process. Your license validity ended on ' + (licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'dd MMMM yyyy', 'Expired') : 'Expired') + '.'
                   : 'Please register again. In accordance with DMT regulations, candidates are allowed a maximum of 3 trial attempts for the written theory examination per registration cycle.'}
               </p>
             </div>
@@ -708,10 +724,10 @@ export default function DmtMilestonesPage() {
 
           <div className="text-xs text-[#6A97C0] flex items-center gap-4">
             <span>
-              Start: <strong className="text-[#152026] font-mono">{licenseStartDate ? format(new Date(licenseStartDate), 'MMM dd, yyyy') : 'Registered'}</strong>
+              Start: <strong className="text-[#152026] font-mono">{licenseStartDate ? safeFormatDate(licenseStartDate, 'MMM dd, yyyy', 'Registered') : 'Registered'}</strong>
             </span>
             <span>
-              Expires: <strong className={`font-mono ${isExpiringSoon ? 'text-amber-600 font-bold' : 'text-[#1B3D59]'}`}>{licenseExpiryDate ? format(licenseExpiryDate, 'MMM dd, yyyy') : 'In 18 Months'}</strong>
+              Expires: <strong className={`font-mono ${isExpiringSoon ? 'text-amber-600 font-bold' : 'text-[#1B3D59]'}`}>{licenseExpiryDate ? safeFormatDate(licenseExpiryDate, 'MMM dd, yyyy', 'In 18 Months') : 'In 18 Months'}</strong>
             </span>
           </div>
         </div>
@@ -882,7 +898,7 @@ export default function DmtMilestonesPage() {
                       <span className="text-[#6A97C0]">Scheduled Medical Date:</span>
                       <span className="text-[#152026] font-bold font-mono">
                         {medDate
-                          ? new Date(medDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                          ? safeFormatDate(medDate, 'MMM dd, yyyy')
                           : 'Not Yet Assigned by Staff'}
                       </span>
                     </div>
@@ -920,7 +936,7 @@ export default function DmtMilestonesPage() {
                       <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                       <span>
                         Reschedule Pending Review{' '}
-                        {medPendingReq.preferred_date && `(Preferred: ${new Date(medPendingReq.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`}
+                        {medPendingReq.preferred_date && `(Preferred: ${safeFormatDate(medPendingReq.preferred_date, 'MMM dd')})`}
                       </span>
                     </div>
                   )}
@@ -938,7 +954,7 @@ export default function DmtMilestonesPage() {
                         <span className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-[#1B3D59] shrink-0" />
                           <span>
-                            Exam scheduled for <strong className="text-[#152026]">{new Date(medDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>. Status update (Pass/Fail) unlocks on exam day.
+                            Exam scheduled for <strong className="text-[#152026]">{safeFormatDate(medDate, 'MMM dd, yyyy')}</strong>. Status update (Pass/Fail) unlocks on exam day.
                           </span>
                         </span>
                       </div>
@@ -1093,7 +1109,7 @@ export default function DmtMilestonesPage() {
                       <span className="text-[#6A97C0]">DMT Submission Date:</span>
                       <span className="text-[#152026] font-bold font-mono">
                         {regDate
-                          ? new Date(regDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                          ? safeFormatDate(regDate, 'MMM dd, yyyy')
                           : 'Not Yet Assigned by Staff'}
                       </span>
                     </div>
@@ -1123,7 +1139,7 @@ export default function DmtMilestonesPage() {
                       <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                       <span>
                         Reschedule Pending Review{' '}
-                        {regPendingReq.preferred_date && `(Preferred: ${new Date(regPendingReq.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`}
+                        {regPendingReq.preferred_date && `(Preferred: ${safeFormatDate(regPendingReq.preferred_date, 'MMM dd')})`}
                       </span>
                     </div>
                   )}
@@ -1161,7 +1177,7 @@ export default function DmtMilestonesPage() {
                       <div className="p-2.5 rounded-xl bg-[#D4EEF8]/60 border border-[#B3D5F1] text-[#1B3D59] text-xs flex items-center justify-between gap-2">
                         <span className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-[#1B3D59] shrink-0" />
-                          <span>Completion & proof unlock on scheduled date ({new Date(regDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</span>
+                          <span>Completion & proof unlock on scheduled date ({safeFormatDate(regDate, 'MMM dd')})</span>
                         </span>
                       </div>
                       <button
@@ -1290,7 +1306,7 @@ export default function DmtMilestonesPage() {
                     <span className="text-[#6A97C0] block text-[11px]">Scheduled Exam Date:</span>
                     <span className="font-bold text-[#152026] text-sm font-mono mt-0.5 block">
                       {examDate
-                        ? new Date(examDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                        ? safeFormatDate(examDate, 'MMM dd, yyyy')
                         : 'Date Not Yet Assigned by Staff'}
                     </span>
                   </div>
@@ -1342,7 +1358,7 @@ export default function DmtMilestonesPage() {
                       <Clock className="w-3.5 h-3.5 animate-pulse text-[#152026]" />
                       <span>
                         Reschedule Pending{' '}
-                        {examPendingReq.preferred_date && `(${new Date(examPendingReq.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`}
+                        {examPendingReq.preferred_date && `(${safeFormatDate(examPendingReq.preferred_date, 'MMM dd')})`}
                       </span>
                     </div>
                   )}
@@ -1440,7 +1456,7 @@ export default function DmtMilestonesPage() {
                     Scheduled Trial Date:{' '}
                     <span className="text-[#152026] font-bold font-mono">
                       {profile?.trial_date
-                        ? new Date(profile.trial_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                        ? safeFormatDate(profile.trial_date, 'MMM dd, yyyy')
                         : (isExamPassed ? 'Eligible to Schedule Trial with Instructor' : 'Locked — Pending Learner Theory Exam Pass')}
                     </span>
                   </span>
@@ -1777,11 +1793,7 @@ export default function DmtMilestonesPage() {
                     new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).setHours(0, 0, 0, 0) && (
                     <p className="w-full text-[11px] text-[#152026] bg-[#F3EED8] border border-[#6A97C0]/40 p-2.5 rounded-xl mb-2 font-medium">
                       ⏳ Medical Exam is scheduled for{' '}
-                      {new Date(profile?.medical_date || profile?.dmtDates?.medicalExamDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {safeFormatDate(profile?.medical_date || profile?.dmtDates?.medicalExamDate, 'MMM dd, yyyy')}
                       . Result and proof submission unlocks on the exam date.
                     </p>
                   )}
@@ -2034,11 +2046,7 @@ export default function DmtMilestonesPage() {
                       <div className="p-2.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] flex items-center justify-between text-xs">
                         <span className="text-[#6A97C0]">Current Assigned Date:</span>
                         <span className="text-[#152026] font-mono font-bold">
-                          {new Date(currentScheduledDate).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
+                          {safeFormatDate(currentScheduledDate, 'MMM dd, yyyy')}
                         </span>
                       </div>
                     )}

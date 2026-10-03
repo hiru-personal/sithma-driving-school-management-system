@@ -32,6 +32,17 @@ import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+const safeFormatDate = (dateVal, formatStr = 'MMM dd, yyyy', fallback = '') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return format(d, formatStr);
+  } catch {
+    return fallback;
+  }
+};
+
 const PALETTE_CHART_COLORS = ['#1B3D59', '#6A97C0', '#B3D5F1', '#F3EED8', '#152026'];
 
 export default function AdminDashboardPage() {
@@ -293,7 +304,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="text-right">
                     <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-bold">
-                      {s.trial?.scheduledDate ? format(new Date(s.trial.scheduledDate), 'MMM dd, yyyy') : 'Pending'}
+                      {safeFormatDate(s.trial?.scheduledDate, 'MMM dd, yyyy', 'Pending')}
                     </span>
                     <p className="text-[10px] text-[#6A97C0] mt-1">Attempt #{s.trial?.currentAttempt || 1}</p>
                   </div>
@@ -323,7 +334,7 @@ export default function AdminDashboardPage() {
                   <div>
                     <p className="font-bold text-[#152026] text-sm">{p.userId?.name}</p>
                     <p className="text-[11px] text-[#475569]">
-                      {p.bankName} • {p.uploadedAt ? format(new Date(p.uploadedAt), 'MMM dd, yyyy') : ''}
+                      {p.bankName} • {safeFormatDate(p?.uploadedAt, 'MMM dd, yyyy', '')}
                     </p>
                   </div>
                   <div className="text-right">
