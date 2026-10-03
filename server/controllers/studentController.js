@@ -806,10 +806,20 @@ exports.recordTrialAttempt = async (req, res) => {
     if (normResult === 'passed') {
       student.trial.licenseObtained = true;
       student.trial.licenseIssuedDate = new Date(attemptDate);
-      student.registrationStatus = 'completed';
       student.isPassed = true;
       student.passedAt = new Date(attemptDate);
-      student.learnerLicenseStatus = 'completed';
+      // The flow requires: Practical Trial -> PASSED -> Upload Driving License Certificate -> PROCESS COMPLETED
+      const hasUploadedCertificate = Boolean(
+        student.finalLicense?.licensePhotoUrl ||
+        student.finalLicense?.verificationStatus === 'verified' ||
+        student.finalLicense?.verificationStatus === 'uploaded'
+      );
+      if (hasUploadedCertificate) {
+        student.registrationStatus = 'completed';
+        student.learnerLicenseStatus = 'completed';
+      } else {
+        student.learnerLicenseStatus = 'passed_pending_license';
+      }
     } else {
       const attemptsRemaining = Math.max(0, 3 - student.trial.attempts.length);
       if (attemptsRemaining === 0) {
@@ -2135,6 +2145,15 @@ exports.uploadFinalLicense = async (req, res) => {
       }
     } else {
       student.finalLicense.verificationStatus = 'uploaded';
+      // If student already passed practical trial, completing certificate upload finishes the process
+      const hasPassedTrial =
+        student.trial?.licenseObtained ||
+        student.isPassed ||
+        student.trial?.attempts?.some((a) => a.result === 'passed');
+      if (hasPassedTrial) {
+        student.learnerLicenseStatus = 'completed';
+        student.registrationStatus = 'completed';
+      }
     }
 
     // Sync to current cycle
@@ -2144,7 +2163,7 @@ exports.uploadFinalLicense = async (req, res) => {
 
     if (currentCycle) {
       currentCycle.finalLicense = student.finalLicense;
-      if (student.finalLicense.verificationStatus === 'verified') {
+      if (student.finalLicense.verificationStatus === 'verified' || student.registrationStatus === 'completed') {
         currentCycle.status = 'completed';
       }
     }
@@ -2486,7 +2505,7 @@ exports.setTrialDate = async (req, res) => {
 // @access  Student
 exports.submitRescheduleRequest = async (req, res) => {
   try {
-    const { reason, preferredDate, milestoneType = 'trial' } = req.body;
+    const { reason, preferredDate, preferredTime, milestoneType = 'trial' } = req.body;
 
     const validMilestones = ['medical', 'registration', 'theory_exam', 'trial'];
     const activeMilestone = validMilestones.includes(milestoneType) ? milestoneType : 'trial';
@@ -2554,6 +2573,7 @@ exports.submitRescheduleRequest = async (req, res) => {
       requested_by: req.user._id,
       reason: (reason || '').trim(),
       preferred_date: parsedPreferred,
+      preferred_time: (preferredTime || '').trim(),
       milestone_type: activeMilestone,
       previous_date: previousDate,
       previous_trial_date: activeMilestone === 'trial' ? student.trial_date : previousDate,

@@ -788,10 +788,24 @@ studentSchema.pre('save', function (next) {
       if (!this.trial.licenseIssuedDate) {
         this.trial.licenseIssuedDate = passedAttempt.date || new Date();
       }
-      this.registrationStatus = 'completed';
       this.isPassed = true;
       this.passedAt = this.passedAt || passedAttempt.date || new Date();
-      this.learnerLicenseStatus = 'completed';
+      // Only mark fully 'completed' if the student has uploaded their driving license certificate
+      const hasCertificate = Boolean(
+        this.finalLicense?.licensePhotoUrl ||
+        this.finalLicense?.verificationStatus === 'verified' ||
+        this.finalLicense?.verificationStatus === 'uploaded'
+      );
+      if (hasCertificate) {
+        this.registrationStatus = 'completed';
+        this.learnerLicenseStatus = 'completed';
+      } else {
+        // Trial passed but awaiting license certificate upload
+        this.registrationStatus = 'completed';
+        if (this.learnerLicenseStatus !== 'completed') {
+          this.learnerLicenseStatus = 'passed_pending_license';
+        }
+      }
     } else if (this.trial.attemptsUsed >= 3) {
       this.registrationStatus = 'cancelled';
       this.accountStatus = 'cancelled';
@@ -906,11 +920,24 @@ studentSchema.methods.evaluateLifecycle = function () {
 
     // Evaluate statuses
     const now = new Date();
-    const isCompleted =
+    // 'completed' requires both passing the trial AND uploading the driving license certificate
+    const hasCertificateUploaded = Boolean(
+      this.finalLicense?.licensePhotoUrl ||
       this.finalLicense?.verificationStatus === 'verified' ||
-      currentCycle.finalLicense?.verificationStatus === 'verified' ||
+      this.finalLicense?.verificationStatus === 'uploaded' ||
+      currentCycle.finalLicense?.licensePhotoUrl ||
+      currentCycle.finalLicense?.verificationStatus === 'verified'
+    );
+    const isTrialPassedNow = Boolean(
+      this.trial?.licenseObtained ||
+      (this.trial?.attempts || []).some((a) => a.result === 'passed')
+    );
+    const isCompleted =
       this.learnerLicenseStatus === 'completed' ||
-      this.trial?.licenseObtained;
+      (isTrialPassedNow && hasCertificateUploaded);
+
+    // Intermediate state: trial passed but certificate not yet uploaded
+    const isPassedPendingLicense = isTrialPassedNow && !hasCertificateUploaded;
 
     // Check Condition A: 3 attempts failed (Trial OR Theory)
     const trialAttempts = this.trial?.attempts || [];
@@ -928,6 +955,13 @@ studentSchema.methods.evaluateLifecycle = function () {
       if (currentCycle.status !== 'completed' || this.learnerLicenseStatus !== 'completed') {
         currentCycle.status = 'completed';
         this.learnerLicenseStatus = 'completed';
+        this.registrationStatus = 'completed';
+        changed = true;
+      }
+    } else if (isPassedPendingLicense) {
+      if (currentCycle.status !== 'passed_pending_license' || this.learnerLicenseStatus !== 'passed_pending_license') {
+        currentCycle.status = 'passed_pending_license';
+        this.learnerLicenseStatus = 'passed_pending_license';
         this.registrationStatus = 'completed';
         changed = true;
       }

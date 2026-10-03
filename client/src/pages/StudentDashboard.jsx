@@ -167,6 +167,8 @@ export default function StudentDashboard() {
   const [rescheduleMilestone, setRescheduleMilestone] = useState('trial');
   const [rescheduleReason, setRescheduleReason] = useState('');
   const [preferredRescheduleDate, setPreferredRescheduleDate] = useState('');
+  const [preferredRescheduleTime, setPreferredRescheduleTime] = useState('');
+  const [rescheduleConfirmed, setRescheduleConfirmed] = useState(false);
   const [submittingReschedule, setSubmittingReschedule] = useState(false);
   const [myRescheduleRequests, setMyRescheduleRequests] = useState([]);
 
@@ -190,12 +192,19 @@ export default function StudentDashboard() {
       const res = await api.post('/students/trial-date/reschedule', {
         milestoneType: rescheduleMilestone,
         reason: rescheduleReason,
-        preferredDate: preferredRescheduleDate,
+        preferredDate: preferredRescheduleDate || null,
+        preferredTime: preferredRescheduleTime || null,
       });
       if (res.data.success) {
-        toast.success(res.data.message || 'Date reschedule request submitted successfully!');
+        if (rescheduleMilestone === 'trial') {
+          toast.success('Trial Date Request Submitted');
+        } else {
+          toast.success(res.data.message || 'Date reschedule request submitted successfully!');
+        }
         setRescheduleReason('');
         setPreferredRescheduleDate('');
+        setPreferredRescheduleTime('');
+        setRescheduleConfirmed(false);
         setShowRescheduleModal(false);
         fetchMyRescheduleRequests();
       }
@@ -219,7 +228,13 @@ export default function StudentDashboard() {
     e.preventDefault();
     setSubmittingTrialResult(true);
     try {
-      const studentId = profile?._id || user?.studentId || user?._id;
+      // IMPORTANT: Use the Student document _id (not the auth User _id — they are different)
+      const studentId = profile?._id || student?._id;
+      if (!studentId) {
+        toast.error('Student profile not loaded. Please refresh the page and try again.');
+        setSubmittingTrialResult(false);
+        return;
+      }
       const res = await api.post(`/students/${studentId}/trial-attempt`, {
         result: trialOutcomeForm.result,
         attemptDate: trialOutcomeForm.attemptDate,
@@ -228,7 +243,7 @@ export default function StudentDashboard() {
 
       if (res.data.success) {
         if (trialOutcomeForm.result === 'passed') {
-          toast.success('🎉 Congratulations! Practical Trial recorded as PASSED! Driver\'s License issued.');
+          toast.success('🎉 Congratulations! Trial recorded as PASSED! Please upload your Driving License Certificate to complete the process.');
         } else if (res.data.registrationStatus === 'cancelled') {
           toast.error('⚠️ Maximum 3 trial attempts failed. Registration has been cancelled.');
         } else {
@@ -246,7 +261,9 @@ export default function StudentDashboard() {
         setShowTrialResultModal(false);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to record trial outcome');
+      const errMsg = err.response?.data?.message || 'Failed to record trial outcome';
+      toast.error(errMsg);
+      console.error('Trial submit error:', err.response?.data || err.message);
     } finally {
       setSubmittingTrialResult(false);
     }
@@ -835,6 +852,27 @@ export default function StudentDashboard() {
     trialAttemptsUsed >= 3 && !trialAttemptsList.some((a) => a.result === 'passed')
   );
 
+  const isTrialPassed = Boolean(
+    profile?.trial?.licenseObtained ||
+    profile?.isPassed ||
+    trialAttemptsList.some((a) => a.result === 'passed')
+  );
+
+  const isTrialFailed = Boolean(!isTrialPassed && latestTrialAttempt && latestTrialAttempt.result === 'failed');
+
+  const isLicenseCertificateUploaded = Boolean(
+    profile?.finalLicense?.licensePhotoUrl ||
+    profile?.finalLicense?.verificationStatus === 'verified' ||
+    profile?.finalLicense?.verificationStatus === 'uploaded'
+  );
+
+  const isProcessCompleted = Boolean(isTrialPassed && isLicenseCertificateUploaded);
+
+  const isLicenseCompleted = Boolean(
+    (profile?.registrationStatus === 'completed' || profile?.learnerLicenseStatus === 'completed') &&
+    isLicenseCertificateUploaded
+  );
+
   const is3AttemptsFailed = Boolean(
     profile?.learnerLicenseStatus === 'attempts_exhausted' ||
     (profile?.learnerExamAttempts && profile.learnerExamAttempts.length >= 3 && !profile.learnerExamAttempts.some((a) => a.result === 'passed')) ||
@@ -843,20 +881,8 @@ export default function StudentDashboard() {
 
   const isFinalPassed = Boolean(
     profile?.learnerLicenseStatus === 'passed' ||
+    isTrialPassed ||
     (isExamPassed && profile?.learnerLicenseStatus !== 'active' && profile?.learnerLicenseStatus !== 'expiring_soon' && profile?.learnerLicenseStatus !== 'pending_payment')
-  );
-
-  const isTrialPassed = Boolean(
-    profile?.trial?.licenseObtained ||
-    profile?.isPassed ||
-    trialAttemptsList.some((a) => a.result === 'passed')
-  );
-
-  const isLicenseCompleted = Boolean(
-    profile?.learnerLicenseStatus === 'completed' ||
-    profile?.finalLicense?.verificationStatus === 'verified' ||
-    profile?.trial?.licenseObtained ||
-    isTrialPassed
   );
 
   const isExpiringSoon = Boolean(
@@ -1785,7 +1811,15 @@ export default function StudentDashboard() {
             <RefreshCw className="w-4 h-4 text-[#D4EEF8]" /> Refresh
           </button>
 
-          {isAdvancePaymentPending ? (
+          {isProcessCompleted ? (
+            <div className="px-4 py-2.5 rounded-xl bg-white/20 border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-emerald-300" /> Driving License Process Completed ✓
+            </div>
+          ) : isTrialPassed ? (
+            <div className="px-4 py-2.5 rounded-xl bg-emerald-500/90 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-white" /> Trial Passed ✓ (Upload Certificate)
+            </div>
+          ) : isAdvancePaymentPending ? (
             <button
               onClick={() =>
                 toast.error(
@@ -2264,89 +2298,335 @@ export default function StudentDashboard() {
       )}
 
       {/* Shared Practical Trial Date & Reschedule Banner (Active for both Type 1 & Type 2) */}
-      {(hasTrialDate || (isTrialEligible && trialAttemptsUsed > 0) || isTrialPassed) && (
+      {(hasTrialDate || (isTrialEligible && trialAttemptsUsed > 0) || isTrialPassed || isTrialFailed) && (
         <div className="card p-6 border-2 border-[#D4EEF8] bg-white rounded-3xl shadow-sm hover:border-[#6A97C0] transition-all flex flex-col gap-5">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#D4EEF8] border border-[#6A97C0]/30 flex items-center justify-center text-[#1B3D59] shrink-0 shadow-inner">
-                <Calendar className="w-6 h-6 text-[#1B3D59]" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs uppercase tracking-wider font-extrabold text-[#1B3D59]">
-                    {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
-                  </span>
-                  {isTrialPassed ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-700" /> DMT Practical Trial Passed (Licensed)
-                    </span>
-                  ) : isTrial3AttemptsFailed ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
-                      All 3 Trial Attempts Failed
-                    </span>
-                  ) : Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString()) ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
-                      Trial Date Passed (Booking Locked)
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
-                      Booking Window Active
-                    </span>
-                  )}
-                  {myRescheduleRequests.find((r) => r.status === 'Pending') && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[11px] font-bold flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-amber-700 animate-pulse" /> Reschedule Pending DEO Review
-                    </span>
-                  )}
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
-                  {isTrialPassed
-                    ? 'Practical Driving Trial Cleared'
-                    : currentTrialDate
-                    ? `Scheduled Trial Date: ${formatTrialDateDisplay(currentTrialDate)}`
-                    : 'Practical Trial Assigned (Awaiting Date)'}
-                </h2>
-                <p className="text-xs sm:text-sm text-[#475569] max-w-xl leading-relaxed">
-                  {isTrialPassed
-                    ? 'Congratulations! You have passed your practical driving trial examination. Your official driver\'s license process is completed.'
-                    : Boolean(currentTrialDate && !isNaN(new Date(currentTrialDate).getTime()) && new Date(currentTrialDate).getTime() < Date.now() && new Date().toDateString() !== new Date(currentTrialDate).toDateString())
-                    ? 'Your scheduled trial date has passed. Please update your trial outcome below, or submit a reschedule request if you need a new trial date.'
-                    : 'You can book practical driving lessons up until your scheduled trial date. After your trial exam at DMT, update your trial outcome here.'}
-                </p>
-              </div>
-            </div>
+          {(() => {
+            const finalLicense = profile?.finalLicense || {};
+            const isCertificateUploaded = Boolean(
+              finalLicense?.licensePhotoUrl ||
+              finalLicense?.verificationStatus === 'verified' ||
+              finalLicense?.verificationStatus === 'uploaded'
+            );
+            const isProcessCompleted = Boolean(isTrialPassed && isCertificateUploaded);
 
-            <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-              {!isTrialPassed && !isTrial3AttemptsFailed && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTrialOutcomeForm({
-                      result: 'passed',
-                      attemptDate: currentTrialDate ? currentTrialDate.split('T')[0] : new Date().toISOString().split('T')[0],
-                      examinerNotes: '',
-                    });
-                    setShowTrialResultModal(true);
-                  }}
-                  className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <Award className="w-4 h-4 text-white" /> Update Trial Result
-                </button>
-              )}
-              {!isTrialPassed && !isTrial3AttemptsFailed && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRescheduleMilestone('trial');
-                    setShowRescheduleModal(true);
-                  }}
-                  className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <Clock className="w-4 h-4 text-[#1B3D59]" /> Request Trial Reschedule
-                </button>
-              )}
-            </div>
-          </div>
+            return (
+              <>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                      isProcessCompleted
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : isTrialPassed
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : isTrialFailed
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                        : 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
+                    }`}>
+                      {isProcessCompleted || isTrialPassed ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                      ) : isTrialFailed ? (
+                        <XCircle className="w-6 h-6 text-rose-600" />
+                      ) : (
+                        <Calendar className="w-6 h-6 text-[#1B3D59]" />
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs uppercase tracking-wider font-extrabold text-[#1B3D59]">
+                          {isType2 ? 'Type 2 Practical Driving Trial' : 'Official DMT Practical Trial'}
+                        </span>
+                        {isProcessCompleted ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-700" /> Driving License Process Completed ✓
+                          </span>
+                        ) : isTrialPassed ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-700" /> Practical Trial PASSED ✓ (Upload Certificate)
+                          </span>
+                        ) : isTrialFailed ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-bold flex items-center gap-1">
+                            <XCircle className="w-3 h-3 text-rose-600" /> Practical Trial FAILED ({trialAttemptsRemaining} Remaining)
+                          </span>
+                        ) : isTrial3AttemptsFailed ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[11px] font-bold">
+                            All 3 Trial Attempts Failed
+                          </span>
+                        ) : (
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${trialAttemptsUsed > 0 ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+                            {trialAttemptsUsed}/3 Attempts Used
+                          </span>
+                        )}
+                        {myRescheduleRequests.find((r) => r.status === 'Pending') && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[11px] font-bold flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-amber-700 animate-pulse" /> Reschedule Pending DEO Review
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Prominent Result Header */}
+                      {isTrialPassed ? (
+                        <div className="space-y-1">
+                          <h2 className="text-xl sm:text-2xl font-black text-emerald-800 flex items-center gap-2">
+                            Practical Trial Result: PASSED ✓
+                          </h2>
+                          <div className="text-xs text-[#475569] font-medium flex items-center gap-4 flex-wrap">
+                            <span>Attempts Used: <strong className="text-[#152026] font-mono">{trialAttemptsUsed} / 3</strong></span>
+                            <span>Trial Date: <strong className="text-[#152026] font-mono">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                          </div>
+                        </div>
+                      ) : isTrialFailed ? (
+                        <div className="space-y-1">
+                          <h2 className="text-xl sm:text-2xl font-black text-rose-800 flex items-center gap-2">
+                            Practical Trial Result: FAILED
+                          </h2>
+                          <div className="text-xs text-[#475569] font-medium flex items-center gap-4 flex-wrap">
+                            <span>Attempts Used: <strong className="text-[#152026] font-mono">{trialAttemptsUsed} / 3</strong></span>
+                            <span>Attempts Remaining: <strong className="text-rose-900 font-bold">{trialAttemptsRemaining}</strong></span>
+                            <span>Trial Date: <strong className="text-[#152026] font-mono">{formatTrialDateDisplay(currentTrialDate)}</strong></span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <h2 className="text-xl sm:text-2xl font-black text-[#152026]">
+                            {currentTrialDate
+                              ? `Scheduled Trial Date: ${formatTrialDateDisplay(currentTrialDate)}`
+                              : 'Practical Trial Assigned (Awaiting Date)'}
+                          </h2>
+                          <p className="text-xs sm:text-sm text-[#475569] max-w-xl leading-relaxed mt-0.5">
+                            You can book practical driving lessons up until your scheduled trial date. After your trial exam at DMT, update your trial outcome below.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions Row */}
+                  <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                    {/* If Failed with attempts remaining: Book Lesson + Request Another Trial Date */}
+                    {isTrialFailed && trialAttemptsRemaining > 0 && (
+                      <>
+                        <Link
+                          to="/student/lessons/book"
+                          className="btn-primary text-xs py-2.5 px-4 font-bold flex items-center gap-2 shadow-xs bg-[#19376D] hover:bg-[#0B2447] text-white"
+                        >
+                          <Car className="w-4 h-4 text-blue-200" />
+                          <span>🚗 Book Lesson</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRescheduleMilestone('trial');
+                            setRescheduleReason(`Requesting re-trial date after Attempt #${trialAttemptsUsed} result.`);
+                            setPreferredRescheduleDate('');
+                            setPreferredRescheduleTime('08:30 AM');
+                            setRescheduleConfirmed(false);
+                            setShowRescheduleModal(true);
+                          }}
+                          className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-2 shadow-xs cursor-pointer"
+                        >
+                          <Calendar className="w-4 h-4 text-[#1B3D59]" />
+                          <span>📅 Request Another Trial Date</span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* If Scheduled (not passed and not failed) */}
+                    {!isTrialPassed && !isTrialFailed && !isTrial3AttemptsFailed && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTrialOutcomeForm({
+                              result: 'passed',
+                              attemptDate: currentTrialDate ? currentTrialDate.split('T')[0] : new Date().toISOString().split('T')[0],
+                              examinerNotes: '',
+                            });
+                            setShowTrialResultModal(true);
+                          }}
+                          className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          <Award className="w-4 h-4 text-white" /> Update Trial Result
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRescheduleMilestone('trial');
+                            setPreferredRescheduleDate('');
+                            setPreferredRescheduleTime('08:30 AM');
+                            setRescheduleConfirmed(false);
+                            setShowRescheduleModal(true);
+                          }}
+                          className="btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-2 shadow-xs cursor-pointer"
+                        >
+                          <Clock className="w-4 h-4 text-[#1B3D59]" /> Request Trial Reschedule
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* PASSED FLOW: 3 Steps + Process Completed or Certificate Upload */}
+                {isTrialPassed && (
+                  <div className="space-y-4 pt-3 border-t border-[#D4EEF8]">
+                    {/* 3-Step Progression */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-2xl bg-emerald-100/80 border border-emerald-300 flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                          ✓
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-emerald-800 uppercase font-bold">Step 1: Practical Trial</div>
+                          <div className="text-xs font-black text-emerald-950">PASSED ✓</div>
+                        </div>
+                      </div>
+
+                      <div className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
+                        isCertificateUploaded
+                          ? 'bg-emerald-100/80 border-emerald-300'
+                          : 'bg-amber-50 border-amber-300 ring-2 ring-amber-400/30 animate-pulse'
+                      }`}>
+                        <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center shrink-0 ${
+                          isCertificateUploaded ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                        }`}>
+                          {isCertificateUploaded ? '✓' : '2'}
+                        </div>
+                        <div>
+                          <div className={`text-[10px] uppercase font-bold ${isCertificateUploaded ? 'text-emerald-800' : 'text-amber-800'}`}>
+                            Step 2: License Certificate
+                          </div>
+                          <div className={`text-xs font-black ${isCertificateUploaded ? 'text-emerald-950' : 'text-amber-950'}`}>
+                            {isCertificateUploaded ? 'Uploaded ✓' : 'Upload Required'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
+                        isProcessCompleted
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                          : 'bg-slate-50 border-slate-200 text-slate-500'
+                      }`}>
+                        <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center shrink-0 ${
+                          isProcessCompleted ? 'bg-white text-emerald-700' : 'bg-slate-300 text-slate-700'
+                        }`}>
+                          {isProcessCompleted ? '✓' : '3'}
+                        </div>
+                        <div>
+                          <div className={`text-[10px] uppercase font-bold ${isProcessCompleted ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            Step 3: Final Status
+                          </div>
+                          <div className="text-xs font-black">
+                            {isProcessCompleted ? 'Process Completed ✓' : 'Pending Upload'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step 3: Process Completed Banner */}
+                    {isProcessCompleted ? (
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                            <Award className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <h4 className="font-black text-sm sm:text-base flex items-center gap-2">
+                              Driving License Process Completed ✓
+                            </h4>
+                            <p className="text-xs text-emerald-100 font-medium leading-relaxed">
+                              Congratulations! You have passed your practical driving trial and uploaded your driving license certificate. Your driver's license journey is officially complete.
+                            </p>
+                            {finalLicense?.licenseNumber && (
+                              <div className="text-xs font-mono font-bold bg-white/15 px-2 py-0.5 rounded inline-block mt-1">
+                                License No: {finalLicense.licenseNumber}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {finalLicense?.licensePhotoUrl && (
+                          <a
+                            href={finalLicense.licensePhotoUrl.startsWith('http') ? finalLicense.licensePhotoUrl : `http://localhost:5001${finalLicense.licensePhotoUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="py-2.5 px-4 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 self-start sm:self-center cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4 text-emerald-700" />
+                            <span>View Uploaded Certificate</span>
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      /* Step 2 Form: Upload Certificate */
+                      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-emerald-300 shadow-xs space-y-4">
+                        <div>
+                          <h4 className="font-extrabold text-[#152026] text-sm flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-[#1B3D59]" /> Driving License Certificate
+                          </h4>
+                          <p className="text-xs text-[#475569] mt-1 font-medium leading-relaxed">
+                            Congratulations! You have passed your practical driving trial. Please upload your driving license certificate to complete the process.
+                          </p>
+                        </div>
+
+                        <form onSubmit={handleUploadFinalLicense} className="space-y-4 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[#152026] font-semibold mb-1">
+                                License Number (Optional):
+                              </label>
+                              <input
+                                type="text"
+                                value={licenseNumberInput}
+                                onChange={(e) => setLicenseNumberInput(e.target.value)}
+                                placeholder="e.g. B8942156"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#D4EEF8] text-[#152026] font-mono text-xs font-bold focus:border-[#1B3D59] focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[#152026] font-semibold mb-1">
+                                Upload Driving License Certificate <span className="text-rose-500">*</span>:
+                              </label>
+                              <input
+                                type="file"
+                                required
+                                accept="image/jpeg,image/png,image/webp,image/jpg,application/pdf"
+                                onChange={handleLicensePhotoSelect}
+                                className="w-full text-xs text-[#475569] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4EEF8] file:text-[#1B3D59] hover:file:bg-[#B3D5F1] cursor-pointer"
+                              />
+                            </div>
+                          </div>
+
+                          {licensePhotoPreview && (
+                            <div className="p-3 rounded-xl bg-slate-50 border border-[#D4EEF8] flex items-center gap-3">
+                              <img
+                                src={licensePhotoPreview}
+                                alt="Certificate Preview"
+                                className="w-20 h-14 object-cover rounded-lg border border-[#B3D5F1] shadow-xs"
+                              />
+                              <div>
+                                <span className="text-xs font-bold text-[#152026] block">Selected Certificate Image</span>
+                                <span className="text-[11px] text-emerald-700 font-semibold">Ready to upload</span>
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            type="submit"
+                            disabled={uploadingLicensePhoto || !licensePhotoFile}
+                            className="btn-primary text-xs py-2.5 px-5 font-bold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                          >
+                            <Upload className={`w-4 h-4 ${uploadingLicensePhoto ? 'animate-spin' : ''}`} />
+                            <span>{uploadingLicensePhoto ? 'Uploading Certificate...' : 'Upload Driving License Certificate'}</span>
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {/* Recorded Trial Attempts History (No Scores) */}
           {trialAttemptsList.length > 0 && (
@@ -3769,21 +4049,138 @@ export default function StudentDashboard() {
               </div>
 
               <div>
-                <label className="block font-semibold text-[#152026] mb-1">
-                  Preferred New Trial Date (Optional):
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-[#152026]">
+                    Preferred New Date:
+                  </label>
+                  {rescheduleMilestone === 'trial' && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          setPreferredRescheduleDate(todayStr);
+                        }}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border transition-all ${
+                          preferredRescheduleDate === new Date().toISOString().split('T')[0]
+                            ? 'bg-[#1B3D59] text-white border-[#1B3D59]'
+                            : 'bg-white text-[#152026] border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+                        }`}
+                      >
+                        ⚡ Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tomorrow = new Date();
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          setPreferredRescheduleDate(tomorrow.toISOString().split('T')[0]);
+                        }}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border transition-all ${
+                          (() => {
+                            const t = new Date();
+                            t.setDate(t.getDate() + 1);
+                            return preferredRescheduleDate === t.toISOString().split('T')[0];
+                          })()
+                            ? 'bg-[#1B3D59] text-white border-[#1B3D59]'
+                            : 'bg-white text-[#152026] border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+                        }`}
+                      >
+                        🌅 Tomorrow
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="relative flex items-center">
                   <Calendar className="w-4 h-4 text-[#1B3D59] absolute left-3.5 pointer-events-none" />
                   <input
                     type="date"
+                    min={new Date().toISOString().split('T')[0]}
                     value={preferredRescheduleDate}
                     onChange={(e) => setPreferredRescheduleDate(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1] text-xs font-bold cursor-pointer"
                   />
                 </div>
                 <span className="text-[10px] text-[#6A97C0] block mt-1">
-                  Final trial date assignment will be confirmed by DMT and your branch Data Entry Officer.
+                  You can request another time today, tomorrow, or any available future date.
                 </span>
+              </div>
+
+              {/* Time Slot Selection (Requirements 7 & 8) */}
+              <div>
+                <label className="block font-semibold text-[#152026] mb-1">
+                  Select Preferred Time Slot:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    '08:30 AM',
+                    '10:00 AM',
+                    '11:30 AM',
+                    '01:00 PM',
+                    '02:30 PM',
+                    '04:00 PM',
+                  ].map((timeOption) => (
+                    <button
+                      key={timeOption}
+                      type="button"
+                      onClick={() => setPreferredRescheduleTime(timeOption)}
+                      className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all ${
+                        preferredRescheduleTime === timeOption
+                          ? 'bg-[#1B3D59] text-white border-[#1B3D59] shadow-xs'
+                          : 'bg-white border-[#D4EEF8] text-[#152026] hover:bg-[#D4EEF8]/30'
+                      }`}
+                    >
+                      🕒 {timeOption}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[10px] text-[#6A97C0]">
+                  <span>Preferred slot: <strong className="text-[#152026]">{preferredRescheduleTime || 'Any Available Time'}</strong></span>
+                  {preferredRescheduleTime && (
+                    <button
+                      type="button"
+                      onClick={() => setPreferredRescheduleTime('')}
+                      className="text-[#1B3D59] underline font-medium cursor-pointer"
+                    >
+                      Clear Slot
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Pre-submission Confirmation Card (Requirement 8) */}
+              <div className="p-3.5 rounded-2xl bg-[#D4EEF8]/40 border border-[#D4EEF8] space-y-2">
+                <div className="text-[11px] font-extrabold text-[#152026] flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Request Summary & Confirmation:
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-[#475569]">
+                  <div>
+                    <span className="text-[10px] text-[#6A97C0] block font-semibold">Preferred Date:</span>
+                    <strong className="font-mono text-[#152026]">
+                      {preferredRescheduleDate
+                        ? safeFormatDate(preferredRescheduleDate, 'MMM dd, yyyy')
+                        : 'Earliest Available'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#6A97C0] block font-semibold">Preferred Time:</span>
+                    <strong className="font-mono text-[#152026]">
+                      {preferredRescheduleTime || 'Any Available Time'}
+                    </strong>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 pt-1.5 border-t border-[#D4EEF8] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rescheduleConfirmed}
+                    onChange={(e) => setRescheduleConfirmed(e.target.checked)}
+                    className="rounded text-[#1B3D59] focus:ring-[#1B3D59]"
+                  />
+                  <span className="text-[11px] font-bold text-[#152026]">
+                    I confirm my preferred date and available time slot selection.
+                  </span>
+                </label>
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
@@ -3791,14 +4188,14 @@ export default function StudentDashboard() {
                   type="button"
                   onClick={() => setShowRescheduleModal(false)}
                   disabled={submittingReschedule}
-                  className="btn-secondary text-xs py-2 px-4"
+                  className="btn-secondary text-xs py-2 px-4 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingReschedule || !rescheduleReason.trim()}
-                  className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-xs"
+                  disabled={submittingReschedule || !rescheduleReason.trim() || !rescheduleConfirmed}
+                  className="btn-primary text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   {submittingReschedule ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   Submit Reschedule Request

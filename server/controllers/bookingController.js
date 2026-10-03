@@ -34,6 +34,31 @@ exports.createBooking = async (req, res) => {
     }
 
     // Rule 17: Backend Protections
+    // Check if driving license process is already completed
+    const isProcessCompleted =
+      student.registrationStatus === 'completed' &&
+      (student.finalLicense?.licensePhotoUrl ||
+        student.finalLicense?.verificationStatus === 'verified' ||
+        student.finalLicense?.verificationStatus === 'uploaded');
+    if (isProcessCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your driving license process is completed. Practical lesson booking is closed.',
+      });
+    }
+
+    // Check if practical trial is already passed
+    const isTrialPassed =
+      student.trial?.licenseObtained ||
+      student.isPassed ||
+      student.trial?.attempts?.some((a) => a.result === 'passed');
+    if (isTrialPassed) {
+      return res.status(403).json({
+        success: false,
+        message: 'Practical Driving Trial has been successfully passed. Lesson booking is closed.',
+      });
+    }
+
     // 1. Student registration status is Cancelled
     if (
       student.registrationStatus === 'cancelled' ||
@@ -110,11 +135,19 @@ exports.createBooking = async (req, res) => {
 
       // 1. Check if trial date has already passed
       if (now > trialMidnight) {
-        const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
-        return res.status(403).json({
-          success: false,
-          message: `Your practical trial date (${formattedTrialDate}) has passed and lesson booking is locked. Please submit a reschedule request or contact the branch to schedule a new trial date.`,
-        });
+        const latestAttempt = student.trial?.attempts?.slice(-1)[0];
+        const isFailedWithRemaining =
+          latestAttempt &&
+          latestAttempt.result !== 'passed' &&
+          (student.trial?.attempts?.length || 0) < 3;
+
+        if (!isFailedWithRemaining) {
+          const formattedTrialDate = new Date(student.trial_date).toISOString().split('T')[0];
+          return res.status(403).json({
+            success: false,
+            message: `Your practical trial date (${formattedTrialDate}) has passed and lesson booking is locked. Please submit a reschedule request or contact the branch to schedule a new trial date.`,
+          });
+        }
       }
 
       // 2. 3-Month Booking Window leading up to the Trial Date
@@ -255,13 +288,20 @@ exports.createBooking = async (req, res) => {
     }
 
     // Gating Rule 1 & 4: Cut-Off Date - Lessons cannot be booked on or after the Trial Exam Date
+    // If student has failed a trial attempt and has remaining attempts, allow them to book lessons to practice!
     if (student.trial_date) {
       const slotDateObj = new Date(timeSlot.date);
       slotDateObj.setHours(0, 0, 0, 0);
       const trialDateObj = new Date(student.trial_date);
       trialDateObj.setHours(0, 0, 0, 0);
 
-      if (slotDateObj.getTime() >= trialDateObj.getTime()) {
+      const latestAttempt = student.trial?.attempts?.slice(-1)[0];
+      const isFailedWithRemaining =
+        latestAttempt &&
+        latestAttempt.result !== 'passed' &&
+        (student.trial?.attempts?.length || 0) < 3;
+
+      if (!isFailedWithRemaining && slotDateObj.getTime() >= trialDateObj.getTime()) {
         return res.status(400).json({
           success: false,
           message: 'Lessons cannot be booked on or after your Trial Exam Date.',
@@ -414,6 +454,29 @@ exports.bookFreeClass = async (req, res) => {
     }
 
     // Rule 17: Backend Protections
+    const isProcessCompleted =
+      student.registrationStatus === 'completed' &&
+      (student.finalLicense?.licensePhotoUrl ||
+        student.finalLicense?.verificationStatus === 'verified' ||
+        student.finalLicense?.verificationStatus === 'uploaded');
+    if (isProcessCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your driving license process is completed. Practical lesson booking is closed.',
+      });
+    }
+
+    const isTrialPassed =
+      student.trial?.licenseObtained ||
+      student.isPassed ||
+      student.trial?.attempts?.some((a) => a.result === 'passed');
+    if (isTrialPassed) {
+      return res.status(403).json({
+        success: false,
+        message: 'Practical Driving Trial has been successfully passed. Lesson booking is closed.',
+      });
+    }
+
     // 1. Student registration status is Cancelled
     if (
       student.registrationStatus === 'cancelled' ||
@@ -462,7 +525,13 @@ exports.bookFreeClass = async (req, res) => {
       const trialDateObj = new Date(student.trial_date);
       trialDateObj.setHours(0, 0, 0, 0);
 
-      if (slotDateObj.getTime() >= trialDateObj.getTime()) {
+      const latestAttempt = student.trial?.attempts?.slice(-1)[0];
+      const isFailedWithRemaining =
+        latestAttempt &&
+        latestAttempt.result !== 'passed' &&
+        (student.trial?.attempts?.length || 0) < 3;
+
+      if (!isFailedWithRemaining && slotDateObj.getTime() >= trialDateObj.getTime()) {
         return res.status(400).json({
           success: false,
           message: 'Lessons cannot be booked on or after your Trial Exam Date.',

@@ -1060,6 +1060,9 @@ export default function StaffStudentListPage() {
                           <span className="text-[11px] text-slate-400 block font-semibold">Requested / Preferred Date:</span>
                           <span className="font-bold text-cyan-300 font-mono text-sm">
                             {safeFormatDate(req.preferred_date, 'MMM dd, yyyy', 'No date preference')}
+                            {req.preferred_time && (
+                              <span className="ml-1.5 text-xs text-amber-300 font-sans font-bold">({req.preferred_time})</span>
+                            )}
                           </span>
                         </div>
                         {(req.new_date || req.new_trial_date) && (
@@ -1661,6 +1664,21 @@ export default function StaffStudentListPage() {
                             )?.preferred_date,
                             'MMM dd, yyyy',
                             'No date preference'
+                          )}
+                          {rescheduleRequests.find(
+                            (r) =>
+                              (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                              (r.milestone_type === 'trial' || !r.milestone_type) &&
+                              r.status === 'Pending'
+                          )?.preferred_time && (
+                            <span className="ml-1 text-xs text-amber-700">
+                              ({rescheduleRequests.find(
+                                (r) =>
+                                  (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                  (r.milestone_type === 'trial' || !r.milestone_type) &&
+                                  r.status === 'Pending'
+                              )?.preferred_time})
+                            </span>
                           )}
                         </strong>
                       </div>
@@ -4300,6 +4318,9 @@ export default function StaffStudentListPage() {
                             <span className="text-[11px] text-slate-500 block font-semibold">Requested / Preferred Date:</span>
                             <span className="font-bold text-[#1B3D59] font-mono">
                               {safeFormatDate(req.preferred_date, 'MMM dd, yyyy', 'No preference')}
+                              {req.preferred_time && (
+                                <span className="ml-1 text-xs text-amber-700 font-sans font-bold">({req.preferred_time})</span>
+                              )}
                             </span>
                           </div>
                           {(req.new_date || req.new_trial_date) && (

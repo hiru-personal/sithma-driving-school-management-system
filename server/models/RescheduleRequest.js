@@ -25,6 +25,11 @@ const rescheduleRequestSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    preferred_time: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     milestone_type: {
       type: String,
       enum: ['medical', 'registration', 'theory_exam', 'trial'],
