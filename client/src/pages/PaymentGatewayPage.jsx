@@ -1207,7 +1207,7 @@ export default function PaymentGatewayPage() {
                         <CreditCard className="w-5 h-5 text-[#1B3D59]" /> Sithma Pay — 3D Secure Online Gateway
                       </h2>
                       <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
-                        University Demo Mode • Test Cards & Bank OTP Simulation
+                        Official Online Payment Portal • 256-Bit SSL Encrypted 3D Secure
                       </p>
                     </div>
                     <button
@@ -1224,9 +1224,9 @@ export default function PaymentGatewayPage() {
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#B3D5F1]">
                         Advance Registration Fee
                       </span>
-                      <h3 className="text-2xl font-black text-white mt-0.5">
+                      <div className="text-2xl sm:text-3xl font-black !text-white mt-0.5" style={{ color: '#ffffff' }}>
                         Rs. {Number(advanceAmount).toLocaleString()}.00 <span className="text-xs font-normal text-[#D4EEF8]">LKR</span>
-                      </h3>
+                      </div>
                       <p className="text-xs text-[#B3D5F1] mt-1">
                         Payer: <strong className="text-white">{studentName}</strong> • {branch} Branch
                       </p>
@@ -1238,7 +1238,7 @@ export default function PaymentGatewayPage() {
                       className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold py-3.5 px-6 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                     >
                       <Lock className="w-4 h-4 text-emerald-200" />
-                      Open Sithma Pay Gateway <ArrowRight className="w-4 h-4" />
+                      Proceed to Secure Payment <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
 
@@ -1246,19 +1246,19 @@ export default function PaymentGatewayPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
                       <div className="flex items-center gap-2 font-bold text-[#152026]">
-                        <CreditCard className="w-4 h-4 text-[#1B3D59]" /> Test Cards Built-in
+                        <CreditCard className="w-4 h-4 text-[#1B3D59]" /> All Major Cards Accepted
                       </div>
                       <p className="text-[#6A97C0] text-[11px]">
-                        Visa, Mastercard, & Amex demo cards ready with 1-click autofill.
+                        Visa, Mastercard, & American Express accepted.
                       </p>
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
                       <div className="flex items-center gap-2 font-bold text-[#152026]">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> 3D Secure Bank OTP
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> 3D Secure Protection
                       </div>
                       <p className="text-[#6A97C0] text-[11px]">
-                        Authentic bank verification screen with quick OTP demo testing.
+                        Multi-factor bank OTP authentication for maximum safety.
                       </p>
                     </div>
 

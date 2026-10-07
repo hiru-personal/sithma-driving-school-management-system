@@ -279,11 +279,11 @@ export default function UploadPaymentPage() {
                     <CreditCard className="w-5 h-5 text-[#1B3D59]" /> Select Course Package & Pay Online
                   </h2>
                   <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
-                    Test Visa, Mastercard, or Amex with simulated 3D Secure OTP verification
+                    Pay securely using Visa, Mastercard, or American Express with 3D Secure bank verification
                   </p>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold">
-                  Demo Gateway Active
+                  Verified 3D Secure Gateway
                 </span>
               </div>
 
@@ -360,9 +360,9 @@ export default function UploadPaymentPage() {
                       3D Secure
                     </span>
                   </div>
-                  <h4 className="text-xl font-black text-white mt-1">
+                  <div className="text-2xl sm:text-3xl font-black !text-white mt-1 tracking-tight" style={{ color: '#ffffff' }}>
                     Rs. {packageAmountDue.toLocaleString()}.00 LKR
-                  </h4>
+                  </div>
                   <p className="text-xs text-[#D4EEF8] mt-0.5">
                     {currentPkgDetails.name} • {currentPkgDetails.lessons} Lessons Unlocked
                   </p>
@@ -374,7 +374,7 @@ export default function UploadPaymentPage() {
                   className="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-3.5 px-6 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer whitespace-nowrap"
                 >
                   <Lock className="w-4 h-4 text-emerald-200" />
-                  Launch Sithma Pay <ArrowRight className="w-4 h-4" />
+                  Pay Online (Instant Unlock) <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -382,19 +382,19 @@ export default function UploadPaymentPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                 <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
                   <p className="font-bold text-[#152026] flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-[#1B3D59]" /> 1-Click Test Cards
+                    <CreditCard className="w-3.5 h-3.5 text-[#1B3D59]" /> All Major Cards Accepted
                   </p>
-                  <p className="text-[11px] text-[#6A97C0]">Visa, Master, & Amex demo presets included.</p>
+                  <p className="text-[11px] text-[#6A97C0]">Visa, Mastercard, & American Express supported.</p>
                 </div>
                 <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
                   <p className="font-bold text-[#152026] flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Bank OTP Testing
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> 3D Secure Protection
                   </p>
-                  <p className="text-[11px] text-[#6A97C0]">Simulates authentic 3DS authentication code.</p>
+                  <p className="text-[11px] text-[#6A97C0]">Multi-factor bank OTP authentication.</p>
                 </div>
                 <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
                   <p className="font-bold text-[#152026] flex items-center gap-1.5">
-                    <Printer className="w-3.5 h-3.5 text-[#1B3D59]" /> Printable Receipt
+                    <Printer className="w-3.5 h-3.5 text-[#1B3D59]" /> Instant Digital Receipt
                   </p>
                   <p className="text-[11px] text-[#6A97C0]">Official transaction voucher with ref code.</p>
                 </div>
