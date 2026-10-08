@@ -27,8 +27,10 @@ import {
   Copy,
   Check,
   Eye,
+  Printer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import SimulatedPaymentGatewayModal, { validateExpiryDate, validateCvc } from '../components/SimulatedPaymentGatewayModal';
 
 // ─── 4 Official Sithma Bank Accounts ──────────────────────────────────────────
 export const SITHMA_OFFICIAL_BANKS = [
@@ -186,6 +188,63 @@ export default function PaymentGatewayPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [doneData, setDoneData] = useState(null);
+  const [showSimulatedModal, setShowSimulatedModal] = useState(false);
+
+  // Modal Submission Handler (Online 3DS simulated card payment)
+  const handleModalSubmitPayment = async ({
+    cardLast4,
+    cardBrand,
+    cardHolder,
+    transactionReference,
+    authCode,
+    receiptNumber,
+    autoVerify,
+    amount,
+  }) => {
+    const res = await api.post('/payments/pay-advance-pending', {
+      amount,
+      bankName: 'Online Payment Gateway (Sithma Pay)',
+      transactionReference,
+      authCode,
+      receiptNumber,
+      autoVerify,
+      pendingUserId: userId || user?._id || '',
+      userId: userId || user?._id || '',
+      studentId: studentId || student?._id || '',
+      cardLast4,
+      cardBrand,
+      cardHolder,
+    });
+
+    if (res.data.success) {
+      if (updateStudentData && student) {
+        updateStudentData({
+          ...student,
+          advancePaymentStatus: autoVerify ? 'verified' : 'pending',
+          isAdvancePaid: autoVerify ? true : student.isAdvancePaid,
+          hasSubmittedPayment: true,
+          latestPayment: res.data.payment,
+        });
+      }
+    }
+    return res.data;
+  };
+
+  const handleModalPaymentSuccess = (receipt) => {
+    setShowSimulatedModal(false);
+    setDoneData({
+      method: 'online',
+      reference: receipt.transactionReference,
+      receiptNumber: receipt.receiptNumber,
+      authCode: receipt.authCode,
+      amount: receipt.amount,
+      cardLast4: receipt.cardLast4,
+      cardBrand: receipt.cardBrand,
+      cardHolder: receipt.studentName,
+      instantActivation: receipt.instantActivation,
+    });
+    setDone(true);
+  };
 
   const branchInfo = BRANCHES[branch] || BRANCHES['Maharagama'];
 
@@ -270,8 +329,14 @@ export default function PaymentGatewayPage() {
       toast.error('Please enter a valid card number');
       return;
     }
-    if (!cardForm.expiry || !cardForm.cvv) {
-      toast.error('Please fill in all card details');
+    const expRes = validateExpiryDate(cardForm.expiry);
+    if (!expRes.valid) {
+      toast.error(expRes.error);
+      return;
+    }
+    const cvcRes = validateCvc(cardForm.cvv);
+    if (!cvcRes.valid) {
+      toast.error(cvcRes.error);
       return;
     }
     setCardStep('processing');
@@ -414,10 +479,14 @@ export default function PaymentGatewayPage() {
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border mb-3 ${
                   doneData.method === 'physical'
                     ? 'bg-[#F3EED8] border-[#6A97C0]/40 text-[#152026]'
+                    : doneData.instantActivation
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                     : 'bg-emerald-50 border-emerald-300 text-emerald-800'
                 }`}>
                   {doneData.method === 'physical' ? (
                     <><Clock className="w-3 h-3" /> Visit Branch to Pay</>
+                  ) : doneData.instantActivation ? (
+                    <><CheckCircle2 className="w-3 h-3 text-emerald-600" /> Account Verified & Active</>
                   ) : (
                     <><CheckCircle2 className="w-3 h-3" /> Payment Submitted</>
                   )}
@@ -426,23 +495,35 @@ export default function PaymentGatewayPage() {
                 <h2 className="text-2xl sm:text-3xl font-black text-[#152026] leading-tight">
                   {doneData.method === 'physical'
                     ? 'Please Visit Your Branch'
+                    : doneData.instantActivation
+                    ? 'Online Payment Verified & Account Activated!'
                     : doneData.method === 'online'
-                    ? 'Online Card Payment Submitted!'
+                    ? 'Online Card Payment Authorized!'
                     : 'Bank Slip Uploaded!'}
                 </h2>
                 <p className="text-sm text-[#6A97C0] mt-2 leading-relaxed max-w-sm mx-auto font-medium">
                   {doneData.method === 'physical'
                     ? `Please visit the ${doneData.branch} branch to complete your advance payment. Bring your NIC and registration reference.`
+                    : doneData.instantActivation
+                    ? 'Your online card advance payment has been verified by the 3DS gateway. Your student profile is active and ready!'
                     : doneData.method === 'online'
-                    ? 'Your online card payment has been captured. Our branch Data Entry Officer will review and verify your transaction before activating your account.'
+                    ? 'Your online card payment has been captured. Our branch Data Entry Officer will review your transaction before full activation.'
                     : 'Our Data Entry Officer will review and verify your bank deposit slip. You will receive login access once verified.'}
                 </p>
               </div>
 
-              {/* Details card */}
-              <div className="p-5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] text-left text-xs space-y-3 text-[#152026]">
+              {/* Details / Official Receipt Card */}
+              <div id="printable-payment-receipt" className="p-5 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] text-left text-xs space-y-3 text-[#152026] shadow-xs">
+                <div className="flex justify-between border-b border-[#D4EEF8] pb-2">
+                  <span className="font-extrabold text-[#1B3D59]">Sithma Driving School (Pvt) Ltd</span>
+                  {doneData.receiptNumber && (
+                    <span className="font-mono font-bold text-[#152026] bg-white px-2 py-0.5 rounded border border-[#D4EEF8]">
+                      {doneData.receiptNumber}
+                    </span>
+                  )}
+                </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6A97C0]">Name:</span>
+                  <span className="text-[#6A97C0]">Student Name:</span>
                   <span className="font-bold text-[#152026]">{studentName}</span>
                 </div>
                 <div className="flex justify-between">
@@ -450,12 +531,20 @@ export default function PaymentGatewayPage() {
                   <span className="font-bold text-[#152026]">{branch}</span>
                 </div>
                 {doneData.method === 'online' && (
-                  <div className="flex justify-between">
-                    <span className="text-[#6A97C0]">Payment Method:</span>
-                    <span className="font-bold text-[#1B3D59]">
-                      Online Gateway ({doneData.cardBrand || 'Card'} •••• {doneData.cardLast4 || 'Card'})
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-[#6A97C0]">Payment Method:</span>
+                      <span className="font-bold text-[#1B3D59]">
+                        3DS Online Gateway ({doneData.cardBrand || 'Card'} •••• {doneData.cardLast4 || 'Card'})
+                      </span>
+                    </div>
+                    {doneData.authCode && (
+                      <div className="flex justify-between">
+                        <span className="text-[#6A97C0]">Auth Code:</span>
+                        <span className="font-mono font-bold text-[#152026]">{doneData.authCode}</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 {doneData.method !== 'physical' && (
                   <div className="flex justify-between">
@@ -465,12 +554,20 @@ export default function PaymentGatewayPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-[#6A97C0]">Advance Amount:</span>
-                  <span className="font-black text-emerald-700 text-sm">Rs. {Number(doneData.amount).toLocaleString()}</span>
+                  <span className="font-black text-emerald-700 text-sm">Rs. {Number(doneData.amount).toLocaleString()}.00</span>
                 </div>
                 {doneData.method !== 'physical' && (
                   <div className="flex justify-between">
                     <span className="text-[#6A97C0]">Account Status:</span>
-                    <span className="font-bold text-[#152026] bg-[#F3EED8] px-2 py-0.5 rounded border border-[#6A97C0]/40">Pending Officer Verification</span>
+                    {doneData.instantActivation ? (
+                      <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
+                        Active & Verified (Instant 3DS)
+                      </span>
+                    ) : (
+                      <span className="font-bold text-[#152026] bg-[#F3EED8] px-2 py-0.5 rounded border border-[#6A97C0]/40">
+                        Pending Officer Verification
+                      </span>
+                    )}
                   </div>
                 )}
                 {doneData.method === 'physical' && (
@@ -491,11 +588,22 @@ export default function PaymentGatewayPage() {
                 )}
               </div>
 
-              {doneData.method !== 'physical' && (
+              {doneData.method === 'online' && (
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="w-full py-2.5 px-4 rounded-xl border border-[#D4EEF8] bg-[#FAFCFE] hover:bg-[#D4EEF8]/40 text-[#152026] text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
+                >
+                  <Printer className="w-4 h-4 text-[#1B3D59]" />
+                  Print / Save Official Payment Voucher
+                </button>
+              )}
+
+              {doneData.method !== 'physical' && !doneData.instantActivation && (
                 <div className="p-4 rounded-xl bg-[#D4EEF8]/40 border border-[#B3D5F1] text-xs text-[#152026] text-left flex gap-2.5">
                   <Info className="w-4 h-4 text-[#1B3D59] flex-shrink-0 mt-0.5" />
                   <span>
-                    <strong className="text-[#152026] font-bold">What happens next?</strong> Our branch Data Entry Officer will verify your {doneData.method === 'online' ? 'online card gateway transaction' : 'payment slip'} within 1–2 business hours. Once verified, you will gain full access to your student dashboard.
+                    <strong className="text-[#152026] font-bold">What happens next?</strong> Our branch Data Entry Officer will verify your transaction within 1–2 business hours. Once verified, you will gain full access to your student dashboard.
                   </span>
                 </div>
               )}
@@ -1096,128 +1204,83 @@ export default function PaymentGatewayPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-lg font-extrabold text-[#152026] flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-[#1B3D59]" /> Sithma Pay — Online Gateway
+                        <CreditCard className="w-5 h-5 text-[#1B3D59]" /> Sithma Pay — 3D Secure Online Gateway
                       </h2>
-                      <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">Secure simulated payment gateway</p>
+                      <p className="text-xs text-[#6A97C0] mt-0.5 font-medium">
+                        Official Online Payment Portal • 256-Bit SSL Encrypted 3D Secure
+                      </p>
                     </div>
-                    <button onClick={() => setActiveMethod(null)} className="p-1.5 rounded-lg text-[#6A97C0] hover:text-[#152026] hover:bg-[#FAFCFE] transition-colors cursor-pointer">
+                    <button
+                      onClick={() => setActiveMethod(null)}
+                      className="p-1.5 rounded-lg text-[#6A97C0] hover:text-[#152026] hover:bg-[#FAFCFE] transition-colors cursor-pointer"
+                    >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
 
-                  {/* Amount Due */}
-                  <div className="rounded-2xl bg-[#D4EEF8]/60 border border-[#B3D5F1] p-4.5 flex items-center justify-between">
-                    <div className="text-xs text-[#1B3D59] font-bold">Advance Payment Due</div>
-                    <div className="text-2xl font-black text-[#152026]">Rs. {Number(advanceAmount).toLocaleString()}<span className="text-sm font-semibold text-[#6A97C0]">.00</span></div>
-                  </div>
-
-                  {/* Verification Notice */}
-                  <div className="p-3.5 rounded-xl bg-[#F3EED8] border border-[#6A97C0]/40 text-xs text-[#152026] flex items-start gap-2.5">
-                    <Clock className="w-4 h-4 text-[#1B3D59] flex-shrink-0 mt-0.5" />
-                    <p className="font-medium leading-relaxed">
-                      <strong className="text-[#152026] font-bold">Officer Verification Required:</strong> Like Bank Deposit Slips, online card transactions are verified by our branch Data Entry Officer before full account activation.
-                    </p>
-                  </div>
-
-                  {cardStep === 'processing' ? (
-                    <div className="py-16 text-center space-y-4">
-                      <div className="w-16 h-16 rounded-full border-4 border-[#D4EEF8] border-t-[#1B3D59] animate-spin mx-auto" />
-                      <p className="text-[#152026] font-black text-base">Processing Payment...</p>
-                      <p className="text-xs text-[#6A97C0]">Please do not close this window</p>
+                  {/* Amount Due Card */}
+                  <div className="rounded-2xl bg-gradient-to-r from-[#152026] via-[#1B3D59] to-[#152026] text-white p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#B3D5F1]">
+                        Advance Registration Fee
+                      </span>
+                      <div className="text-2xl sm:text-3xl font-black !text-white mt-0.5" style={{ color: '#ffffff' }}>
+                        Rs. {Number(advanceAmount).toLocaleString()}.00 <span className="text-xs font-normal text-[#D4EEF8]">LKR</span>
+                      </div>
+                      <p className="text-xs text-[#B3D5F1] mt-1">
+                        Payer: <strong className="text-white">{studentName}</strong> • {branch} Branch
+                      </p>
                     </div>
-                  ) : (
-                    <>
-                      {/* Test Card Autofill */}
-                      <div>
-                        <p className="text-[11px] font-bold text-[#6A97C0] uppercase tracking-wider mb-2">Use a Test Card (Demo Mode)</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          {DUMMY_CARDS.map((card, i) => (
-                            <button
-                              key={i}
-                              onClick={() => {
-                                setSelectedDummy(i);
-                                setCardForm({ ...cardForm, cardNumber: card.number, expiry: '12/28', cvv: '123' });
-                              }}
-                              className={`rounded-xl p-3 border text-left text-xs transition-all bg-gradient-to-br ${card.color} cursor-pointer ${
-                                selectedDummy === i ? 'ring-2 ring-[#1B3D59] shadow-lg scale-[1.02]' : 'hover:shadow-md opacity-90 hover:opacity-100'
-                              }`}
-                            >
-                              <p className="font-mono text-white text-[11px] font-bold tracking-wider">{card.number}</p>
-                              <p className="text-white/80 mt-1 font-extrabold">{card.type}</p>
-                            </button>
-                          ))}
-                        </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowSimulatedModal(true)}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold py-3.5 px-6 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4 text-emerald-200" />
+                      Proceed to Secure Payment <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Features highlights */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+                      <div className="flex items-center gap-2 font-bold text-[#152026]">
+                        <CreditCard className="w-4 h-4 text-[#1B3D59]" /> All Major Cards Accepted
                       </div>
+                      <p className="text-[#6A97C0] text-[11px]">
+                        Visa, Mastercard, & American Express accepted.
+                      </p>
+                    </div>
 
-                      {/* Card Form */}
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-bold text-[#152026] mb-1.5">Card Number</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={cardForm.cardNumber}
-                              onChange={(e) => setCardForm({ ...cardForm, cardNumber: formatCardNumber(e.target.value) })}
-                              placeholder="0000 0000 0000 0000"
-                              maxLength={19}
-                              className="w-full px-4 py-3 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-mono font-bold rounded-xl text-sm outline-none focus:border-[#1B3D59] focus:bg-white pr-12 transition-colors"
-                            />
-                            <CreditCard className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6A97C0]" />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-[#152026] mb-1.5">Card Holder Name</label>
-                          <input
-                            type="text"
-                            value={cardForm.cardHolder}
-                            onChange={(e) => setCardForm({ ...cardForm, cardHolder: e.target.value })}
-                            className="w-full px-4 py-3 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-bold rounded-xl text-sm outline-none focus:border-[#1B3D59] focus:bg-white uppercase transition-colors"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-bold text-[#152026] mb-1.5">Expiry Date</label>
-                            <input
-                              type="text"
-                              value={cardForm.expiry}
-                              onChange={(e) => setCardForm({ ...cardForm, expiry: formatExpiry(e.target.value) })}
-                              placeholder="MM/YY"
-                              maxLength={5}
-                              className="w-full px-4 py-3 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-mono font-bold rounded-xl text-sm outline-none focus:border-[#1B3D59] focus:bg-white transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-[#152026] mb-1.5">CVV / CVC</label>
-                            <input
-                              type="password"
-                              value={cardForm.cvv}
-                              onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value.slice(0, 4) })}
-                              placeholder="•••"
-                              maxLength={4}
-                              className="w-full px-4 py-3 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] font-mono font-bold rounded-xl text-sm outline-none focus:border-[#1B3D59] focus:bg-white transition-colors"
-                            />
-                          </div>
-                        </div>
+                    <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+                      <div className="flex items-center gap-2 font-bold text-[#152026]">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> 3D Secure Protection
                       </div>
+                      <p className="text-[#6A97C0] text-[11px]">
+                        Multi-factor bank OTP authentication for maximum safety.
+                      </p>
+                    </div>
 
-                      {/* Security badges */}
-                      <div className="flex items-center justify-center gap-4 text-[11px] text-[#6A97C0] font-semibold">
-                        <span className="flex items-center gap-1"><Lock className="w-3.5 h-3.5 text-emerald-600" /> 256-bit SSL</span>
-                        <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-[#1B3D59]" /> PCI DSS Compliant</span>
-                        <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5 text-[#1B3D59]" /> 3D Secure</span>
+                    <div className="p-3.5 rounded-xl bg-[#FAFCFE] border border-[#D4EEF8] space-y-1">
+                      <div className="flex items-center gap-2 font-bold text-[#152026]">
+                        <Printer className="w-4 h-4 text-[#1B3D59]" /> Official Receipt
                       </div>
+                      <p className="text-[#6A97C0] text-[11px]">
+                        Instant printable payment voucher and transaction reference code.
+                      </p>
+                    </div>
+                  </div>
 
-                      <button
-                        onClick={handleOnlinePayment}
-                        disabled={loading}
-                        className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 transition-all bg-[#1B3D59] hover:bg-[#152026] text-white shadow-md disabled:opacity-50 cursor-pointer"
-                      >
-                        <Lock className="w-5 h-5 text-white" /> Pay Rs. {Number(advanceAmount).toLocaleString()} Securely
-                      </button>
-                    </>
-                  )}
+                  {/* Direct Launch Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowSimulatedModal(true)}
+                    className="w-full bg-[#1B3D59] hover:bg-[#152026] text-white py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+                  >
+                    <CreditCard className="w-4 h-4 text-white" />
+                    Pay Rs. {Number(advanceAmount).toLocaleString()} via Online Card Gateway
+                  </button>
                 </div>
               )}
 
@@ -1344,6 +1407,20 @@ export default function PaymentGatewayPage() {
           </a>
         </p>
       </div>
+
+      {/* ── 3D Secure Simulated Gateway Modal ───────────────────────── */}
+      <SimulatedPaymentGatewayModal
+        isOpen={showSimulatedModal}
+        onClose={() => setShowSimulatedModal(false)}
+        onPaymentSuccess={handleModalPaymentSuccess}
+        onSubmitPayment={handleModalSubmitPayment}
+        amount={advanceAmount}
+        itemTitle="Learner License Registration Advance Fee"
+        studentName={studentName}
+        studentNic={nic}
+        studentBranch={branch}
+        email={email}
+      />
     </div>
   );
 }

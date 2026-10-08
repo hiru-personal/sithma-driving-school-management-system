@@ -236,13 +236,31 @@ exports.submitPackagePayment = async (req, res) => {
       uploadedAt: new Date(),
     });
 
+    const shouldAutoVerify = isOnlineCard && (req.body.autoVerify === true || req.body.autoVerify === 'true' || req.body.instantActivation === true);
+    const authCode = req.body.authCode || `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
+    const receiptNumber = req.body.receiptNumber || `RCP-${Date.now().toString().slice(-6)}`;
+
+    if (shouldAutoVerify) {
+      payment.status = 'confirmed';
+      payment.payment_status = 'Verified';
+      payment.paymentStatus = 'Verified';
+      payment.verifiedAt = new Date();
+      await payment.save();
+
+      student.packagePaymentStatus = 'confirmed';
+      student.lessonsUnlocked = pkgDoc.isPerLesson || paymentPlan === 'single' ? 1 : pkgDoc.lessons;
+      await student.save();
+    }
+
     // Notify Data Entry Officers and Admins
     const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
     const notifications = staffUsers.map((staff) => ({
       recipientId: staff._id,
       recipientRole: staff.role,
-      title: isOnlineCard ? '💳 Online Package Payment (Pending Verification)' : 'New Package Payment Uploaded',
-      message: `Student ${req.user.name} submitted Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) via ${isOnlineCard ? 'Online Card Gateway' : paymentMethod}. Verification required before lessons unlock.`,
+      title: shouldAutoVerify
+        ? '💳 Online Package Payment Verified (Auto-Unlocked)'
+        : (isOnlineCard ? '💳 Online Package Payment (Pending Verification)' : 'New Package Payment Uploaded'),
+      message: `Student ${req.user.name} submitted Rs. ${payAmount.toLocaleString()} (${paymentPlan} plan for ${pkgDoc.name}) via ${isOnlineCard ? 'Online Card Gateway' : paymentMethod}. ${shouldAutoVerify ? 'Lessons unlocked instantly.' : 'Verification required before lessons unlock.'}`,
       type: 'payment',
       link: '/staff/payments',
     }));
@@ -252,11 +270,21 @@ exports.submitPackagePayment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: isOnlineCard
-        ? 'Card payment authorized successfully! Your lesson balance will unlock once verified by our branch officer.'
-        : 'Package payment submitted successfully. Your lesson balance will unlock once verified by our branch officer.',
-      payment,
+      message: shouldAutoVerify
+        ? 'Online card payment authorized & course lessons unlocked successfully!'
+        : (isOnlineCard
+          ? 'Card payment authorized successfully! Your lesson balance will unlock once verified by our branch officer.'
+          : 'Package payment submitted successfully. Your lesson balance will unlock once verified by our branch officer.'),
+      payment: {
+        ...payment.toObject(),
+        transactionReference: resolvedTxRef,
+        authCode,
+        receiptNumber,
+      },
       student,
+      authCode,
+      receiptNumber,
+      activated: shouldAutoVerify,
     });
   } catch (error) {
     console.error('Submit package payment error:', error);
@@ -311,13 +339,37 @@ exports.payAdvance = async (req, res) => {
       uploadedAt: new Date(),
     });
 
-    student.isAdvancePaid = false;
-    student.accountStatus = 'pending_verification';
-    student.account_status = 'Unverified / Pending Payment';
-    student.advancePaymentStatus = 'pending';
-    student.payment_method = paymentMethod || 'online_gateway';
-    student.payment_status = 'Pending Verification';
-    await student.save();
+    const shouldAutoVerify = req.body.autoVerify === true || req.body.autoVerify === 'true' || req.body.instantActivation === true;
+    const authCode = req.body.authCode || `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
+    const receiptNumber = req.body.receiptNumber || `RCP-${Date.now().toString().slice(-6)}`;
+
+    if (shouldAutoVerify) {
+      payment.status = 'confirmed';
+      payment.payment_status = 'Verified';
+      payment.paymentStatus = 'Verified';
+      payment.verifiedAt = new Date();
+      await payment.save();
+
+      student.isAdvancePaid = true;
+      student.isPremium = true;
+      student.advancePaymentStatus = 'verified';
+      student.advancePaymentReference = txRef;
+      student.accountStatus = 'active';
+      student.account_status = 'Verified';
+      student.hasSubmittedPayment = true;
+      student.registrationStatus = 'registered';
+      await student.save();
+
+      await User.findByIdAndUpdate(req.user._id, { account_status: 'Verified', status: 'active' });
+    } else {
+      student.isAdvancePaid = false;
+      student.accountStatus = 'pending_verification';
+      student.account_status = 'Unverified / Pending Payment';
+      student.advancePaymentStatus = 'pending';
+      student.payment_method = paymentMethod || 'online_gateway';
+      student.payment_status = 'Pending Verification';
+      await student.save();
+    }
 
     const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
     if (staffUsers.length > 0) {
@@ -325,8 +377,10 @@ exports.payAdvance = async (req, res) => {
         staffUsers.map((s) => ({
           recipientId: s._id,
           recipientRole: s.role,
-          title: '💳 Advance Payment Received (Pending Verification)',
-          message: `${req.user.name} submitted an advance payment of Rs. ${payAmount.toLocaleString()} via ${paymentMethod === 'online_gateway' ? 'Online Card Gateway' : paymentMethod}. Verification required before account activation.`,
+          title: shouldAutoVerify
+            ? '💳 Advance Payment Verified (Auto-Activated)'
+            : '💳 Advance Payment Received (Pending Verification)',
+          message: `${req.user.name} submitted an advance payment of Rs. ${payAmount.toLocaleString()} via ${paymentMethod === 'online_gateway' ? 'Online Card Gateway' : paymentMethod}. ${shouldAutoVerify ? 'Account activated instantly via 3DS Gateway.' : 'Verification required before account activation.'}`,
           type: 'payment',
           link: '/staff/payments',
         }))
@@ -335,9 +389,19 @@ exports.payAdvance = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Advance payment submitted successfully! Your account will be activated once verified by our branch officer.',
-      payment,
+      message: shouldAutoVerify
+        ? 'Advance payment authorized & account activated successfully!'
+        : 'Advance payment submitted successfully! Your account will be activated once verified by our branch officer.',
+      payment: {
+        ...payment.toObject(),
+        transactionReference: txRef,
+        authCode,
+        receiptNumber,
+      },
       student,
+      authCode,
+      receiptNumber,
+      activated: shouldAutoVerify,
     });
   } catch (error) {
     console.error('Advance payment error:', error);
@@ -877,19 +941,47 @@ exports.payAdvancePending = async (req, res) => {
       uploadedAt: new Date(),
     });
 
-    // Account remains pending verification until Data Entry Officer approves
-    student.accountStatus = 'pending_verification';
-    student.account_status = 'Unverified / Pending Payment';
-    student.payment_method = 'online_gateway';
-    student.payment_status = 'Pending Verification';
-    student.advancePaymentStatus = 'pending';
-    student.isAdvancePaid = false;
-    student.isPremium = false;
-    student.registrationStatus = 'pending_payment';
-    await student.save();
+    const shouldAutoVerify = req.body.autoVerify === true || req.body.autoVerify === 'true' || req.body.instantActivation === true;
+    const authCode = req.body.authCode || `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
+    const receiptNumber = req.body.receiptNumber || `RCP-${Date.now().toString().slice(-6)}`;
 
-    user.account_status = 'Unverified / Pending Payment';
-    await user.save();
+    if (shouldAutoVerify) {
+      payment.status = 'confirmed';
+      payment.payment_status = 'Verified';
+      payment.paymentStatus = 'Verified';
+      payment.verifiedAt = new Date();
+      await payment.save();
+
+      student.accountStatus = 'active';
+      student.account_status = 'Verified';
+      student.payment_method = 'online_gateway';
+      student.payment_status = 'Verified';
+      student.advancePaymentStatus = 'verified';
+      student.advancePaymentReference = txRef;
+      student.isAdvancePaid = true;
+      student.isPremium = true;
+      student.hasSubmittedPayment = true;
+      student.registrationStatus = 'registered';
+      await student.save();
+
+      user.account_status = 'Verified';
+      user.status = 'active';
+      await user.save();
+    } else {
+      // Account remains pending verification until Data Entry Officer approves
+      student.accountStatus = 'pending_verification';
+      student.account_status = 'Unverified / Pending Payment';
+      student.payment_method = 'online_gateway';
+      student.payment_status = 'Pending Verification';
+      student.advancePaymentStatus = 'pending';
+      student.isAdvancePaid = false;
+      student.isPremium = false;
+      student.registrationStatus = 'pending_payment';
+      await student.save();
+
+      user.account_status = 'Unverified / Pending Payment';
+      await user.save();
+    }
 
     // Notify branch staff and Data Entry Officers
     const staffUsers = await User.find({ role: { $in: ['staff', 'admin'] } });
@@ -898,8 +990,10 @@ exports.payAdvancePending = async (req, res) => {
         staffUsers.map((s) => ({
           recipientId: s._id,
           recipientRole: s.role,
-          title: '💳 Online Advance Payment Received (Pending Verification)',
-          message: `${user.name} (${student.branch} Branch - ${student.student_type || student.studentType || 'Student'}) paid Rs. ${payAmount.toLocaleString()} via online card (Ref: ${txRef}). Verification required before account activation.`,
+          title: shouldAutoVerify
+            ? '💳 Online Advance Payment Verified (Auto-Activated)'
+            : '💳 Online Advance Payment Received (Pending Verification)',
+          message: `${user.name} (${student.branch} Branch - ${student.student_type || student.studentType || 'Student'}) paid Rs. ${payAmount.toLocaleString()} via online card (Ref: ${txRef}). ${shouldAutoVerify ? 'Account verified & activated instantly via 3DS Gateway.' : 'Verification required before account activation.'}`,
           type: 'payment',
           link: '/staff/payments',
         }))
@@ -908,9 +1002,18 @@ exports.payAdvancePending = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Online payment received successfully! Your account will be activated once verified by our Data Entry Officer.',
-      payment: { ...payment.toObject(), transactionReference: txRef },
-      activated: false,
+      message: shouldAutoVerify
+        ? 'Online card payment authorized & account activated instantly!'
+        : 'Online payment received successfully! Your account will be activated once verified by our Data Entry Officer.',
+      payment: {
+        ...payment.toObject(),
+        transactionReference: txRef,
+        authCode,
+        receiptNumber,
+      },
+      activated: shouldAutoVerify,
+      authCode,
+      receiptNumber,
       account_status: student.account_status,
       payment_method: student.payment_method,
       payment_status: student.payment_status,

@@ -49,6 +49,7 @@ import toast from 'react-hot-toast';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { SITHMA_OFFICIAL_BANKS } from './PaymentGatewayPage';
+import { validateExpiryDate, validateCvc } from '../components/SimulatedPaymentGatewayModal';
 
 const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
   if (!dateVal) return fallback;
@@ -279,9 +280,11 @@ export default function StudentDashboard() {
   const [cardForm, setCardForm] = useState({
     cardNumber: '4532 8921 4421 9012',
     cardHolder: '',
-    expDate: '08/28',
-    cvv: '882',
+    expDate: '12/28',
+    cvv: '123',
   });
+  const [cardErrors, setCardErrors] = useState({});
+  const [cardTouched, setCardTouched] = useState({});
   const [cardProcessing, setCardProcessing] = useState(false);
   const [submittingPkgPayment, setSubmittingPkgPayment] = useState(false);
   const [showPaymentFormOverride, setShowPaymentFormOverride] = useState(false);
@@ -620,6 +623,43 @@ export default function StudentDashboard() {
     setCardForm({ ...cardForm, cardNumber: formatted });
   };
 
+  const handleExpiryChange = (e) => {
+    const clean = e.target.value.replace(/\D/g, '').slice(0, 4);
+    let formatted = clean;
+    if (clean.length > 2) {
+      formatted = `${clean.slice(0, 2)}/${clean.slice(2)}`;
+    }
+    setCardForm((prev) => ({ ...prev, expDate: formatted }));
+    setCardTouched((prev) => ({ ...prev, expDate: true }));
+
+    if (clean.length >= 2) {
+      const m = parseInt(clean.slice(0, 2), 10);
+      if (m < 1 || m > 12) {
+        setCardErrors((prev) => ({
+          ...prev,
+          expDate: 'Invalid expiry month! Month must be between 01 and 12.',
+        }));
+        return;
+      }
+    }
+
+    if (formatted.length === 5) {
+      const res = validateExpiryDate(formatted);
+      setCardErrors((prev) => ({ ...prev, expDate: res.error }));
+    } else {
+      setCardErrors((prev) => ({ ...prev, expDate: null }));
+    }
+  };
+
+  const handleCvvChange = (e) => {
+    const clean = e.target.value.replace(/\D/g, '').slice(0, 3); // STRICTLY 3 NUMBERS
+    setCardForm((prev) => ({ ...prev, cvv: clean }));
+    setCardTouched((prev) => ({ ...prev, cvv: true }));
+
+    const res = validateCvc(clean);
+    setCardErrors((prev) => ({ ...prev, cvv: res.error }));
+  };
+
   const handlePackagePaymentSubmit = async (e) => {
     if (e) e.preventDefault();
     const selectedPkg = availablePackages.find((p) => p._id === selectedPkgId) || availablePackages[0];
@@ -686,12 +726,26 @@ export default function StudentDashboard() {
         return;
       }
       const rawCard = cardForm.cardNumber.replace(/\s+/g, '');
-      if (rawCard.length < 15) {
+      if (rawCard.length < 15 || rawCard.length > 16) {
         toast.error('Please enter a valid 16-digit card number');
         return;
       }
-      if (!cardForm.expDate.trim() || !cardForm.cvv.trim()) {
-        toast.error('Please complete the card expiry and CVV');
+
+      // Strict Expiry Date Validation (Future Date, MM/YY, Month 01-12)
+      const expRes = validateExpiryDate(cardForm.expDate);
+      if (!expRes.valid) {
+        setCardTouched((prev) => ({ ...prev, expDate: true }));
+        setCardErrors((prev) => ({ ...prev, expDate: expRes.error }));
+        toast.error(expRes.error);
+        return;
+      }
+
+      // Strict CVV Validation (Strictly 3 numbers)
+      const cvcRes = validateCvc(cardForm.cvv);
+      if (!cvcRes.valid) {
+        setCardTouched((prev) => ({ ...prev, cvv: true }));
+        setCardErrors((prev) => ({ ...prev, cvv: cvcRes.error }));
+        toast.error(cvcRes.error);
         return;
       }
 
@@ -3438,30 +3492,71 @@ export default function StudentDashboard() {
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-semibold text-[#152026] mb-1">
-                                Expiry Date <span className="text-red-500">*</span>
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[11px] font-semibold text-[#152026]">
+                                  Expiry Date <span className="text-red-500">*</span>
+                                </label>
+                                <span className="text-[9px] text-[#6A97C0] font-bold">MM/YY (Future)</span>
+                              </div>
                               <input
                                 type="text"
                                 maxLength={5}
                                 placeholder="MM/YY"
                                 value={cardForm.expDate}
-                                onChange={(e) => setCardForm({ ...cardForm, expDate: e.target.value })}
-                                className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs font-mono outline-none focus:border-[#1B3D59]"
+                                onChange={handleExpiryChange}
+                                className={`w-full px-3.5 py-2.5 border bg-white text-[#152026] rounded-xl text-xs font-mono outline-none transition-colors ${
+                                  cardTouched.expDate && cardErrors.expDate
+                                    ? 'border-rose-400 bg-rose-50/20'
+                                    : cardTouched.expDate && !cardErrors.expDate && cardForm.expDate?.length === 5
+                                    ? 'border-emerald-500'
+                                    : 'border-[#D4EEF8] focus:border-[#1B3D59]'
+                                }`}
                               />
+                              {cardTouched.expDate && cardErrors.expDate && (
+                                <p className="text-[10px] text-rose-600 font-bold flex items-start gap-1 mt-1">
+                                  <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                  <span>{cardErrors.expDate}</span>
+                                </p>
+                              )}
+                              {cardTouched.expDate && !cardErrors.expDate && cardForm.expDate?.length === 5 && (
+                                <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
+                                  <Check className="w-3 h-3 flex-shrink-0" /> Valid future expiry
+                                </p>
+                              )}
                             </div>
                             <div>
-                              <label className="block text-[11px] font-semibold text-[#152026] mb-1">
-                                CVV / CVC <span className="text-red-500">*</span>
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[11px] font-semibold text-[#152026]">
+                                  CVV / CVC <span className="text-red-500">*</span>
+                                </label>
+                                <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded font-bold border border-emerald-300">
+                                  Exact 3 Digits
+                                </span>
+                              </div>
                               <input
                                 type="password"
-                                maxLength={4}
-                                placeholder="882"
+                                maxLength={3}
+                                placeholder="123"
                                 value={cardForm.cvv}
-                                onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value })}
-                                className="w-full px-3.5 py-2.5 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl text-xs font-mono outline-none focus:border-[#1B3D59]"
+                                onChange={handleCvvChange}
+                                className={`w-full px-3.5 py-2.5 border bg-white text-[#152026] rounded-xl text-xs font-mono outline-none transition-colors ${
+                                  cardTouched.cvv && cardErrors.cvv
+                                    ? 'border-rose-400 bg-rose-50/20'
+                                    : cardTouched.cvv && !cardErrors.cvv && cardForm.cvv?.length === 3
+                                    ? 'border-emerald-500'
+                                    : 'border-[#D4EEF8] focus:border-[#1B3D59]'
+                                }`}
                               />
+                              {cardTouched.cvv && cardErrors.cvv && (
+                                <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1 mt-1">
+                                  <AlertCircle className="w-3 h-3 flex-shrink-0" /> {cardErrors.cvv}
+                                </p>
+                              )}
+                              {cardTouched.cvv && !cardErrors.cvv && cardForm.cvv?.length === 3 && (
+                                <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
+                                  <Check className="w-3 h-3 flex-shrink-0" /> 3-digit CVC verified
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
