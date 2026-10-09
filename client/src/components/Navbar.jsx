@@ -669,16 +669,28 @@ export default function Navbar() {
               )}
 
               {isInstructor && (
-                <Link
-                  to="/instructor/schedule"
-                  className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
-                    isActive('/instructor/schedule')
-                      ? 'bg-[#1B3D59] text-white shadow-xs border border-[#1B3D59] font-bold'
-                      : 'text-[#152026] hover:text-[#1B3D59] hover:bg-white'
-                  }`}
-                >
-                  <Calendar className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${isActive('/instructor/schedule') ? 'text-[#B3D5F1]' : 'text-[#6A97C0]'}`} /> Daily Schedule
-                </Link>
+                <>
+                  <Link
+                    to="/instructor/schedule"
+                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/instructor/schedule')
+                        ? 'bg-[#1B3D59] text-white shadow-xs border border-[#1B3D59] font-bold'
+                        : 'text-[#152026] hover:text-[#1B3D59] hover:bg-white'
+                    }`}
+                  >
+                    <Calendar className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${isActive('/instructor/schedule') ? 'text-[#B3D5F1]' : 'text-[#6A97C0]'}`} /> Daily Schedule
+                  </Link>
+                  <Link
+                    to="/instructor/profile"
+                    className={`px-2.5 lg:px-3.5 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/instructor/profile')
+                        ? 'bg-[#1B3D59] text-white shadow-xs border border-[#1B3D59] font-bold'
+                        : 'text-[#152026] hover:text-[#1B3D59] hover:bg-white'
+                    }`}
+                  >
+                    <User className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${isActive('/instructor/profile') ? 'text-[#B3D5F1]' : 'text-[#6A97C0]'}`} /> Instructor Profile
+                  </Link>
+                </>
               )}
             </nav>
           )}
@@ -690,8 +702,11 @@ export default function Navbar() {
                 <NotificationBell />
 
                 {/* User Pill */}
-                <div
-                  className="flex items-center gap-2 px-2 sm:px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-full bg-white border border-[#D4EEF8] shadow-xs shrink-0"
+                <Link
+                  to={isInstructor ? '/instructor/profile' : isStudent ? '/student/profile' : '#'}
+                  className={`flex items-center gap-2 px-2 sm:px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-full bg-white border border-[#D4EEF8] shadow-xs shrink-0 transition-colors ${
+                    isInstructor || isStudent ? 'hover:border-[#1B3D59] cursor-pointer' : ''
+                  }`}
                   title={`${user.name} (${user.role}${user.branch ? ` • ${user.branch}` : ''})`}
                 >
                   {user?.profilePicture || student?.profilePicture ? (
@@ -711,7 +726,7 @@ export default function Navbar() {
                       {user.role} <span className="hidden 2xl:inline text-[#6A97C0]">{user.branch ? `• ${user.branch}` : ''}</span>
                     </p>
                   </div>
-                </div>
+                </Link>
 
                 {/* Logout Button */}
                 <button
@@ -1021,6 +1036,17 @@ export default function Navbar() {
                     }`}
                   >
                     <Calendar className={`w-4 h-4 ${isActive('/instructor/schedule') ? 'text-[#B3D5F1]' : 'text-[#1B3D59]'}`} /> Daily Assigned Schedule
+                  </Link>
+                  <Link
+                    to="/instructor/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium transition-all ${
+                      isActive('/instructor/profile')
+                        ? 'bg-[#1B3D59] text-white shadow-xs font-bold'
+                        : 'text-[#152026] hover:bg-[#D4EEF8]/50 hover:text-[#1B3D59]'
+                    }`}
+                  >
+                    <User className={`w-4 h-4 ${isActive('/instructor/profile') ? 'text-[#B3D5F1]' : 'text-[#1B3D59]'}`} /> Instructor Profile
                   </Link>
                 </div>
               )}

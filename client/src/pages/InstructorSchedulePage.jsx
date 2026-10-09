@@ -23,7 +23,9 @@ import {
   CreditCard,
   Layers,
   ChevronRight,
+  BookOpen,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -54,7 +56,7 @@ export default function InstructorSchedulePage() {
     capacity: 10,
   });
 
-  const PRESET_TOPICS = [
+  const DEFAULT_PRESET_TOPICS = [
     {
       title: 'Morning Highway Driving & Overtaking',
       topic: 'Speed regulation, lane discipline, dual-carriageway entry/exit, overtaking maneuvers',
@@ -93,6 +95,19 @@ export default function InstructorSchedulePage() {
     },
   ];
 
+  const [presets, setPresets] = useState(DEFAULT_PRESET_TOPICS);
+
+  const fetchPresets = async () => {
+    try {
+      const res = await api.get('/curriculum-presets');
+      if (res.data?.success && Array.isArray(res.data.presets) && res.data.presets.length > 0) {
+        setPresets(res.data.presets);
+      }
+    } catch (err) {
+      console.error('Failed to load presets, using standard default syllabus', err);
+    }
+  };
+
   const fetchSchedule = async () => {
     if (!user?._id) return;
     setLoading(true);
@@ -112,6 +127,10 @@ export default function InstructorSchedulePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPresets();
+  }, []);
 
   useEffect(() => {
     fetchSchedule();
@@ -167,6 +186,12 @@ export default function InstructorSchedulePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/instructor/profile"
+            className="py-2.5 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer"
+          >
+            <BookOpen className="w-4 h-4 text-[#1B3D59]" /> Curriculum Presets
+          </Link>
           <button
             onClick={fetchSchedule}
             className="py-2 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer"
@@ -175,6 +200,7 @@ export default function InstructorSchedulePage() {
           </button>
           <button
             onClick={() => {
+              fetchPresets();
               setNewLessonForm((prev) => ({
                 ...prev,
                 date: selectedDate,
@@ -191,25 +217,25 @@ export default function InstructorSchedulePage() {
 
       {/* Top Stats Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card p-4.5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
           <span className="text-[11px] font-bold text-[#6A97C0] uppercase tracking-wider block">Sessions Today</span>
           <div className="text-2xl sm:text-3xl font-black text-[#152026] mt-1">{totalSessions}</div>
           <span className="text-[11px] font-semibold text-[#1B3D59]">Scheduled on {selectedDate}</span>
         </div>
 
-        <div className="card p-4.5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
           <span className="text-[11px] font-bold text-[#6A97C0] uppercase tracking-wider block">Students Booked</span>
           <div className="text-2xl sm:text-3xl font-black text-[#1B3D59] mt-1">{totalBookedStudents}</div>
           <span className="text-[11px] font-medium text-[#6A97C0]">Attending lessons</span>
         </div>
 
-        <div className="card p-4.5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
           <span className="text-[11px] font-bold text-[#6A97C0] uppercase tracking-wider block">Seats Remaining</span>
           <div className="text-2xl sm:text-3xl font-black text-emerald-700 mt-1">{totalRemainingSpots}</div>
           <span className="text-[11px] font-medium text-[#6A97C0]">Available to book</span>
         </div>
 
-        <div className="card p-4.5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
           <span className="text-[11px] font-bold text-[#6A97C0] uppercase tracking-wider block">Class Limit</span>
           <div className="text-2xl sm:text-3xl font-black text-[#152026] mt-1">10 Max</div>
           <span className="text-[11px] font-medium text-[#6A97C0]">Strict cap per lesson</span>
@@ -217,7 +243,7 @@ export default function InstructorSchedulePage() {
       </div>
 
       {/* Filter & Date Bar */}
-      <div className="card p-4.5 bg-white border border-[#D4EEF8] rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="card p-5 bg-white border border-[#D4EEF8] rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div>
             <label className="block text-[10px] font-bold text-[#6A97C0] uppercase mb-1">Select Date:</label>
@@ -583,26 +609,37 @@ export default function InstructorSchedulePage() {
             <form onSubmit={handleCreateLesson} className="space-y-4 text-xs">
               {/* Quick Topic Preset Selector */}
               <div>
-                <label className="block font-bold text-[#152026] mb-1.5">Quick Curriculum Preset:</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-[#152026]">Quick Curriculum Preset:</label>
+                  <Link
+                    to="/instructor/profile#curriculum-presets"
+                    className="text-[11px] font-bold text-[#1B3D59] hover:underline flex items-center gap-1"
+                  >
+                    <BookOpen className="w-3 h-3 text-[#1B3D59]" /> Manage Presets
+                  </Link>
+                </div>
                 <select
                   onChange={(e) => {
-                    const preset = PRESET_TOPICS[e.target.value];
-                    if (preset) {
-                      setNewLessonForm((prev) => ({
-                        ...prev,
-                        lessonTitle: preset.title,
-                        lessonTopic: preset.topic,
-                        vehicleCategory: preset.category,
-                        vehicleType: preset.type,
-                      }));
+                    const idx = e.target.value;
+                    if (idx !== '') {
+                      const preset = presets[idx];
+                      if (preset) {
+                        setNewLessonForm((prev) => ({
+                          ...prev,
+                          lessonTitle: preset.title,
+                          lessonTopic: preset.description || preset.topic,
+                          vehicleCategory: preset.vehicleCategory || preset.category || 'Light',
+                          vehicleType: preset.vehicleType || preset.type || 'Car',
+                        }));
+                      }
                     }
                   }}
                   className="w-full px-3 py-2 rounded-xl bg-white border border-[#D4EEF8] text-[#152026] font-bold outline-none focus:border-[#1B3D59] transition-colors cursor-pointer"
                 >
                   <option value="">-- Choose a standard syllabus topic --</option>
-                  {PRESET_TOPICS.map((p, i) => (
-                    <option key={i} value={i}>
-                      {p.title} ({p.type})
+                  {presets.map((p, i) => (
+                    <option key={p._id || i} value={i}>
+                      {p.title} ({p.vehicleType || p.type})
                     </option>
                   ))}
                 </select>

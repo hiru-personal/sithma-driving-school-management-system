@@ -25,6 +25,7 @@ import PaymentVerificationQueuePage from './pages/PaymentVerificationQueuePage';
 import QuestionBankManagementPage from './pages/QuestionBankManagementPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import InstructorSchedulePage from './pages/InstructorSchedulePage';
+import InstructorProfilePage from './pages/InstructorProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsAnalyticsPage from './pages/ReportsAnalyticsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -305,6 +306,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['instructor', 'staff', 'admin']}>
                   <InstructorSchedulePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/instructor/profile"
+              element={
+                <ProtectedRoute allowedRoles={['instructor', 'staff', 'admin']}>
+                  <InstructorProfilePage />
                 </ProtectedRoute>
               }
             />
