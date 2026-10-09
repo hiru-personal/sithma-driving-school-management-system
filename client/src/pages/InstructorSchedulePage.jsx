@@ -170,31 +170,35 @@ export default function InstructorSchedulePage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full text-[#152026]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] font-bold text-xs mb-2">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="space-y-1 min-w-0">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] font-bold text-xs mb-1">
             <Sparkles className="w-3.5 h-3.5 text-[#1B3D59]" /> Certified Instructor Operations
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] flex items-center gap-2.5">
-            <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-[#1B3D59]" /> Instructor Daily Session Schedule & Roster
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152026] flex items-center gap-2.5 break-words">
+            <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-[#1B3D59] shrink-0" /> Instructor Daily Session Schedule & Roster
           </h1>
-          <p className="text-xs sm:text-sm text-[#6A97C0] mt-1">
-            Instructor: <strong className="text-[#152026]">{user?.name}</strong> • Assigned Branch:{' '}
-            <strong className="text-[#1B3D59]">{user?.branch || selectedBranch}</strong> • Max Capacity:{' '}
-            <strong className="text-[#152026] bg-[#F3EED8] px-2 py-0.5 rounded-md border border-[#6A97C0]/40">10 Students / Lesson</strong>
-          </p>
+          <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm text-[#6A97C0] pt-0.5">
+            <span>Instructor: <strong className="text-[#152026] font-bold">{user?.name}</strong></span>
+            <span className="text-[#D4EEF8] hidden sm:inline">•</span>
+            <span>Assigned Branch: <strong className="text-[#1B3D59] font-bold">{user?.branch || selectedBranch}</strong></span>
+            <span className="text-[#D4EEF8] hidden sm:inline">•</span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#152026] bg-[#F3EED8] px-2.5 py-0.5 rounded-md border border-[#E2D9B8] whitespace-nowrap shadow-xs">
+              Max Capacity: 10 Students / Lesson
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap self-start lg:self-auto shrink-0">
           <Link
             to="/instructor/profile"
-            className="py-2.5 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer"
+            className="py-2.5 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <BookOpen className="w-4 h-4 text-[#1B3D59]" /> Curriculum Presets
           </Link>
           <button
             onClick={fetchSchedule}
-            className="py-2 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer"
+            className="py-2.5 px-3.5 rounded-xl border border-[#D4EEF8] bg-white text-[#152026] hover:bg-[#FAFCFE] text-xs flex items-center gap-1.5 font-bold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#1B3D59] ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
@@ -208,7 +212,7 @@ export default function InstructorSchedulePage() {
               }));
               setIsAddModalOpen(true);
             }}
-            className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2.5 px-4 font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            className="bg-[#1B3D59] hover:bg-[#152026] text-white text-xs py-2.5 px-4 font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" /> Add Lesson Session
           </button>
@@ -337,7 +341,7 @@ export default function InstructorSchedulePage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 min-w-0">
           {schedule.map((slot) => {
             const bookedCount = slot.bookedCount || 0;
             const capacity = slot.capacity || 10;
@@ -348,7 +352,7 @@ export default function InstructorSchedulePage() {
             return (
               <div
                 key={slot._id}
-                className="card p-5 space-y-4 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                className="card p-5 space-y-4 border border-[#D4EEF8] hover:border-[#1B3D59] bg-white rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-w-0 w-full"
               >
                 <div className="space-y-3">
                   {/* Top Bar */}
