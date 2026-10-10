@@ -52,10 +52,11 @@ exports.getAllAccounts = async (req, res) => {
       const s = search.toLowerCase().trim();
       users = users.filter(
         (u) =>
-          u.name.toLowerCase().includes(s) ||
-          u.email.toLowerCase().includes(s) ||
+          (u.name && u.name.toLowerCase().includes(s)) ||
+          (u.email && u.email.toLowerCase().includes(s)) ||
           (u.username && u.username.toLowerCase().includes(s)) ||
-          (u.nic && u.nic.toLowerCase().includes(s))
+          (u.nic && u.nic.toLowerCase().includes(s)) ||
+          (u.phone && u.phone.includes(s))
       );
     }
 
