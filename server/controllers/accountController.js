@@ -578,6 +578,116 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
+// @desc    Admin verifies a student account
+// @route   PATCH /api/admin/students/:id/verify or PATCH /api/admin/accounts/:id/verify-student
+// @access  Admin only
+exports.verifyStudentAccount = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status = 'Verified' } = req.body;
+
+    // Resolve student and user
+    let student = await Student.findById(id);
+    let user = null;
+
+    if (student) {
+      user = await User.findById(student.userId);
+    } else {
+      user = await User.findById(id);
+      if (user) {
+        student = await Student.findOne({ userId: user._id });
+      }
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student account not found.',
+      });
+    }
+
+    const nextStatus = status === 'Verified' ? 'Verified' : 'Pending Verification';
+    const isNowVerified = nextStatus === 'Verified';
+
+    user.verificationStatus = nextStatus;
+    if (isNowVerified) {
+      user.account_status = 'Verified';
+      user.status = 'active';
+      user.verifiedBy = req.user._id;
+      user.verifiedAt = new Date();
+    } else {
+      user.account_status = 'Unverified / Pending Payment';
+      user.status = 'pending_verification';
+      user.verifiedBy = null;
+      user.verifiedAt = null;
+    }
+    await user.save();
+
+    if (student) {
+      student.verificationStatus = nextStatus;
+      if (isNowVerified) {
+        student.account_status = 'Verified';
+        student.accountStatus = 'active';
+        student.verifiedBy = req.user._id;
+        student.verifiedAt = new Date();
+      } else {
+        student.account_status = 'Unverified / Pending Payment';
+        student.accountStatus = 'pending_verification';
+        student.verifiedBy = null;
+        student.verifiedAt = null;
+      }
+      await student.save();
+    }
+
+    // Create system notification for student
+    if (isNowVerified) {
+      try {
+        await Notification.create({
+          recipientId: user._id,
+          recipientRole: 'student',
+          title: 'Account Verified by Admin',
+          message:
+            'Your student account has been approved and verified by the Admin. You now have full access to your student portal.',
+          type: 'system',
+          read: false,
+          createdAt: new Date(),
+        });
+      } catch (notifErr) {
+        console.warn('Could not create verification notification:', notifErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Student account for ${user.name} has been successfully ${isNowVerified ? 'verified' : 'marked as Pending Verification'}.`,
+      verificationStatus: nextStatus,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        verificationStatus: user.verificationStatus,
+        account_status: user.account_status,
+        status: user.status,
+      },
+      student: student
+        ? {
+            _id: student._id,
+            name: student.name,
+            verificationStatus: student.verificationStatus,
+            account_status: student.account_status,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error('Error verifying student account:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update student verification status',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Admin updates user account details
 // @route   PUT /api/admin/accounts/:id or PATCH /api/admin/accounts/:id
 // @access  Admin only
@@ -754,5 +864,3 @@ exports.updateUserAccount = async (req, res) => {
     });
   }
 };
-
-

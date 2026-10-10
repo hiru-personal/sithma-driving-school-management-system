@@ -14,6 +14,10 @@ import {
   Layers,
   ArrowUpRight,
   Sparkles,
+  ShieldCheck,
+  Search,
+  User,
+  Building2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -49,6 +53,14 @@ export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState('All');
+  const [availableBranches, setAvailableBranches] = useState([]);
+
+  // Student Account Management & Verification State
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [studentVerificationFilter, setStudentVerificationFilter] = useState('all'); // 'all' | 'pending' | 'verified'
+  const [studentSearch, setStudentSearch] = useState('');
+  const [verifyingStudentId, setVerifyingStudentId] = useState(null);
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -66,9 +78,79 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchStudents = async () => {
+    setLoadingStudents(true);
+    try {
+      const res = await api.get('/students', {
+        params: { branch: selectedBranch !== 'All' ? selectedBranch : undefined },
+      });
+      if (res.data?.success && Array.isArray(res.data.students)) {
+        setStudents(res.data.students);
+      }
+    } catch (err) {
+      console.warn('Failed to load students in admin dashboard:', err.message);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const fetchAvailableBranches = async () => {
+    try {
+      const res = await api.get('/branches/active');
+      if (res.data?.success && Array.isArray(res.data.branches)) {
+        setAvailableBranches(res.data.branches);
+      }
+    } catch (err) {
+      console.warn('Failed to load active branches:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableBranches();
+  }, []);
+
   useEffect(() => {
     fetchAnalytics();
+    fetchStudents();
   }, [selectedBranch]);
+
+  const handleVerifyStudent = async (studentId, studentName = 'Student') => {
+    setVerifyingStudentId(studentId);
+    try {
+      const res = await api.patch(`/admin/students/${studentId}/verify`, { status: 'Verified' });
+      if (res.data?.success) {
+        toast.success(`Student "${studentName}" has been successfully verified!`);
+        // Immediately reflect the updated status in the Admin Dashboard
+        setStudents((prev) =>
+          prev.map((s) => {
+            if (s._id === studentId || s.userId?._id === studentId) {
+              return {
+                ...s,
+                verificationStatus: 'Verified',
+                account_status: 'Verified',
+                accountStatus: 'active',
+                verifiedAt: new Date(),
+                userId: s.userId
+                  ? {
+                      ...s.userId,
+                      verificationStatus: 'Verified',
+                      status: 'active',
+                      account_status: 'Verified',
+                    }
+                  : s.userId,
+              };
+            }
+            return s;
+          })
+        );
+        fetchAnalytics();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to verify student');
+    } finally {
+      setVerifyingStudentId(null);
+    }
+  };
 
   if (loading || !analytics) {
     return (
@@ -81,6 +163,31 @@ export default function AdminDashboardPage() {
   }
 
   const { metrics, branchData, trialDistribution, upcomingTrials, recentActivity } = analytics;
+
+  const pendingCount = students.filter(
+    (s) => (s.verificationStatus || s.userId?.verificationStatus) === 'Pending Verification'
+  ).length;
+
+  const verifiedCount = students.filter(
+    (s) => (s.verificationStatus || s.userId?.verificationStatus) === 'Verified'
+  ).length;
+
+  const filteredStudents = students.filter((s) => {
+    const status = s.verificationStatus || s.userId?.verificationStatus || 'Pending Verification';
+    if (studentVerificationFilter === 'pending' && status !== 'Pending Verification') return false;
+    if (studentVerificationFilter === 'verified' && status !== 'Verified') return false;
+    if (studentSearch.trim()) {
+      const q = studentSearch.toLowerCase().trim();
+      const name = (s.userId?.name || s.name || '').toLowerCase();
+      const email = (s.userId?.email || s.email || '').toLowerCase();
+      const phone = (s.userId?.phone || s.phone || '').toLowerCase();
+      const nic = (s.userId?.nic || s.nic || '').toLowerCase();
+      if (!name.includes(q) && !email.includes(q) && !phone.includes(q) && !nic.includes(q)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
@@ -108,20 +215,30 @@ export default function AdminDashboardPage() {
               className="px-3.5 py-2 border border-[#D4EEF8] rounded-xl text-xs bg-white font-bold text-[#152026] outline-none shadow-xs focus:border-[#1B3D59]"
             >
               <option value="All">All Branches Combined</option>
-              <option value="Maharagama">Maharagama Branch</option>
-              <option value="Werahara">Werahara Branch</option>
-              <option value="Delgoda">Delgoda Branch</option>
+              {availableBranches.length > 0 ? (
+                availableBranches.map((b) => (
+                  <option key={b._id} value={b.name}>
+                    {b.name} Branch ({b.code})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Maharagama">Maharagama Branch</option>
+                  <option value="Werahara">Werahara Branch</option>
+                  <option value="Delgoda">Delgoda Branch</option>
+                </>
+              )}
             </select>
           </div>
 
-          <button onClick={fetchAnalytics} className="btn-secondary text-xs py-2 px-3.5 flex items-center gap-1.5 font-bold shadow-xs cursor-pointer">
+          <button onClick={() => { fetchAnalytics(); fetchStudents(); }} className="btn-secondary text-xs py-2 px-3.5 flex items-center gap-1.5 font-bold shadow-xs cursor-pointer">
             <RefreshCw className="w-3.5 h-3.5 text-[#1B3D59]" /> Refresh
           </button>
         </div>
       </div>
 
       {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
         {/* Card 1: Active Learners */}
         <div className="card p-5 space-y-2 border-l-4 border-l-[#1B3D59] border-[#D4EEF8] bg-white rounded-2xl shadow-xs">
           <div className="flex items-center justify-between">
@@ -134,7 +251,29 @@ export default function AdminDashboardPage() {
           <p className="text-[11px] text-slate-600 font-medium">{metrics.activeStudents} active in training</p>
         </div>
 
-        {/* Card 2: Pending Payments */}
+        {/* Card 2: Pending Student Account Verifications */}
+        <div className="card p-5 space-y-2 border-l-4 border-l-amber-500 border-amber-200 bg-white rounded-2xl shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-900">Pending Student Verifications</span>
+            <div className="w-8 h-8 rounded-xl bg-[#F3EED8] border border-amber-300 flex items-center justify-center text-amber-800">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-amber-800">{pendingCount}</div>
+          <button
+            type="button"
+            onClick={() => {
+              setStudentVerificationFilter('pending');
+              const el = document.getElementById('student-management-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-[11px] font-bold text-[#1B3D59] hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            Review & Verify Students <ArrowUpRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* Card 3: Pending Payments */}
         <div className="card p-5 space-y-2 border-l-4 border-l-amber-500 border-amber-200 bg-white rounded-2xl shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-amber-900">Pending Payment Slips</span>
@@ -282,6 +421,267 @@ export default function AdminDashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Branch Management Section */}
+      <div id="branch-management-section" className="card p-6 sm:p-7 rounded-3xl bg-white border border-[#D4EEF8] shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-5">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-1.5 shadow-xs">
+              <Building2 className="w-3.5 h-3.5 text-[#1B3D59]" /> Multi-Branch Infrastructure
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2.5">
+              Branch Management & Operations
+            </h2>
+            <p className="text-xs text-slate-600 font-semibold mt-0.5">
+              Manage driving school branches, facility managers, student distribution, and center allocations.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/branches"
+              className="btn-primary text-xs py-2 px-4.5 font-bold flex items-center gap-2 rounded-xl shadow-xs"
+            >
+              <Building2 className="w-4 h-4" /> Open Branch Management Portal <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Branch Cards Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {availableBranches.map((b) => {
+            const branchStat = branchData?.find((bd) => bd.branch === b.name);
+            return (
+              <div
+                key={b._id}
+                className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#D4EEF8] text-[#1B3D59] flex items-center justify-center font-bold">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-[#152026] text-sm">{b.name} Branch</h4>
+                      <span className="text-[10px] font-mono font-bold text-slate-500">{b.code}</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                    Active
+                  </span>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-1">
+                  <p className="flex items-center gap-1.5 truncate">
+                    <MapPin className="w-3.5 h-3.5 text-[#1B3D59] shrink-0" />
+                    <span className="truncate">{b.address}</span>
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>Manager: <strong>{b.manager || 'Assigned Staff'}</strong></span>
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-[#D4EEF8] flex items-center justify-between text-xs font-bold text-[#1B3D59]">
+                  <span>{branchStat ? `${branchStat.students} Enrolled` : 'Operational Center'}</span>
+                  <Link
+                    to="/admin/branches"
+                    className="text-[11px] text-[#1B3D59] hover:underline flex items-center gap-1"
+                  >
+                    Manage →
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Student Management & Account Verification */}
+      <div id="student-management-section" className="card p-6 sm:p-7 rounded-3xl bg-white border border-[#D4EEF8] shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-5">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-1.5 shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1B3D59]" /> Student Account Verification
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2.5">
+              Student Management
+            </h2>
+            <p className="text-xs text-slate-600 font-semibold mt-0.5">
+              Display registered student profiles, verify pending accounts, and manage learner access.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026]">
+              All Students: <strong>{students.length}</strong>
+            </span>
+            <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#F3EED8] text-[#152026] border border-amber-300 flex items-center gap-1.5 shadow-xs">
+              <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
+              Pending: <strong>{pendingCount}</strong>
+            </span>
+            <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-xs">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Verified: <strong>{verifiedCount}</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Filter Tabs & Search Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <button
+              type="button"
+              onClick={() => setStudentVerificationFilter('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                studentVerificationFilter === 'all'
+                  ? 'bg-[#1B3D59] text-white shadow-xs'
+                  : 'bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] hover:bg-[#D4EEF8]/40'
+              }`}
+            >
+              All Students ({students.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStudentVerificationFilter('pending')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                studentVerificationFilter === 'pending'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'bg-[#F3EED8] border border-amber-300 text-amber-900 hover:bg-amber-100'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Pending Verification ({pendingCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStudentVerificationFilter('verified')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                studentVerificationFilter === 'verified'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-emerald-50 border border-emerald-300 text-emerald-900 hover:bg-emerald-100'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Verified ({verifiedCount})
+            </button>
+          </div>
+
+          <div className="relative w-full md:w-80">
+            <Search className="w-4 h-4 text-[#6A97C0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search student name, email, NIC..."
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-[#FAFCFE] border border-[#D4EEF8] text-[#152026] rounded-xl text-xs font-medium focus:bg-white focus:border-[#1B3D59] outline-none transition-all placeholder:text-[#6A97C0]"
+            />
+          </div>
+        </div>
+
+        {/* Table of Students */}
+        <div className="overflow-x-auto rounded-2xl border border-[#D4EEF8]">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-[#1B3D59] text-white text-[11px] font-black uppercase tracking-wider">
+              <tr>
+                <th className="py-3 px-4">Student Name & Account</th>
+                <th className="py-3 px-4">Contact & Branch</th>
+                <th className="py-3 px-4">Curriculum</th>
+                <th className="py-3 px-4">Registered Date</th>
+                <th className="py-3 px-4 text-center">Verification Status</th>
+                <th className="py-3 px-4 text-right">Admin Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D4EEF8] text-xs">
+              {loadingStudents ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-[#6A97C0] font-medium">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#1B3D59] mb-2" />
+                    Loading student list...
+                  </td>
+                </tr>
+              ) : filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-[#6A97C0] font-medium">
+                    No students found matching your criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredStudents.map((st) => {
+                  const studentName = st.userId?.name || st.name || 'Student';
+                  const studentEmail = st.userId?.email || st.email || '—';
+                  const studentPhone = st.userId?.phone || st.phone || '—';
+                  const studentBranch = st.branch || st.userId?.branch || 'Maharagama';
+                  const isVerified = (st.verificationStatus || st.userId?.verificationStatus) === 'Verified';
+                  const studentCategory =
+                    st.studentType === 'Type2_TrialReady' || st.student_type === 'Type 2'
+                      ? 'Type 2 (Trial-Ready)'
+                      : 'Type 1 (New Learner)';
+
+                  return (
+                    <tr key={st._id} className="hover:bg-[#D4EEF8]/30 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-extrabold text-[#152026] text-sm">{studentName}</div>
+                        <div className="text-[11px] text-[#6A97C0] font-medium truncate max-w-[220px]">{studentEmail}</div>
+                        {st.userId?.username && (
+                          <div className="text-[10px] text-[#1B3D59] font-mono">@{st.userId.username}</div>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-[#152026]">{studentPhone}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">{studentBranch} Branch</div>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-semibold text-[#152026]">
+                        {studentCategory}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {safeFormatDate(st.createdAt || st.userId?.createdAt, 'MMM dd, yyyy', 'Recent')}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center">
+                        {isVerified ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#F3EED8] text-[#152026] border border-amber-300 shadow-xs">
+                            <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" />
+                            Pending Verification
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        {isVerified ? (
+                          <div className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Approved</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyStudent(st._id, studentName)}
+                            disabled={verifyingStudentId === st._id}
+                            className="btn-primary text-xs py-1.5 px-3.5 font-bold inline-flex items-center gap-1.5 rounded-xl shadow-xs cursor-pointer hover:shadow transition-all"
+                            title="Verify and approve student account"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                            <span>{verifyingStudentId === st._id ? 'Verifying...' : 'Verify Student'}</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

@@ -161,6 +161,8 @@ export default function StaffStudentListPage() {
     advanceAmount: 5000,
   });
 
+  const [availableBranches, setAvailableBranches] = useState([]);
+
   const walkInCalculatedAge = React.useMemo(() => {
     if (!walkInForm.dob) return null;
     const dob = new Date(walkInForm.dob);
@@ -281,6 +283,38 @@ export default function StaffStudentListPage() {
     }
   };
 
+  const handleVerifyStudentAccount = async (studentId, studentName = 'Student') => {
+    try {
+      const res = await api.patch(`/admin/students/${studentId}/verify`, { status: 'Verified' });
+      if (res.data?.success) {
+        toast.success(`Student "${studentName}" verified successfully!`);
+        setStudents((prev) =>
+          prev.map((s) => {
+            if (s._id === studentId || s.userId?._id === studentId) {
+              return {
+                ...s,
+                verificationStatus: 'Verified',
+                account_status: 'Verified',
+                accountStatus: 'active',
+                userId: s.userId
+                  ? {
+                      ...s.userId,
+                      verificationStatus: 'Verified',
+                      status: 'active',
+                      account_status: 'Verified',
+                    }
+                  : s.userId,
+              };
+            }
+            return s;
+          })
+        );
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to verify student account');
+    }
+  };
+
   useEffect(() => {
     fetchStudents();
     fetchRescheduleRequests();
@@ -290,6 +324,13 @@ export default function StaffStudentListPage() {
         setAvailablePackages(res.data.packages);
       }
     }).catch(() => { });
+
+    // Load active branches dynamically
+    api.get('/branches/active').then((res) => {
+      if (res.data?.success && res.data?.branches) {
+        setAvailableBranches(res.data.branches);
+      }
+    }).catch(() => {});
 
     // Periodic polling for incoming student reschedule requests
     const interval = setInterval(() => {
@@ -3757,9 +3798,19 @@ export default function StaffStudentListPage() {
                       onChange={(e) => setWalkInForm({ ...walkInForm, branch: e.target.value })}
                       className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none cursor-pointer"
                     >
-                      <option value="Maharagama">Maharagama (Headquarters & Ground)</option>
-                      <option value="Werahara">Werahara (DMT Hub)</option>
-                      <option value="Delgoda">Delgoda (Branch Center)</option>
+                      {availableBranches.length > 0 ? (
+                        availableBranches.map((b) => (
+                          <option key={b._id} value={b.name}>
+                            {b.name} ({b.code}) - {b.address}
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Maharagama">Maharagama (Headquarters & Ground)</option>
+                          <option value="Werahara">Werahara (DMT Hub)</option>
+                          <option value="Delgoda">Delgoda (Branch Center)</option>
+                        </>
+                      )}
                     </select>
                   </div>
 

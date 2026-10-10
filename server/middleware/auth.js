@@ -144,24 +144,17 @@ const requireVerifiedStudent = async (req, res, next) => {
     if (req.user.role === 'student') {
       const student = await Student.findOne({ userId: req.user._id });
       const isVerified =
-        (req.user.account_status === 'Verified' || req.user.status === 'active') &&
-        (student?.account_status === 'Verified' || student?.accountStatus === 'active');
+        (req.user.verificationStatus === 'Verified' || req.user.account_status === 'Verified') &&
+        (student?.verificationStatus === 'Verified' || student?.account_status === 'Verified' || student?.accountStatus === 'active');
 
       if (!isVerified) {
-        const paymentMethod = student?.payment_method || student?.advancePaymentStatus || 'bank_slip';
-        let customMessage =
-          'Your payment is currently being verified by a Data Entry Officer. You cannot access the system until your account is verified.';
-
-        if (paymentMethod === 'physical_branch') {
-          customMessage =
-            'Please visit your nearest branch to complete your advance payment of LKR 5,000. You will gain full system access once the payment is verified by our team.';
-        }
-
         return res.status(403).json({
           success: false,
-          account_status: student?.account_status || 'Unverified / Pending Payment',
-          payment_method: paymentMethod,
-          message: customMessage,
+          isVerified: false,
+          verificationStatus: 'Pending Verification',
+          account_status: student?.account_status || 'Pending Verification',
+          message:
+            'Your account has been successfully registered but is not yet verified by the admin. Please wait until the admin verifies your account. You will be able to access the system once your account has been approved.',
         });
       }
     }

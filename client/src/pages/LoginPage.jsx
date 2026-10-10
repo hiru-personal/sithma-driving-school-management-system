@@ -64,12 +64,13 @@ export default function LoginPage() {
 
   const redirectBasedOnRole = (role, user, student, authRes = {}) => {
     if (role === 'student') {
-      const isVerified = Boolean(
-        user?.status === 'active' ||
-        user?.account_status === 'Verified' ||
-        student?.isAdvancePaid ||
-        student?.advancePaymentStatus === 'verified'
-      );
+      const isAccountVerified = user?.verificationStatus === 'Verified';
+
+      // Unverified students go directly to student dashboard where the Account Pending Verification screen is rendered
+      if (!isAccountVerified) {
+        navigate('/student/dashboard');
+        return;
+      }
 
       const hasSubmittedPayment = Boolean(
         authRes?.hasSubmittedPayment ||
@@ -80,8 +81,8 @@ export default function LoginPage() {
         student?.isAdvancePaid
       );
 
-      // If student has not submitted any payment yet, send them straight to complete payment
-      if (!isVerified && !hasSubmittedPayment) {
+      // If verified student has not submitted any payment yet, send them to payment gateway
+      if (!hasSubmittedPayment) {
         navigate('/payment-gateway', {
           replace: true,
           state: {

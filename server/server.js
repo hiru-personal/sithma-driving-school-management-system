@@ -79,6 +79,7 @@ const notificationRoutes = require('./routes/notifications');
 const quizRoutes = require('./routes/quiz');
 const adminRoutes = require('./routes/admin');
 const curriculumPresetRoutes = require('./routes/curriculumPresets');
+const branchRoutes = require('./routes/branches');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
@@ -90,6 +91,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/curriculum-presets', curriculumPresetRoutes);
+app.use('/api/branches', branchRoutes);
 
 // Fallback 404 Handler
 app.use((req, res, next) => {

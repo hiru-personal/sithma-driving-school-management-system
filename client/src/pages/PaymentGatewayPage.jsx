@@ -158,6 +158,13 @@ export default function PaymentGatewayPage() {
     }
   }, [location.state]);
 
+  // Prevent unverified students from accessing payment gateway directly
+  React.useEffect(() => {
+    if (user?.role === 'student' && user?.verificationStatus !== 'Verified') {
+      navigate('/student/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   // ── UI State ─────────────────────────────────────────────────────────────────
   const [showExitModal, setShowExitModal] = useState(false);
   const [activeMethod, setActiveMethod] = useState(null); // 'slip' | 'online' | 'physical'

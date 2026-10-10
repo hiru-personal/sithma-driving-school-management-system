@@ -10,6 +10,7 @@ const {
   updateUserAccount,
   forceResetPassword,
   deleteAccount,
+  verifyStudentAccount,
 } = require('../controllers/accountController');
 const { authenticate, authorize } = require('../middleware/auth');
 
@@ -30,5 +31,9 @@ router.patch('/accounts/:id', authorize('admin'), updateUserAccount);
 router.patch('/accounts/:id/status', authorize('admin'), updateAccountStatus);
 router.post('/accounts/:id/reset-password', authorize('admin'), forceResetPassword);
 router.delete('/accounts/:id', authorize('admin'), deleteAccount);
+
+// Student Account Verification (Admin Only)
+router.patch('/students/:id/verify', authorize('admin'), verifyStudentAccount);
+router.patch('/accounts/:id/verify-student', authorize('admin'), verifyStudentAccount);
 
 module.exports = router;

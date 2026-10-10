@@ -306,7 +306,7 @@ const studentSchema = new mongoose.Schema(
     },
     branch: {
       type: String,
-      enum: ['Maharagama', 'Werahara', 'Delgoda'],
+      trim: true,
       required: true,
     },
     accountStatus: {
@@ -328,6 +328,20 @@ const studentSchema = new mongoose.Schema(
       type: String,
       enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled', 'cancelled'],
       default: 'Unverified / Pending Payment',
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['Pending Verification', 'Verified'],
+      default: 'Pending Verification',
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
     },
     advancePaymentStatus: {
       type: String,

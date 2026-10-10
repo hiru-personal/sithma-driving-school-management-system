@@ -15,6 +15,7 @@ import {
   X,
   Sparkles,
   Trash2,
+  ShieldCheck,
   Database,
   Edit2,
 } from 'lucide-react';
@@ -98,6 +99,15 @@ export default function AdminAccountsPage() {
 
   const [tempPassword, setTempPassword] = useState('TempResetPass#2026');
   const [submitting, setSubmitting] = useState(false);
+  const [availableBranches, setAvailableBranches] = useState([]);
+
+  useEffect(() => {
+    api.get('/branches/active').then((res) => {
+      if (res.data?.success && res.data?.branches) {
+        setAvailableBranches(res.data.branches);
+      }
+    }).catch((err) => console.warn('Could not load branches:', err));
+  }, []);
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -257,6 +267,29 @@ export default function AdminAccountsPage() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const handleVerifyStudentAccount = async (userId) => {
+    try {
+      const res = await api.patch(`/admin/accounts/${userId}/verify-student`, { status: 'Verified' });
+      if (res.data?.success) {
+        toast.success(res.data.message || 'Student account verified successfully!');
+        setAccounts((prev) =>
+          prev.map((u) =>
+            u._id === userId
+              ? {
+                  ...u,
+                  verificationStatus: 'Verified',
+                  status: 'active',
+                  account_status: 'Verified',
+                }
+              : u
+          )
+        );
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to verify student account');
     }
   };
 
@@ -556,18 +589,37 @@ export default function AdminAccountsPage() {
                       <div className="text-[11px] text-slate-700 font-medium">{user.phone}</div>
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          user.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : user.status === 'pending_verification'
-                            ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
-                      >
-                        {user.status || 'active'}
-                      </span>
+                    <td className="py-3.5 px-4 space-y-1">
+                      {user.role === 'student' ? (
+                        <div>
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              user.verificationStatus === 'Verified'
+                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                                : 'bg-[#F3EED8] text-[#152026] border border-amber-300'
+                            }`}
+                          >
+                            {user.verificationStatus || 'Pending Verification'}
+                          </span>
+                          {user.status && user.status !== 'active' && user.status !== 'pending_verification' && (
+                            <span className="block text-[9px] text-rose-600 font-semibold mt-0.5">
+                              Status: {user.status}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            user.status === 'active'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : user.status === 'pending_verification'
+                              ? 'bg-[#F3EED8] text-[#152026] border border-[#6A97C0]/40'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          {user.status || 'active'}
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 space-y-1">
@@ -589,6 +641,16 @@ export default function AdminAccountsPage() {
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {user.role === 'student' && user.verificationStatus !== 'Verified' && (
+                          <button
+                            onClick={() => handleVerifyStudentAccount(user._id)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Verify and approve student account"
+                          >
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Verify Student</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => openEditUserModal(user)}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-[#6A97C0]/40 text-[#1B3D59] bg-[#D4EEF8]/40 hover:bg-[#D4EEF8] transition-colors flex items-center gap-1 cursor-pointer"
@@ -906,9 +968,17 @@ export default function AdminAccountsPage() {
                     onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   >
-                    <option value="Maharagama">Maharagama</option>
-                    <option value="Werahara">Werahara</option>
-                    <option value="Delgoda">Delgoda</option>
+                    {availableBranches.length > 0 ? (
+                      availableBranches.map((b) => (
+                        <option key={b._id} value={b.name}>{b.name} ({b.code})</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Maharagama">Maharagama</option>
+                        <option value="Werahara">Werahara</option>
+                        <option value="Delgoda">Delgoda</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -1034,9 +1104,17 @@ export default function AdminAccountsPage() {
                     onChange={(e) => setInstructorForm({ ...instructorForm, branch: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   >
-                    <option value="Maharagama">Maharagama</option>
-                    <option value="Werahara">Werahara</option>
-                    <option value="Delgoda">Delgoda</option>
+                    {availableBranches.length > 0 ? (
+                      availableBranches.map((b) => (
+                        <option key={b._id} value={b.name}>{b.name} ({b.code})</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Maharagama">Maharagama</option>
+                        <option value="Werahara">Werahara</option>
+                        <option value="Delgoda">Delgoda</option>
+                      </>
+                    )}
                   </select>
                 </div>
 

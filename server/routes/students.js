@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { verifyStudentAccount } = require('../controllers/accountController');
 const {
   getAllStudents,
   getStudentById,
@@ -26,7 +27,7 @@ const {
   getRegistrationCycles,
   updateStudentDetails,
 } = require('../controllers/studentController');
-const { authenticate, authorize, checkStudentOwnership } = require('../middleware/auth');
+const { authenticate, authorize, checkStudentOwnership, requireVerifiedStudent } = require('../middleware/auth');
 const dmtProofUpload = require('../middleware/dmtProofUpload');
 const avatarUpload = require('../middleware/avatarUpload');
 const finalLicenseUpload = require('../middleware/finalLicenseUpload');
@@ -37,30 +38,31 @@ router.get('/', authenticate, authorize('staff', 'admin'), getAllStudents);
 router.post('/walk-in', authenticate, authorize('staff', 'admin'), registerWalkInStudent);
 
 // Reschedule Requests (Student & Staff)
-router.post('/trial-date/reschedule', authenticate, submitRescheduleRequest);
+router.post('/trial-date/reschedule', authenticate, requireVerifiedStudent, submitRescheduleRequest);
 router.get('/trial-date/reschedule', authenticate, getMyRescheduleRequests);
 router.get('/reschedule-requests/all', authenticate, authorize('staff', 'admin'), getAllRescheduleRequests);
 router.patch('/reschedule-requests/:id/review', authenticate, authorize('staff', 'admin'), reviewRescheduleRequest);
 
 // Student profile & DMT updates: Enforce Student ownership (Student can only access/modify their own ID)
 router.get('/:id', authenticate, checkStudentOwnership, getStudentById);
-router.patch('/:id/profile', authenticate, checkStudentOwnership, updateStudentProfile);
-router.post('/:id/profile-photo', authenticate, checkStudentOwnership, avatarUpload.single('profilePhoto'), uploadStudentProfilePhoto);
-router.patch('/:id/dmt-dates', authenticate, checkStudentOwnership, updateDmtDates);
-router.post('/:id/exam-attempt', authenticate, checkStudentOwnership, recordExamAttempt);
-router.post('/:id/re-register', authenticate, checkStudentOwnership, reRegisterStudent);
+router.patch('/:id/profile', authenticate, checkStudentOwnership, requireVerifiedStudent, updateStudentProfile);
+router.post('/:id/profile-photo', authenticate, checkStudentOwnership, requireVerifiedStudent, avatarUpload.single('profilePhoto'), uploadStudentProfilePhoto);
+router.patch('/:id/dmt-dates', authenticate, checkStudentOwnership, requireVerifiedStudent, updateDmtDates);
+router.post('/:id/exam-attempt', authenticate, checkStudentOwnership, requireVerifiedStudent, recordExamAttempt);
+router.post('/:id/re-register', authenticate, checkStudentOwnership, requireVerifiedStudent, reRegisterStudent);
 router.get('/:id/registration-cycles', authenticate, checkStudentOwnership, getRegistrationCycles);
-router.post('/:id/final-license', authenticate, checkStudentOwnership, finalLicenseUpload.single('licensePhoto'), uploadFinalLicense);
-router.post('/:id/milestone-proof', authenticate, checkStudentOwnership, dmtProofUpload.single('proofDocument'), uploadMilestoneProof);
+router.post('/:id/final-license', authenticate, checkStudentOwnership, requireVerifiedStudent, finalLicenseUpload.single('licensePhoto'), uploadFinalLicense);
+router.post('/:id/milestone-proof', authenticate, checkStudentOwnership, requireVerifiedStudent, dmtProofUpload.single('proofDocument'), uploadMilestoneProof);
 router.get('/:id/heavy-vehicle-eligibility', authenticate, checkStudentOwnership, checkHeavyVehicleEligibility);
 
 // Student self-update & Staff/Admin action
-router.post('/:id/trial-attempt', authenticate, checkStudentOwnership, recordTrialAttempt);
-router.patch('/:id/trial-attempt', authenticate, checkStudentOwnership, recordTrialAttempt);
-router.post('/:id/trial', authenticate, checkStudentOwnership, recordTrialAttempt);
-router.patch('/:id/trial', authenticate, checkStudentOwnership, recordTrialAttempt);
+router.post('/:id/trial-attempt', authenticate, checkStudentOwnership, requireVerifiedStudent, recordTrialAttempt);
+router.patch('/:id/trial-attempt', authenticate, checkStudentOwnership, requireVerifiedStudent, recordTrialAttempt);
+router.post('/:id/trial', authenticate, checkStudentOwnership, requireVerifiedStudent, recordTrialAttempt);
+router.patch('/:id/trial', authenticate, checkStudentOwnership, requireVerifiedStudent, recordTrialAttempt);
 
 // Staff/Admin only actions
+router.patch('/:id/verify-account', authenticate, authorize('admin'), verifyStudentAccount);
 router.put('/:id', authenticate, authorize('staff', 'admin'), updateStudentDetails);
 router.patch('/:id', authenticate, authorize('staff', 'admin'), updateStudentDetails);
 router.patch('/:id/details', authenticate, authorize('staff', 'admin'), updateStudentDetails);

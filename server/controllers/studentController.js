@@ -12,12 +12,16 @@ const TimeSlot = require('../models/TimeSlot');
 // @access  Staff, Admin
 exports.getAllStudents = async (req, res) => {
   try {
-    const { branch, studentType, status, search, page = 1, limit = 20 } = req.query;
+    const { branch, studentType, status, verificationStatus, search, page = 1, limit = 20 } = req.query;
 
     const query = {};
 
     if (branch && branch !== 'All') {
       query.branch = branch;
+    }
+
+    if (verificationStatus && verificationStatus !== 'All') {
+      query.verificationStatus = verificationStatus;
     }
 
     if (studentType) {
@@ -55,8 +59,9 @@ exports.getAllStudents = async (req, res) => {
     }
 
     let students = await Student.find(query)
-      .populate('userId', 'name email phone role branch status account_status createdAt')
+      .populate('userId', 'name email phone role branch status account_status verificationStatus verifiedBy verifiedAt createdAt')
       .populate('package.packageId')
+      .populate('verifiedBy', 'name email role')
       .sort({ createdAt: -1 });
 
     // Client-side text search on populated user name/email/phone/nic and direct student fields
@@ -1331,6 +1336,8 @@ exports.registerWalkInStudent = async (req, res) => {
       passwordHash,
       role: 'student',
       status: initialStatus,
+      account_status: isImmediateVerified ? 'Verified' : 'Unverified / Pending Payment',
+      verificationStatus: isImmediateVerified ? 'Verified' : 'Pending Verification',
       branch,
       createdBy: req.user._id,
       mustChangePassword: false,
@@ -1351,6 +1358,8 @@ exports.registerWalkInStudent = async (req, res) => {
       branch,
       registrationStatus: isImmediateVerified ? 'registered' : 'pending_payment',
       accountStatus: initialStatus,
+      account_status: isImmediateVerified ? 'Verified' : 'Unverified / Pending Payment',
+      verificationStatus: isImmediateVerified ? 'Verified' : 'Pending Verification',
       advancePaymentStatus: advanceStatus,
       advancePaymentReference: resolvedRef,
       isAdvancePaid: isImmediateVerified,
@@ -1484,9 +1493,9 @@ exports.updateStudentProfile = async (req, res) => {
       user.nic = nic.trim();
     }
 
-    if (branch && ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)) {
-      student.branch = branch;
-      user.branch = branch;
+    if (branch && branch.trim()) {
+      student.branch = branch.trim();
+      user.branch = branch.trim();
     }
 
     if (studentType && ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'].includes(studentType)) {
