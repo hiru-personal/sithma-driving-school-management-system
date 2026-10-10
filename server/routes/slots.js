@@ -8,10 +8,12 @@ const {
   deleteTimeSlot,
   getInstructorSchedule,
 } = require('../controllers/slotController');
+const { getCurriculumPresets } = require('../controllers/curriculumPresetController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Available time slots (Authenticated or Public)
 router.get('/', getTimeSlots);
+router.get('/presets', getCurriculumPresets);
 router.get('/instructors', authenticate, getInstructors);
 
 // Staff/Admin/Instructor time slot management

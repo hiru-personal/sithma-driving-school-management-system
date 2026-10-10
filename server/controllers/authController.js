@@ -1191,3 +1191,44 @@ exports.registerType2Student = async (req, res) => {
   }
 };
 
+// @desc    Update user profile (phone, teachingCategories, etc.)
+// @route   PATCH /api/auth/profile
+// @access  Authenticated
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const { phone, teachingCategories } = req.body;
+    if (phone) user.phone = phone.trim();
+    if (teachingCategories && ['Light', 'Heavy', 'Both'].includes(teachingCategories)) {
+      user.teachingCategories = teachingCategories;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        nic: user.nic,
+        role: user.role,
+        branch: user.branch,
+        teachingCategories: user.teachingCategories,
+        status: user.status,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update profile', error: err.message });
+  }
+};
+
+
