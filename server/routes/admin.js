@@ -7,6 +7,7 @@ const {
   createInstructorAccount,
   createUserAccount,
   updateAccountStatus,
+  updateUserAccount,
   forceResetPassword,
   deleteAccount,
 } = require('../controllers/accountController');
@@ -24,6 +25,8 @@ router.post('/accounts/user', authorize('admin'), createUserAccount);
 router.post('/users', authorize('admin'), createUserAccount);
 router.post('/accounts/staff', authorize('admin'), createStaffAccount);
 router.post('/accounts/instructor', authorize('admin'), createInstructorAccount);
+router.put('/accounts/:id', authorize('admin'), updateUserAccount);
+router.patch('/accounts/:id', authorize('admin'), updateUserAccount);
 router.patch('/accounts/:id/status', authorize('admin'), updateAccountStatus);
 router.post('/accounts/:id/reset-password', authorize('admin'), forceResetPassword);
 router.delete('/accounts/:id', authorize('admin'), deleteAccount);

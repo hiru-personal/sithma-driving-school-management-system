@@ -577,3 +577,181 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
+// @desc    Admin updates user account details
+// @route   PUT /api/admin/accounts/:id or PATCH /api/admin/accounts/:id
+// @access  Admin only
+exports.updateUserAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found' });
+    }
+
+    const {
+      name,
+      username,
+      email,
+      phone,
+      nic,
+      branch,
+      role,
+      status,
+      account_status,
+      teachingCategories,
+      studentType,
+      student_type,
+      dob,
+      dateOfBirth,
+    } = req.body;
+
+    // Check unique username if changing
+    if (username && username.toLowerCase().trim() !== (user.username || '').toLowerCase()) {
+      const cleanUsername = username.toLowerCase().trim();
+      const existingUser = await User.findOne({ username: cleanUsername, _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is already taken by another account.',
+        });
+      }
+      user.username = cleanUsername;
+    }
+
+    // Check unique email if changing
+    if (email && email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const cleanEmail = email.toLowerCase().trim();
+      const existingEmail = await User.findOne({ email: cleanEmail, _id: { $ne: user._id } });
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is already registered to another account.',
+        });
+      }
+      user.email = cleanEmail;
+    }
+
+    if (name && name.trim()) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (nic !== undefined) user.nic = nic.trim();
+    if (branch && ['Maharagama', 'Werahara', 'Delgoda', 'All'].includes(branch)) {
+      user.branch = branch;
+    }
+
+    // Role check: prevent removing admin status from oneself
+    if (role && ['staff', 'instructor', 'student', 'admin'].includes(role)) {
+      if (user._id.toString() === req.user._id.toString() && role !== 'admin') {
+        return res.status(400).json({
+          success: false,
+          message: 'You cannot remove administrative privileges from your own account.',
+        });
+      }
+      user.role = role;
+    }
+
+    if (status && ['active', 'inactive', 'pending_verification', 'suspended', 'cancelled'].includes(status)) {
+      user.status = status;
+      if (status === 'active' && (!account_status || account_status === 'Deactivated')) {
+        user.account_status = 'Verified';
+      } else if ((status === 'inactive' || status === 'suspended') && (!account_status || account_status === 'Verified')) {
+        user.account_status = 'Deactivated';
+      }
+    }
+
+    if (account_status && ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled'].includes(account_status)) {
+      user.account_status = account_status;
+    }
+
+    if (teachingCategories && ['Light', 'Heavy', 'Both'].includes(teachingCategories)) {
+      user.teachingCategories = teachingCategories;
+    }
+
+    const resolvedStudentType = studentType || student_type;
+    if (resolvedStudentType) {
+      const normalized = (resolvedStudentType === 'Type 2' || resolvedStudentType === 'Type2_TrialReady') ? 'Type 2' : 'Type 1';
+      user.student_type = normalized;
+    }
+
+    const birthDateVal = dob || dateOfBirth;
+    if (birthDateVal) {
+      const parsedDob = new Date(birthDateVal);
+      if (!isNaN(parsedDob.getTime())) {
+        user.dob = parsedDob;
+        user.dateOfBirth = parsedDob;
+        const today = new Date();
+        let computedAge = today.getFullYear() - parsedDob.getFullYear();
+        const monthDiff = today.getMonth() - parsedDob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsedDob.getDate())) {
+          computedAge--;
+        }
+        user.age = computedAge >= 0 ? computedAge : null;
+      }
+    }
+
+    await user.save();
+
+    // Cascading sync to Student record if role is student or student record exists
+    let syncedStudent = null;
+    const existingStudent = await Student.findOne({ userId: user._id });
+    if (existingStudent) {
+      existingStudent.name = user.name;
+      existingStudent.studentName = user.name;
+      existingStudent.email = user.email;
+      existingStudent.phone = user.phone;
+      existingStudent.nic = user.nic;
+      if (user.branch && user.branch !== 'All') {
+        existingStudent.branch = user.branch;
+      }
+      if (user.dob) {
+        existingStudent.dob = user.dob;
+        existingStudent.dateOfBirth = user.dateOfBirth;
+        existingStudent.age = user.age;
+      }
+      if (resolvedStudentType) {
+        existingStudent.student_type = (resolvedStudentType === 'Type 2' || resolvedStudentType === 'Type2_TrialReady') ? 'Type 2' : 'Type 1';
+        existingStudent.studentType = (resolvedStudentType === 'Type 2' || resolvedStudentType === 'Type2_TrialReady') ? 'Type2_TrialReady' : 'Type1_NewLearner';
+      }
+      if (user.status) {
+        existingStudent.accountStatus = user.status;
+      }
+      if (user.account_status) {
+        existingStudent.account_status = user.account_status;
+      }
+      await existingStudent.save();
+      syncedStudent = existingStudent;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `User account '${user.name}' updated successfully in database.`,
+      user: {
+        _id: user._id,
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        nic: user.nic,
+        branch: user.branch,
+        role: user.role,
+        status: user.status,
+        account_status: user.account_status,
+        teachingCategories: user.teachingCategories,
+        student_type: user.student_type,
+        dob: user.dob,
+        dateOfBirth: user.dateOfBirth,
+        age: user.age,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      student: syncedStudent,
+    });
+  } catch (error) {
+    console.error('Update user account error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update user account in database',
+    });
+  }
+};
+
+

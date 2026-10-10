@@ -16,6 +16,7 @@ import {
   Sparkles,
   Trash2,
   Database,
+  Edit2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -39,6 +40,26 @@ export default function AdminAccountsPage() {
   const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // Edit User State
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserLoading, setEditUserLoading] = useState(false);
+  const [editUserForm, setEditUserForm] = useState({
+    name: '',
+    username: '',
+    email: '',
+    phone: '',
+    nic: '',
+    branch: 'Maharagama',
+    role: 'staff',
+    status: 'active',
+    account_status: 'Verified',
+    vehicleCategories: 'Light',
+    teachingCategories: 'Light',
+    studentType: 'Type 1',
+    dob: '',
+  });
 
   // Forms
   const [userForm, setUserForm] = useState({
@@ -277,6 +298,87 @@ export default function AdminAccountsPage() {
     }
   };
 
+  const openEditUserModal = (user) => {
+    setEditingUser(user);
+    let formattedDob = '';
+    const rawDob = user.dob || user.dateOfBirth;
+    if (rawDob) {
+      try {
+        const d = new Date(rawDob);
+        if (!isNaN(d.getTime())) formattedDob = d.toISOString().split('T')[0];
+      } catch {}
+    }
+    const rawStudentType = user.student_type || user.studentType;
+    const isType2 = rawStudentType === 'Type 2' || rawStudentType === 'Type2_TrialReady';
+
+    setEditUserForm({
+      name: user.name || '',
+      username: user.username || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      nic: user.nic || '',
+      branch: user.branch || 'Maharagama',
+      role: user.role || 'staff',
+      status: user.status || 'active',
+      account_status: user.account_status || 'Verified',
+      vehicleCategories: user.teachingCategories || 'Light',
+      teachingCategories: user.teachingCategories || 'Light',
+      studentType: isType2 ? 'Type 2' : 'Type 1',
+      dob: formattedDob,
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    if (!editUserForm.name.trim()) {
+      toast.error('Full name is required.');
+      return;
+    }
+    if (!editUserForm.email.trim()) {
+      toast.error('Email address is required.');
+      return;
+    }
+    if (!editUserForm.phone.trim()) {
+      toast.error('Phone number is required.');
+      return;
+    }
+
+    setEditUserLoading(true);
+    try {
+      const payload = {
+        ...editUserForm,
+        teachingCategories: editUserForm.vehicleCategories || editUserForm.teachingCategories,
+      };
+      const res = await api.put(`/admin/accounts/${editingUser._id}`, payload);
+      if (res.data.success) {
+        toast.success(res.data.message || 'User details updated successfully');
+        const updated = res.data.user;
+        setAccounts((prev) =>
+          prev.map((u) => (u._id === editingUser._id ? { ...u, ...updated } : u))
+        );
+        setShowEditUserModal(false);
+        setEditingUser(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update user details');
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
+
+  const editUserAge = React.useMemo(() => {
+    if (!editUserForm.dob) return null;
+    const d = new Date(editUserForm.dob);
+    if (isNaN(d.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age >= 0 ? age : null;
+  }, [editUserForm.dob]);
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-10 space-y-8 max-w-[1440px] mx-auto w-full">
       {/* Header */}
@@ -487,6 +589,15 @@ export default function AdminAccountsPage() {
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <button
+                          onClick={() => openEditUserModal(user)}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-[#6A97C0]/40 text-[#1B3D59] bg-[#D4EEF8]/40 hover:bg-[#D4EEF8] transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Edit User Details"
+                        >
+                          <Edit2 className="w-3 h-3 text-[#1B3D59]" />
+                          <span>Edit</span>
+                        </button>
+
                         {user.role !== 'admin' && (
                           <button
                             onClick={() => handleToggleStatus(user)}
@@ -1107,6 +1218,236 @@ export default function AdminAccountsPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modal: Edit User Details */}
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#152026]/75 backdrop-blur-sm">
+          <div className="w-full max-w-xl p-5 sm:p-6 rounded-3xl bg-white border border-[#D4EEF8] shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]">
+            <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
+              <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-[#1B3D59]" /> Edit User Details: {editingUser.name}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowEditUserModal(false);
+                  setEditingUser(null);
+                }}
+                className="text-[#6A97C0] hover:text-[#152026] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#6A97C0] font-medium">
+              Update personal information, contact numbers, branch assignment, and account status in the database.
+            </p>
+
+            <form onSubmit={handleUpdateUser} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Account Role */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Account Role <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={editUserForm.role}
+                    disabled={editingUser.role === 'admin'}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none font-bold focus:border-[#1B3D59] disabled:bg-slate-100"
+                  >
+                    <option value="staff">Staff (Data Entry Officer)</option>
+                    <option value="instructor">Driving Instructor</option>
+                    <option value="student">Student / Learner</option>
+                    <option value="admin">System Administrator</option>
+                  </select>
+                </div>
+
+                {/* Branch */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Assigned Branch <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={editUserForm.branch}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, branch: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                  >
+                    <option value="Maharagama">Maharagama</option>
+                    <option value="Werahara">Werahara</option>
+                    <option value="Delgoda">Delgoda</option>
+                    <option value="All">All Branches</option>
+                  </select>
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editUserForm.name}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                  />
+                </div>
+
+                {/* Username */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Username <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editUserForm.username}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, username: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={editUserForm.email}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                  />
+                </div>
+
+                {/* Contact Phone */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Contact Phone <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={editUserForm.phone}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                  />
+                </div>
+
+                {/* NIC */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">NIC / Passport</label>
+                  <input
+                    type="text"
+                    value={editUserForm.nic}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, nic: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                  />
+                </div>
+
+                {/* Date of Birth */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">
+                    Date of Birth {editUserAge !== null && <span className="text-emerald-700 font-bold">({editUserAge} yrs)</span>}
+                  </label>
+                  <input
+                    type="date"
+                    value={editUserForm.dob}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, dob: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59] focus:ring-1 focus:ring-[#B3D5F1]"
+                  />
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">Account Lifecycle Status</label>
+                  <select
+                    value={editUserForm.status}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending_verification">Pending Verification</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+
+                {/* Account Status / Verification */}
+                <div>
+                  <label className="block font-semibold text-[#152026] mb-1">Verification Status</label>
+                  <select
+                    value={editUserForm.account_status}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, account_status: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                  >
+                    <option value="Verified">Verified</option>
+                    <option value="Unverified / Pending Payment">Unverified / Pending Payment</option>
+                    <option value="Deactivated">Deactivated</option>
+                  </select>
+                </div>
+
+                {/* Role Specific - Instructor */}
+                {editUserForm.role === 'instructor' && (
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold text-[#152026] mb-1">Teaching Vehicle Categories</label>
+                    <select
+                      value={editUserForm.teachingCategories}
+                      onChange={(e) => setEditUserForm({ ...editUserForm, teachingCategories: e.target.value, vehicleCategories: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                    >
+                      <option value="Light">Light Vehicles Only (Car / Bike / Three-Wheel)</option>
+                      <option value="Heavy">Heavy Vehicles Only (Bus / Lorry)</option>
+                      <option value="Both">Both Light & Heavy Vehicles</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Role Specific - Student */}
+                {editUserForm.role === 'student' && (
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold text-[#152026] mb-1">Student Type</label>
+                    <select
+                      value={editUserForm.studentType}
+                      onChange={(e) => setEditUserForm({ ...editUserForm, studentType: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                    >
+                      <option value="Type 1">Type 1 — New Learner (Needs DMT Milestones & Theory)</option>
+                      <option value="Type 2">Type 2 — Trial-Ready (Existing DMT Clearance)</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#D4EEF8]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditUserModal(false);
+                    setEditingUser(null);
+                  }}
+                  className="btn-secondary text-xs py-2 px-4 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editUserLoading}
+                  className="btn-primary text-xs py-2 px-5 font-bold cursor-pointer flex items-center gap-2"
+                >
+                  {editUserLoading ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving Changes...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

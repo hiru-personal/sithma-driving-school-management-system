@@ -229,6 +229,38 @@ export default function StaffStudentListPage() {
     learnerExamMarks: '',
   });
 
+  // Form State for Editing Student Details
+  const [savingStudentDetails, setSavingStudentDetails] = useState(false);
+  const [editStudentForm, setEditStudentForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    nic: '',
+    dob: '',
+    branch: 'Maharagama',
+    studentType: 'Type1_NewLearner',
+    registrationStatus: 'registered',
+    accountStatus: 'active',
+    advancePaymentStatus: 'verified',
+    isAdvancePaid: true,
+    trial_date: '',
+    packageType: 'Car_Full',
+    lessonsTotal: 15,
+    lessonsUsed: 0,
+    priceTotal: 25000,
+  });
+
+  const editStudentAge = React.useMemo(() => {
+    if (!editStudentForm.dob) return null;
+    const d = new Date(editStudentForm.dob);
+    if (isNaN(d.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age >= 0 ? age : null;
+  }, [editStudentForm.dob]);
+
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -433,6 +465,83 @@ export default function StaffStudentListPage() {
     setAdminLicenseFile(null);
     setShowRejectLicenseInput(false);
     setRejectLicenseReason('');
+
+    // Preload details for Edit Student Modal
+    if (mode === 'edit_details') {
+      let formattedDob = '';
+      const rawDob = student.dob || student.dateOfBirth || student.userId?.dob || student.userId?.dateOfBirth;
+      if (rawDob) {
+        try {
+          const d = new Date(rawDob);
+          if (!isNaN(d.getTime())) formattedDob = d.toISOString().split('T')[0];
+        } catch {}
+      }
+
+      let formattedTrialDate = '';
+      const rawTrial = student.trial_date || student.trial?.trialDate;
+      if (rawTrial) {
+        try {
+          const d = new Date(rawTrial);
+          if (!isNaN(d.getTime())) formattedTrialDate = d.toISOString().split('T')[0];
+        } catch {}
+      }
+
+      const rawType = student.studentType || student.student_type || student.userId?.student_type;
+      const isType2 = rawType === 'Type 2' || rawType === 'Type2_TrialReady' || rawType === 'Type2';
+
+      setEditStudentForm({
+        name: student.name || student.studentName || student.userId?.name || '',
+        email: student.email || student.userId?.email || '',
+        phone: student.phone || student.userId?.phone || '',
+        nic: student.nic || student.userId?.nic || '',
+        dob: formattedDob,
+        branch: student.branch || student.userId?.branch || 'Maharagama',
+        studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
+        registrationStatus: student.registrationStatus || 'registered',
+        accountStatus: student.accountStatus || student.userId?.status || 'active',
+        advancePaymentStatus: student.advancePaymentStatus || (student.isAdvancePaid ? 'verified' : 'none'),
+        isAdvancePaid: student.isAdvancePaid ?? true,
+        trial_date: formattedTrialDate,
+        packageType: student.package?.type || 'Car_Full',
+        lessonsTotal: student.package?.lessonsTotal ?? 15,
+        lessonsUsed: student.package?.lessonsUsed ?? 0,
+        priceTotal: student.package?.priceTotal ?? 25000,
+      });
+    }
+  };
+
+  const handleSaveStudentDetails = async (e) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    if (!editStudentForm.name.trim()) {
+      toast.error('Student name is required');
+      return;
+    }
+    if (!editStudentForm.email.trim()) {
+      toast.error('Student email is required');
+      return;
+    }
+    if (!editStudentForm.phone.trim()) {
+      toast.error('Student phone number is required');
+      return;
+    }
+
+    setSavingStudentDetails(true);
+    try {
+      const res = await api.put(`/students/${selectedStudent._id}`, editStudentForm);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Student details updated successfully in database.');
+        const updatedStudent = res.data.student;
+        setStudents((prev) =>
+          prev.map((s) => (s._id === selectedStudent._id ? { ...s, ...updatedStudent } : s))
+        );
+        setSelectedStudent(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update student details');
+    } finally {
+      setSavingStudentDetails(false);
+    }
   };
 
   const handleSaveTrialDate = async (e) => {
@@ -1530,6 +1639,15 @@ export default function StaffStudentListPage() {
                             <Eye className="w-4 h-4" />
                           </button>
 
+                          {/* Edit Student Details Button */}
+                          <button
+                            onClick={() => openStudentModal(st, 'edit_details')}
+                            className="p-2 rounded-xl bg-[#D4EEF8]/70 hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/40 transition-all cursor-pointer shadow-xs"
+                            title="Edit All Student & Registration Details"
+                          >
+                            <Edit3 className="w-4 h-4 text-[#1B3D59]" />
+                          </button>
+
                           {/* Verify Payment Button */}
                           <button
                             onClick={() => openVerifyPaymentModal(st)}
@@ -1597,11 +1715,15 @@ export default function StaffStudentListPage() {
       {/* Modal Dialog: Edit DMT Dates / Record Trial Attempt */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl ${modalMode === 'lifecycle' ? 'max-w-3xl' : 'max-w-lg'} w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]`}>
+          <div className={`bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl ${modalMode === 'lifecycle' || modalMode === 'edit_details' ? 'max-w-2xl sm:max-w-3xl' : 'max-w-lg'} w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]`}>
             <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
               <div>
                 <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
-                  {modalMode === 'edit_dmt' ? (
+                  {modalMode === 'edit_details' ? (
+                    <>
+                      <Edit3 className="w-5 h-5 text-[#1B3D59]" /> Edit Student & Registration Details: {selectedStudent.userId?.name || selectedStudent.name}
+                    </>
+                  ) : modalMode === 'edit_dmt' ? (
                     <>
                       <Calendar className="w-5 h-5 text-[#1B3D59]" /> DMT Regulatory Dates: {selectedStudent.userId?.name}
                     </>
@@ -1625,11 +1747,267 @@ export default function StaffStudentListPage() {
               </div>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Edit Full Student Details Form */}
+            {modalMode === 'edit_details' && (
+              <form onSubmit={handleSaveStudentDetails} className="space-y-4 text-xs">
+                {/* Personal & Contact Information */}
+                <div>
+                  <h4 className="font-bold text-[#1B3D59] text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1 border-b border-[#D4EEF8]">
+                    <User className="w-4 h-4 text-[#1B3D59]" /> Personal & Contact Details
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Full Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editStudentForm.name}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={editStudentForm.email}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, email: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Contact Phone <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={editStudentForm.phone}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, phone: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">NIC / Passport</label>
+                      <input
+                        type="text"
+                        value={editStudentForm.nic}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, nic: e.target.value })}
+                        placeholder="e.g. 200012345678"
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Date of Birth {editStudentAge !== null && <span className="text-emerald-700 font-bold">({editStudentAge} yrs)</span>}
+                      </label>
+                      <input
+                        type="date"
+                        value={editStudentForm.dob}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, dob: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Assigned Branch</label>
+                      <select
+                        value={editStudentForm.branch}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, branch: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="Maharagama">Maharagama</option>
+                        <option value="Werahara">Werahara</option>
+                        <option value="Delgoda">Delgoda</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Registration & Lifecycle Status */}
+                <div>
+                  <h4 className="font-bold text-[#1B3D59] text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1 border-b border-[#D4EEF8]">
+                    <FileCheck className="w-4 h-4 text-[#1B3D59]" /> Registration & Lifecycle Status
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Student Type</label>
+                      <select
+                        value={editStudentForm.studentType}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, studentType: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="Type1_NewLearner">Type 1 — New Learner (DMT Milestones & Theory)</option>
+                        <option value="Type2_TrialReady">Type 2 — Trial Ready (Direct Practical Training)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Registration Status</label>
+                      <select
+                        value={editStudentForm.registrationStatus}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, registrationStatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="registered">Registered</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="pending_payment">Pending Payment</option>
+                        <option value="completed">Completed / Passed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Account Status</label>
+                      <select
+                        value={editStudentForm.accountStatus}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, accountStatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="active">Active (Verified)</option>
+                        <option value="inactive">Inactive / Deactivated</option>
+                        <option value="pending_verification">Pending Verification</option>
+                        <option value="suspended">Suspended</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Advance Payment Status</label>
+                      <select
+                        value={editStudentForm.advancePaymentStatus}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditStudentForm({
+                            ...editStudentForm,
+                            advancePaymentStatus: val,
+                            isAdvancePaid: val === 'verified',
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="verified">Verified (Paid)</option>
+                        <option value="pending">Pending Verification</option>
+                        <option value="none">None / Unpaid</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Training Package & Trial Schedule */}
+                <div>
+                  <h4 className="font-bold text-[#1B3D59] text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1 border-b border-[#D4EEF8]">
+                    <PackageIcon className="w-4 h-4 text-[#1B3D59]" /> Training Package & Trial Schedule
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block font-semibold text-[#152026] mb-1">Training Package</label>
+                      <select
+                        value={editStudentForm.packageType}
+                        onChange={(e) => {
+                          const selectedPkg = walkInDisplayedPackages.find((p) => p.type === e.target.value);
+                          setEditStudentForm({
+                            ...editStudentForm,
+                            packageType: e.target.value,
+                            lessonsTotal: selectedPkg ? selectedPkg.lessons : editStudentForm.lessonsTotal,
+                            priceTotal: selectedPkg ? selectedPkg.price : editStudentForm.priceTotal,
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        {walkInDisplayedPackages.map((pkg) => (
+                          <option key={pkg.type} value={pkg.type}>
+                            {pkg.name} — {pkg.lessons} Lessons — LKR {pkg.price?.toLocaleString()}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Total Lessons Allocated</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStudentForm.lessonsTotal}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, lessonsTotal: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Lessons Completed / Used</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStudentForm.lessonsUsed}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, lessonsUsed: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Total Package Price (LKR)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStudentForm.priceTotal}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, priceTotal: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Practical Trial Date</label>
+                      <input
+                        type="date"
+                        value={editStudentForm.trial_date}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, trial_date: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#D4EEF8]">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudent(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingStudentDetails}
+                    className="btn-primary text-xs py-2 px-5 font-bold cursor-pointer flex items-center gap-2"
+                  >
+                    {savingStudentDetails ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving Changes...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Set Practical Trial Date Form (Shared for Type 1 & Type 2) */}
             {modalMode === 'set_trial_date' && (

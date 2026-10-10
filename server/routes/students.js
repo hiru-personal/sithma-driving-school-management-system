@@ -24,6 +24,7 @@ const {
   uploadFinalLicense,
   verifyFinalLicense,
   getRegistrationCycles,
+  updateStudentDetails,
 } = require('../controllers/studentController');
 const { authenticate, authorize, checkStudentOwnership } = require('../middleware/auth');
 const dmtProofUpload = require('../middleware/dmtProofUpload');
@@ -60,6 +61,9 @@ router.post('/:id/trial', authenticate, checkStudentOwnership, recordTrialAttemp
 router.patch('/:id/trial', authenticate, checkStudentOwnership, recordTrialAttempt);
 
 // Staff/Admin only actions
+router.put('/:id', authenticate, authorize('staff', 'admin'), updateStudentDetails);
+router.patch('/:id', authenticate, authorize('staff', 'admin'), updateStudentDetails);
+router.patch('/:id/details', authenticate, authorize('staff', 'admin'), updateStudentDetails);
 router.patch('/:id/final-pass', authenticate, authorize('staff', 'admin'), markStudentPassed);
 router.patch('/:id/final-license/verify', authenticate, authorize('staff', 'admin'), verifyFinalLicense);
 router.patch('/:id/trial-date', authenticate, authorize('staff', 'admin'), setTrialDate);
