@@ -1287,7 +1287,7 @@ export default function StaffStudentListPage() {
                       {/* Name & Contact */}
                       <td className="px-4 py-3 font-semibold text-[#152026]">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm sm:text-base font-extrabold text-[#152026]">{st.userId?.name || 'Unknown Student'}</div>
+                          <div className="text-sm sm:text-base font-extrabold text-[#152026]">{st.userId?.name || st.name || st.studentName || 'Student'}</div>
                           {studentPendingReq && (
                             <button
                               type="button"
@@ -1308,7 +1308,7 @@ export default function StaffStudentListPage() {
                           )}
                         </div>
                         <div className="text-xs text-[#475569] font-medium mt-0.5">
-                          {st.userId?.phone} • {st.userId?.email}
+                          {(st.userId?.phone || st.phone || '—')} • {(st.userId?.email || st.email || '—')}
                         </div>
                       </td>
 

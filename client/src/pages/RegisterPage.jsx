@@ -215,8 +215,9 @@ export default function RegisterPage() {
     if (!p) return [];
     const errors = [];
     if (p.length < 8) errors.push('At least 8 characters');
-    if (!/[A-Za-z]/.test(p)) errors.push('At least one letter');
-    if (!/[0-9]/.test(p)) errors.push('At least one numeric digit');
+    if (!/[A-Z]/.test(p)) errors.push('At least one uppercase letter (A-Z)');
+    if (!/[a-z]/.test(p)) errors.push('At least one lowercase letter (a-z)');
+    if (!/[0-9]/.test(p)) errors.push('At least one numeric digit (0-9)');
     return errors;
   }, [formData.password]);
 
@@ -689,13 +690,16 @@ export default function RegisterPage() {
           <div className="text-[11px] text-[#6A97C0] flex flex-wrap items-center gap-3">
             <span className="font-bold text-[#152026]">Must contain:</span>
             <span className={formData.password.length >= 8 ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
-              ✓ 8+ characters
+              ✓ 8+ chars
             </span>
-            <span className={/[A-Za-z]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
-              ✓ Letters
+            <span className={/[A-Z]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
+              ✓ Uppercase (A-Z)
+            </span>
+            <span className={/[a-z]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
+              ✓ Lowercase (a-z)
             </span>
             <span className={/[0-9]/.test(formData.password) ? 'text-emerald-700 font-bold' : 'text-[#6A97C0]'}>
-              ✓ Numbers
+              ✓ Number (0-9)
             </span>
             {!passwordsMatch && (
               <span className="text-rose-600 font-bold ml-auto">Passwords do not match</span>
