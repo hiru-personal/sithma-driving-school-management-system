@@ -160,6 +160,12 @@ export default function Navbar() {
           {user && (
             <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2 bg-[#D4EEF8]/45 p-1 lg:p-1.5 rounded-full border border-[#D4EEF8] shrink-0 relative">
               {isStudent && (
+                user?.verificationStatus !== 'Verified' ? (
+                  <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#F3EED8] text-[#152026] border border-amber-300 shadow-xs flex items-center gap-2 shrink-0 whitespace-nowrap">
+                    <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin shrink-0" />
+                    <span>Account Pending Verification</span>
+                  </span>
+                ) : (
                 <>
                   {!isPremium && (
                     <span className="px-2.5 lg:px-3.5 py-1 lg:py-1.5 rounded-full text-[11px] lg:text-xs font-bold bg-[#F3EED8] text-[#152026] border border-[#E2D9B8] shadow-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap">
@@ -245,6 +251,7 @@ export default function Navbar() {
                     </>
                   )}
                 </>
+                )
               )}
 
               {/* Admin Navigation Links */}
@@ -832,6 +839,12 @@ export default function Navbar() {
 
               {/* Student Navigation Links */}
               {isStudent && (
+                user?.verificationStatus !== 'Verified' ? (
+                  <div className="p-3.5 rounded-2xl bg-[#F3EED8] border border-amber-300 text-xs font-bold text-[#152026] flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-700 animate-spin shrink-0" />
+                    <span>Account Pending Verification</span>
+                  </div>
+                ) : (
                 <div className="space-y-1 text-xs">
                   <Link
                     to="/student/dashboard"
@@ -912,6 +925,7 @@ export default function Navbar() {
                     </>
                   )}
                 </div>
+                )
               )}
 
               {/* Admin Navigation Links */}

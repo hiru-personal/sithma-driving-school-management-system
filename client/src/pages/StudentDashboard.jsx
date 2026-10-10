@@ -50,6 +50,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { SITHMA_OFFICIAL_BANKS } from './PaymentGatewayPage';
 import { validateExpiryDate, validateCvc } from '../components/SimulatedPaymentGatewayModal';
+import AccountPendingVerification from '../components/AccountPendingVerification';
 
 const safeFormatDate = (dateVal, formatStr = 'EEEE, MMMM dd, yyyy', fallback = 'None') => {
   if (!dateVal) return fallback;
@@ -148,6 +149,12 @@ const FALLBACK_PACKAGES = [
 export default function StudentDashboard() {
   const { user, student, updateStudentData } = useAuth();
   const navigate = useNavigate();
+
+  // If student is not verified by admin, show dedicated AccountPendingVerification screen
+  if (user?.role === 'student' && user?.verificationStatus !== 'Verified') {
+    return <AccountPendingVerification />;
+  }
+
   const [profile, setProfile] = useState(student);
   const [loading, setLoading] = useState(!student);
   const [checkingStatus, setCheckingStatus] = useState(false);

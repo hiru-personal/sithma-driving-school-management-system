@@ -34,6 +34,7 @@ import AdminAccountsPage from './pages/AdminAccountsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PremiumLockOverlay from './components/PremiumLockOverlay';
 import PaymentGatewayPage from './pages/PaymentGatewayPage';
+import AccountPendingVerification from './components/AccountPendingVerification';
 import { Clock } from 'lucide-react';
 
 function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePremium = false }) {
@@ -57,7 +58,13 @@ function ProtectedRoute({ children, allowedRoles, onlyType1 = false, requirePrem
     return <Navigate to="/" replace />;
   }
 
-  // Learner Unpaid Gate: If a student has not submitted any payment, route directly to /payment-gateway
+  // 1. Admin Verification Gate for Students:
+  // If a student account is NOT verified by admin, lock student functionality and show AccountPendingVerification
+  if (user.role === 'student' && user.verificationStatus !== 'Verified') {
+    return <AccountPendingVerification />;
+  }
+
+  // Learner Unpaid Gate: If a verified student has not submitted any payment, route directly to /payment-gateway
   if (user.role === 'student') {
     const isVerified = Boolean(
       user.status === 'active' ||

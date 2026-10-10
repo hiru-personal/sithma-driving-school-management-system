@@ -248,6 +248,7 @@ exports.registerStudent = async (req, res) => {
       role: 'student',
       student_type: resolvedStudentType,
       account_status: 'Unverified / Pending Payment',
+      verificationStatus: 'Pending Verification',
       status: 'pending_verification',
       branch: resolvedBranch,
       mustChangePassword: false,
@@ -299,6 +300,7 @@ exports.registerStudent = async (req, res) => {
       branch: resolvedBranch,
       accountStatus: 'pending_verification',
       account_status: 'Unverified / Pending Payment',
+      verificationStatus: 'Pending Verification',
       advancePaymentStatus: 'none',
       packagePaymentStatus: 'none',
       paymentPlan: chosenPlan,
@@ -344,6 +346,7 @@ exports.registerStudent = async (req, res) => {
         _id: student._id,
         student_type: student.student_type,
         branch: student.branch,
+        verificationStatus: student.verificationStatus,
         advancePaymentAmount: ADVANCE_PAYMENT_AMOUNT,
       },
       user: {
@@ -356,6 +359,7 @@ exports.registerStudent = async (req, res) => {
         age: user.age,
         student_type: user.student_type,
         account_status: user.account_status,
+        verificationStatus: user.verificationStatus,
         branch: user.branch,
       },
     });
@@ -505,9 +509,10 @@ exports.login = async (req, res) => {
       studentProfile?.payment_method ||
       null;
 
-    const isVerified =
-      (user.account_status === 'Verified' || user.status === 'active') &&
-      (studentProfile?.advancePaymentStatus === 'verified' || studentProfile?.isAdvancePaid === true);
+    const verificationStatus =
+      user.verificationStatus ||
+      (user.account_status === 'Verified' ? 'Verified' : 'Pending Verification');
+    const isVerified = verificationStatus === 'Verified';
 
     const paymentStatus = isVerified
       ? 'Verified'
@@ -515,16 +520,22 @@ exports.login = async (req, res) => {
       ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
       : 'none';
 
+    const studentData = sanitizeStudentForType(studentProfile);
+    if (studentData) {
+      studentData.verificationStatus = studentProfile?.verificationStatus || verificationStatus;
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
       mustChangePassword: user.mustChangePassword || false,
       isVerified,
+      verificationStatus,
       hasSubmittedPayment,
       requiresPayment: !isVerified && !hasSubmittedPayment,
       account_status:
-        user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+        user.account_status || (isVerified ? 'Verified' : 'Unverified / Pending Payment'),
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       user: {
@@ -539,13 +550,14 @@ exports.login = async (req, res) => {
         age: user.age,
         student_type: user.student_type || studentProfile?.student_type || 'Type 1',
         account_status:
-          user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+          user.account_status || (isVerified ? 'Verified' : 'Unverified / Pending Payment'),
+        verificationStatus,
         role: user.role,
         status: user.status,
         branch: user.branch,
         mustChangePassword: user.mustChangePassword || false,
       },
-      student: sanitizeStudentForType(studentProfile),
+      student: studentData,
       latestPayment,
     });
   } catch (error) {
@@ -820,9 +832,10 @@ exports.getMe = async (req, res) => {
       studentProfile?.payment_method ||
       null;
 
-    const isVerified =
-      (user.account_status === 'Verified' || user.status === 'active') &&
-      (studentProfile?.advancePaymentStatus === 'verified' || studentProfile?.isAdvancePaid === true);
+    const verificationStatus =
+      user.verificationStatus ||
+      (user.account_status === 'Verified' ? 'Verified' : 'Pending Verification');
+    const isVerified = verificationStatus === 'Verified';
 
     const paymentStatus = isVerified
       ? 'Verified'
@@ -830,13 +843,19 @@ exports.getMe = async (req, res) => {
       ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
       : 'none';
 
+    const studentData = sanitizeStudentForType(studentProfile);
+    if (studentData) {
+      studentData.verificationStatus = studentProfile?.verificationStatus || verificationStatus;
+    }
+
     return res.status(200).json({
       success: true,
       isVerified,
+      verificationStatus,
       hasSubmittedPayment,
       requiresPayment: !isVerified && !hasSubmittedPayment,
       account_status:
-        user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+        user.account_status || (isVerified ? 'Verified' : 'Unverified / Pending Payment'),
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       user: {
@@ -851,7 +870,8 @@ exports.getMe = async (req, res) => {
         age: user.age,
         student_type: user.student_type || studentProfile?.student_type || 'Type 1',
         account_status:
-          user.account_status || (user.status === 'active' ? 'Verified' : 'Unverified / Pending Payment'),
+          user.account_status || (isVerified ? 'Verified' : 'Unverified / Pending Payment'),
+        verificationStatus,
         role: user.role,
         status: user.status,
         branch: user.branch,
@@ -859,13 +879,58 @@ exports.getMe = async (req, res) => {
         mustChangePassword: user.mustChangePassword || false,
         createdAt: user.createdAt,
       },
-      student: sanitizeStudentForType(studentProfile),
+      student: studentData,
       latestPayment,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve profile',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get current student/user account verification status
+// @route   GET /api/auth/verification-status
+// @access  Private (Authenticated User)
+exports.getVerificationStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const studentProfile = user.role === 'student' ? await Student.findOne({ userId: user._id }) : null;
+    const verificationStatus =
+      user.verificationStatus ||
+      (user.account_status === 'Verified' ? 'Verified' : 'Pending Verification');
+    const isVerified = verificationStatus === 'Verified';
+
+    return res.status(200).json({
+      success: true,
+      isVerified,
+      verificationStatus,
+      account_status: user.account_status,
+      status: user.status,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        verificationStatus,
+      },
+      student: studentProfile
+        ? {
+            _id: studentProfile._id,
+            verificationStatus: studentProfile.verificationStatus || verificationStatus,
+          }
+        : null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve verification status',
       error: error.message,
     });
   }

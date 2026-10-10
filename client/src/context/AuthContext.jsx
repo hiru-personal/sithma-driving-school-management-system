@@ -254,6 +254,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const isVerified = user?.role === 'student' ? (user?.verificationStatus === 'Verified') : true;
+
+  const refreshVerificationStatus = async () => {
+    try {
+      const res = await api.get('/auth/verification-status');
+      if (res.data?.success) {
+        const nextStatus = res.data.verificationStatus;
+        if (user && user.verificationStatus !== nextStatus) {
+          const updatedUser = { ...user, verificationStatus: nextStatus };
+          setUser(updatedUser);
+          localStorage.setItem('sithma_user', JSON.stringify(updatedUser));
+        }
+        if (student && student.verificationStatus !== nextStatus) {
+          const updatedStudent = { ...student, verificationStatus: nextStatus };
+          setStudent(updatedStudent);
+          localStorage.setItem('sithma_student', JSON.stringify(updatedStudent));
+        }
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Failed to refresh verification status:', err.message);
+    }
+    return null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -267,6 +292,9 @@ export const AuthProvider = ({ children }) => {
         isStaff: user?.role === 'staff' || user?.role === 'admin',
         isAdmin: user?.role === 'admin',
         isInstructor: user?.role === 'instructor',
+        verificationStatus: user?.verificationStatus || student?.verificationStatus || 'Pending Verification',
+        isVerified,
+        refreshVerificationStatus,
         isAdvancePaid,
         isPremium,
         login,

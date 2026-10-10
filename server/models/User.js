@@ -58,6 +58,20 @@ const userSchema = new mongoose.Schema(
       enum: ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled'],
       default: 'Unverified / Pending Payment',
     },
+    verificationStatus: {
+      type: String,
+      enum: ['Pending Verification', 'Verified'],
+      default: 'Pending Verification',
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
     profilePicture: {
       type: String,
       default: null,

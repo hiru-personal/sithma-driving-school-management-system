@@ -11,6 +11,7 @@ const {
   forgotPassword,
   resetPassword,
   updateUserProfile,
+  getVerificationStatus,
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const clearanceUpload = require('../middleware/clearanceUpload');
@@ -25,6 +26,7 @@ router.post('/reset-password', resetPassword);
 
 // Protected authentication routes
 router.get('/me', authenticate, getMe);
+router.get('/verification-status', authenticate, getVerificationStatus);
 router.patch('/profile', authenticate, updateUserProfile);
 router.post('/logout', authenticate, logout);
 router.post('/change-password', authenticate, changePassword);

@@ -249,6 +249,38 @@ export default function StaffStudentListPage() {
     }
   };
 
+  const handleVerifyStudentAccount = async (studentId, studentName = 'Student') => {
+    try {
+      const res = await api.patch(`/admin/students/${studentId}/verify`, { status: 'Verified' });
+      if (res.data?.success) {
+        toast.success(`Student "${studentName}" verified successfully!`);
+        setStudents((prev) =>
+          prev.map((s) => {
+            if (s._id === studentId || s.userId?._id === studentId) {
+              return {
+                ...s,
+                verificationStatus: 'Verified',
+                account_status: 'Verified',
+                accountStatus: 'active',
+                userId: s.userId
+                  ? {
+                      ...s.userId,
+                      verificationStatus: 'Verified',
+                      status: 'active',
+                      account_status: 'Verified',
+                    }
+                  : s.userId,
+              };
+            }
+            return s;
+          })
+        );
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to verify student account');
+    }
+  };
+
   useEffect(() => {
     fetchStudents();
     fetchRescheduleRequests();
@@ -1429,6 +1461,16 @@ export default function StaffStudentListPage() {
                             {isLicensed ? 'Licensed' : st.registrationStatus === 'cancelled' ? '❌ CANCELLED' : st.registrationStatus?.replace('_', ' ')}
                           </span>
 
+                          {(st.verificationStatus || st.userId?.verificationStatus) === 'Verified' ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
+                              ✓ Account Verified
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
+                              ⏳ Pending Verification
+                            </span>
+                          )}
+
                           {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment' ? (
                             <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
                               👑 Premium User
@@ -1551,6 +1593,19 @@ export default function StaffStudentListPage() {
                                 : 'Verify Pay'}
                             </span>
                           </button>
+
+                          {/* Admin Student Account Verification Button */}
+                          {(st.verificationStatus || st.userId?.verificationStatus) !== 'Verified' && (
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyStudentAccount(st._id, st.userId?.name || st.name)}
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 text-xs font-extrabold flex items-center gap-1 cursor-pointer shadow-xs transition-all"
+                              title="Verify student account"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Verify Student</span>
+                            </button>
+                          )}
 
                           {/* Schedule Practical Trial Date (Shared for Type 1 & Type 2) */}
                           <button
