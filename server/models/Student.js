@@ -306,7 +306,7 @@ const studentSchema = new mongoose.Schema(
     },
     branch: {
       type: String,
-      enum: ['Maharagama', 'Werahara', 'Delgoda'],
+      trim: true,
       required: true,
     },
     accountStatus: {

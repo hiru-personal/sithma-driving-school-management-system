@@ -58,6 +58,15 @@ export default function AdminAccountsPage() {
 
   const [tempPassword, setTempPassword] = useState('TempResetPass#2026');
   const [submitting, setSubmitting] = useState(false);
+  const [availableBranches, setAvailableBranches] = useState([]);
+
+  useEffect(() => {
+    api.get('/branches/active').then((res) => {
+      if (res.data?.success && res.data?.branches) {
+        setAvailableBranches(res.data.branches);
+      }
+    }).catch((err) => console.warn('Could not load branches:', err));
+  }, []);
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -548,9 +557,17 @@ export default function AdminAccountsPage() {
                     onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   >
-                    <option value="Maharagama">Maharagama</option>
-                    <option value="Werahara">Werahara</option>
-                    <option value="Delgoda">Delgoda</option>
+                    {availableBranches.length > 0 ? (
+                      availableBranches.map((b) => (
+                        <option key={b._id} value={b.name}>{b.name} ({b.code})</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Maharagama">Maharagama</option>
+                        <option value="Werahara">Werahara</option>
+                        <option value="Delgoda">Delgoda</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -676,9 +693,17 @@ export default function AdminAccountsPage() {
                     onChange={(e) => setInstructorForm({ ...instructorForm, branch: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
                   >
-                    <option value="Maharagama">Maharagama</option>
-                    <option value="Werahara">Werahara</option>
-                    <option value="Delgoda">Delgoda</option>
+                    {availableBranches.length > 0 ? (
+                      availableBranches.map((b) => (
+                        <option key={b._id} value={b.name}>{b.name} ({b.code})</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Maharagama">Maharagama</option>
+                        <option value="Werahara">Werahara</option>
+                        <option value="Delgoda">Delgoda</option>
+                      </>
+                    )}
                   </select>
                 </div>
 

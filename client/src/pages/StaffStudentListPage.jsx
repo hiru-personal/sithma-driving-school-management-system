@@ -161,6 +161,8 @@ export default function StaffStudentListPage() {
     advanceAmount: 5000,
   });
 
+  const [availableBranches, setAvailableBranches] = useState([]);
+
   const walkInCalculatedAge = React.useMemo(() => {
     if (!walkInForm.dob) return null;
     const dob = new Date(walkInForm.dob);
@@ -288,6 +290,13 @@ export default function StaffStudentListPage() {
     api.get('/packages').then((res) => {
       if (res.data?.success && res.data?.packages) {
         setAvailablePackages(res.data.packages);
+      }
+    }).catch(() => {});
+
+    // Load active branches dynamically
+    api.get('/branches/active').then((res) => {
+      if (res.data?.success && res.data?.branches) {
+        setAvailableBranches(res.data.branches);
       }
     }).catch(() => {});
 
@@ -1237,9 +1246,19 @@ export default function StaffStudentListPage() {
             className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
           >
             <option value="All">All Branches</option>
-            <option value="Maharagama">Maharagama Branch</option>
-            <option value="Werahara">Werahara Branch</option>
-            <option value="Delgoda">Delgoda Branch</option>
+            {availableBranches.length > 0 ? (
+              availableBranches.map((b) => (
+                <option key={b._id} value={b.name}>
+                  {b.name} Branch ({b.code})
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="Maharagama">Maharagama Branch</option>
+                <option value="Werahara">Werahara Branch</option>
+                <option value="Delgoda">Delgoda Branch</option>
+              </>
+            )}
           </select>
 
           {/* Student Type Filter */}
@@ -3459,9 +3478,19 @@ export default function StaffStudentListPage() {
                       onChange={(e) => setWalkInForm({ ...walkInForm, branch: e.target.value })}
                       className="w-full px-3.5 py-2 border border-[#D4EEF8] bg-white text-[#152026] font-bold rounded-xl focus:border-[#1B3D59] focus:ring-1 focus:ring-[#1B3D59] outline-none cursor-pointer"
                     >
-                      <option value="Maharagama">Maharagama (Headquarters & Ground)</option>
-                      <option value="Werahara">Werahara (DMT Hub)</option>
-                      <option value="Delgoda">Delgoda (Branch Center)</option>
+                      {availableBranches.length > 0 ? (
+                        availableBranches.map((b) => (
+                          <option key={b._id} value={b.name}>
+                            {b.name} ({b.code}) - {b.address}
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Maharagama">Maharagama (Headquarters & Ground)</option>
+                          <option value="Werahara">Werahara (DMT Hub)</option>
+                          <option value="Delgoda">Delgoda (Branch Center)</option>
+                        </>
+                      )}
                     </select>
                   </div>
 

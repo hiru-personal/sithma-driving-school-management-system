@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Search,
   User,
+  Building2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -52,6 +53,7 @@ export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState('All');
+  const [availableBranches, setAvailableBranches] = useState([]);
 
   // Student Account Management & Verification State
   const [students, setStudents] = useState([]);
@@ -91,6 +93,21 @@ export default function AdminDashboardPage() {
       setLoadingStudents(false);
     }
   };
+
+  const fetchAvailableBranches = async () => {
+    try {
+      const res = await api.get('/branches/active');
+      if (res.data?.success && Array.isArray(res.data.branches)) {
+        setAvailableBranches(res.data.branches);
+      }
+    } catch (err) {
+      console.warn('Failed to load active branches:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableBranches();
+  }, []);
 
   useEffect(() => {
     fetchAnalytics();
@@ -198,9 +215,19 @@ export default function AdminDashboardPage() {
               className="px-3.5 py-2 border border-[#D4EEF8] rounded-xl text-xs bg-white font-bold text-[#152026] outline-none shadow-xs focus:border-[#1B3D59]"
             >
               <option value="All">All Branches Combined</option>
-              <option value="Maharagama">Maharagama Branch</option>
-              <option value="Werahara">Werahara Branch</option>
-              <option value="Delgoda">Delgoda Branch</option>
+              {availableBranches.length > 0 ? (
+                availableBranches.map((b) => (
+                  <option key={b._id} value={b.name}>
+                    {b.name} Branch ({b.code})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Maharagama">Maharagama Branch</option>
+                  <option value="Werahara">Werahara Branch</option>
+                  <option value="Delgoda">Delgoda Branch</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -394,6 +421,81 @@ export default function AdminDashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Branch Management Section */}
+      <div id="branch-management-section" className="card p-6 sm:p-7 rounded-3xl bg-white border border-[#D4EEF8] shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4EEF8] pb-5">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4EEF8] border border-[#6A97C0]/30 text-[#1B3D59] font-bold text-xs mb-1.5 shadow-xs">
+              <Building2 className="w-3.5 h-3.5 text-[#1B3D59]" /> Multi-Branch Infrastructure
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#152026] flex items-center gap-2.5">
+              Branch Management & Operations
+            </h2>
+            <p className="text-xs text-slate-600 font-semibold mt-0.5">
+              Manage driving school branches, facility managers, student distribution, and center allocations.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/branches"
+              className="btn-primary text-xs py-2 px-4.5 font-bold flex items-center gap-2 rounded-xl shadow-xs"
+            >
+              <Building2 className="w-4 h-4" /> Open Branch Management Portal <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Branch Cards Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {availableBranches.map((b) => {
+            const branchStat = branchData?.find((bd) => bd.branch === b.name);
+            return (
+              <div
+                key={b._id}
+                className="p-4 rounded-2xl bg-[#FAFCFE] border border-[#D4EEF8] hover:border-[#6A97C0] transition-all space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#D4EEF8] text-[#1B3D59] flex items-center justify-center font-bold">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-[#152026] text-sm">{b.name} Branch</h4>
+                      <span className="text-[10px] font-mono font-bold text-slate-500">{b.code}</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                    Active
+                  </span>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-1">
+                  <p className="flex items-center gap-1.5 truncate">
+                    <MapPin className="w-3.5 h-3.5 text-[#1B3D59] shrink-0" />
+                    <span className="truncate">{b.address}</span>
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>Manager: <strong>{b.manager || 'Assigned Staff'}</strong></span>
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-[#D4EEF8] flex items-center justify-between text-xs font-bold text-[#1B3D59]">
+                  <span>{branchStat ? `${branchStat.students} Enrolled` : 'Operational Center'}</span>
+                  <Link
+                    to="/admin/branches"
+                    className="text-[11px] text-[#1B3D59] hover:underline flex items-center gap-1"
+                  >
+                    Manage →
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

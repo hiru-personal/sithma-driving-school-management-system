@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Package,
   FolderKanban,
+  Building2,
 } from 'lucide-react';
 import api from '../api/axios';
 
@@ -114,6 +115,7 @@ export default function Navbar() {
 
   const isAnyMoreActive =
     isActive('/staff/packages') ||
+    isActive('/admin/branches') ||
     isActive('/staff/quiz') ||
     isActive('/admin/question-lists') ||
     isActive('/staff/reports') ||
@@ -121,6 +123,7 @@ export default function Navbar() {
     isActive('/staff/payments');
 
   const getActiveMoreLabel = () => {
+    if (isActive('/admin/branches')) return 'Branches';
     if (isActive('/staff/packages')) return 'Packages';
     if (isActive('/staff/quiz') || isActive('/admin/question-lists')) return 'Question Lists';
     if (isActive('/staff/reports')) return 'Reports';
@@ -290,6 +293,22 @@ export default function Navbar() {
                   </Link>
 
                   <Link
+                    to="/admin/branches"
+                    className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                      isActive('/admin/branches')
+                        ? 'nav-pill-active bg-[#1B3D59] text-white shadow-xs border border-[#1B3D59]'
+                        : 'text-[#152026] hover:text-[#1B3D59] hover:bg-white border border-transparent'
+                    }`}
+                  >
+                    <Building2
+                      className={`w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 ${isActive('/admin/branches') ? 'text-[#B3D5F1]' : 'text-[#6A97C0]'}`}
+                    />
+                    <span>
+                      <span className="hidden 2xl:inline">Manage </span>Branches
+                    </span>
+                  </Link>
+
+                  <Link
                     to="/staff/students"
                     className={`px-3 xl:px-4 py-1.5 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       isActive('/staff/students')
@@ -354,6 +373,31 @@ export default function Navbar() {
                           <span className="font-extrabold text-[#152026] tracking-wider">Operations & Management</span>
                           <span className="text-[9px] px-2 py-0.5 rounded-md bg-[#D4EEF8] text-[#1B3D59] font-extrabold border border-[#B3D5F1] tracking-wider">Admin Tools</span>
                         </div>
+
+                        {/* Branch Management */}
+                        <Link
+                          to="/admin/branches"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ${
+                            isActive('/admin/branches')
+                              ? 'bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] shadow-xs'
+                              : 'hover:bg-[#D4EEF8]/40 border border-transparent'
+                          }`}
+                        >
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                            isActive('/admin/branches')
+                              ? 'bg-[#1B3D59] text-white shadow-xs'
+                              : 'bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1]/60 group-hover:bg-[#1B3D59] group-hover:text-white group-hover:border-[#1B3D59] group-hover:scale-105'
+                          }`}>
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold transition-colors ${
+                              isActive('/admin/branches') ? 'text-[#1B3D59]' : 'text-[#152026] group-hover:text-[#1B3D59]'
+                            }`}>Branch Management</p>
+                            <p className="text-[11px] text-slate-600 font-medium truncate leading-snug">Add, edit, view & assign branches</p>
+                          </div>
+                        </Link>
 
                         {/* 1. Slot Creator */}
                         <Link
@@ -953,6 +997,17 @@ export default function Navbar() {
                     }`}
                   >
                     <Users className={`w-4 h-4 ${isActive('/admin/accounts') ? 'text-[#B3D5F1]' : 'text-[#6A97C0]'}`} /> Manage Accounts
+                  </Link>
+                  <Link
+                    to="/admin/branches"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold transition-all ${
+                      isActive('/admin/branches')
+                        ? 'bg-[#1B3D59] text-white shadow-xs'
+                        : 'text-[#152026] hover:bg-[#D4EEF8]/50 hover:text-[#1B3D59]'
+                    }`}
+                  >
+                    <Building2 className={`w-4 h-4 ${isActive('/admin/branches') ? 'text-[#B3D5F1]' : 'text-[#6A97C0]'}`} /> Branch Management
                   </Link>
                 </div>
               )}

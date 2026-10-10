@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Student = require('../models/Student');
 const Package = require('../models/Package');
 const Payment = require('../models/Payment');
+const Branch = require('../models/Branch');
 const Notification = require('../models/Notification');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const { revokeToken } = require('../middleware/auth');
@@ -228,10 +229,18 @@ exports.registerStudent = async (req, res) => {
     const isType2 = resolvedStudentType === 'Type 2';
     const isType1 = !isType2;
 
-    // Resolve Branch (default Maharagama)
-    const resolvedBranch = ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)
-      ? branch
-      : 'Maharagama';
+    // Resolve Branch dynamically (fall back to first active or Maharagama)
+    let resolvedBranch = (branch || '').trim();
+    if (resolvedBranch) {
+      const branchExists = await Branch.findOne({ name: resolvedBranch, status: 'Active' });
+      if (!branchExists) {
+        const anyActive = await Branch.findOne({ status: 'Active' });
+        resolvedBranch = anyActive ? anyActive.name : resolvedBranch;
+      }
+    } else {
+      const anyActive = await Branch.findOne({ status: 'Active' });
+      resolvedBranch = anyActive ? anyActive.name : 'Maharagama';
+    }
 
     // 5. Create User Account Immediately with status = "Unverified / Pending Payment"
     const passwordHash = await User.hashPassword(password);
@@ -1070,11 +1079,12 @@ exports.registerType2Student = async (req, res) => {
     }
 
     // 7. Validate Branch
-    const validBranches = ['Maharagama', 'Werahara', 'Delgoda'];
+    const activeBranches = await Branch.find({ status: 'Active' }).distinct('name');
+    const validBranches = activeBranches.length > 0 ? activeBranches : ['Maharagama', 'Werahara', 'Delgoda'];
     if (!validBranches.includes(branch)) {
       return res.status(400).json({
         success: false,
-        message: 'Please select a valid branch: Maharagama, Werahara, or Delgoda.',
+        message: `Please select a valid branch: ${validBranches.join(', ')}.`,
       });
     }
 

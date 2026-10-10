@@ -1494,9 +1494,9 @@ exports.updateStudentProfile = async (req, res) => {
       user.nic = nic.trim();
     }
 
-    if (branch && ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)) {
-      student.branch = branch;
-      user.branch = branch;
+    if (branch && branch.trim()) {
+      student.branch = branch.trim();
+      user.branch = branch.trim();
     }
 
     if (studentType && ['Type1_NewLearner', 'Type2_TrialReady', 'Type 1', 'Type 2'].includes(studentType)) {

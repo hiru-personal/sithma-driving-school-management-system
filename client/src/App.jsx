@@ -31,6 +31,7 @@ import ReportsAnalyticsPage from './pages/ReportsAnalyticsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminAccountsPage from './pages/AdminAccountsPage';
+import AdminBranchesPage from './pages/AdminBranchesPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PremiumLockOverlay from './components/PremiumLockOverlay';
 import PaymentGatewayPage from './pages/PaymentGatewayPage';
@@ -303,6 +304,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminAccountsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/branches"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminBranchesPage />
                 </ProtectedRoute>
               }
             />

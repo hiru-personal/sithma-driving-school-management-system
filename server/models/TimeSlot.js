@@ -4,7 +4,7 @@ const timeSlotSchema = new mongoose.Schema(
   {
     branch: {
       type: String,
-      enum: ['Maharagama', 'Werahara', 'Delgoda'],
+      trim: true,
       required: true,
     },
     date: {

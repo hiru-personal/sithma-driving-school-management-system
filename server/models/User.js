@@ -97,7 +97,7 @@ const userSchema = new mongoose.Schema(
     },
     branch: {
       type: String,
-      enum: ['Maharagama', 'Werahara', 'Delgoda', 'All'],
+      trim: true,
       default: 'Maharagama',
     },
     teachingCategories: {

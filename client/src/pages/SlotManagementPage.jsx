@@ -22,6 +22,7 @@ export default function SlotManagementPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [slots, setSlots] = useState([]);
   const [instructors, setInstructors] = useState([]);
+  const [availableBranches, setAvailableBranches] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // New Slot Modal
@@ -64,6 +65,14 @@ export default function SlotManagementPage() {
       console.error('Failed to load instructors', err);
     }
   };
+
+  useEffect(() => {
+    api.get('/branches/active').then((res) => {
+      if (res.data?.success && res.data?.branches) {
+        setAvailableBranches(res.data.branches);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchSlots();
@@ -180,9 +189,17 @@ export default function SlotManagementPage() {
             onChange={(e) => setSelectedBranch(e.target.value)}
             className="w-full px-3.5 py-2.5 border border-[#D4EEF8] rounded-xl text-xs bg-white font-bold text-[#152026] outline-none focus:border-[#1B3D59] cursor-pointer"
           >
-            <option value="Maharagama">Maharagama Branch</option>
-            <option value="Werahara">Werahara Branch</option>
-            <option value="Delgoda">Delgoda Branch</option>
+            {availableBranches.length > 0 ? (
+              availableBranches.map((b) => (
+                <option key={b._id} value={b.name}>{b.name} Branch ({b.code})</option>
+              ))
+            ) : (
+              <>
+                <option value="Maharagama">Maharagama Branch</option>
+                <option value="Werahara">Werahara Branch</option>
+                <option value="Delgoda">Delgoda Branch</option>
+              </>
+            )}
           </select>
         </div>
 

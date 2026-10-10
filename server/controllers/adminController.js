@@ -2,6 +2,7 @@ const Student = require('../models/Student');
 const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const Branch = require('../models/Branch');
 const Notification = require('../models/Notification');
 
 // @desc    Get comprehensive system analytics for Admin Dashboard
@@ -46,7 +47,8 @@ exports.getAdminAnalytics = async (req, res) => {
       .limit(10);
 
     // 2. Branch Breakdown (Registrations & Revenue)
-    const branches = ['Maharagama', 'Werahara', 'Delgoda'];
+    const branchDocs = await Branch.find({}).sort({ name: 1 }).lean();
+    const branches = branchDocs.length > 0 ? branchDocs.map((b) => b.name) : ['Maharagama', 'Werahara', 'Delgoda'];
     const branchData = await Promise.all(
       branches.map(async (bName) => {
         const studentCount = await Student.countDocuments({ branch: bName });

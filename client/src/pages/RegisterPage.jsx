@@ -196,6 +196,26 @@ export default function RegisterPage() {
     confirmPassword: '',
   });
 
+  const [activeBranches, setActiveBranches] = useState([]);
+
+  useEffect(() => {
+    const fetchActiveBranches = async () => {
+      try {
+        const res = await api.get('/branches/active');
+        if (res.data?.success && Array.isArray(res.data.branches) && res.data.branches.length > 0) {
+          setActiveBranches(res.data.branches);
+          setFormData((prev) => {
+            const hasCurrent = res.data.branches.some((b) => b.name === prev.branch);
+            return hasCurrent ? prev : { ...prev, branch: res.data.branches[0].name };
+          });
+        }
+      } catch (err) {
+        console.warn('Could not load branches in register page:', err);
+      }
+    };
+    fetchActiveBranches();
+  }, []);
+
   const calculatedAge = useMemo(() => {
     if (!formData.dob) return null;
     const dob = new Date(formData.dob);
@@ -607,9 +627,19 @@ export default function RegisterPage() {
                   required
                   className="w-full bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl px-4 py-3 text-sm text-[#152026] font-bold focus:outline-none focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1] transition-all cursor-pointer"
                 >
-                  <option value="Maharagama">Maharagama (Headquarters & Training Ground)</option>
-                  <option value="Werahara">Werahara (DMT Central Exam Hub)</option>
-                  <option value="Delgoda">Delgoda (Gampaha District Center)</option>
+                  {activeBranches.length > 0 ? (
+                    activeBranches.map((b) => (
+                      <option key={b._id} value={b.name}>
+                        {b.name} ({b.code}) - {b.address}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Maharagama">Maharagama (Headquarters & Training Ground)</option>
+                      <option value="Werahara">Werahara (DMT Central Exam Hub)</option>
+                      <option value="Delgoda">Delgoda (Gampaha District Center)</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
