@@ -29,12 +29,12 @@ export const AuthProvider = ({ children }) => {
             setUser(res.data.user);
             const enrichedStudent = res.data.student
               ? {
-                  ...res.data.student,
-                  hasSubmittedPayment: res.data.hasSubmittedPayment,
-                  requiresPayment: res.data.requiresPayment,
-                  latestPayment: res.data.latestPayment,
-                  payment_status: res.data.payment_status,
-                }
+                ...res.data.student,
+                hasSubmittedPayment: res.data.hasSubmittedPayment,
+                requiresPayment: res.data.requiresPayment,
+                latestPayment: res.data.latestPayment,
+                payment_status: res.data.payment_status,
+              }
               : null;
             setStudent(enrichedStudent);
             setMustChangePassword(Boolean(res.data.user?.mustChangePassword));
@@ -80,12 +80,12 @@ export const AuthProvider = ({ children }) => {
         } = res.data;
         const enrichedStudent = student
           ? {
-              ...student,
-              hasSubmittedPayment,
-              requiresPayment,
-              latestPayment,
-              payment_status,
-            }
+            ...student,
+            hasSubmittedPayment,
+            requiresPayment,
+            latestPayment,
+            payment_status,
+          }
           : null;
         setToken(token);
         setUser(user);

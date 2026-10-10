@@ -522,8 +522,8 @@ exports.login = async (req, res) => {
     const paymentStatus = isVerified
       ? 'Verified'
       : hasSubmittedPayment
-      ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
-      : 'none';
+        ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
+        : 'none';
 
     return res.status(200).json({
       success: true,
@@ -837,8 +837,8 @@ exports.getMe = async (req, res) => {
     const paymentStatus = isVerified
       ? 'Verified'
       : hasSubmittedPayment
-      ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
-      : 'none';
+        ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
+        : 'none';
 
     return res.status(200).json({
       success: true,

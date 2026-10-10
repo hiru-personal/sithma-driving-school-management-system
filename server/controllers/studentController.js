@@ -897,8 +897,8 @@ exports.recordTrialAttempt = async (req, res) => {
     const message = normResult === 'passed'
       ? `Trial attempt #${attemptNumber} recorded as PASSED! License process completed.`
       : attemptsRemaining > 0
-      ? `Trial attempt #${attemptNumber} recorded as ${normResult}. Student has ${attemptsRemaining} attempt(s) remaining.`
-      : `All 3 Trial attempts failed. Registration cycle has been automatically cancelled.`;
+        ? `Trial attempt #${attemptNumber} recorded as ${normResult}. Student has ${attemptsRemaining} attempt(s) remaining.`
+        : `All 3 Trial attempts failed. Registration cycle has been automatically cancelled.`;
 
     return res.status(200).json({
       success: true,
@@ -935,7 +935,7 @@ exports.checkHeavyVehicleEligibility = async (req, res) => {
       const twoYearsAgo = new Date();
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
       isEligible = new Date(student.lightVehicleLicenseDate) <= twoYearsAgo;
-      
+
       message = isEligible
         ? 'Eligible for Heavy Vehicle (Bus) package (License held for 2+ years).'
         : 'Ineligible: Must hold Light Vehicle license for at least 2 full years.';
@@ -1170,9 +1170,8 @@ exports.toggleAdvancePaid = async (req, res) => {
         recipientId: student.userId,
         recipientRole: 'student',
         title: '⚠️ Advance Payment Slip Rejected',
-        message: `Your advance payment slip was rejected by staff. Reason: ${
-          rejectionReason || 'Please verify deposit details and re-upload a clear slip.'
-        }`,
+        message: `Your advance payment slip was rejected by staff. Reason: ${rejectionReason || 'Please verify deposit details and re-upload a clear slip.'
+          }`,
         type: 'payment',
         link: '/student/dashboard',
       });
@@ -1608,9 +1607,8 @@ exports.recordExamAttempt = async (req, res) => {
       await student.save();
       return res.status(400).json({
         success: false,
-        message: `Learner license has expired (18-month validity ended on ${
-          student.learnerLicenseExpiryDate ? new Date(student.learnerLicenseExpiryDate).toLocaleDateString() : 'N/A'
-        }). Please re-register to start a new registration cycle.`,
+        message: `Learner license has expired (18-month validity ended on ${student.learnerLicenseExpiryDate ? new Date(student.learnerLicenseExpiryDate).toLocaleDateString() : 'N/A'
+          }). Please re-register to start a new registration cycle.`,
         isExpired: true,
         isCancelled: true,
       });
@@ -1802,8 +1800,8 @@ exports.recordExamAttempt = async (req, res) => {
       message: result === 'passed'
         ? `Congratulations! Exam passed with ${numericMarks !== null ? numericMarks : ''} marks. Practical lessons are now unlocked!`
         : (isAutoCancelled
-            ? 'All 3 attempts failed. Registration cycle closed. Please register again.'
-            : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining.`),
+          ? 'All 3 attempts failed. Registration cycle closed. Please register again.'
+          : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining.`),
       student: populatedStudent,
       isAutoCancelled,
       attemptsRemaining: Math.max(0, 3 - populatedStudent.learnerExamAttempts.length),
@@ -2686,8 +2684,8 @@ exports.getAllRescheduleRequests = async (req, res) => {
       branch && branch !== 'All'
         ? branch
         : req.user.role === 'staff' && req.user.branch && req.user.branch !== 'All'
-        ? req.user.branch
-        : null;
+          ? req.user.branch
+          : null;
 
     if (effectiveBranch) {
       const branchStudents = await Student.find({ branch: effectiveBranch }).select('_id');
@@ -3300,16 +3298,16 @@ exports.updateStudentDetails = async (req, res) => {
       student: sanitizeStudentForType(updatedStudent),
       user: user
         ? {
-            id: user._id,
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            nic: user.nic,
-            branch: user.branch,
-            status: user.status,
-            account_status: user.account_status,
-          }
+          id: user._id,
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          nic: user.nic,
+          branch: user.branch,
+          status: user.status,
+          account_status: user.account_status,
+        }
         : null,
     });
   } catch (error) {

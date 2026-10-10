@@ -524,13 +524,12 @@ export default function RegisterPage() {
                 Calculated Age (DMT 18+ Rule)
               </label>
               <div
-                className={`min-h-[46px] py-2 rounded-xl flex items-center px-4 transition-all duration-300 border ${
-                  calculatedAge === null
+                className={`min-h-[46px] py-2 rounded-xl flex items-center px-4 transition-all duration-300 border ${calculatedAge === null
                     ? 'bg-[#FAFCFE] border-[#D4EEF8] text-[#6A97C0]'
                     : calculatedAge >= 18
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : 'bg-rose-50 border-rose-200 text-rose-800'
-                }`}
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-rose-50 border-rose-200 text-rose-800'
+                  }`}
               >
                 {calculatedAge === null ? (
                   <div className="text-xs text-[#6A97C0] flex items-center gap-2">
@@ -669,11 +668,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="••••••••"
                   required
-                  className={`w-full bg-[#FAFCFE] rounded-xl pl-4 pr-11 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none transition-all border ${
-                    passwordsMatch
+                  className={`w-full bg-[#FAFCFE] rounded-xl pl-4 pr-11 py-3 text-sm text-[#152026] font-medium placeholder-[#6A97C0] focus:outline-none transition-all border ${passwordsMatch
                       ? 'border-[#D4EEF8] focus:border-[#1B3D59] focus:ring-2 focus:ring-[#B3D5F1]'
                       : 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
@@ -734,11 +732,10 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => handleTierChange('C')}
-                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
-                    selectedTier === 'C'
+                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${selectedTier === 'C'
                       ? 'bg-[#1B3D59] text-white shadow-sm font-black'
                       : 'text-[#152026] hover:bg-[#D4EEF8]/40'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-1 text-[11px] sm:text-xs">
                     <Layers className="w-3.5 h-3.5" /> Full Packages
@@ -749,11 +746,10 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => handleTierChange('A')}
-                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
-                    selectedTier === 'A'
+                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${selectedTier === 'A'
                       ? 'bg-[#1B3D59] text-white shadow-sm font-black'
                       : 'text-[#152026] hover:bg-[#D4EEF8]/40'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-1 text-[11px] sm:text-xs">
                     <Award className="w-3.5 h-3.5" /> Individual / Private
@@ -764,11 +760,10 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => handleTierChange('B')}
-                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
-                    selectedTier === 'B'
+                  className={`py-2.5 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${selectedTier === 'B'
                       ? 'bg-[#1B3D59] text-white shadow-sm font-black'
                       : 'text-[#152026] hover:bg-[#D4EEF8]/40'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-1 text-[11px] sm:text-xs">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Standard Single
@@ -785,21 +780,19 @@ export default function RegisterPage() {
                     <div
                       key={pkg.type}
                       onClick={() => setSelectedPackageType(pkg.type)}
-                      className={`cursor-pointer rounded-2xl p-4 border transition-all relative flex flex-col justify-between ${
-                        isSelected
+                      className={`cursor-pointer rounded-2xl p-4 border transition-all relative flex flex-col justify-between ${isSelected
                           ? 'bg-[#FAFCFE] border-2 border-[#1B3D59] shadow-sm'
                           : 'bg-white border border-[#D4EEF8] hover:border-[#6A97C0]'
-                      }`}
+                        }`}
                     >
                       <div className="space-y-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2.5">
                             <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                                isSelected
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${isSelected
                                   ? 'bg-[#1B3D59] text-white shadow-sm'
                                   : 'bg-[#D4EEF8] text-[#1B3D59]'
-                              }`}
+                                }`}
                             >
                               {getVehicleIcon(pkg.vehicleCategory || pkg.type)}
                             </div>
@@ -814,11 +807,10 @@ export default function RegisterPage() {
                           </div>
 
                           <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
-                              isSelected
+                            className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${isSelected
                                 ? 'bg-[#1B3D59] text-white shadow-xs'
                                 : 'border border-[#D4EEF8]'
-                            }`}
+                              }`}
                           >
                             {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
