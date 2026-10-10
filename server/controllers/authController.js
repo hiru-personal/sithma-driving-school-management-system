@@ -185,10 +185,15 @@ exports.registerStudent = async (req, res) => {
 
     // Database connectivity check
     if (mongoose.connection.readyState !== 1) {
+      const isAtlas = process.env.MONGO_URI && process.env.MONGO_URI.includes('mongodb.net');
       return res.status(503).json({
         success: false,
-        message: 'Database is offline. Please whitelist your current IP address in MongoDB Atlas Network Access.',
-        error: 'MongoDB Atlas connection required. Please add your current IP or allow 0.0.0.0/0 in cloud.mongodb.com > Network Access.',
+        message: isAtlas
+          ? 'Database is offline. Please whitelist your current IP address in MongoDB Atlas Network Access.'
+          : 'Database is offline. Please make sure MongoDB is running locally on 127.0.0.1:27017.',
+        error: isAtlas
+          ? 'MongoDB Atlas connection required. Please add your current IP or allow 0.0.0.0/0 in cloud.mongodb.com > Network Access.'
+          : 'Local MongoDB service unreachable on 127.0.0.1:27017.',
       });
     }
 
@@ -398,10 +403,15 @@ exports.login = async (req, res) => {
 
     // Database connectivity check
     if (mongoose.connection.readyState !== 1) {
+      const isAtlas = process.env.MONGO_URI && process.env.MONGO_URI.includes('mongodb.net');
       return res.status(503).json({
         success: false,
-        message: 'Database is offline. Please whitelist your current IP address in MongoDB Atlas Network Access.',
-        error: 'MongoDB Atlas connection required. Please add your current IP or allow 0.0.0.0/0 in cloud.mongodb.com > Network Access.',
+        message: isAtlas
+          ? 'Database is offline. Please whitelist your current IP address in MongoDB Atlas Network Access.'
+          : 'Database is offline. Please make sure MongoDB is running locally on 127.0.0.1:27017.',
+        error: isAtlas
+          ? 'MongoDB Atlas connection required. Please add your current IP or allow 0.0.0.0/0 in cloud.mongodb.com > Network Access.'
+          : 'Local MongoDB service unreachable on 127.0.0.1:27017.',
       });
     }
 
@@ -526,8 +536,8 @@ exports.login = async (req, res) => {
     const paymentStatus = isVerified
       ? 'Verified'
       : hasSubmittedPayment
-      ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
-      : 'none';
+        ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
+        : 'none';
 
     const studentData = sanitizeStudentForType(studentProfile);
     if (studentData) {
@@ -849,8 +859,8 @@ exports.getMe = async (req, res) => {
     const paymentStatus = isVerified
       ? 'Verified'
       : hasSubmittedPayment
-      ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
-      : 'none';
+        ? (latestPayment?.payment_status || (paymentMethod === 'physical_branch' ? 'Pending Branch Payment' : 'Pending Verification'))
+        : 'none';
 
     const studentData = sanitizeStudentForType(studentProfile);
     if (studentData) {

@@ -902,8 +902,8 @@ exports.recordTrialAttempt = async (req, res) => {
     const message = normResult === 'passed'
       ? `Trial attempt #${attemptNumber} recorded as PASSED! License process completed.`
       : attemptsRemaining > 0
-      ? `Trial attempt #${attemptNumber} recorded as ${normResult}. Student has ${attemptsRemaining} attempt(s) remaining.`
-      : `All 3 Trial attempts failed. Registration cycle has been automatically cancelled.`;
+        ? `Trial attempt #${attemptNumber} recorded as ${normResult}. Student has ${attemptsRemaining} attempt(s) remaining.`
+        : `All 3 Trial attempts failed. Registration cycle has been automatically cancelled.`;
 
     return res.status(200).json({
       success: true,
@@ -940,7 +940,7 @@ exports.checkHeavyVehicleEligibility = async (req, res) => {
       const twoYearsAgo = new Date();
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
       isEligible = new Date(student.lightVehicleLicenseDate) <= twoYearsAgo;
-      
+
       message = isEligible
         ? 'Eligible for Heavy Vehicle (Bus) package (License held for 2+ years).'
         : 'Ineligible: Must hold Light Vehicle license for at least 2 full years.';
@@ -1175,9 +1175,8 @@ exports.toggleAdvancePaid = async (req, res) => {
         recipientId: student.userId,
         recipientRole: 'student',
         title: '⚠️ Advance Payment Slip Rejected',
-        message: `Your advance payment slip was rejected by staff. Reason: ${
-          rejectionReason || 'Please verify deposit details and re-upload a clear slip.'
-        }`,
+        message: `Your advance payment slip was rejected by staff. Reason: ${rejectionReason || 'Please verify deposit details and re-upload a clear slip.'
+          }`,
         type: 'payment',
         link: '/student/dashboard',
       });
@@ -1617,9 +1616,8 @@ exports.recordExamAttempt = async (req, res) => {
       await student.save();
       return res.status(400).json({
         success: false,
-        message: `Learner license has expired (18-month validity ended on ${
-          student.learnerLicenseExpiryDate ? new Date(student.learnerLicenseExpiryDate).toLocaleDateString() : 'N/A'
-        }). Please re-register to start a new registration cycle.`,
+        message: `Learner license has expired (18-month validity ended on ${student.learnerLicenseExpiryDate ? new Date(student.learnerLicenseExpiryDate).toLocaleDateString() : 'N/A'
+          }). Please re-register to start a new registration cycle.`,
         isExpired: true,
         isCancelled: true,
       });
@@ -1811,8 +1809,8 @@ exports.recordExamAttempt = async (req, res) => {
       message: result === 'passed'
         ? `Congratulations! Exam passed with ${numericMarks !== null ? numericMarks : ''} marks. Practical lessons are now unlocked!`
         : (isAutoCancelled
-            ? 'All 3 attempts failed. Registration cycle closed. Please register again.'
-            : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining.`),
+          ? 'All 3 attempts failed. Registration cycle closed. Please register again.'
+          : `Attempt ${attemptNumber} recorded as failed. You have ${3 - attemptNumber} attempt(s) remaining.`),
       student: populatedStudent,
       isAutoCancelled,
       attemptsRemaining: Math.max(0, 3 - populatedStudent.learnerExamAttempts.length),
@@ -2695,8 +2693,8 @@ exports.getAllRescheduleRequests = async (req, res) => {
       branch && branch !== 'All'
         ? branch
         : req.user.role === 'staff' && req.user.branch && req.user.branch !== 'All'
-        ? req.user.branch
-        : null;
+          ? req.user.branch
+          : null;
 
     if (effectiveBranch) {
       const branchStudents = await Student.find({ branch: effectiveBranch }).select('_id');
@@ -3085,4 +3083,249 @@ exports.uploadStudentProfilePhoto = async (req, res) => {
     });
   }
 };
+
+// @desc    Admin / Staff updates full student details (personal, academic, status, package)
+// @route   PUT /api/students/:id or PATCH /api/students/:id
+// @access  Admin, Staff
+exports.updateStudentDetails = async (req, res) => {
+  try {
+    let student = await Student.findById(req.params.id);
+    if (!student) {
+      student = await Student.findOne({ userId: req.params.id });
+    }
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student record not found',
+      });
+    }
+
+    let user = await User.findById(student.userId);
+
+    const {
+      name,
+      studentName,
+      email,
+      phone,
+      nic,
+      dob,
+      dateOfBirth,
+      branch,
+      studentType,
+      student_type,
+      registrationStatus,
+      accountStatus,
+      account_status,
+      advancePaymentStatus,
+      isAdvancePaid,
+      trial_date,
+      trialDate,
+      learnerExamStatus,
+      packageType,
+      packageId,
+      lessonsTotal,
+      lessonsUsed,
+      priceTotal,
+      notes,
+    } = req.body;
+
+    const resolvedName = (name || studentName || '').trim();
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
+
+    // Check email uniqueness if email provided and changed
+    if (cleanEmail && user && cleanEmail !== (user.email || '').toLowerCase()) {
+      const existingUser = await User.findOne({
+        email: cleanEmail,
+        _id: { $ne: user._id },
+      });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email address already exists in the system.',
+        });
+      }
+    }
+
+    // Calculate age if dob provided
+    const birthDateVal = dob || dateOfBirth;
+    let computedAge = student.age;
+    let parsedDob = student.dob;
+    if (birthDateVal) {
+      const d = new Date(birthDateVal);
+      if (!isNaN(d.getTime())) {
+        parsedDob = d;
+        const today = new Date();
+        let a = today.getFullYear() - d.getFullYear();
+        const monthDiff = today.getMonth() - d.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
+          a--;
+        }
+        computedAge = a >= 0 ? a : null;
+      }
+    }
+
+    // Update student fields
+    if (resolvedName) {
+      student.name = resolvedName;
+      student.studentName = resolvedName;
+    }
+    if (cleanEmail) {
+      student.email = cleanEmail;
+    }
+    if (phone !== undefined) {
+      student.phone = phone.trim();
+    }
+    if (nic !== undefined) {
+      student.nic = nic.trim();
+    }
+    if (parsedDob) {
+      student.dob = parsedDob;
+      student.dateOfBirth = parsedDob;
+      student.age = computedAge;
+    }
+    if (branch && ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)) {
+      student.branch = branch;
+    }
+
+    const resolvedType = studentType || student_type;
+    if (resolvedType) {
+      const isType2 = resolvedType === 'Type 2' || resolvedType === 'Type2_TrialReady';
+      student.studentType = isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner';
+      student.student_type = isType2 ? 'Type 2' : 'Type 1';
+      student.trialEligible = isType2;
+      student.trial_eligible = isType2;
+    }
+
+    if (registrationStatus && ['pending_payment', 'registered', 'in_progress', 'completed', 'cancelled'].includes(registrationStatus)) {
+      student.registrationStatus = registrationStatus;
+    }
+
+    if (accountStatus) {
+      student.accountStatus = accountStatus;
+      if (accountStatus === 'active') {
+        student.account_status = 'Verified';
+      } else if (accountStatus === 'inactive' || accountStatus === 'deactivated' || accountStatus === 'suspended') {
+        student.account_status = 'Deactivated';
+      }
+    }
+
+    if (account_status) {
+      student.account_status = account_status;
+    }
+
+    if (advancePaymentStatus) {
+      student.advancePaymentStatus = advancePaymentStatus;
+      if (advancePaymentStatus === 'verified') {
+        student.isAdvancePaid = true;
+        student.isPremium = true;
+      } else if (advancePaymentStatus === 'pending' || advancePaymentStatus === 'none' || advancePaymentStatus === 'rejected') {
+        student.isAdvancePaid = isAdvancePaid !== undefined ? Boolean(isAdvancePaid) : false;
+      }
+    } else if (isAdvancePaid !== undefined) {
+      student.isAdvancePaid = Boolean(isAdvancePaid);
+      if (Boolean(isAdvancePaid)) {
+        student.advancePaymentStatus = 'verified';
+        student.isPremium = true;
+      }
+    }
+
+    const resolvedTrialDate = trial_date || trialDate;
+    if (resolvedTrialDate) {
+      const td = new Date(resolvedTrialDate);
+      if (!isNaN(td.getTime())) {
+        student.trial_date = td;
+        if (!student.trial) student.trial = {};
+        student.trial.trialDate = td;
+      }
+    }
+
+    if (learnerExamStatus && ['not_taken', 'passed', 'failed'].includes(learnerExamStatus)) {
+      student.learnerExamStatus = learnerExamStatus;
+      if (learnerExamStatus === 'passed') {
+        if (!student.dmtDates) student.dmtDates = {};
+        student.dmtDates.learnerExamPassed = true;
+      }
+    }
+
+    // Package update
+    if (packageType || packageId || lessonsTotal !== undefined || priceTotal !== undefined) {
+      if (!student.package) student.package = {};
+      if (packageType) student.package.type = packageType;
+      if (lessonsTotal !== undefined) student.package.lessonsTotal = Number(lessonsTotal) || 0;
+      if (lessonsUsed !== undefined) student.package.lessonsUsed = Number(lessonsUsed) || 0;
+      if (priceTotal !== undefined) student.package.priceTotal = Number(priceTotal) || 0;
+
+      // Link packageId if found
+      if (packageId) {
+        student.package.packageId = packageId;
+      } else if (packageType) {
+        const pkgDoc = await Package.findOne({ type: packageType });
+        if (pkgDoc) {
+          student.package.packageId = pkgDoc._id;
+          if (lessonsTotal === undefined) student.package.lessonsTotal = pkgDoc.lessons;
+          if (priceTotal === undefined) student.package.priceTotal = pkgDoc.price;
+        }
+      }
+    }
+
+    student.lastActivityDate = new Date();
+    await student.save();
+
+    // Synchronize parent User record
+    if (user) {
+      if (resolvedName) user.name = resolvedName;
+      if (cleanEmail) user.email = cleanEmail;
+      if (phone !== undefined) user.phone = phone.trim();
+      if (nic !== undefined) user.nic = nic.trim();
+      if (parsedDob) {
+        user.dob = parsedDob;
+        user.dateOfBirth = parsedDob;
+        user.age = computedAge;
+      }
+      if (branch && ['Maharagama', 'Werahara', 'Delgoda'].includes(branch)) {
+        user.branch = branch;
+      }
+      if (resolvedType) {
+        user.student_type = (resolvedType === 'Type 2' || resolvedType === 'Type2_TrialReady') ? 'Type 2' : 'Type 1';
+      }
+      if (accountStatus) {
+        user.status = (accountStatus === 'Verified' || accountStatus === 'active') ? 'active' : accountStatus;
+      }
+      if (student.account_status) {
+        user.account_status = student.account_status;
+      }
+      await user.save();
+    }
+
+    const updatedStudent = await Student.findById(student._id)
+      .populate('userId', 'name email phone role branch status account_status createdAt')
+      .populate('package.packageId');
+
+    return res.status(200).json({
+      success: true,
+      message: `Student details for '${student.name || (user && user.name)}' updated successfully in database.`,
+      student: sanitizeStudentForType(updatedStudent),
+      user: user
+        ? {
+          id: user._id,
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          nic: user.nic,
+          branch: user.branch,
+          status: user.status,
+          account_status: user.account_status,
+        }
+        : null,
+    });
+  } catch (error) {
+    console.error('Update student details error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update student details in database',
+    });
+  }
+};
+
 

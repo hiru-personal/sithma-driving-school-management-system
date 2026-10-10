@@ -1,8 +1,8 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
-const LOCAL_URI = 'mongodb://127.0.0.1:27017/sithma-driving-school';
-const ATLAS_URI = process.env.MONGO_URI;
+const LOCAL_URI = process.env.LOCAL_MONGO_URI || 'mongodb://127.0.0.1:27017/sithma-driving-school';
+const ATLAS_URI = process.env.ATLAS_URI || (process.env.MONGO_URI && process.env.MONGO_URI.includes('mongodb+srv') ? process.env.MONGO_URI : null);
 
 const COLLECTIONS_TO_SYNC = [
   'packages',
@@ -18,7 +18,9 @@ const COLLECTIONS_TO_SYNC = [
 
 async function syncLocalToAtlas() {
   if (!ATLAS_URI) {
-    console.error('❌ Error: MONGO_URI is not defined in server/.env');
+    console.error('❌ Error: No MongoDB Atlas connection URI provided.');
+    console.error('👉 Please specify your MongoDB Atlas connection string (mongodb+srv://...) as ATLAS_URI in server/.env');
+    console.error('   Example: ATLAS_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/sithma-driving-school?retryWrites=true&w=majority\n');
     process.exit(1);
   }
 

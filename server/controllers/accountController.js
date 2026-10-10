@@ -123,6 +123,7 @@ exports.createStaffAccount = async (req, res) => {
       passwordHash,
       role: 'staff',
       status: 'active', // Active immediately per requirements
+      account_status: 'Verified',
       mustChangePassword: true, // Must change password on first login
       createdBy: req.user._id,
     });
@@ -131,6 +132,7 @@ exports.createStaffAccount = async (req, res) => {
       success: true,
       message: `Staff (Data Entry Officer) account '${cleanUsername}' created successfully. Forced password change is set for their first login.`,
       user: {
+        _id: newStaff._id,
         id: newStaff._id,
         name: newStaff.name,
         username: newStaff.username,
@@ -140,7 +142,10 @@ exports.createStaffAccount = async (req, res) => {
         role: newStaff.role,
         branch: newStaff.branch,
         status: newStaff.status,
+        account_status: newStaff.account_status,
         mustChangePassword: newStaff.mustChangePassword,
+        createdAt: newStaff.createdAt,
+        updatedAt: newStaff.updatedAt,
       },
     });
   } catch (error) {
@@ -211,6 +216,7 @@ exports.createInstructorAccount = async (req, res) => {
       passwordHash,
       role: 'instructor',
       status: 'active', // Active immediately
+      account_status: 'Verified',
       mustChangePassword: true, // Force change on first login
       createdBy: req.user._id,
     });
@@ -219,6 +225,7 @@ exports.createInstructorAccount = async (req, res) => {
       success: true,
       message: `Instructor account '${cleanUsername}' created successfully. Forced password change is set for their first login.`,
       user: {
+        _id: newInstructor._id,
         id: newInstructor._id,
         name: newInstructor.name,
         username: newInstructor.username,
@@ -229,7 +236,10 @@ exports.createInstructorAccount = async (req, res) => {
         branch: newInstructor.branch,
         teachingCategories: newInstructor.teachingCategories,
         status: newInstructor.status,
+        account_status: newInstructor.account_status,
         mustChangePassword: newInstructor.mustChangePassword,
+        createdAt: newInstructor.createdAt,
+        updatedAt: newInstructor.updatedAt,
       },
     });
   } catch (error) {
@@ -238,6 +248,163 @@ exports.createInstructorAccount = async (req, res) => {
       success: false,
       message: 'Failed to create instructor account',
       error: error.message,
+    });
+  }
+};
+
+// @desc    Admin creates any user account (Staff, Instructor, Student, Admin)
+// @route   POST /api/admin/accounts or POST /api/admin/accounts/user or POST /api/admin/users
+// @access  Admin only
+exports.createUserAccount = async (req, res) => {
+  try {
+    const {
+      name,
+      nic,
+      phone,
+      branch = 'Maharagama',
+      role = 'staff',
+      username,
+      email,
+      initialPassword,
+      password,
+      vehicleCategories,
+      teachingCategories,
+      dob,
+      dateOfBirth,
+      studentType = 'Type 1',
+    } = req.body;
+
+    const pwd = initialPassword || password;
+
+    if (!name || !nic || !phone || !branch || !username || !pwd) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required: Full name, NIC, phone number, branch, username, and initial password.',
+      });
+    }
+
+    const validRoles = ['staff', 'instructor', 'student', 'admin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid role specified. Must be one of: ${validRoles.join(', ')}`,
+      });
+    }
+
+    const cleanUsername = username.toLowerCase().trim();
+    const defaultDomain = role === 'student' ? '@gmail.com' : '@sithma.lk';
+    const cleanEmail = (email || `${cleanUsername}${defaultDomain}`).toLowerCase().trim();
+
+    // Check uniqueness
+    const existing = await User.findOne({
+      $or: [{ username: cleanUsername }, { email: cleanEmail }],
+    });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message:
+          existing.username === cleanUsername
+            ? 'Username is already taken by another user.'
+            : 'Email address is already registered in the system.',
+      });
+    }
+
+    // Password policy
+    const policy = validatePasswordPolicy(pwd, cleanUsername, cleanEmail);
+    if (!policy.valid) {
+      return res.status(400).json({ success: false, message: policy.message });
+    }
+
+    const resolvedCategories = vehicleCategories || teachingCategories || 'Light';
+    const passwordHash = await User.hashPassword(pwd);
+
+    const birthDate = (dob || dateOfBirth) ? new Date(dob || dateOfBirth) : null;
+    let computedAge = null;
+    if (birthDate && !isNaN(birthDate.getTime())) {
+      const today = new Date();
+      computedAge = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        computedAge--;
+      }
+    }
+
+    const newUser = await User.create({
+      name: name.trim(),
+      nic: nic.trim(),
+      phone: phone.trim(),
+      branch,
+      username: cleanUsername,
+      email: cleanEmail,
+      passwordHash,
+      role,
+      status: 'active',
+      account_status: 'Verified',
+      teachingCategories: role === 'instructor' ? resolvedCategories : undefined,
+      dateOfBirth: birthDate,
+      dob: birthDate,
+      age: computedAge,
+      student_type: role === 'student' ? (studentType === 'Type 2' ? 'Type 2' : 'Type 1') : undefined,
+      mustChangePassword: role !== 'student',
+      createdBy: req.user._id,
+    });
+
+    let createdStudent = null;
+    if (role === 'student') {
+      const isType2 = studentType === 'Type 2' || studentType === 'Type2_TrialReady';
+      createdStudent = await Student.create({
+        userId: newUser._id,
+        name: newUser.name,
+        studentName: newUser.name,
+        email: cleanEmail,
+        phone: phone.trim(),
+        nic: nic.trim(),
+        dob: birthDate,
+        dateOfBirth: birthDate,
+        age: computedAge,
+        studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
+        student_type: isType2 ? 'Type 2' : 'Type 1',
+        branch,
+        registrationStatus: 'registered',
+        accountStatus: 'active',
+        account_status: 'Verified',
+        advancePaymentStatus: 'verified',
+        isAdvancePaid: true,
+        isPremium: true,
+        trialEligible: isType2,
+        createdBy: req.user._id,
+        verifiedBy: req.user._id,
+        verifiedAt: new Date(),
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `${role.charAt(0).toUpperCase() + role.slice(1)} account '${cleanUsername}' created and saved to database successfully.`,
+      user: {
+        _id: newUser._id,
+        id: newUser._id,
+        name: newUser.name,
+        username: newUser.username,
+        email: newUser.email,
+        phone: newUser.phone,
+        nic: newUser.nic,
+        role: newUser.role,
+        branch: newUser.branch,
+        status: newUser.status,
+        account_status: newUser.account_status,
+        teachingCategories: newUser.teachingCategories,
+        mustChangePassword: newUser.mustChangePassword,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt,
+      },
+      student: createdStudent,
+    });
+  } catch (error) {
+    console.error('Create user account error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create user account in database',
     });
   }
 };
@@ -521,3 +688,179 @@ exports.verifyStudentAccount = async (req, res) => {
   }
 };
 
+// @desc    Admin updates user account details
+// @route   PUT /api/admin/accounts/:id or PATCH /api/admin/accounts/:id
+// @access  Admin only
+exports.updateUserAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found' });
+    }
+
+    const {
+      name,
+      username,
+      email,
+      phone,
+      nic,
+      branch,
+      role,
+      status,
+      account_status,
+      teachingCategories,
+      studentType,
+      student_type,
+      dob,
+      dateOfBirth,
+    } = req.body;
+
+    // Check unique username if changing
+    if (username && username.toLowerCase().trim() !== (user.username || '').toLowerCase()) {
+      const cleanUsername = username.toLowerCase().trim();
+      const existingUser = await User.findOne({ username: cleanUsername, _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is already taken by another account.',
+        });
+      }
+      user.username = cleanUsername;
+    }
+
+    // Check unique email if changing
+    if (email && email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const cleanEmail = email.toLowerCase().trim();
+      const existingEmail = await User.findOne({ email: cleanEmail, _id: { $ne: user._id } });
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is already registered to another account.',
+        });
+      }
+      user.email = cleanEmail;
+    }
+
+    if (name && name.trim()) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (nic !== undefined) user.nic = nic.trim();
+    if (branch && ['Maharagama', 'Werahara', 'Delgoda', 'All'].includes(branch)) {
+      user.branch = branch;
+    }
+
+    // Role check: prevent removing admin status from oneself
+    if (role && ['staff', 'instructor', 'student', 'admin'].includes(role)) {
+      if (user._id.toString() === req.user._id.toString() && role !== 'admin') {
+        return res.status(400).json({
+          success: false,
+          message: 'You cannot remove administrative privileges from your own account.',
+        });
+      }
+      user.role = role;
+    }
+
+    if (status && ['active', 'inactive', 'pending_verification', 'suspended', 'cancelled'].includes(status)) {
+      user.status = status;
+      if (status === 'active' && (!account_status || account_status === 'Deactivated')) {
+        user.account_status = 'Verified';
+      } else if ((status === 'inactive' || status === 'suspended') && (!account_status || account_status === 'Verified')) {
+        user.account_status = 'Deactivated';
+      }
+    }
+
+    if (account_status && ['Unverified / Pending Payment', 'Verified', 'Deactivated', 'Cancelled'].includes(account_status)) {
+      user.account_status = account_status;
+    }
+
+    if (teachingCategories && ['Light', 'Heavy', 'Both'].includes(teachingCategories)) {
+      user.teachingCategories = teachingCategories;
+    }
+
+    const resolvedStudentType = studentType || student_type;
+    if (resolvedStudentType) {
+      const normalized = (resolvedStudentType === 'Type 2' || resolvedStudentType === 'Type2_TrialReady') ? 'Type 2' : 'Type 1';
+      user.student_type = normalized;
+    }
+
+    const birthDateVal = dob || dateOfBirth;
+    if (birthDateVal) {
+      const parsedDob = new Date(birthDateVal);
+      if (!isNaN(parsedDob.getTime())) {
+        user.dob = parsedDob;
+        user.dateOfBirth = parsedDob;
+        const today = new Date();
+        let computedAge = today.getFullYear() - parsedDob.getFullYear();
+        const monthDiff = today.getMonth() - parsedDob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsedDob.getDate())) {
+          computedAge--;
+        }
+        user.age = computedAge >= 0 ? computedAge : null;
+      }
+    }
+
+    await user.save();
+
+    // Cascading sync to Student record if role is student or student record exists
+    let syncedStudent = null;
+    const existingStudent = await Student.findOne({ userId: user._id });
+    if (existingStudent) {
+      existingStudent.name = user.name;
+      existingStudent.studentName = user.name;
+      existingStudent.email = user.email;
+      existingStudent.phone = user.phone;
+      existingStudent.nic = user.nic;
+      if (user.branch && user.branch !== 'All') {
+        existingStudent.branch = user.branch;
+      }
+      if (user.dob) {
+        existingStudent.dob = user.dob;
+        existingStudent.dateOfBirth = user.dateOfBirth;
+        existingStudent.age = user.age;
+      }
+      if (resolvedStudentType) {
+        existingStudent.student_type = (resolvedStudentType === 'Type 2' || resolvedStudentType === 'Type2_TrialReady') ? 'Type 2' : 'Type 1';
+        existingStudent.studentType = (resolvedStudentType === 'Type 2' || resolvedStudentType === 'Type2_TrialReady') ? 'Type2_TrialReady' : 'Type1_NewLearner';
+      }
+      if (user.status) {
+        existingStudent.accountStatus = user.status;
+      }
+      if (user.account_status) {
+        existingStudent.account_status = user.account_status;
+      }
+      await existingStudent.save();
+      syncedStudent = existingStudent;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `User account '${user.name}' updated successfully in database.`,
+      user: {
+        _id: user._id,
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        nic: user.nic,
+        branch: user.branch,
+        role: user.role,
+        status: user.status,
+        account_status: user.account_status,
+        teachingCategories: user.teachingCategories,
+        student_type: user.student_type,
+        dob: user.dob,
+        dateOfBirth: user.dateOfBirth,
+        age: user.age,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      student: syncedStudent,
+    });
+  } catch (error) {
+    console.error('Update user account error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update user account in database',
+    });
+  }
+};

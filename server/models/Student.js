@@ -492,7 +492,7 @@ const studentSchema = new mongoose.Schema(
     // Heavy Vehicle Eligibility & Prior Licensing
     lightVehicleLicenseDate: { type: Date, default: null },
     heavyVehicleEligible: { type: Boolean, default: false },
-    
+
     // Package & Lesson Balance (Selected in US-14)
     package: {
       type: {
@@ -817,7 +817,7 @@ studentSchema.pre('save', function (next) {
   // 3. Auto-calculate Trial Timeline upon passing Learner Exam (3 months & 1.5 years)
   if (this.dmtDates && this.dmtDates.learnerExamPassedDate) {
     const passDate = new Date(this.dmtDates.learnerExamPassedDate);
-    
+
     // Eligible 3 months after passing
     const eligibleDate = new Date(passDate);
     eligibleDate.setMonth(eligibleDate.getMonth() + 3);
@@ -832,7 +832,7 @@ studentSchema.pre('save', function (next) {
   // 4. Update attemptsUsed count and check trial outcome
   if (this.trial && this.trial.attempts) {
     this.trial.attemptsUsed = this.trial.attempts.length;
-    
+
     if (this.trial.attemptsUsed > 3) {
       return next(new Error('A student cannot exceed the maximum of 3 Trial attempts.'));
     }
@@ -1056,8 +1056,8 @@ studentSchema.methods.evaluateLifecycle = function () {
         diffDays <= 30
           ? 'expiring_soon'
           : this.registrationStatus === 'pending_payment' && !this.isAdvancePaid
-          ? 'pending_payment'
-          : 'active';
+            ? 'pending_payment'
+            : 'active';
       if (currentCycle.status !== targetStatus || this.learnerLicenseStatus !== targetStatus) {
         currentCycle.status = targetStatus;
         this.learnerLicenseStatus = targetStatus;

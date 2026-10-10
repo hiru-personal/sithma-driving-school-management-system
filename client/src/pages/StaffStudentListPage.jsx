@@ -231,6 +231,38 @@ export default function StaffStudentListPage() {
     learnerExamMarks: '',
   });
 
+  // Form State for Editing Student Details
+  const [savingStudentDetails, setSavingStudentDetails] = useState(false);
+  const [editStudentForm, setEditStudentForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    nic: '',
+    dob: '',
+    branch: 'Maharagama',
+    studentType: 'Type1_NewLearner',
+    registrationStatus: 'registered',
+    accountStatus: 'active',
+    advancePaymentStatus: 'verified',
+    isAdvancePaid: true,
+    trial_date: '',
+    packageType: 'Car_Full',
+    lessonsTotal: 15,
+    lessonsUsed: 0,
+    priceTotal: 25000,
+  });
+
+  const editStudentAge = React.useMemo(() => {
+    if (!editStudentForm.dob) return null;
+    const d = new Date(editStudentForm.dob);
+    if (isNaN(d.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age >= 0 ? age : null;
+  }, [editStudentForm.dob]);
+
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -291,7 +323,7 @@ export default function StaffStudentListPage() {
       if (res.data?.success && res.data?.packages) {
         setAvailablePackages(res.data.packages);
       }
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Load active branches dynamically
     api.get('/branches/active').then((res) => {
@@ -463,8 +495,8 @@ export default function StaffStudentListPage() {
       setAdminLicensePreview(
         student.finalLicense.photoUrl
           ? (student.finalLicense.photoUrl.startsWith('http')
-              ? student.finalLicense.photoUrl
-              : `http://localhost:5001${student.finalLicense.photoUrl}`)
+            ? student.finalLicense.photoUrl
+            : `http://localhost:5001${student.finalLicense.photoUrl}`)
           : null
       );
     } else {
@@ -474,6 +506,83 @@ export default function StaffStudentListPage() {
     setAdminLicenseFile(null);
     setShowRejectLicenseInput(false);
     setRejectLicenseReason('');
+
+    // Preload details for Edit Student Modal
+    if (mode === 'edit_details') {
+      let formattedDob = '';
+      const rawDob = student.dob || student.dateOfBirth || student.userId?.dob || student.userId?.dateOfBirth;
+      if (rawDob) {
+        try {
+          const d = new Date(rawDob);
+          if (!isNaN(d.getTime())) formattedDob = d.toISOString().split('T')[0];
+        } catch { }
+      }
+
+      let formattedTrialDate = '';
+      const rawTrial = student.trial_date || student.trial?.trialDate;
+      if (rawTrial) {
+        try {
+          const d = new Date(rawTrial);
+          if (!isNaN(d.getTime())) formattedTrialDate = d.toISOString().split('T')[0];
+        } catch { }
+      }
+
+      const rawType = student.studentType || student.student_type || student.userId?.student_type;
+      const isType2 = rawType === 'Type 2' || rawType === 'Type2_TrialReady' || rawType === 'Type2';
+
+      setEditStudentForm({
+        name: student.name || student.studentName || student.userId?.name || '',
+        email: student.email || student.userId?.email || '',
+        phone: student.phone || student.userId?.phone || '',
+        nic: student.nic || student.userId?.nic || '',
+        dob: formattedDob,
+        branch: student.branch || student.userId?.branch || 'Maharagama',
+        studentType: isType2 ? 'Type2_TrialReady' : 'Type1_NewLearner',
+        registrationStatus: student.registrationStatus || 'registered',
+        accountStatus: student.accountStatus || student.userId?.status || 'active',
+        advancePaymentStatus: student.advancePaymentStatus || (student.isAdvancePaid ? 'verified' : 'none'),
+        isAdvancePaid: student.isAdvancePaid ?? true,
+        trial_date: formattedTrialDate,
+        packageType: student.package?.type || 'Car_Full',
+        lessonsTotal: student.package?.lessonsTotal ?? 15,
+        lessonsUsed: student.package?.lessonsUsed ?? 0,
+        priceTotal: student.package?.priceTotal ?? 25000,
+      });
+    }
+  };
+
+  const handleSaveStudentDetails = async (e) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    if (!editStudentForm.name.trim()) {
+      toast.error('Student name is required');
+      return;
+    }
+    if (!editStudentForm.email.trim()) {
+      toast.error('Student email is required');
+      return;
+    }
+    if (!editStudentForm.phone.trim()) {
+      toast.error('Student phone number is required');
+      return;
+    }
+
+    setSavingStudentDetails(true);
+    try {
+      const res = await api.put(`/students/${selectedStudent._id}`, editStudentForm);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Student details updated successfully in database.');
+        const updatedStudent = res.data.student;
+        setStudents((prev) =>
+          prev.map((s) => (s._id === selectedStudent._id ? { ...s, ...updatedStudent } : s))
+        );
+        setSelectedStudent(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update student details');
+    } finally {
+      setSavingStudentDetails(false);
+    }
   };
 
   const handleSaveTrialDate = async (e) => {
@@ -566,7 +675,7 @@ export default function StaffStudentListPage() {
       if (res.data.success) {
         toast.success(
           res.data.message ||
-            `Driving license photo ${action === 'verify' ? 'verified' : 'rejected'} successfully!`
+          `Driving license photo ${action === 'verify' ? 'verified' : 'rejected'} successfully!`
         );
         setSelectedStudent(res.data.student);
         setShowRejectLicenseInput(false);
@@ -867,9 +976,9 @@ export default function StaffStudentListPage() {
                 </strong>
                 {rescheduleRequests.find((r) => r.status === 'Pending')?.preferred_date
                   ? ` (Preferred Date: ${safeFormatDate(
-                      rescheduleRequests.find((r) => r.status === 'Pending').preferred_date,
-                      'MMM dd, yyyy'
-                    )})`
+                    rescheduleRequests.find((r) => r.status === 'Pending').preferred_date,
+                    'MMM dd, yyyy'
+                  )})`
                   : ''}
                 {rescheduleRequests.find((r) => r.status === 'Pending')?.reason
                   ? ` — "${rescheduleRequests.find((r) => r.status === 'Pending').reason}"`
@@ -907,11 +1016,10 @@ export default function StaffStudentListPage() {
         <button
           type="button"
           onClick={() => setActiveViewTab('students')}
-          className={`px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 ${
-            activeViewTab === 'students'
+          className={`px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 ${activeViewTab === 'students'
               ? 'bg-[#3F72AF] text-white shadow-md'
               : 'text-[#4B6584] hover:text-[#112D4E] hover:bg-[#DBE2EF]/60 border border-transparent'
-          }`}
+            }`}
         >
           <Users className="w-4 h-4" /> All Students & DMT Milestones
           <span className={`badge ${activeViewTab === 'students' ? 'bg-white/20 text-white' : 'bg-[#DBE2EF] text-[#112D4E]'} text-[10px] font-bold px-2 py-0.5 rounded-full`}>
@@ -925,11 +1033,10 @@ export default function StaffStudentListPage() {
             fetchRescheduleRequests();
             setActiveViewTab('reschedules');
           }}
-          className={`px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 ${
-            activeViewTab === 'reschedules'
+          className={`px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 ${activeViewTab === 'reschedules'
               ? 'bg-[#112D4E] text-white shadow-md'
               : 'text-[#4B6584] hover:text-[#112D4E] hover:bg-[#DBE2EF]/60 border border-transparent'
-          }`}
+            }`}
         >
           <Clock className="w-4 h-4" /> Student Date Reschedule Requests
           {rescheduleRequests.filter((r) => r.status === 'Pending').length > 0 && (
@@ -962,11 +1069,10 @@ export default function StaffStudentListPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => setRescheduleMilestoneFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      rescheduleMilestoneFilter === tab.id
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${rescheduleMilestoneFilter === tab.id
                         ? 'bg-purple-600 text-white shadow-md'
                         : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/5'
-                    }`}
+                      }`}
                   >
                     {tab.label}
                     <span className="text-[10px] opacity-75 font-mono">({count})</span>
@@ -992,11 +1098,10 @@ export default function StaffStudentListPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => setRescheduleStatusFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      rescheduleStatusFilter === tab.id
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${rescheduleStatusFilter === tab.id
                         ? 'bg-white/20 text-cyan-300 border border-white/30 shadow'
                         : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200 border border-white/5'
-                    }`}
+                      }`}
                   >
                     {tab.label}
                     <span className="text-[10px] font-mono">({count})</span>
@@ -1013,11 +1118,11 @@ export default function StaffStudentListPage() {
               Loading reschedule requests...
             </div>
           ) : rescheduleRequests.filter((r) => {
-              const m = r.milestone_type || 'trial';
-              if (rescheduleMilestoneFilter !== 'All' && m !== rescheduleMilestoneFilter) return false;
-              if (rescheduleStatusFilter !== 'All' && r.status !== rescheduleStatusFilter) return false;
-              return true;
-            }).length === 0 ? (
+            const m = r.milestone_type || 'trial';
+            if (rescheduleMilestoneFilter !== 'All' && m !== rescheduleMilestoneFilter) return false;
+            if (rescheduleStatusFilter !== 'All' && r.status !== rescheduleStatusFilter) return false;
+            return true;
+          }).length === 0 ? (
             <div className="py-16 text-center text-slate-400 text-sm space-y-2 card bg-slate-950/40 border-white/10">
               <Clock className="w-12 h-12 text-slate-600 mx-auto" />
               <p className="font-bold text-slate-200 text-base">No Date Reschedule Requests Found</p>
@@ -1045,11 +1150,10 @@ export default function StaffStudentListPage() {
                   return (
                     <div
                       key={req._id}
-                      className={`p-5 rounded-3xl border transition-all ${
-                        isPending
+                      className={`p-5 rounded-3xl border transition-all ${isPending
                           ? 'bg-purple-950/25 border-purple-400/40 shadow-[0_0_20px_rgba(168,85,247,0.15)]'
                           : 'bg-white/5 border-white/10'
-                      } space-y-3.5`}
+                        } space-y-3.5`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
                         <div>
@@ -1067,13 +1171,12 @@ export default function StaffStudentListPage() {
                               </span>
                             )}
                             <span
-                              className={`badge text-xs font-black ${
-                                req.status === 'Approved'
+                              className={`badge text-xs font-black ${req.status === 'Approved'
                                   ? 'badge-success'
                                   : req.status === 'Rejected'
-                                  ? 'badge-error'
-                                  : 'badge-warning animate-pulse'
-                              }`}
+                                    ? 'badge-error'
+                                    : 'badge-warning animate-pulse'
+                                }`}
                             >
                               {req.status}
                             </span>
@@ -1224,458 +1327,435 @@ export default function StaffStudentListPage() {
       ) : (
         /* Standard Student Registry View */
         <>
-      {/* Filter & Search Bar */}
-      <div className="card p-6 space-y-4 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
-            <input
-              type="text"
-              placeholder="Search name, email, phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-slate-400 rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
-            />
-          </div>
+          {/* Filter & Search Bar */}
+          <div className="card p-6 space-y-4 bg-white border border-[#D4EEF8] rounded-2xl shadow-xs">
+            <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Search Box */}
+              <div className="relative">
+                <Search className="w-5 h-5 text-slate-500 absolute left-4 top-3.5" />
+                <input
+                  type="text"
+                  placeholder="Search name, email, phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4EEF8] text-[#152026] placeholder-slate-400 rounded-xl text-sm sm:text-base focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20 outline-none"
+                />
+              </div>
 
-          {/* Branch Filter */}
-          <select
-            value={branchFilter}
-            onChange={(e) => setBranchFilter(e.target.value)}
-            className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
-          >
-            <option value="All">All Branches</option>
-            {availableBranches.length > 0 ? (
-              availableBranches.map((b) => (
-                <option key={b._id} value={b.name}>
-                  {b.name} Branch ({b.code})
-                </option>
-              ))
-            ) : (
-              <>
+              {/* Branch Filter */}
+              <select
+                value={branchFilter}
+                onChange={(e) => setBranchFilter(e.target.value)}
+                className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
+              >
+                <option value="All">All Branches</option>
                 <option value="Maharagama">Maharagama Branch</option>
                 <option value="Werahara">Werahara Branch</option>
                 <option value="Delgoda">Delgoda Branch</option>
-              </>
-            )}
-          </select>
+              </select>
 
-          {/* Student Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
-          >
-            <option value="">All Categories (Type 1 & 2)</option>
-            <option value="Type1_NewLearner">Type 1 — New Learner</option>
-            <option value="Type2_TrialReady">Type 2 — Trial-Ready</option>
-          </select>
+              {/* Student Type Filter */}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
+              >
+                <option value="">All Categories (Type 1 & 2)</option>
+                <option value="Type1_NewLearner">Type 1 — New Learner</option>
+                <option value="Type2_TrialReady">Type 2 — Trial-Ready</option>
+              </select>
 
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
-          >
-            <option value="">All Progress Statuses</option>
-            <option value="pending_payment">Pending Payment</option>
-            <option value="registered">Registered</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed / Licensed</option>
-          </select>
-        </form>
-      </div>
-
-      {/* Student List Table */}
-      <div className="card p-0 overflow-hidden shadow-xs border border-[#D4EEF8] bg-white rounded-2xl">
-        {loading ? (
-          <div className="py-16 text-center text-sm sm:text-base text-[#475569] flex items-center justify-center gap-3">
-            <RefreshCw className="w-5 h-5 animate-spin text-[#1B3D59]" /> Loading student database...
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-3 border border-[#D4EEF8] rounded-xl text-sm sm:text-base bg-white text-[#152026] outline-none font-semibold focus:border-[#1B3D59] focus:ring-2 focus:ring-[#1B3D59]/20"
+              >
+                <option value="">All Progress Statuses</option>
+                <option value="pending_payment">Pending Payment</option>
+                <option value="registered">Registered</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed / Licensed</option>
+              </select>
+            </form>
           </div>
-        ) : students.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <Users className="w-12 h-12 text-slate-400 mx-auto" />
-            <p className="text-lg font-bold text-[#152026]">No students found matching your filters</p>
-            <p className="text-sm text-[#475569]">Try adjusting your search query or branch filters.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-[#1B3D59] border-b border-[#D4EEF8] text-white uppercase text-xs font-black tracking-wider">
-                <tr>
-                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">Student Name</th>
-                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Branch & Category</th>
-                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Package / Lessons</th>
-                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[150px]">DMT Learner Status</th>
-                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[110px] text-center">Trial Attempts</th>
-                  <th className="px-4 py-3.5 whitespace-nowrap min-w-[130px]">Status</th>
-                  <th className="px-4 py-3.5 whitespace-nowrap text-right min-w-[260px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D4EEF8]">
-                {students.map((st) => {
-                  const isLicensed = Boolean(
-                    st.trial?.licenseObtained ||
-                    st.isPassed ||
-                    st.trial?.attempts?.some((a) => a.result === 'passed')
-                  );
-                  const attemptsCount = st.trial?.attempts?.length || 0;
-                  const isType2 =
-                    st.studentType === 'Type2_TrialReady' ||
-                    st.studentType === 'Type 2' ||
-                    st.studentType === 'type2' ||
-                    st.student_type === 'Type 2';
 
-                  const studentPendingReq = rescheduleRequests.find(
-                    (r) =>
-                      (r.student_id?._id === st._id || r.student_id === st._id) &&
-                      r.status === 'Pending'
-                  );
+          {/* Student List Table */}
+          <div className="card p-0 overflow-hidden shadow-xs border border-[#D4EEF8] bg-white rounded-2xl">
+            {loading ? (
+              <div className="py-16 text-center text-sm sm:text-base text-[#475569] flex items-center justify-center gap-3">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#1B3D59]" /> Loading student database...
+              </div>
+            ) : students.length === 0 ? (
+              <div className="py-16 text-center space-y-3">
+                <Users className="w-12 h-12 text-slate-400 mx-auto" />
+                <p className="text-lg font-bold text-[#152026]">No students found matching your filters</p>
+                <p className="text-sm text-[#475569]">Try adjusting your search query or branch filters.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-[#1B3D59] border-b border-[#D4EEF8] text-white uppercase text-xs font-black tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">Student Name</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Branch & Category</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">Package / Lessons</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[150px]">DMT Learner Status</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[110px] text-center">Trial Attempts</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap min-w-[130px]">Status</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap text-right min-w-[260px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#D4EEF8]">
+                    {students.map((st) => {
+                      const isLicensed = Boolean(
+                        st.trial?.licenseObtained ||
+                        st.isPassed ||
+                        st.trial?.attempts?.some((a) => a.result === 'passed')
+                      );
+                      const attemptsCount = st.trial?.attempts?.length || 0;
+                      const isType2 =
+                        st.studentType === 'Type2_TrialReady' ||
+                        st.studentType === 'Type 2' ||
+                        st.studentType === 'type2' ||
+                        st.student_type === 'Type 2';
 
-                  return (
-                    <tr key={st._id} className="hover:bg-[#D4EEF8]/40 transition-colors">
-                      {/* Name & Contact */}
-                      <td className="px-4 py-3 font-semibold text-[#152026]">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm sm:text-base font-extrabold text-[#152026]">{st.userId?.name || st.name || st.studentName || 'Student'}</div>
-                          {studentPendingReq && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReviewingRequest(studentPendingReq);
-                                setReviewNewTrialDate(
-                                  studentPendingReq.preferred_date ? studentPendingReq.preferred_date.split('T')[0] : ''
-                                );
-                                setReviewNotes('');
-                                setShowRescheduleModal(true);
-                              }}
-                              className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold animate-pulse hover:bg-amber-100 flex items-center gap-1 cursor-pointer transition-all shadow-xs"
-                              title="Click to review student's reschedule request"
-                            >
-                              <Clock className="w-3 h-3 text-amber-700" />
-                              📅 {getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Requested
-                            </button>
-                          )}
-                        </div>
-                        <div className="text-xs text-[#475569] font-medium mt-0.5">
-                          {(st.userId?.phone || st.phone || '—')} • {(st.userId?.email || st.email || '—')}
-                        </div>
-                      </td>
+                      const studentPendingReq = rescheduleRequests.find(
+                        (r) =>
+                          (r.student_id?._id === st._id || r.student_id === st._id) &&
+                          r.status === 'Pending'
+                      );
 
-                      {/* Branch & Type */}
-                      <td className="px-4 py-3">
-                        <div className="font-extrabold text-xs sm:text-sm text-[#152026]">{st.branch}</div>
-                        <span
-                          className={`inline-block text-[11px] py-0.5 px-2 mt-1 font-bold rounded-full border ${
-                            isType2
-                              ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#6A97C0]/40'
-                              : 'bg-white text-[#152026] border-[#D4EEF8]'
-                          }`}
-                        >
-                          {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
-                        </span>
-                        {st.trial_date && (
-                          <div className="mt-1">
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-[#D4EEF8]/60 text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
-                              📅 Trial: {formatShortTrialDate(st.trial_date)}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Package */}
-                      <td className="px-4 py-3">
-                        {st.package?.type ? (
-                          <>
-                            <div className="font-bold text-xs sm:text-sm text-[#152026]">{st.package.type.replace(/_/g, ' ')}</div>
-                            <div className="text-xs text-[#475569] font-medium mt-0.5">
-                              {st.package.lessonsUsed || 0} / {st.package.lessonsTotal || 0} used
+                      return (
+                        <tr key={st._id} className="hover:bg-[#D4EEF8]/40 transition-colors">
+                          {/* Name & Contact */}
+                          <td className="px-4 py-3 font-semibold text-[#152026]">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="text-sm sm:text-base font-extrabold text-[#152026]">{st.userId?.name || st.name || st.studentName || 'Student'}</div>
+                              {studentPendingReq && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReviewingRequest(studentPendingReq);
+                                    setReviewNewTrialDate(
+                                      studentPendingReq.preferred_date ? studentPendingReq.preferred_date.split('T')[0] : ''
+                                    );
+                                    setReviewNotes('');
+                                    setShowRescheduleModal(true);
+                                  }}
+                                  className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold animate-pulse hover:bg-amber-100 flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                                  title="Click to review student's reschedule request"
+                                >
+                                  <Clock className="w-3 h-3 text-amber-700" />
+                                  📅 {getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Requested
+                                </button>
+                              )}
                             </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="font-bold text-xs text-[#1B3D59]">Pending Theory Exam</div>
-                            <div className="text-[11px] text-slate-600 font-medium mt-0.5">Selected at Step 5</div>
-                          </>
-                        )}
-                      </td>
+                            <div className="text-xs text-[#475569] font-medium mt-0.5">
+                              {(st.userId?.phone || st.phone || '—')} • {(st.userId?.email || st.email || '—')}
+                            </div>
+                          </td>
 
-                      {/* DMT Learner Exam */}
-                      <td className="px-4 py-3">
-                        {isType2 ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">Pre-Cleared</span>
-                        ) : st.registrationStatus === 'cancelled' ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed 3/3 Attempts</span>
-                        ) : st.dmtDates?.learnerExamPassed ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
-                            Passed {st.learnerExamMarks ? `(${st.learnerExamMarks}/40)` : 'Written Exam'}
-                          </span>
-                        ) : st.learnerExamAttemptsCount > 0 ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed ({st.learnerExamAttemptsCount}/3)</span>
-                            {st.dmtDates?.learnerExamDate && (
-                              <span className="text-[10px] text-amber-700 font-bold">
-                                Next: {safeFormatDate(st.dmtDates.learnerExamDate, 'MMM dd')}
-                              </span>
+                          {/* Branch & Type */}
+                          <td className="px-4 py-3">
+                            <div className="font-extrabold text-xs sm:text-sm text-[#152026]">{st.branch}</div>
+                            <span
+                              className={`inline-block text-[11px] py-0.5 px-2 mt-1 font-bold rounded-full border ${isType2
+                                  ? 'bg-[#D4EEF8] text-[#1B3D59] border-[#6A97C0]/40'
+                                  : 'bg-white text-[#152026] border-[#D4EEF8]'
+                                }`}
+                            >
+                              {isType2 ? 'Type 2: Trial-Ready' : 'Type 1: New Learner'}
+                            </span>
+                            {st.trial_date && (
+                              <div className="mt-1">
+                                <span className="inline-block px-2 py-0.5 rounded-full bg-[#D4EEF8]/60 text-[#1B3D59] border border-[#6A97C0]/30 text-[10px] font-bold">
+                                  📅 Trial: {formatShortTrialDate(st.trial_date)}
+                                </span>
+                              </div>
                             )}
-                          </div>
-                        ) : st.dmtDates?.learnerExamDate ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-xs font-bold">
-                            Exam: {safeFormatDate(st.dmtDates.learnerExamDate, 'MMM dd')}
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 text-xs font-bold">Exam Pending</span>
-                        )}
-                      </td>
+                          </td>
 
-                      {/* Trial Attempts Pills */}
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {[1, 2, 3].map((num) => {
-                            const att = st.trial?.attempts?.find((a) => a.attemptNumber === num);
-                            let bg = 'bg-slate-100 text-slate-500 border border-slate-200';
-                            if (att) {
-                              bg =
-                                att.result === 'passed'
-                                  ? 'bg-emerald-600 text-white font-black border-emerald-500 shadow-xs'
-                                  : 'bg-red-600 text-white font-black border-red-500 shadow-xs';
-                            }
+                          {/* Package */}
+                          <td className="px-4 py-3">
+                            {st.package?.type ? (
+                              <>
+                                <div className="font-bold text-xs sm:text-sm text-[#152026]">{st.package.type.replace(/_/g, ' ')}</div>
+                                <div className="text-xs text-[#475569] font-medium mt-0.5">
+                                  {st.package.lessonsUsed || 0} / {st.package.lessonsTotal || 0} used
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="font-bold text-xs text-[#1B3D59]">Pending Theory Exam</div>
+                                <div className="text-[11px] text-slate-600 font-medium mt-0.5">Selected at Step 5</div>
+                              </>
+                            )}
+                          </td>
 
-                            return (
+                          {/* DMT Learner Exam */}
+                          <td className="px-4 py-3">
+                            {isType2 ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">Pre-Cleared</span>
+                            ) : st.registrationStatus === 'cancelled' ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed 3/3 Attempts</span>
+                            ) : st.dmtDates?.learnerExamPassed ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                                Passed {st.learnerExamMarks ? `(${st.learnerExamMarks}/40)` : 'Written Exam'}
+                              </span>
+                            ) : st.learnerExamAttemptsCount > 0 ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-xs font-bold">Failed ({st.learnerExamAttemptsCount}/3)</span>
+                                {st.dmtDates?.learnerExamDate && (
+                                  <span className="text-[10px] text-amber-700 font-bold">
+                                    Next: {safeFormatDate(st.dmtDates.learnerExamDate, 'MMM dd')}
+                                  </span>
+                                )}
+                              </div>
+                            ) : st.dmtDates?.learnerExamDate ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-xs font-bold">
+                                Exam: {safeFormatDate(st.dmtDates.learnerExamDate, 'MMM dd')}
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 text-xs font-bold">Exam Pending</span>
+                            )}
+                          </td>
+
+                          {/* Trial Attempts Pills */}
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {[1, 2, 3].map((num) => {
+                                const att = st.trial?.attempts?.find((a) => a.attemptNumber === num);
+                                let bg = 'bg-slate-100 text-slate-500 border border-slate-200';
+                                if (att) {
+                                  bg =
+                                    att.result === 'passed'
+                                      ? 'bg-emerald-600 text-white font-black border-emerald-500 shadow-xs'
+                                      : 'bg-red-600 text-white font-black border-red-500 shadow-xs';
+                                }
+
+                                return (
+                                  <span
+                                    key={num}
+                                    className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-extrabold transition-transform hover:scale-105 ${bg}`}
+                                    title={
+                                      att
+                                        ? `Attempt ${num}: ${att.result?.toUpperCase()} on ${safeFormatDate(
+                                          att.attemptDate || att.date || att.createdAt,
+                                          'MMM dd, yyyy',
+                                          'Recorded'
+                                        )}`
+                                        : `Attempt ${num}: Available`
+                                    }
+                                  >
+                                    {num}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </td>
+
+                          {/* Registration Status */}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-start gap-1">
                               <span
-                                key={num}
-                                className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-extrabold transition-transform hover:scale-105 ${bg}`}
+                                className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${isLicensed
+                                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                    : st.registrationStatus === 'cancelled'
+                                      ? 'bg-red-50 text-red-800 border border-red-300'
+                                      : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
+                                        ? 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
+                                        : 'bg-[#F3EED8] text-[#152026] border border-amber-300'
+                                  }`}
+                              >
+                                {isLicensed ? 'Licensed' : st.registrationStatus === 'cancelled' ? '❌ CANCELLED' : st.registrationStatus?.replace('_', ' ')}
+                              </span>
+
+                              {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment' ? (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                                  👑 Premium User
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
+                                  🔒 Advance Pending
+                                </span>
+                              )}
+
+                              {st.latestPayment?.slipImageUrl && !st.isAdvancePaid && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-[#1B3D59] bg-[#D4EEF8] px-2 py-0.5 rounded-full border border-[#6A97C0]/30 font-bold">
+                                  <FileText className="w-3 h-3 text-[#1B3D59]" /> Slip Uploaded
+                                </span>
+                              )}
+
+                              {/* DMT Learner License Lifecycle & Completion Status */}
+                              {st.learnerLicenseStatus === 'completed' && (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
+                                  ✓ License Completed
+                                </span>
+                              )}
+                              {st.learnerLicenseStatus === 'passed' && (
+                                <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/40 text-[10px] font-extrabold flex items-center gap-1">
+                                  ★ Passed (Upload DL)
+                                </span>
+                              )}
+                              {st.learnerLicenseStatus === 'expired' && (
+                                <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-300 text-[10px] font-extrabold flex items-center gap-1">
+                                  ⚠️ 18M Expired
+                                </span>
+                              )}
+                              {st.learnerLicenseStatus === 'attempts_exhausted' && (
+                                <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-300 text-[10px] font-extrabold flex items-center gap-1">
+                                  ❌ 3 Attempts Failed
+                                </span>
+                              )}
+                              {st.learnerLicenseStatus === 'expiring_soon' && (
+                                <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
+                                  ⏳ Expiring Soon
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Action Buttons */}
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+                              {/* DMT Learner License Lifecycle & Completion Management */}
+                              <button
+                                onClick={() => openStudentModal(st, 'lifecycle')}
+                                className="p-2 rounded-xl bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] border border-[#6A97C0]/30 transition-all cursor-pointer shadow-xs"
+                                title="DMT License Lifecycle (18M Validity, 3 Attempts, Final Pass & License Upload)"
+                              >
+                                <FileCheck className="w-4 h-4 text-[#1B3D59]" />
+                              </button>
+
+                              {/* Re-Register Action Button for Cancelled / Expired Students (Rules 10 & 15) */}
+                              {(st.registrationStatus === 'cancelled' ||
+                                st.accountStatus === 'cancelled' ||
+                                st.learnerLicenseStatus === 'attempts_exhausted' ||
+                                st.learnerLicenseStatus === 'expired') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStaffReRegister(st._id)}
+                                    disabled={reRegisteringId === st._id}
+                                    className="p-2 rounded-xl bg-[#F3EED8] hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all cursor-pointer shadow-xs"
+                                    title="Re-Register Student (Start New 18-Month Cycle & Reset Attempts)"
+                                  >
+                                    <RotateCcw className={`w-4 h-4 ${reRegisteringId === st._id ? 'animate-spin' : ''}`} />
+                                  </button>
+                                )}
+
+                              {/* Direct Date Reschedule Review Action Button */}
+                              {studentPendingReq && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReviewingRequest(studentPendingReq);
+                                    setReviewNewTrialDate(
+                                      studentPendingReq.preferred_date ? studentPendingReq.preferred_date.split('T')[0] : ''
+                                    );
+                                    setReviewNotes('');
+                                    setShowRescheduleModal(true);
+                                  }}
+                                  className="p-2 rounded-xl bg-[#F3EED8] hover:bg-amber-100 text-[#152026] border border-amber-300 animate-pulse transition-all shadow-xs cursor-pointer"
+                                  title={`Action Required: Review ${getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Request`}
+                                >
+                                  <Clock className="w-4 h-4 text-amber-700" />
+                                </button>
+                              )}
+
+                              {/* Inspect Details Button */}
+                              <button
+                                onClick={() => openVerifyPaymentModal(st)}
+                                className="p-2 rounded-xl bg-[#F0F4F8] hover:bg-blue-50 text-[#3F72AF] hover:text-[#0B2447] border border-[#DBE2EF] transition-all cursor-pointer shadow-xs"
+                                title="Inspect Student Registration Details & Payment Slip"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+
+                              {/* Edit Student Details Button */}
+                              <button
+                                onClick={() => openStudentModal(st, 'edit_details')}
+                                className="p-2 rounded-xl bg-[#D4EEF8]/70 hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/40 transition-all cursor-pointer shadow-xs"
+                                title="Edit All Student & Registration Details"
+                              >
+                                <Edit3 className="w-4 h-4 text-[#1B3D59]" />
+                              </button>
+
+                              {/* Verify Payment Button */}
+                              <button
+                                onClick={() => openVerifyPaymentModal(st)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1 cursor-pointer shadow-xs ${st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                                    : 'bg-amber-100 text-amber-950 border border-amber-300 hover:bg-amber-200 shadow-xs animate-pulse'
+                                  }`}
                                 title={
-                                  att
-                                    ? `Attempt ${num}: ${att.result?.toUpperCase()} on ${safeFormatDate(
-                                        att.attemptDate || att.date || att.createdAt,
-                                        'MMM dd, yyyy',
-                                        'Recorded'
-                                      )}`
-                                    : `Attempt ${num}: Available`
+                                  st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                                    ? 'View Payment Slip & Registration Records'
+                                    : 'Review Payment Slip, Student Details & Verify Payment'
                                 }
                               >
-                                {num}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </td>
+                                <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                                <span>
+                                  {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
+                                    ? 'Verified'
+                                    : 'Verify Pay'}
+                                </span>
+                              </button>
 
-                      {/* Registration Status */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col items-start gap-1">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              isLicensed
-                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                : st.registrationStatus === 'cancelled'
-                                ? 'bg-red-50 text-red-800 border border-red-300'
-                                : st.registrationStatus === 'registered' || st.registrationStatus === 'in_progress'
-                                ? 'bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/30'
-                                : 'bg-[#F3EED8] text-[#152026] border border-amber-300'
-                            }`}
-                          >
-                            {isLicensed ? 'Licensed' : st.registrationStatus === 'cancelled' ? '❌ CANCELLED' : st.registrationStatus?.replace('_', ' ')}
-                          </span>
+                              {/* Schedule Practical Trial Date (Shared for Type 1 & Type 2) */}
+                              <button
+                                onClick={() => openStudentModal(st, 'set_trial_date')}
+                                className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer shadow-xs"
+                                title="Schedule or Reschedule Practical Trial Date"
+                              >
+                                <Calendar className="w-4 h-4 text-purple-600" />
+                              </button>
 
-                          {(st.verificationStatus || st.userId?.verificationStatus) === 'Verified' ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
-                              ✓ Account Verified
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
-                              ⏳ Pending Verification
-                            </span>
-                          )}
+                              {/* DMT Milestone Dates (Only for Type 1 New Learners) */}
+                              {!isType2 && (
+                                <button
+                                  onClick={() => openStudentModal(st, 'edit_dmt')}
+                                  className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#3F72AF] border border-blue-200 transition-all cursor-pointer shadow-xs"
+                                  title="Update DMT Milestone Dates (Type 1 Only)"
+                                >
+                                  <Calendar className="w-4 h-4 text-[#3F72AF]" />
+                                </button>
+                              )}
 
-                          {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment' ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
-                              👑 Premium User
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
-                              🔒 Advance Pending
-                            </span>
-                          )}
-
-                          {st.latestPayment?.slipImageUrl && !st.isAdvancePaid && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-[#1B3D59] bg-[#D4EEF8] px-2 py-0.5 rounded-full border border-[#6A97C0]/30 font-bold">
-                              <FileText className="w-3 h-3 text-[#1B3D59]" /> Slip Uploaded
-                            </span>
-                          )}
-
-                          {/* DMT Learner License Lifecycle & Completion Status */}
-                          {st.learnerLicenseStatus === 'completed' && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
-                              ✓ License Completed
-                            </span>
-                          )}
-                          {st.learnerLicenseStatus === 'passed' && (
-                            <span className="px-2 py-0.5 rounded-full bg-[#D4EEF8] text-[#1B3D59] border border-[#6A97C0]/40 text-[10px] font-extrabold flex items-center gap-1">
-                              ★ Passed (Upload DL)
-                            </span>
-                          )}
-                          {st.learnerLicenseStatus === 'expired' && (
-                            <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-300 text-[10px] font-extrabold flex items-center gap-1">
-                              ⚠️ 18M Expired
-                            </span>
-                          )}
-                          {st.learnerLicenseStatus === 'attempts_exhausted' && (
-                            <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-300 text-[10px] font-extrabold flex items-center gap-1">
-                              ❌ 3 Attempts Failed
-                            </span>
-                          )}
-                          {st.learnerLicenseStatus === 'expiring_soon' && (
-                            <span className="px-2 py-0.5 rounded-full bg-[#F3EED8] text-[#152026] border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
-                              ⏳ Expiring Soon
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Action Buttons */}
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5 flex-nowrap">
-                          {/* DMT Learner License Lifecycle & Completion Management */}
-                          <button
-                            onClick={() => openStudentModal(st, 'lifecycle')}
-                            className="p-2 rounded-xl bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] border border-[#6A97C0]/30 transition-all cursor-pointer shadow-xs"
-                            title="DMT License Lifecycle (18M Validity, 3 Attempts, Final Pass & License Upload)"
-                          >
-                            <FileCheck className="w-4 h-4 text-[#1B3D59]" />
-                          </button>
-
-                          {/* Re-Register Action Button for Cancelled / Expired Students (Rules 10 & 15) */}
-                          {(st.registrationStatus === 'cancelled' ||
-                            st.accountStatus === 'cancelled' ||
-                            st.learnerLicenseStatus === 'attempts_exhausted' ||
-                            st.learnerLicenseStatus === 'expired') && (
-                            <button
-                              type="button"
-                              onClick={() => handleStaffReRegister(st._id)}
-                              disabled={reRegisteringId === st._id}
-                              className="p-2 rounded-xl bg-[#F3EED8] hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all cursor-pointer shadow-xs"
-                              title="Re-Register Student (Start New 18-Month Cycle & Reset Attempts)"
-                            >
-                              <RotateCcw className={`w-4 h-4 ${reRegisteringId === st._id ? 'animate-spin' : ''}`} />
-                            </button>
-                          )}
-
-                          {/* Direct Date Reschedule Review Action Button */}
-                          {studentPendingReq && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReviewingRequest(studentPendingReq);
-                                setReviewNewTrialDate(
-                                  studentPendingReq.preferred_date ? studentPendingReq.preferred_date.split('T')[0] : ''
-                                );
-                                setReviewNotes('');
-                                setShowRescheduleModal(true);
-                              }}
-                              className="p-2 rounded-xl bg-[#F3EED8] hover:bg-amber-100 text-[#152026] border border-amber-300 animate-pulse transition-all shadow-xs cursor-pointer"
-                              title={`Action Required: Review ${getMilestoneLabel(studentPendingReq.milestone_type || 'trial')} Reschedule Request`}
-                            >
-                              <Clock className="w-4 h-4 text-amber-700" />
-                            </button>
-                          )}
-
-                          {/* Inspect Details Button */}
-                          <button
-                            onClick={() => openVerifyPaymentModal(st)}
-                            className="p-2 rounded-xl bg-[#F0F4F8] hover:bg-blue-50 text-[#3F72AF] hover:text-[#0B2447] border border-[#DBE2EF] transition-all cursor-pointer shadow-xs"
-                            title="Inspect Student Registration Details & Payment Slip"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {/* Verify Payment Button */}
-                          <button
-                            onClick={() => openVerifyPaymentModal(st)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1 cursor-pointer shadow-xs ${
-                              st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
-                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-amber-100 text-amber-950 border border-amber-300 hover:bg-amber-200 shadow-xs animate-pulse'
-                            }`}
-                            title={
-                              st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
-                                ? 'View Payment Slip & Registration Records'
-                                : 'Review Payment Slip, Student Details & Verify Payment'
-                            }
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                            <span>
-                              {st.isAdvancePaid || st.isPremium || st.registrationStatus !== 'pending_payment'
-                                ? 'Verified'
-                                : 'Verify Pay'}
-                            </span>
-                          </button>
-
-                          {/* Admin Student Account Verification Button */}
-                          {(st.verificationStatus || st.userId?.verificationStatus) !== 'Verified' && (
-                            <button
-                              type="button"
-                              onClick={() => handleVerifyStudentAccount(st._id, st.userId?.name || st.name)}
-                              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 text-xs font-extrabold flex items-center gap-1 cursor-pointer shadow-xs transition-all"
-                              title="Verify student account"
-                            >
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Verify Student</span>
-                            </button>
-                          )}
-
-                          {/* Schedule Practical Trial Date (Shared for Type 1 & Type 2) */}
-                          <button
-                            onClick={() => openStudentModal(st, 'set_trial_date')}
-                            className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all cursor-pointer shadow-xs"
-                            title="Schedule or Reschedule Practical Trial Date"
-                          >
-                            <Calendar className="w-4 h-4 text-purple-600" />
-                          </button>
-
-                          {/* DMT Milestone Dates (Only for Type 1 New Learners) */}
-                          {!isType2 && (
-                            <button
-                              onClick={() => openStudentModal(st, 'edit_dmt')}
-                              className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#3F72AF] border border-blue-200 transition-all cursor-pointer shadow-xs"
-                              title="Update DMT Milestone Dates (Type 1 Only)"
-                            >
-                              <Calendar className="w-4 h-4 text-[#3F72AF]" />
-                            </button>
-                          )}
-
-                          {/* Record Practical Trial Result */}
-                          <button
-                            onClick={() => openStudentModal(st, 'record_trial')}
-                            disabled={isLicensed || attemptsCount >= 3}
-                            className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs"
-                            title="Record Practical Trial Result"
-                          >
-                            <Award className="w-4 h-4 text-amber-700" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                              {/* Record Practical Trial Result */}
+                              <button
+                                onClick={() => openStudentModal(st, 'record_trial')}
+                                disabled={isLicensed || attemptsCount >= 3}
+                                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs"
+                                title="Record Practical Trial Result"
+                              >
+                                <Award className="w-4 h-4 text-amber-700" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      </>
+        </>
       )}
 
       {/* Modal Dialog: Edit DMT Dates / Record Trial Attempt */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl ${modalMode === 'lifecycle' ? 'max-w-3xl' : 'max-w-lg'} w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]`}>
+          <div className={`bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl ${modalMode === 'lifecycle' || modalMode === 'edit_details' ? 'max-w-2xl sm:max-w-3xl' : 'max-w-lg'} w-full p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto my-auto text-[#152026]`}>
             <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
               <div>
                 <h3 className="text-base font-bold text-[#152026] flex items-center gap-2">
-                  {modalMode === 'edit_dmt' ? (
+                  {modalMode === 'edit_details' ? (
+                    <>
+                      <Edit3 className="w-5 h-5 text-[#1B3D59]" /> Edit Student & Registration Details: {selectedStudent.userId?.name || selectedStudent.name}
+                    </>
+                  ) : modalMode === 'edit_dmt' ? (
                     <>
                       <Calendar className="w-5 h-5 text-[#1B3D59]" /> DMT Regulatory Dates: {selectedStudent.userId?.name}
                     </>
@@ -1699,11 +1779,267 @@ export default function StaffStudentListPage() {
               </div>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#D4EEF8] hover:bg-[#B3D5F1] text-[#1B3D59] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Edit Full Student Details Form */}
+            {modalMode === 'edit_details' && (
+              <form onSubmit={handleSaveStudentDetails} className="space-y-4 text-xs">
+                {/* Personal & Contact Information */}
+                <div>
+                  <h4 className="font-bold text-[#1B3D59] text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1 border-b border-[#D4EEF8]">
+                    <User className="w-4 h-4 text-[#1B3D59]" /> Personal & Contact Details
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Full Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editStudentForm.name}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={editStudentForm.email}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, email: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Contact Phone <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={editStudentForm.phone}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, phone: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">NIC / Passport</label>
+                      <input
+                        type="text"
+                        value={editStudentForm.nic}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, nic: e.target.value })}
+                        placeholder="e.g. 200012345678"
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">
+                        Date of Birth {editStudentAge !== null && <span className="text-emerald-700 font-bold">({editStudentAge} yrs)</span>}
+                      </label>
+                      <input
+                        type="date"
+                        value={editStudentForm.dob}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, dob: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Assigned Branch</label>
+                      <select
+                        value={editStudentForm.branch}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, branch: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="Maharagama">Maharagama</option>
+                        <option value="Werahara">Werahara</option>
+                        <option value="Delgoda">Delgoda</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Registration & Lifecycle Status */}
+                <div>
+                  <h4 className="font-bold text-[#1B3D59] text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1 border-b border-[#D4EEF8]">
+                    <FileCheck className="w-4 h-4 text-[#1B3D59]" /> Registration & Lifecycle Status
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Student Type</label>
+                      <select
+                        value={editStudentForm.studentType}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, studentType: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="Type1_NewLearner">Type 1 — New Learner (DMT Milestones & Theory)</option>
+                        <option value="Type2_TrialReady">Type 2 — Trial Ready (Direct Practical Training)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Registration Status</label>
+                      <select
+                        value={editStudentForm.registrationStatus}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, registrationStatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="registered">Registered</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="pending_payment">Pending Payment</option>
+                        <option value="completed">Completed / Passed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Account Status</label>
+                      <select
+                        value={editStudentForm.accountStatus}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, accountStatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="active">Active (Verified)</option>
+                        <option value="inactive">Inactive / Deactivated</option>
+                        <option value="pending_verification">Pending Verification</option>
+                        <option value="suspended">Suspended</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Advance Payment Status</label>
+                      <select
+                        value={editStudentForm.advancePaymentStatus}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditStudentForm({
+                            ...editStudentForm,
+                            advancePaymentStatus: val,
+                            isAdvancePaid: val === 'verified',
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        <option value="verified">Verified (Paid)</option>
+                        <option value="pending">Pending Verification</option>
+                        <option value="none">None / Unpaid</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Training Package & Trial Schedule */}
+                <div>
+                  <h4 className="font-bold text-[#1B3D59] text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1 border-b border-[#D4EEF8]">
+                    <PackageIcon className="w-4 h-4 text-[#1B3D59]" /> Training Package & Trial Schedule
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block font-semibold text-[#152026] mb-1">Training Package</label>
+                      <select
+                        value={editStudentForm.packageType}
+                        onChange={(e) => {
+                          const selectedPkg = walkInDisplayedPackages.find((p) => p.type === e.target.value);
+                          setEditStudentForm({
+                            ...editStudentForm,
+                            packageType: e.target.value,
+                            lessonsTotal: selectedPkg ? selectedPkg.lessons : editStudentForm.lessonsTotal,
+                            priceTotal: selectedPkg ? selectedPkg.price : editStudentForm.priceTotal,
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      >
+                        {walkInDisplayedPackages.map((pkg) => (
+                          <option key={pkg.type} value={pkg.type}>
+                            {pkg.name} — {pkg.lessons} Lessons — LKR {pkg.price?.toLocaleString()}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Total Lessons Allocated</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStudentForm.lessonsTotal}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, lessonsTotal: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Lessons Completed / Used</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStudentForm.lessonsUsed}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, lessonsUsed: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Total Package Price (LKR)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStudentForm.priceTotal}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, priceTotal: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-[#152026] mb-1">Practical Trial Date</label>
+                      <input
+                        type="date"
+                        value={editStudentForm.trial_date}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, trial_date: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-[#D4EEF8] text-[#152026] rounded-xl outline-none focus:border-[#1B3D59]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-[#D4EEF8]">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudent(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingStudentDetails}
+                    className="btn-primary text-xs py-2 px-5 font-bold cursor-pointer flex items-center gap-2"
+                  >
+                    {savingStudentDetails ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving Changes...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Set Practical Trial Date Form (Shared for Type 1 & Type 2) */}
             {modalMode === 'set_trial_date' && (
@@ -1745,15 +2081,15 @@ export default function StaffStudentListPage() {
                               (r.milestone_type === 'trial' || !r.milestone_type) &&
                               r.status === 'Pending'
                           )?.preferred_time && (
-                            <span className="ml-1 text-xs text-amber-700">
-                              ({rescheduleRequests.find(
-                                (r) =>
-                                  (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                                  (r.milestone_type === 'trial' || !r.milestone_type) &&
-                                  r.status === 'Pending'
-                              )?.preferred_time})
-                            </span>
-                          )}
+                              <span className="ml-1 text-xs text-amber-700">
+                                ({rescheduleRequests.find(
+                                  (r) =>
+                                    (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                    (r.milestone_type === 'trial' || !r.milestone_type) &&
+                                    r.status === 'Pending'
+                                )?.preferred_time})
+                              </span>
+                            )}
                         </strong>
                       </div>
                       {rescheduleRequests.find(
@@ -1762,41 +2098,41 @@ export default function StaffStudentListPage() {
                           (r.milestone_type === 'trial' || !r.milestone_type) &&
                           r.status === 'Pending'
                       )?.reason && (
-                        <div className="text-slate-600 italic text-[11px]">
-                          "{rescheduleRequests.find(
-                            (r) =>
-                              (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                              (r.milestone_type === 'trial' || !r.milestone_type) &&
-                              r.status === 'Pending'
-                          ).reason}"
-                        </div>
-                      )}
+                          <div className="text-slate-600 italic text-[11px]">
+                            "{rescheduleRequests.find(
+                              (r) =>
+                                (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                (r.milestone_type === 'trial' || !r.milestone_type) &&
+                                r.status === 'Pending'
+                            ).reason}"
+                          </div>
+                        )}
                       {rescheduleRequests.find(
                         (r) =>
                           (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
                           (r.milestone_type === 'trial' || !r.milestone_type) &&
                           r.status === 'Pending'
                       )?.preferred_date && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const req = rescheduleRequests.find(
-                              (r) =>
-                                (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                                (r.milestone_type === 'trial' || !r.milestone_type) &&
-                                r.status === 'Pending'
-                            );
-                            if (req?.preferred_date) {
-                              const pDate = req.preferred_date.split('T')[0];
-                              setTrialDateInput(pDate);
-                              toast.success(`Applied preferred date (${pDate}) to input!`);
-                            }
-                          }}
-                          className="px-3 py-1 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold text-[11px] flex items-center gap-1 shadow-sm"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Apply Student's Preferred Trial Date
-                        </button>
-                      )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const req = rescheduleRequests.find(
+                                (r) =>
+                                  (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                  (r.milestone_type === 'trial' || !r.milestone_type) &&
+                                  r.status === 'Pending'
+                              );
+                              if (req?.preferred_date) {
+                                const pDate = req.preferred_date.split('T')[0];
+                                setTrialDateInput(pDate);
+                                toast.success(`Applied preferred date (${pDate}) to input!`);
+                              }
+                            }}
+                            className="px-3 py-1 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Apply Student's Preferred Trial Date
+                          </button>
+                        )}
                     </div>
                   )}
 
@@ -1918,49 +2254,49 @@ export default function StaffStudentListPage() {
                           r.status === 'Pending' &&
                           ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
                       )?.reason && (
-                        <div className="text-slate-600 italic text-[11px]">
-                          "{rescheduleRequests.find(
-                            (r) =>
-                              (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                              r.status === 'Pending' &&
-                              ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
-                          ).reason}"
-                        </div>
-                      )}
+                          <div className="text-slate-600 italic text-[11px]">
+                            "{rescheduleRequests.find(
+                              (r) =>
+                                (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                r.status === 'Pending' &&
+                                ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
+                            ).reason}"
+                          </div>
+                        )}
                       {rescheduleRequests.find(
                         (r) =>
                           (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
                           r.status === 'Pending' &&
                           ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
                       )?.preferred_date && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const req = rescheduleRequests.find(
-                              (r) =>
-                                (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
-                                r.status === 'Pending' &&
-                                ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
-                            );
-                            if (req?.preferred_date) {
-                              const pDate = req.preferred_date.split('T')[0];
-                              if (req.milestone_type === 'medical') {
-                                setDmtForm((prev) => ({ ...prev, medicalExamDate: pDate }));
-                              } else if (req.milestone_type === 'registration') {
-                                setDmtForm((prev) => ({ ...prev, learnerRegistrationDate: pDate }));
-                              } else if (req.milestone_type === 'theory_exam') {
-                                setDmtForm((prev) => ({ ...prev, learnerExamDate: pDate }));
-                              }
-                              toast.success(
-                                `Applied requested date (${pDate}) to form. Click "Save DMT Dates" below to approve!`
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const req = rescheduleRequests.find(
+                                (r) =>
+                                  (r.student_id?._id === selectedStudent._id || r.student_id === selectedStudent._id) &&
+                                  r.status === 'Pending' &&
+                                  ['medical', 'registration', 'theory_exam'].includes(r.milestone_type)
                               );
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold text-[11px] flex items-center gap-1 shadow-sm"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Apply Student's Requested Date to Form
-                        </button>
-                      )}
+                              if (req?.preferred_date) {
+                                const pDate = req.preferred_date.split('T')[0];
+                                if (req.milestone_type === 'medical') {
+                                  setDmtForm((prev) => ({ ...prev, medicalExamDate: pDate }));
+                                } else if (req.milestone_type === 'registration') {
+                                  setDmtForm((prev) => ({ ...prev, learnerRegistrationDate: pDate }));
+                                } else if (req.milestone_type === 'theory_exam') {
+                                  setDmtForm((prev) => ({ ...prev, learnerExamDate: pDate }));
+                                }
+                                toast.success(
+                                  `Applied requested date (${pDate}) to form. Click "Save DMT Dates" below to approve!`
+                                );
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#D4EEF8] text-[#1B3D59] border border-[#B3D5F1] font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Apply Student's Requested Date to Form
+                          </button>
+                        )}
                     </div>
                   )}
 
@@ -2174,11 +2510,10 @@ export default function StaffStudentListPage() {
                               <span className="font-mono text-[#1B3D59] font-bold">{att.marks}/40</span>
                             )}
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                att.result === 'passed'
-                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                   : 'bg-rose-50 text-rose-700 border border-rose-200'
-                              }`}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${att.result === 'passed'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}
                             >
                               {att.result?.toUpperCase()}
                             </span>
@@ -2262,11 +2597,10 @@ export default function StaffStudentListPage() {
                             )}
                           </div>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              att.result === 'passed'
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${att.result === 'passed'
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                 : 'bg-rose-100 text-rose-800 border border-rose-300'
-                            }`}
+                              }`}
                           >
                             {att.result}
                           </span>
@@ -2410,8 +2744,8 @@ export default function StaffStudentListPage() {
                           {isExpired
                             ? '18M Expired'
                             : is3AttemptsFailed
-                            ? '3 Attempts Failed'
-                            : 'Registration Cancelled'}
+                              ? '3 Attempts Failed'
+                              : 'Registration Cancelled'}
                         </span>
                       ) : isExpiringSoon ? (
                         <span className="px-3 py-1 rounded-full bg-[#F3EED8] text-[#152026] border border-[#E2D8B3] font-bold flex items-center gap-1">
@@ -2455,19 +2789,18 @@ export default function StaffStudentListPage() {
                       <div className="p-3 rounded-xl bg-white border border-[#D4EEF8]">
                         <span className="text-[11px] text-slate-500 block font-medium">Validity Remaining</span>
                         <span
-                          className={`text-sm font-bold font-mono mt-0.5 block ${
-                            isExpired
+                          className={`text-sm font-bold font-mono mt-0.5 block ${isExpired
                               ? 'text-rose-600 font-black'
                               : isExpiringSoon
-                              ? 'text-[#1B3D59] font-black'
-                              : 'text-emerald-700'
-                          }`}
+                                ? 'text-[#1B3D59] font-black'
+                                : 'text-emerald-700'
+                            }`}
                         >
                           {isExpired
                             ? 'EXPIRED'
                             : diffDays !== null
-                            ? `${diffDays} Days Remaining`
-                            : 'N/A'}
+                              ? `${diffDays} Days Remaining`
+                              : 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -2516,24 +2849,22 @@ export default function StaffStudentListPage() {
                         return (
                           <div
                             key={num}
-                            className={`p-3 rounded-xl border ${
-                              att
+                            className={`p-3 rounded-xl border ${att
                                 ? att.result === 'passed'
                                   ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                                   : 'bg-rose-50 border-rose-200 text-rose-900'
                                 : 'bg-white border-[#D4EEF8] text-slate-500'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="font-bold text-xs">Attempt {num}</span>
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                  att
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${att
                                     ? att.result === 'passed'
                                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                       : 'bg-rose-100 text-rose-800 border border-rose-300'
                                     : 'bg-slate-100 text-slate-500'
-                                }`}
+                                  }`}
                               >
                                 {att ? att.result.toUpperCase() : 'Available'}
                               </span>
@@ -2603,24 +2934,22 @@ export default function StaffStudentListPage() {
                         return (
                           <div
                             key={num}
-                            className={`p-3 rounded-xl border ${
-                              att
+                            className={`p-3 rounded-xl border ${att
                                 ? att.result === 'passed'
                                   ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                                   : 'bg-rose-50 border-rose-200 text-rose-900'
                                 : 'bg-white border-[#D4EEF8] text-slate-500'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="font-bold text-xs">Trial Attempt {num}</span>
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                  att
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${att
                                     ? att.result === 'passed'
                                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                       : 'bg-rose-100 text-rose-800 border border-rose-300'
                                     : 'bg-slate-100 text-slate-500'
-                                }`}
+                                  }`}
                               >
                                 {att ? att.result.toUpperCase() : 'Available'}
                               </span>
@@ -2758,13 +3087,12 @@ export default function StaffStudentListPage() {
                       <div>
                         {selectedStudent.finalLicense?.photoUrl ? (
                           <span
-                            className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 border ${
-                              selectedStudent.finalLicense?.verificationStatus === 'verified'
+                            className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 border ${selectedStudent.finalLicense?.verificationStatus === 'verified'
                                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                 : selectedStudent.finalLicense?.verificationStatus === 'rejected'
-                                ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'
-                            }`}
+                                  ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                  : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'
+                              }`}
                           >
                             {selectedStudent.finalLicense?.verificationStatus === 'verified' ? (
                               <>
@@ -2805,8 +3133,8 @@ export default function StaffStudentListPage() {
                             <img
                               src={
                                 selectedStudent.finalLicense.photoUrl.startsWith('http')
-                                ? selectedStudent.finalLicense.photoUrl
-                                : `http://localhost:5001${selectedStudent.finalLicense.photoUrl}`
+                                  ? selectedStudent.finalLicense.photoUrl
+                                  : `http://localhost:5001${selectedStudent.finalLicense.photoUrl}`
                               }
                               alt="Final Driving License"
                               className="w-full h-full object-contain transition-transform group-hover:scale-105"
@@ -3076,11 +3404,10 @@ export default function StaffStudentListPage() {
                                   {cycle.examAttempts.map((att, aIdx) => (
                                     <span
                                       key={aIdx}
-                                      className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 ${
-                                        att.result === 'passed'
+                                      className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 ${att.result === 'passed'
                                           ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                                           : 'bg-rose-50 border-rose-200 text-rose-800'
-                                      }`}
+                                        }`}
                                     >
                                       <strong>Attempt {att.attemptNumber || aIdx + 1}:</strong>{' '}
                                       {att.result?.toUpperCase()}
@@ -3102,11 +3429,10 @@ export default function StaffStudentListPage() {
                                   {cycle.trialAttempts.map((att, aIdx) => (
                                     <span
                                       key={aIdx}
-                                      className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 ${
-                                        att.result === 'passed'
+                                      className={`px-2 py-1 rounded-lg border text-[10px] font-mono flex items-center gap-1.5 ${att.result === 'passed'
                                           ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                                           : 'bg-rose-50 border-rose-200 text-rose-800'
-                                      }`}
+                                        }`}
                                     >
                                       <strong>Trial #{att.attemptNumber || aIdx + 1}:</strong>{' '}
                                       {att.result?.toUpperCase()}
@@ -3188,29 +3514,26 @@ export default function StaffStudentListPage() {
                     }
                     setWalkInStep(s.step);
                   }}
-                  className={`text-left p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                    walkInStep === s.step
+                  className={`text-left p-2.5 rounded-2xl border transition-all cursor-pointer ${walkInStep === s.step
                       ? 'bg-[#1B3D59] text-white border-[#1B3D59] shadow-sm'
                       : walkInStep > s.step
-                      ? 'bg-emerald-50 text-emerald-950 border-emerald-300 font-semibold'
-                      : 'bg-[#FAFCFE] text-slate-600 border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
-                  }`}
+                        ? 'bg-emerald-50 text-emerald-950 border-emerald-300 font-semibold'
+                        : 'bg-[#FAFCFE] text-slate-600 border-[#D4EEF8] hover:bg-[#D4EEF8]/40'
+                    }`}
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold">
                     {walkInStep > s.step ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                     ) : (
-                      <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-black ${
-                        walkInStep === s.step ? 'bg-white text-[#1B3D59]' : 'bg-[#D4EEF8] text-[#1B3D59]'
-                      }`}>
+                      <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-black ${walkInStep === s.step ? 'bg-white text-[#1B3D59]' : 'bg-[#D4EEF8] text-[#1B3D59]'
+                        }`}>
                         {s.step}
                       </span>
                     )}
                     <span className="truncate">{s.label}</span>
                   </div>
-                  <div className={`text-[10px] mt-0.5 truncate hidden sm:block ${
-                    walkInStep === s.step ? 'text-[#D4EEF8]' : 'text-slate-500'
-                  }`}>
+                  <div className={`text-[10px] mt-0.5 truncate hidden sm:block ${walkInStep === s.step ? 'text-[#D4EEF8]' : 'text-slate-500'
+                    }`}>
                     {s.desc}
                   </div>
                 </button>
@@ -3231,11 +3554,10 @@ export default function StaffStudentListPage() {
                   {/* Option A: Type 1 */}
                   <div
                     onClick={() => setWalkInForm({ ...walkInForm, studentType: 'Type1_NewLearner' })}
-                    className={`cursor-pointer p-5 sm:p-6 rounded-2xl border-2 transition-all flex flex-col justify-between text-left ${
-                      walkInForm.studentType === 'Type1_NewLearner'
+                    className={`cursor-pointer p-5 sm:p-6 rounded-2xl border-2 transition-all flex flex-col justify-between text-left ${walkInForm.studentType === 'Type1_NewLearner'
                         ? 'border-[#1B3D59] bg-[#FAFCFE] shadow-md ring-2 ring-[#1B3D59]/20'
                         : 'border-[#D4EEF8] bg-white hover:border-[#1B3D59]/50 hover:bg-[#FAFCFE]'
-                    }`}
+                      }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -3277,11 +3599,10 @@ export default function StaffStudentListPage() {
                   {/* Option B: Type 2 */}
                   <div
                     onClick={() => setWalkInForm({ ...walkInForm, studentType: 'Type2_TrialReady' })}
-                    className={`cursor-pointer p-5 sm:p-6 rounded-2xl border-2 transition-all flex flex-col justify-between text-left ${
-                      walkInForm.studentType === 'Type2_TrialReady'
+                    className={`cursor-pointer p-5 sm:p-6 rounded-2xl border-2 transition-all flex flex-col justify-between text-left ${walkInForm.studentType === 'Type2_TrialReady'
                         ? 'border-[#1B3D59] bg-[#FAFCFE] shadow-md ring-2 ring-[#1B3D59]/20'
                         : 'border-[#D4EEF8] bg-white hover:border-[#1B3D59]/50 hover:bg-[#FAFCFE]'
-                    }`}
+                      }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -3400,13 +3721,12 @@ export default function StaffStudentListPage() {
                     <label className="block font-bold text-[#152026] mb-1">
                       DMT Age Eligibility (18+ Rule)
                     </label>
-                    <div className={`py-2 px-3 rounded-xl border flex items-center gap-2 min-h-[38px] ${
-                      walkInCalculatedAge === null
+                    <div className={`py-2 px-3 rounded-xl border flex items-center gap-2 min-h-[38px] ${walkInCalculatedAge === null
                         ? 'bg-[#FAFCFE] border-[#D4EEF8] text-slate-500'
                         : walkInCalculatedAge >= 18
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
-                        : 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
-                    }`}>
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                          : 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
+                      }`}>
                       {walkInCalculatedAge === null ? (
                         <span>Select DOB to calculate age</span>
                       ) : walkInCalculatedAge >= 18 ? (
@@ -3605,11 +3925,10 @@ export default function StaffStudentListPage() {
                           const firstInTier = walkInDisplayedPackages.find((p) => p.categoryGroup === 'C');
                           if (firstInTier) setWalkInForm({ ...walkInForm, packageType: firstInTier.type });
                         }}
-                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
-                          walkInSelectedTier === 'C'
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${walkInSelectedTier === 'C'
                             ? 'bg-[#1B3D59] text-white shadow-sm font-black'
                             : 'text-[#152026] hover:bg-[#D4EEF8]/40'
-                        }`}
+                          }`}
                       >
                         <span className="flex items-center gap-1 text-[11px] sm:text-xs">
                           <Layers className="w-3.5 h-3.5" /> Full Packages
@@ -3624,11 +3943,10 @@ export default function StaffStudentListPage() {
                           const firstInTier = walkInDisplayedPackages.find((p) => p.categoryGroup === 'A');
                           if (firstInTier) setWalkInForm({ ...walkInForm, packageType: firstInTier.type });
                         }}
-                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
-                          walkInSelectedTier === 'A'
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${walkInSelectedTier === 'A'
                             ? 'bg-[#1B3D59] text-white shadow-sm font-black'
                             : 'text-[#152026] hover:bg-[#D4EEF8]/40'
-                        }`}
+                          }`}
                       >
                         <span className="flex items-center gap-1 text-[11px] sm:text-xs">
                           <Award className="w-3.5 h-3.5" /> Individual / Private
@@ -3643,11 +3961,10 @@ export default function StaffStudentListPage() {
                           const firstInTier = walkInDisplayedPackages.find((p) => p.categoryGroup === 'B');
                           if (firstInTier) setWalkInForm({ ...walkInForm, packageType: firstInTier.type });
                         }}
-                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
-                          walkInSelectedTier === 'B'
+                        className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${walkInSelectedTier === 'B'
                             ? 'bg-[#1B3D59] text-white shadow-sm font-black'
                             : 'text-[#152026] hover:bg-[#D4EEF8]/40'
-                        }`}
+                          }`}
                       >
                         <span className="flex items-center gap-1 text-[11px] sm:text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Standard Single
@@ -3664,18 +3981,16 @@ export default function StaffStudentListPage() {
                           <div
                             key={pkg.type}
                             onClick={() => setWalkInForm({ ...walkInForm, packageType: pkg.type })}
-                            className={`cursor-pointer rounded-2xl p-3.5 border transition-all relative flex flex-col justify-between ${
-                              isSelected
+                            className={`cursor-pointer rounded-2xl p-3.5 border transition-all relative flex flex-col justify-between ${isSelected
                                 ? 'bg-[#FAFCFE] border-2 border-[#1B3D59] shadow-sm'
                                 : 'bg-white border border-[#D4EEF8] hover:border-[#1B3D59]/50'
-                            }`}
+                              }`}
                           >
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                                    isSelected ? 'bg-[#1B3D59] text-white' : 'bg-[#D4EEF8] text-[#1B3D59]'
-                                  }`}>
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isSelected ? 'bg-[#1B3D59] text-white' : 'bg-[#D4EEF8] text-[#1B3D59]'
+                                    }`}>
                                     {getWalkInVehicleIcon(pkg.vehicleCategory || pkg.type)}
                                   </div>
                                   <div>
@@ -3685,9 +4000,8 @@ export default function StaffStudentListPage() {
                                     </span>
                                   </div>
                                 </div>
-                                <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                                  isSelected ? 'bg-[#1B3D59] text-white' : 'border border-[#D4EEF8]'
-                                }`}>
+                                <div className={`w-4 h-4 rounded-full flex items-center justify-center ${isSelected ? 'bg-[#1B3D59] text-white' : 'border border-[#D4EEF8]'
+                                  }`}>
                                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                                 </div>
                               </div>
@@ -4011,11 +4325,10 @@ export default function StaffStudentListPage() {
                           <FileText className="w-3.5 h-3.5 text-[#1B3D59]" /> DMT Clearance Proof
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            verifyModalStudent.dmt_clearance_verified
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${verifyModalStudent.dmt_clearance_verified
                               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                               : 'bg-[#F3EED8] text-[#152026] border border-[#E2D8B3]'
-                          }`}
+                            }`}
                         >
                           {verifyModalStudent.dmt_clearance_verified ? 'Verified' : 'Pending Review'}
                         </span>
@@ -4066,8 +4379,8 @@ export default function StaffStudentListPage() {
                   const fullSlipUrl = slipUrl?.startsWith('http')
                     ? slipUrl
                     : slipUrl
-                    ? `http://localhost:5001${slipUrl}`
-                    : null;
+                      ? `http://localhost:5001${slipUrl}`
+                      : null;
 
                   return (
                     <div className="space-y-3">
@@ -4293,11 +4606,10 @@ export default function StaffStudentListPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => setRescheduleMilestoneFilter(tab.id)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      rescheduleMilestoneFilter === tab.id
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${rescheduleMilestoneFilter === tab.id
                         ? 'bg-[#1B3D59] text-white shadow-sm'
                         : 'bg-white text-slate-600 border border-[#D4EEF8] hover:bg-[#D4EEF8]'
-                    }`}
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -4311,11 +4623,10 @@ export default function StaffStudentListPage() {
                     key={stTab}
                     type="button"
                     onClick={() => setRescheduleStatusFilter(stTab)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      rescheduleStatusFilter === stTab
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${rescheduleStatusFilter === stTab
                         ? 'bg-[#1B3D59] text-white shadow-sm'
                         : 'bg-white text-slate-600 border border-[#D4EEF8] hover:bg-[#D4EEF8]'
-                    }`}
+                      }`}
                   >
                     {stTab}
                   </button>
@@ -4354,9 +4665,8 @@ export default function StaffStudentListPage() {
                     return (
                       <div
                         key={req._id}
-                        className={`p-5 rounded-2xl border transition-colors ${
-                          isPending ? 'bg-[#F3EED8]/40 border-[#E2D8B3]' : 'bg-white border-[#D4EEF8]'
-                        } space-y-3`}
+                        className={`p-5 rounded-2xl border transition-colors ${isPending ? 'bg-[#F3EED8]/40 border-[#E2D8B3]' : 'bg-white border-[#D4EEF8]'
+                          } space-y-3`}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D4EEF8] pb-3">
                           <div>
@@ -4368,13 +4678,12 @@ export default function StaffStudentListPage() {
                               <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-mono">
                                 {req.student_id?.branch || studentUser?.branch || 'Branch'}
                               </span>
-                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                req.status === 'Approved'
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${req.status === 'Approved'
                                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                   : req.status === 'Rejected'
-                                  ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                  : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'
-                              }`}>
+                                    ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                    : 'bg-[#F3EED8] text-[#152026] border-[#E2D8B3]'
+                                }`}>
                                 {req.status}
                               </span>
                             </div>
