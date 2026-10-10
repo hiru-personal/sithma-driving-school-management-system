@@ -346,6 +346,12 @@ export default function PackageManagementPage() {
       return false;
     }
     const cleanName = cleanLabel.replace(/\s+/g, '_');
+    if (existingCustomTypes.includes(cleanName)) {
+      toast.success(`Custom package type '${cleanName.replace(/_/g, ' ')}' is ready to use`);
+      setFormData((prev) => ({ ...prev, type: cleanName }));
+      setIsCustomType(false);
+      return true;
+    }
     try {
       const res = await api.post('/packages/custom-types', {
         name: cleanName,
@@ -882,7 +888,16 @@ export default function PackageManagementPage() {
 
               {/* Package Type Selection */}
               <div>
-                <label className="block font-semibold text-[#152026] mb-1">Package Type:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-[#152026]">Package Type:</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomTypesManagerOpen(true)}
+                    className="text-[11px] text-[#1B3D59] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Tag className="w-3 h-3 text-[#1B3D59]" /> Manage All Package Types ({existingCustomTypes.length})
+                  </button>
+                </div>
                 <select
                   value={isCustomType ? '__CUSTOM__' : formData.type}
                   onChange={handleTypeSelectChange}
@@ -926,19 +941,52 @@ export default function PackageManagementPage() {
                     </optgroup>
                   )}
                 </select>
+
+                {/* Quick Action Bar when an existing custom type is currently selected */}
+                {!isCustomType && existingCustomTypes.includes(formData.type) && (
+                  <div className="mt-2 p-2.5 bg-[#D4EEF8]/50 border border-[#B3D5F1] rounded-xl flex items-center justify-between gap-2 animate-fade-in">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-[#1B3D59] text-white shrink-0">
+                        Custom Type
+                      </span>
+                      <span className="text-xs font-bold text-[#152026] truncate">
+                        {formData.type.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openEditCustomTypeModal(formData.type)}
+                        className="px-2.5 py-1 bg-white hover:bg-[#D4EEF8] border border-[#B3D5F1] text-[#1B3D59] text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                        title="Edit / Rename this custom package type"
+                      >
+                        <Edit2 className="w-3 h-3" /> Edit / Rename
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openDeleteCustomTypeModal(formData.type)}
+                        className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                        title="Delete this custom package type"
+                      >
+                        <Trash2 className="w-3 h-3" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Custom Package Type Input (Shown when "Other / New Package Type" selected) */}
+              {/* Custom Package Type Input & Management (Shown when "Other / New Package Type" selected) */}
               {isCustomType && (
-                <div className="p-3 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-xl space-y-1.5 transition-all">
+                <div className="p-3.5 bg-[#D4EEF8]/40 border border-[#B3D5F1] rounded-2xl space-y-3 transition-all animate-fade-in">
                   <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-[#1B3D59]">
+                    <label className="block font-bold text-[#1B3D59] text-xs">
                       New / Custom Package Type Identifier:
                     </label>
-                    <span className="text-[10px] text-[#1B3D59] font-mono px-2 py-0.5 bg-[#D4EEF8] rounded font-bold">
+                    <span className="text-[10px] text-[#1B3D59] font-mono px-2 py-0.5 bg-[#D4EEF8] rounded font-bold border border-[#B3D5F1]">
                       Custom Type
                     </span>
                   </div>
+
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -946,52 +994,172 @@ export default function PackageManagementPage() {
                       value={customTypeInput}
                       onChange={(e) => setCustomTypeInput(e.target.value)}
                       placeholder="e.g. Other, VIP_Package, Electric_Car, Combo_Special..."
-                      className="flex-1 px-3.5 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-lg focus:outline-none focus:border-[#1B3D59] font-medium"
+                      className="flex-1 px-3.5 py-2 border border-[#D4EEF8] bg-white text-[#152026] rounded-xl focus:outline-none focus:border-[#1B3D59] font-medium text-xs"
                     />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (customTypeInput.trim()) {
-                          const success = await handleCreateDirectCustomType(customTypeInput);
-                          if (success) {
+                    {existingCustomTypes.includes(customTypeInput.trim().replace(/\s+/g, '_')) ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
                             const val = customTypeInput.trim().replace(/\s+/g, '_');
-                            setIsCustomType(false);
                             setFormData((prev) => ({ ...prev, type: val }));
+                            setIsCustomType(false);
+                            toast.success(`Selected custom package type '${val.replace(/_/g, ' ')}'`);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                          title="Use this existing custom package type"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Use Type
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEditCustomTypeModal(customTypeInput.trim().replace(/\s+/g, '_'))}
+                          className="px-2.5 py-2 rounded-xl bg-[#1B3D59] hover:bg-[#152026] text-white font-bold text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                          title="Rename this package type"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" /> Rename
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteCustomTypeModal(customTypeInput.trim().replace(/\s+/g, '_'))}
+                          className="px-2.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                          title="Delete this package type"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (customTypeInput.trim()) {
+                            const success = await handleCreateDirectCustomType(customTypeInput);
+                            if (success) {
+                              const val = customTypeInput.trim().replace(/\s+/g, '_');
+                              setIsCustomType(false);
+                              setFormData((prev) => ({ ...prev, type: val }));
+                            }
                           }
-                        }
-                      }}
-                      className="px-3 py-2 rounded-lg bg-[#1B3D59] hover:bg-[#152026] text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-colors"
-                      title="Save as permanent custom package type"
-                    >
-                      + Save Type
-                    </button>
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-[#1B3D59] hover:bg-[#152026] text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                        title="Save as permanent custom package type"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Save Type
+                      </button>
+                    )}
                   </div>
+
                   <p className="text-[11px] text-slate-600 font-medium">
-                    Type a new package type name or "Other". It will be saved as this package's type.
+                    Type a new package type name (e.g. &quot;Other&quot;) or select, edit, or delete previously created custom types below.
                   </p>
+
+                  {/* List of Custom Package Types with Edit & Delete actions */}
+                  <div className="pt-2 border-t border-[#B3D5F1]/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#1B3D59] flex items-center gap-1.5">
+                        <Tag className="w-3 h-3 text-[#1B3D59]" />
+                        Existing Custom Types ({existingCustomTypes.length}):
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Click name to select, or use icons to edit/delete
+                      </span>
+                    </div>
+
+                    {existingCustomTypes.length === 0 ? (
+                      <div className="py-3 px-3 text-center text-slate-500 text-[11px] bg-white/70 rounded-xl border border-dashed border-[#B3D5F1]">
+                        No custom package types created yet. Type a name above (e.g. &quot;Other&quot;) and click &quot;+ Save Type&quot;.
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                        {existingCustomTypes.map((t) => {
+                          const isSelected = !isCustomType && formData.type === t;
+                          return (
+                            <div
+                              key={t}
+                              className={`inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                isSelected
+                                  ? 'bg-[#1B3D59] text-white border-[#1B3D59] shadow-xs'
+                                  : 'bg-white text-[#152026] border-[#D4EEF8] hover:border-[#B3D5F1]'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsCustomType(false);
+                                  setFormData((prev) => ({ ...prev, type: t }));
+                                  setCustomTypeInput(t.replace(/_/g, ' '));
+                                  toast.success(`Selected '${t.replace(/_/g, ' ')}'`);
+                                }}
+                                className="cursor-pointer text-left hover:underline truncate max-w-[130px]"
+                                title={`Select ${t.replace(/_/g, ' ')}`}
+                              >
+                                {t.replace(/_/g, ' ')}
+                              </button>
+                              <div
+                                className={`flex items-center gap-0.5 ml-1 border-l pl-1 ${
+                                  isSelected ? 'border-white/30' : 'border-[#D4EEF8]'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditCustomTypeModal(t);
+                                  }}
+                                  className={`p-1 rounded-md transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'hover:bg-white/20 text-white'
+                                      : 'hover:bg-[#D4EEF8] text-[#1B3D59]'
+                                  }`}
+                                  title={`Edit / Rename ${t.replace(/_/g, ' ')}`}
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openDeleteCustomTypeModal(t);
+                                  }}
+                                  className={`p-1 rounded-md transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'hover:bg-rose-500 text-rose-200 hover:text-white'
+                                      : 'hover:bg-rose-100 text-rose-600'
+                                  }`}
+                                  title={`Delete ${t.replace(/_/g, ' ')}`}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* Custom Package Types with Edit & Delete icons */}
-              {existingCustomTypes.length > 0 && (
+              {/* Quick custom types chips when standard type is selected */}
+              {!isCustomType && existingCustomTypes.length > 0 && (
                 <div className="p-3 bg-[#FAFCFE] border border-[#D4EEF8] rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#1B3D59] flex items-center gap-1.5">
                       <Tag className="w-3 h-3 text-[#1B3D59]" />
-                      Custom Package Types ({existingCustomTypes.length}):
+                      Custom Package Types Available ({existingCustomTypes.length}):
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium">
-                      Click name to select, or use icons to edit/delete
+                      Click to use, or edit/delete
                     </span>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
                     {existingCustomTypes.map((t) => {
-                      const isSelected = !isCustomType && formData.type === t;
+                      const isSelected = formData.type === t;
                       return (
                         <div
                           key={t}
-                          className={`inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          className={`inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-xl text-xs font-semibold border transition-all ${
                             isSelected
                               ? 'bg-[#1B3D59] text-white border-[#1B3D59] shadow-xs'
                               : 'bg-white text-[#152026] border-[#D4EEF8] hover:border-[#B3D5F1]'
@@ -1002,8 +1170,10 @@ export default function PackageManagementPage() {
                             onClick={() => {
                               setIsCustomType(false);
                               setFormData((prev) => ({ ...prev, type: t }));
+                              setCustomTypeInput(t.replace(/_/g, ' '));
+                              toast.success(`Selected '${t.replace(/_/g, ' ')}'`);
                             }}
-                            className="cursor-pointer text-left hover:underline"
+                            className="cursor-pointer text-left hover:underline truncate max-w-[130px]"
                             title={`Select ${t.replace(/_/g, ' ')}`}
                           >
                             {t.replace(/_/g, ' ')}
@@ -1019,7 +1189,7 @@ export default function PackageManagementPage() {
                                 e.stopPropagation();
                                 openEditCustomTypeModal(t);
                               }}
-                              className={`p-1 rounded transition-colors cursor-pointer ${
+                              className={`p-1 rounded-md transition-colors cursor-pointer ${
                                 isSelected
                                   ? 'hover:bg-white/20 text-white'
                                   : 'hover:bg-[#D4EEF8] text-[#1B3D59]'
@@ -1034,7 +1204,7 @@ export default function PackageManagementPage() {
                                 e.stopPropagation();
                                 openDeleteCustomTypeModal(t);
                               }}
-                              className={`p-1 rounded transition-colors cursor-pointer ${
+                              className={`p-1 rounded-md transition-colors cursor-pointer ${
                                 isSelected
                                   ? 'hover:bg-rose-500 text-rose-200 hover:text-white'
                                   : 'hover:bg-rose-100 text-rose-600'
@@ -1232,7 +1402,7 @@ export default function PackageManagementPage() {
 
       {/* 1. Edit / Rename Custom Package Type Modal */}
       {isEditingCustomTypeModalOpen && customTypeToEdit && (
-        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
           <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-fade-in text-[#152026]">
             <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
               <div className="flex items-center gap-2.5">
@@ -1315,7 +1485,7 @@ export default function PackageManagementPage() {
 
       {/* 2. Delete Confirmation Popup Modal */}
       {isDeleteConfirmModalOpen && customTypeToDelete && (
-        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
           <div className="bg-white border border-rose-200 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-fade-in text-[#152026]">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
@@ -1372,7 +1542,7 @@ export default function PackageManagementPage() {
 
       {/* 3. Manage Custom Package Types Modal */}
       {isCustomTypesManagerOpen && (
-        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#152026]/75 backdrop-blur-sm z-[75] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white border border-[#D4EEF8] rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 my-auto text-[#152026] animate-fade-in">
             <div className="flex items-center justify-between border-b border-[#D4EEF8] pb-3">
               <div className="flex items-center gap-2">

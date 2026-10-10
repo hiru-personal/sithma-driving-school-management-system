@@ -13,7 +13,7 @@ const Notification = require('../models/Notification');
 const QuizQuestion = require('../models/QuizQuestion');
 const QuizAttempt = require('../models/QuizAttempt');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sithma_driving_school';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sithma-driving-school';
 
 async function seed() {
   try {

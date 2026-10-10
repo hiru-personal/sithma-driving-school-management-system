@@ -5,6 +5,7 @@ const {
   getAllAccounts,
   createStaffAccount,
   createInstructorAccount,
+  createUserAccount,
   updateAccountStatus,
   forceResetPassword,
   deleteAccount,
@@ -18,6 +19,9 @@ router.get('/analytics', authorize('admin', 'staff'), getAdminAnalytics);
 
 // Account Management routes accessible ONLY by Admin
 router.get('/accounts', authorize('admin'), getAllAccounts);
+router.post('/accounts', authorize('admin'), createUserAccount);
+router.post('/accounts/user', authorize('admin'), createUserAccount);
+router.post('/users', authorize('admin'), createUserAccount);
 router.post('/accounts/staff', authorize('admin'), createStaffAccount);
 router.post('/accounts/instructor', authorize('admin'), createInstructorAccount);
 router.patch('/accounts/:id/status', authorize('admin'), updateAccountStatus);

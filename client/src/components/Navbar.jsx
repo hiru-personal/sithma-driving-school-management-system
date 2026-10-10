@@ -816,19 +816,6 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* Database indicator in mobile drawer for admin */}
-              {user?.role === 'admin' && dbInfo && (
-                <div
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
-                    dbInfo.target?.includes('Atlas')
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-[#F3EED8] text-[#152026] border-[#B3D5F1]'
-                  }`}
-                >
-                  <Database className="w-3.5 h-3.5 text-[#1B3D59]" />
-                  <span>DB: {dbInfo.target?.includes('Atlas') ? 'MongoDB Atlas (Cloud)' : 'Local MongoDB'}</span>
-                </div>
-              )}
 
               {/* Student Navigation Links */}
               {isStudent && (
