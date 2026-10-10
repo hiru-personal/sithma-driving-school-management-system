@@ -59,16 +59,17 @@ exports.getAllStudents = async (req, res) => {
       .populate('package.packageId')
       .sort({ createdAt: -1 });
 
-    // Client-side text search on populated user name/email/phone
+    // Client-side text search on populated user name/email/phone/nic and direct student fields
     if (search && search.trim() !== '') {
       const s = search.toLowerCase().trim();
-      students = students.filter(
-        (st) =>
-          st.userId &&
-          (st.userId.name.toLowerCase().includes(s) ||
-            st.userId.email.toLowerCase().includes(s) ||
-            st.userId.phone.includes(s))
-      );
+      students = students.filter((st) => {
+        const u = st.userId;
+        const nameMatch = (u?.name && u.name.toLowerCase().includes(s)) || (st.name && st.name.toLowerCase().includes(s));
+        const emailMatch = (u?.email && u.email.toLowerCase().includes(s)) || (st.email && st.email.toLowerCase().includes(s));
+        const phoneMatch = (u?.phone && u.phone.includes(s)) || (st.phone && st.phone.includes(s));
+        const nicMatch = (u?.nic && u.nic.toLowerCase().includes(s)) || (st.nic && st.nic.toLowerCase().includes(s));
+        return Boolean(nameMatch || emailMatch || phoneMatch || nicMatch);
+      });
     }
 
     // Attach payments & latest slip for each student
